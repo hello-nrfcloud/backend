@@ -1,0 +1,9 @@
+# This file should only cover artifacts caused by the source code in this
+# repository, not those caused by the personal choice of editor and/or
+# environment of a developer.
+# See adr/002-clean-gitignore.md
+node_modules/
+npm-debug.log
+.swc/
+cdk.out/
+dist/
