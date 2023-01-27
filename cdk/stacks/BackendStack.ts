@@ -24,10 +24,17 @@ export class BackendStack extends Stack {
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
 			compatibleRuntimes: [Lambda.Runtime.NODEJS_18_X],
 		})
+		const powerToolLayer = Lambda.LayerVersion.fromLayerVersionArn(
+			this,
+			'powertoolsLayer',
+			`arn:aws:lambda:${
+				Stack.of(this).region
+			}:094274105915:layer:AWSLambdaPowertoolsTypeScript:7`,
+		)
 
 		const api = new WebsocketAPI(this, {
 			lambdaSources,
-			baseLayer,
+			layers: [baseLayer, powerToolLayer],
 		})
 
 		// Outputs

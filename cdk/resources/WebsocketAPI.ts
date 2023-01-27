@@ -18,14 +18,14 @@ export class WebsocketAPI extends Construct {
 		parent: Stack,
 		{
 			lambdaSources,
-			baseLayer,
+			layers,
 		}: {
 			lambdaSources: {
 				onConnect: PackedLambda
 				onMessage: PackedLambda
 				onDisconnect: PackedLambda
 			}
-			baseLayer: Lambda.ILayerVersion
+			layers: Lambda.ILayerVersion[]
 		},
 	) {
 		super(parent, 'WebsocketAPI')
@@ -54,7 +54,7 @@ export class WebsocketAPI extends Construct {
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 			},
 			initialPolicy: [],
-			layers: [baseLayer],
+			layers: layers,
 		})
 		this.connectionsTable.grantWriteData(onConnect)
 
@@ -74,7 +74,7 @@ export class WebsocketAPI extends Construct {
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 			},
 			initialPolicy: [],
-			layers: [baseLayer],
+			layers: layers,
 		})
 		this.connectionsTable.grantWriteData(onMessage)
 
@@ -94,7 +94,7 @@ export class WebsocketAPI extends Construct {
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 			},
 			initialPolicy: [],
-			layers: [baseLayer],
+			layers: layers,
 		})
 		this.connectionsTable.grantWriteData(onDisconnect)
 
