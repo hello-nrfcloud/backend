@@ -52,6 +52,7 @@ export class WebsocketAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				LOG_LEVEL: this.node.tryGetContext('log_level'),
 			},
 			initialPolicy: [],
 			layers: layers,
@@ -72,11 +73,13 @@ export class WebsocketAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				LOG_LEVEL: this.node.tryGetContext('log_level'),
 			},
 			initialPolicy: [],
 			layers: layers,
 		})
-		this.connectionsTable.grantWriteData(onMessage)
+
+		this.connectionsTable.grantReadWriteData(onMessage)
 
 		new LambdaLogGroup(this, 'onMessageLogs', onMessage)
 
@@ -92,6 +95,7 @@ export class WebsocketAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				LOG_LEVEL: this.node.tryGetContext('log_level'),
 			},
 			initialPolicy: [],
 			layers: layers,
