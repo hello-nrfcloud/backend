@@ -4,4 +4,5 @@ type BackendLambdas = {
 	onConnect: PackedLambda
 	onMessage: PackedLambda
 	onDisconnect: PackedLambda
+	publishToWebsocketClients: PackedLambda
 }

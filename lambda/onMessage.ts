@@ -1,81 +1,101 @@
-import { Logger } from '@aws-lambda-powertools/logger'
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
+import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type {
 	APIGatewayProxyStructuredResultV2,
 	APIGatewayProxyWebsocketEventV2,
 } from 'aws-lambda'
-const { TableName, level } = fromEnv({
+import { logger } from './logger.js'
+const { TableName, EventBusName } = fromEnv({
 	TableName: 'CONNECTIONS_TABLE_NAME',
-	level: 'LOG_LEVEL',
+	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
-const logger = new Logger({
-	logLevel: level ?? 'info',
-	serviceName: 'ws:message',
-})
+const log = logger('message')
 const db = new DynamoDBClient({})
+const eventBus = new EventBridge({})
 
 export const handler = async (
 	event: APIGatewayProxyWebsocketEventV2,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
-	try {
-		logger.info('event', { event })
+	log.info('onMessage event', { event })
 
-		// Query device id based on connection id
-		const { Item } = await db.send(
-			new GetItemCommand({
-				TableName,
-				Key: {
-					connectionId: {
-						S: event.requestContext.connectionId,
-					},
+	// Query device id based on connection id
+	const { Item } = await db.send(
+		new GetItemCommand({
+			TableName,
+			Key: {
+				connectionId: {
+					S: event.requestContext.connectionId,
 				},
-			}),
-		)
+			},
+		}),
+	)
+	const deviceId = Item?.deviceId?.S
 
-		logger.info('Items', { Item })
+	const action = JSON.parse(event.body ?? 'null')?.action ?? ''
+	switch (action) {
+		case 'echo':
+			await eventBus.putEvents({
+				Entries: [
+					{
+						EventBusName: EventBusName,
+						Source: 'ws.broadcast',
+						DetailType: 'action: echo',
+						Detail: JSON.stringify({
+							context: {
+								deviceId,
+								connectionId: event.requestContext.connectionId,
+							},
+							payload: JSON.parse(event.body ?? 'null'),
+							targets: [deviceId],
+						}),
+					},
+				],
+			})
+			break
+		case 'broadcast':
+			await eventBus.putEvents({
+				Entries: [
+					{
+						EventBusName: EventBusName,
+						Source: 'ws.broadcast',
+						DetailType: 'action: broadcast',
+						Detail: JSON.stringify({
+							context: {
+								deviceId,
+								connectionId: event.requestContext.connectionId,
+							},
+							payload: JSON.parse(event.body ?? 'null'),
+						}),
+					},
+				],
+			})
+			break
+	}
 
-		const action = JSON.parse(event.body ?? 'null').action
-		logger.info('Action', { action })
-		let body: Record<string, unknown> = {}
-		switch (action) {
-			case 'send':
-				body = { action }
-				break
-			default:
-				body = { connectionId: event.requestContext.connectionId }
-		}
+	// await db.send(
+	// 	new UpdateItemCommand({
+	// 		TableName,
+	// 		Key: {
+	// 			connectionId: {
+	// 				S: event.requestContext.connectionId,
+	// 			},
+	// 		},
+	// 		UpdateExpression: 'SET #lastSeen = :lastSeen',
+	// 		ExpressionAttributeNames: {
+	// 			'#lastSeen': 'lastSeen',
+	// 		},
+	// 		ExpressionAttributeValues: {
+	// 			':lastSeen': {
+	// 				S: new Date().toISOString(),
+	// 			},
+	// 		},
+	// 	}),
+	// )
 
-		// await db.send(
-		// 	new UpdateItemCommand({
-		// 		TableName,
-		// 		Key: {
-		// 			connectionId: {
-		// 				S: event.requestContext.connectionId,
-		// 			},
-		// 		},
-		// 		UpdateExpression: 'SET #lastSeen = :lastSeen',
-		// 		ExpressionAttributeNames: {
-		// 			'#lastSeen': 'lastSeen',
-		// 		},
-		// 		ExpressionAttributeValues: {
-		// 			':lastSeen': {
-		// 				S: new Date().toISOString(),
-		// 			},
-		// 		},
-		// 	}),
-		// )
-
-		return {
-			statusCode: 200,
-			body: JSON.stringify(body),
-		}
-	} catch (error) {
-		logger.error('error', { error })
-		return {
-			statusCode: 500,
-			body: (error as Error).message,
-		}
+	return {
+		statusCode: 200,
+		body: `Got your message, ${event.requestContext.connectionId}!`,
 	}
 }

@@ -1,27 +1,41 @@
-import { Logger } from '@aws-lambda-powertools/logger'
 import { DeleteItemCommand, DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type {
 	APIGatewayProxyStructuredResultV2,
 	APIGatewayProxyWebsocketEventV2,
 } from 'aws-lambda'
-const { TableName, level } = fromEnv({
+import { logger } from './logger.js'
+const { TableName, EventBusName } = fromEnv({
 	TableName: 'CONNECTIONS_TABLE_NAME',
-	level: 'LOG_LEVEL',
+	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
-const logger = new Logger({
-	logLevel: level ?? 'info',
-	serviceName: 'ws:disconnect',
-})
+const log = logger('disconnect')
 const db = new DynamoDBClient({})
+const eventBus = new EventBridge({})
 
 export const handler = async (
 	event: APIGatewayProxyWebsocketEventV2,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
-	logger.info('event', { event })
+	log.info('onDisconnect event', { event })
 
-	const { Attributes } = await db.send(
+	await eventBus.putEvents({
+		Entries: [
+			{
+				EventBusName: EventBusName,
+				Source: 'ws.disconnect',
+				DetailType: 'disconnect',
+				Detail: JSON.stringify({
+					context: {
+						connectionId: event.requestContext.connectionId,
+					},
+				}),
+			},
+		],
+	})
+
+	await db.send(
 		new DeleteItemCommand({
 			TableName,
 			Key: {
@@ -31,7 +45,6 @@ export const handler = async (
 			},
 		}),
 	)
-	logger.info(`Delete item`, { Attributes })
 
 	return {
 		statusCode: 200,

@@ -35,6 +35,7 @@ new BackendApp({
 		onConnect: await pack('onConnect'),
 		onMessage: await pack('onMessage'),
 		onDisconnect: await pack('onDisconnect'),
+		publishToWebsocketClients: await pack('publishToWebsocketClients'),
 	},
 	layer: await packLayer({
 		id: 'baseLayer',
