@@ -33,7 +33,9 @@ export const handler = async (
 	)
 	const deviceId = Item?.deviceId?.S
 
-	const action = JSON.parse(event.body ?? 'null')?.action ?? ''
+	const body = JSON.parse(event.body!)
+	const action = body.action
+	const payload = body.payload ?? {}
 	switch (action) {
 		case 'echo':
 			await eventBus.putEvents({
@@ -47,7 +49,7 @@ export const handler = async (
 								deviceId,
 								connectionId: event.requestContext.connectionId,
 							},
-							payload: JSON.parse(event.body ?? 'null'),
+							payload,
 							targets: [deviceId],
 						}),
 					},
@@ -66,7 +68,7 @@ export const handler = async (
 								deviceId,
 								connectionId: event.requestContext.connectionId,
 							},
-							payload: JSON.parse(event.body ?? 'null'),
+							payload,
 						}),
 					},
 				],

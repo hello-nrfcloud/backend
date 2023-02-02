@@ -24,15 +24,12 @@ export const notifyClients =
 		apiGwManagementClient: ApiGatewayManagementApiClient
 	}) =>
 	async (event: WSEvent, deviceIds?: string[]): Promise<void> => {
-		log.info('notifyClients event', { event, deviceIds })
-
 		const connectionIds: string[] = await getActiveConnections(
 			db,
 			connectionsTableName,
 			deviceIds,
 		)
 
-		log.info('active connections', { connectionIds })
 		for (const connectionId of connectionIds) {
 			try {
 				await apiGwManagementClient.send(

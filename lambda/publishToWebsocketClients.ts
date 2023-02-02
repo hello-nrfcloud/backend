@@ -39,10 +39,7 @@ export const handler = async (event: Event): Promise<void> => {
 	log.info('publishToWebSocketClients event', { event })
 
 	const caller = event.detail.context?.connectionId ?? 'unknown'
-	const payload = event.detail.payload ?? {}
-
-	delete payload.message
-	delete payload.action
+	const payload = event.detail.payload
 
 	if (event.detail.targets) {
 		await notifier({ caller, payload }, event.detail.targets)
