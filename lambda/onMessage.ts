@@ -42,8 +42,8 @@ export const handler = async (
 				Entries: [
 					{
 						EventBusName: EventBusName,
-						Source: 'ws.broadcast',
-						DetailType: 'action: echo',
+						Source: 'thingy.ws',
+						DetailType: 'message',
 						Detail: JSON.stringify({
 							context: {
 								deviceId,
@@ -61,8 +61,8 @@ export const handler = async (
 				Entries: [
 					{
 						EventBusName: EventBusName,
-						Source: 'ws.broadcast',
-						DetailType: 'action: broadcast',
+						Source: 'thingy.ws',
+						DetailType: 'message',
 						Detail: JSON.stringify({
 							context: {
 								deviceId,

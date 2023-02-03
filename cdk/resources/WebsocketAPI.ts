@@ -254,7 +254,7 @@ export class WebsocketAPI extends Construct {
 			this,
 			'publishToWebsocketClientsRule',
 			{
-				eventPattern: { source: ['ws.broadcast'] },
+				eventPattern: { source: ['thingy.ws'], detailType: ['message'] },
 				targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
 				eventBus: this.eventBus,
 			},
@@ -304,8 +304,8 @@ export class WebsocketAPI extends Construct {
 			target: this.eventBus.eventBusArn,
 			targetParameters: {
 				eventBridgeEventBusParameters: {
-					detailType: 'Event from queue',
-					source: 'ws.broadcast',
+					detailType: 'message',
+					source: 'thingy.ws',
 				},
 				inputTemplate: `{
 					"context": {

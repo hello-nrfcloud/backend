@@ -24,7 +24,7 @@ export const handler = async (
 		Entries: [
 			{
 				EventBusName: EventBusName,
-				Source: 'ws.disconnect',
+				Source: 'thingy.ws',
 				DetailType: 'disconnect',
 				Detail: JSON.stringify({
 					context: {

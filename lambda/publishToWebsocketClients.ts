@@ -10,7 +10,7 @@ type Event = {
 	'detail-type'?: string
 	time: string
 	detail: {
-		context: {
+		context?: {
 			connectionId: string
 		}
 		payload?: Record<string, unknown>
