@@ -3,7 +3,6 @@ import path from 'node:path'
 import { BackendApp } from './BackendApp.js'
 import { packLambda } from './packLambda.js'
 import { packLayer } from './packLayer.js'
-import { ASSET_TRACKER_STACK_NAME } from './stacks/stackName.js'
 export type PackedLambda = { lambdaZipFile: string; handler: string }
 
 const packagesInLayer: string[] = [
@@ -41,5 +40,4 @@ new BackendApp({
 		id: 'baseLayer',
 		dependencies: packagesInLayer,
 	}),
-	assetTrackerStackName: ASSET_TRACKER_STACK_NAME,
 })

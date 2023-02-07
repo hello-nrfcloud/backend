@@ -1,7 +1,7 @@
 {
-  "name": "@nordicsemiconductor/thingy-rocks-cloud",
+  "name": "@nordicsemiconductor/nrf-guide-backend",
   "version": "0.0.0-development",
-  "description": "Cloud backend for the thingy.rocks AWS IoT dashboard developed using AWS CDK in TypeScript.",
+  "description": "Cloud backend for nRF guide developed using AWS CDK in TypeScript.",
   "type": "module",
   "scripts": {
     "test": "jest --passWithNoTests",
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NordicPlayground/thingy-rocks-cloud-aws-js.git"
+    "url": "git+https://github.com/NordicSemiconductor/nrf.guide-backend.git"
   },
   "bugs": {
-    "url": "https://github.com/NordicPlayground/thingy-rocks-cloud-aws-js/issues"
+    "url": "https://github.com/NordicSemiconductor/nrf.guide-backend/issues"
   },
-  "homepage": "https://github.com/NordicPlayground/thingy-rocks-cloud-aws-js#readme",
+  "homepage": "https://github.com/NordicSemiconductor/nrf.guide-backend#readme",
   "keywords": [
-    "thingy-world",
+    "nrf-guide",
     "iot",
     "aws",
     "cdk",

@@ -76,26 +76,6 @@ export const handler = async (
 			break
 	}
 
-	// await db.send(
-	// 	new UpdateItemCommand({
-	// 		TableName,
-	// 		Key: {
-	// 			connectionId: {
-	// 				S: event.requestContext.connectionId,
-	// 			},
-	// 		},
-	// 		UpdateExpression: 'SET #lastSeen = :lastSeen',
-	// 		ExpressionAttributeNames: {
-	// 			'#lastSeen': 'lastSeen',
-	// 		},
-	// 		ExpressionAttributeValues: {
-	// 			':lastSeen': {
-	// 				S: new Date().toISOString(),
-	// 			},
-	// 		},
-	// 	}),
-	// )
-
 	return {
 		statusCode: 200,
 		body: `Got your message, ${event.requestContext.connectionId}!`,

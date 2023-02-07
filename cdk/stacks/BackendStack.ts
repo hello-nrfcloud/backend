@@ -10,11 +10,9 @@ export class BackendStack extends Stack {
 		{
 			lambdaSources,
 			layer,
-			assetTrackerStackName,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
-			assetTrackerStackName: string
 		},
 	) {
 		super(parent, STACK_NAME)

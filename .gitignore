@@ -7,3 +7,5 @@ npm-debug.log
 .swc/
 cdk.out/
 dist/
+scripts/
+.envrc

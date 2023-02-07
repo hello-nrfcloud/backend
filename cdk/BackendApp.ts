@@ -7,13 +7,11 @@ export class BackendApp extends App {
 	public constructor({
 		lambdaSources,
 		layer,
-		assetTrackerStackName,
 	}: {
 		lambdaSources: BackendLambdas
 		layer: PackedLayer
-		assetTrackerStackName: string
 	}) {
 		super()
-		new BackendStack(this, { lambdaSources, layer, assetTrackerStackName })
+		new BackendStack(this, { lambdaSources, layer })
 	}
 }
