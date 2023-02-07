@@ -18,8 +18,13 @@ type Event = {
 	}
 }
 
-const { connectionsTableName, websocketManagementAPIURL } = fromEnv({
+const {
+	connectionsTableName,
+	websocketManagementAPIURL,
+	connectionsIndexName,
+} = fromEnv({
 	connectionsTableName: 'CONNECTIONS_TABLE_NAME',
+	connectionsIndexName: 'CONNECTIONS_INDEX_NAME',
 	websocketManagementAPIURL: 'WEBSOCKET_MANAGEMENT_API_URL',
 })(process.env)
 
@@ -32,6 +37,7 @@ export const apiGwManagementClient = new ApiGatewayManagementApi({
 const notifier = notifyClients({
 	db,
 	connectionsTableName,
+	connectionsIndexName,
 	apiGwManagementClient,
 })
 

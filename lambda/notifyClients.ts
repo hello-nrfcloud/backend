@@ -5,7 +5,8 @@ import {
 import {
 	DeleteItemCommand,
 	DynamoDBClient,
-	ScanCommand,
+	ExecuteStatementCommand,
+	ExecuteStatementCommandOutput,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { logger } from './logger.js'
@@ -17,16 +18,19 @@ export const notifyClients =
 	({
 		db,
 		connectionsTableName,
+		connectionsIndexName,
 		apiGwManagementClient,
 	}: {
 		db: DynamoDBClient
 		connectionsTableName: string
+		connectionsIndexName: string
 		apiGwManagementClient: ApiGatewayManagementApiClient
 	}) =>
 	async (event: WSEvent, deviceIds?: string[]): Promise<void> => {
 		const connectionIds: string[] = await getActiveConnections(
 			db,
 			connectionsTableName,
+			connectionsIndexName,
 			deviceIds,
 		)
 
@@ -70,26 +74,31 @@ export const notifyClients =
 export async function getActiveConnections(
 	db: DynamoDBClient,
 	connectionsTableName: string,
+	connectionsIndexName: string,
 	deviceIds?: string[],
 ): Promise<string[]> {
-	const res = await db.send(
-		new ScanCommand({
-			TableName: connectionsTableName,
-		}),
-	)
+	let res: ExecuteStatementCommandOutput
+
+	if (deviceIds) {
+		res = await db.send(
+			new ExecuteStatementCommand({
+				Statement: `select connectionId from "${connectionsTableName}"."${connectionsIndexName}" where deviceId in (${deviceIds
+					.map(() => '?')
+					.join(',')})`,
+				Parameters: deviceIds.map((deviceId) => ({ S: deviceId })),
+			}),
+		)
+	} else {
+		res = await db.send(
+			new ExecuteStatementCommand({
+				Statement: `select connectionId from "${connectionsTableName}"`,
+			}),
+		)
+	}
 
 	const connectionIds = res?.Items?.reduce<string[]>((acc, item) => {
-		const { connectionId, deviceId } = unmarshall(item)
-
-		if (connectionId as string) {
-			const filterByDeviceId = !!deviceIds
-			if (filterByDeviceId) {
-				if (deviceIds.includes(deviceId)) acc.push(connectionId as string)
-			} else {
-				acc.push(connectionId as string)
-			}
-		}
-
+		const { connectionId } = unmarshall(item)
+		acc.push(connectionId as string)
 		return acc
 	}, [])
 

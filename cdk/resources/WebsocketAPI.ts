@@ -18,7 +18,8 @@ import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 
 export class WebsocketAPI extends Construct {
 	public readonly websocketURI: string
-	public readonly connectionsTable: DynamoDB.ITable
+	public readonly connectionsTable: DynamoDB.Table
+	public readonly connectionsTableIndexName: string = 'connectionsByDeviceId'
 	public readonly eventBus: Events.IEventBus
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
@@ -51,7 +52,15 @@ export class WebsocketAPI extends Construct {
 			},
 			timeToLiveAttribute: 'ttl',
 			removalPolicy: RemovalPolicy.DESTROY,
-		}) as DynamoDB.ITable
+		})
+		this.connectionsTable.addGlobalSecondaryIndex({
+			indexName: this.connectionsTableIndexName,
+			partitionKey: {
+				name: 'deviceId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
+		})
 
 		// OnConnect
 		const onConnect = new Lambda.Function(this, 'onConnect', {
@@ -232,6 +241,7 @@ export class WebsocketAPI extends Construct {
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
 					CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+					CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
 					WEBSOCKET_MANAGEMENT_API_URL: this.websocketManagementAPIURL,
 					LOG_LEVEL: this.node.tryGetContext('log_level'),
 				},
@@ -239,6 +249,24 @@ export class WebsocketAPI extends Construct {
 					new IAM.PolicyStatement({
 						actions: ['execute-api:ManageConnections'],
 						resources: [this.websocketAPIArn],
+					}),
+					new IAM.PolicyStatement({
+						effect: IAM.Effect.ALLOW,
+						resources: [
+							`${this.connectionsTable.tableArn}`,
+							`${this.connectionsTable.tableArn}/*`,
+						],
+						actions: ['dynamodb:PartiQLSelect'],
+					}),
+					new IAM.PolicyStatement({
+						effect: IAM.Effect.DENY,
+						actions: ['dynamodb:PartiQLSelect'],
+						resources: [`${this.connectionsTable.tableArn}/*`],
+						conditions: {
+							Bool: {
+								'dynamodb:FullTableScan': ['true'],
+							},
+						},
 					}),
 				],
 				layers: layers,
