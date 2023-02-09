@@ -1,7 +1,7 @@
 {
   "name": "@nordicsemiconductor/nrf-guide-backend",
   "version": "0.0.0-development",
-  "description": "Cloud backend for nRF guide developed using AWS CDK in TypeScript.",
+  "description": "Cloud backend for nRF guide developed using AWS CDK in TypeScript",
   "type": "module",
   "scripts": {
     "test": "jest --passWithNoTests",
@@ -18,11 +18,11 @@
   },
   "homepage": "https://github.com/NordicSemiconductor/nrf.guide-backend#readme",
   "keywords": [
+    "nordicsemiconductor",
+    "cellular-iot",
     "nrf-guide",
-    "iot",
     "aws",
-    "cdk",
-    "demo"
+    "cdk"
   ],
   "author": "Nordic Semiconductor ASA | nordicsemi.no",
   "license": "BSD-3-Clause",
