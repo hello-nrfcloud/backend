@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "jest --passWithNoTests",
-    "prepare": "husky install && check-node-version --package"
+    "prepare": "husky install && check-node-version --package",
+    "deploy": "cdk deploy",
+    "synth": "cdk synth"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,7 @@
 import { App, aws_lambda as Lambda, CfnOutput, Stack } from 'aws-cdk-lib'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../packLayer.js'
+import { Integration } from '../resources/Integration.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { STACK_NAME } from './stackName.js'
 
@@ -35,11 +36,18 @@ export class BackendStack extends Stack {
 			layers: [baseLayer, powerToolLayer],
 		})
 
+		const integration = new Integration(this)
+
 		// Outputs
 		new CfnOutput(this, 'WebSocketURI', {
 			exportName: `${this.stackName}:WebSocketURI`,
 			description: 'The WSS Protocol URI to connect to',
 			value: api.websocketURI,
+		})
+		new CfnOutput(this, 'mqttURI', {
+			exportName: `${this.stackName}:MqttURI`,
+			description: 'The mqtt Protocol URI to connect to',
+			value: integration.mqttURI,
 		})
 	}
 }

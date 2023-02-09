@@ -9,6 +9,8 @@ import { ICluster, LogDriver } from 'aws-cdk-lib/aws-ecs'
 import { Construct } from 'constructs'
 
 export class Integration extends Construct {
+	public readonly mqttURI: string
+
 	public constructor(parent: Stack) {
 		super(parent, 'Integration')
 
@@ -25,6 +27,7 @@ export class Integration extends Construct {
 			vpc: vpc as IVpc,
 			internetFacing: true,
 		})
+		this.mqttURI = nlb.loadBalancerDnsName
 		const listener = nlb.addListener('mqtt-1883', {
 			port: 1883,
 		})
