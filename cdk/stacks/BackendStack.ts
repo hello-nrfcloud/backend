@@ -1,9 +1,10 @@
 import { App, aws_lambda as Lambda, CfnOutput, Stack } from 'aws-cdk-lib'
+import type { MqttConfiguration } from '../backend.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../packLayer.js'
 import { Integration } from '../resources/Integration.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
-import { STACK_NAME } from './stackName.js'
+import { STACK_NAME } from './stackConfig.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -11,9 +12,11 @@ export class BackendStack extends Stack {
 		{
 			lambdaSources,
 			layer,
+			mqttConfiguration,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
+			mqttConfiguration: MqttConfiguration
 		},
 	) {
 		super(parent, STACK_NAME)
@@ -36,7 +39,9 @@ export class BackendStack extends Stack {
 			layers: [baseLayer, powerToolLayer],
 		})
 
-		const integration = new Integration(this)
+		const integration = new Integration(this, {
+			mqttConfiguration,
+		})
 
 		// Outputs
 		new CfnOutput(this, 'WebSocketURI', {
