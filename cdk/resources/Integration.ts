@@ -70,6 +70,8 @@ export class Integration extends Construct {
 				NRFCLOUD_CLIENT_KEY: this.getSecret(
 					mqttConfiguration.SSMParams.nrfcloud.key,
 				),
+				IOT_CERT: this.getSecret(mqttConfiguration.SSMParams.iot.cert),
+				IOT_KEY: this.getSecret(mqttConfiguration.SSMParams.iot.key),
 			},
 			environment: {
 				NRFCLOUD_CA:
@@ -111,6 +113,18 @@ start_type automatic
 notifications false
 
 topic m/# in 1 data/ ${mqttConfiguration.accountInfo.mqttTopicPrefix}
+
+connection iot-bridge
+address ${mqttConfiguration.iotInfo.mqttEndpoint}:8883
+bridge_cafile /mosquitto/config/nrfcloud_ca.crt
+bridge_certfile /mosquitto/config/iot_cert.crt
+bridge_keyfile /mosquitto/config/iot_key.key
+bridge_insecure false
+cleansession true
+start_type automatic
+notifications false
+
+topic # out 1
 `,
 			},
 			healthCheck: {

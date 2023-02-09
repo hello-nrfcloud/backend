@@ -6,6 +6,7 @@ import { packLambda } from './packLambda.js'
 import { packLayer } from './packLayer.js'
 import {
 	IOT_CERT_PARAM,
+	IOT_ENDPOINT_PARAM,
 	IOT_KEY_PARAM,
 	NRFCLOUD_ACCOUNT_INFO_PARAM,
 	NRFCLOUD_CLIENT_CERT_PARAM,
@@ -23,6 +24,9 @@ export type MqttConfiguration = {
 			cert: string
 			key: string
 		}
+	}
+	iotInfo: {
+		mqttEndpoint: string
 	}
 	accountInfo: {
 		mqttEndpoint: string
@@ -59,11 +63,18 @@ const pack = async (id: string, handler = 'handler'): Promise<PackedLambda> => {
 const getMqttConfiguration = async (): Promise<MqttConfiguration> => {
 	const ssm = new SSMClient({})
 
-	const nrfcloudAccountInfo = await ssm.send(
-		new GetParameterCommand({
-			Name: NRFCLOUD_ACCOUNT_INFO_PARAM,
-		}),
-	)
+	const [nrfcloudAccountInfo, iotEndpoint] = await Promise.all([
+		ssm.send(
+			new GetParameterCommand({
+				Name: NRFCLOUD_ACCOUNT_INFO_PARAM,
+			}),
+		),
+		ssm.send(
+			new GetParameterCommand({
+				Name: IOT_ENDPOINT_PARAM,
+			}),
+		),
+	])
 	return {
 		SSMParams: {
 			iot: {
@@ -74,6 +85,9 @@ const getMqttConfiguration = async (): Promise<MqttConfiguration> => {
 				cert: NRFCLOUD_CLIENT_CERT_PARAM,
 				key: NRFCLOUD_CLIENT_KEY_PARAM,
 			},
+		},
+		iotInfo: {
+			mqttEndpoint: iotEndpoint.Parameter?.Value ?? '',
 		},
 		accountInfo: JSON.parse(nrfcloudAccountInfo?.Parameter?.Value ?? '{}'),
 	}

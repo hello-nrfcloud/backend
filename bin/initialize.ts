@@ -15,6 +15,7 @@ import { randomUUID } from 'crypto'
 import needle from 'needle'
 import {
 	IOT_CERT_PARAM,
+	IOT_ENDPOINT_PARAM,
 	IOT_KEY_PARAM,
 	NRFCLOUD_ACCOUNT_INFO_PARAM,
 	NRFCLOUD_CLIENT_CERT_PARAM,
@@ -230,8 +231,17 @@ async function generateIotCredentials(): Promise<CertificateCredentials> {
 
 async function saveIotCredentialsSSM(
 	credentials: CertificateCredentials,
+	iotEndpoint: string,
 ): Promise<void> {
 	await Promise.all([
+		SSM.send(
+			new PutParameterCommand({
+				Name: IOT_ENDPOINT_PARAM,
+				Value: iotEndpoint,
+				Type: ParameterType.STRING,
+				Overwrite: true,
+			}),
+		),
 		SSM.send(
 			new PutParameterCommand({
 				Name: IOT_CERT_PARAM,
@@ -251,12 +261,12 @@ async function saveIotCredentialsSSM(
 	])
 }
 
-async function ensureIotCredentials(input: CliInput) {
+async function ensureIotCredentials(input: CliInput, iotEndpoint: string) {
 	const res = await getIotCredentialsSSM()
 	if (res.privateKey == null || res.clientCert == null || input.reset) {
 		console.log('Generating new IoT credentials')
 		const credentials = await generateIotCredentials()
-		await saveIotCredentialsSSM(credentials)
+		await saveIotCredentialsSSM(credentials, iotEndpoint)
 		console.log(
 			`Saved new iot credentials to ${IOT_CERT_PARAM} and ${IOT_KEY_PARAM}`,
 		)
@@ -276,7 +286,7 @@ export async function initializeMQTTBridge(input: CliInput): Promise<void> {
 	console.log(JSON.stringify(accountInfo, null, 2))
 
 	await ensureNrfcloudCredentials(input, accountInfo)
-	await ensureIotCredentials(input)
+	await ensureIotCredentials(input, iotEndpoint ?? '')
 
 	console.log('All certificates have been saved on SSM')
 }
