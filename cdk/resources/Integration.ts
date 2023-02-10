@@ -1,17 +1,22 @@
 import {
 	aws_ec2 as EC2,
 	aws_ecs as ECS,
-	aws_elasticloadbalancingv2 as ELB,
+	aws_iam as IAM,
+	aws_iot as IoT,
+	aws_sqs as SQS,
 	aws_ssm as SSM,
+	CfnOutput,
+	Duration,
 	Stack,
 } from 'aws-cdk-lib'
 import type { IVpc } from 'aws-cdk-lib/aws-ec2'
 import { ICluster, LogDriver } from 'aws-cdk-lib/aws-ecs'
+import type { IPrincipal } from 'aws-cdk-lib/aws-iam'
 import { Construct } from 'constructs'
 import type { MqttConfiguration } from '../backend'
 
 export class Integration extends Construct {
-	public readonly mqttURI: string
+	// public readonly mqttURI: string
 
 	public constructor(
 		parent: Stack,
@@ -28,15 +33,15 @@ export class Integration extends Construct {
 		})
 
 		// Network load balancer
-		const nlb = new ELB.NetworkLoadBalancer(this, 'nlb', {
-			loadBalancerName: 'mqttLoadBalancer',
-			vpc: vpc as IVpc,
-			internetFacing: true,
-		})
-		this.mqttURI = nlb.loadBalancerDnsName
-		const listener = nlb.addListener('mqtt-1883', {
-			port: 1883,
-		})
+		// const nlb = new ELB.NetworkLoadBalancer(this, 'nlb', {
+		// 	loadBalancerName: 'mqttLoadBalancer',
+		// 	vpc: vpc as IVpc,
+		// 	internetFacing: true,
+		// })
+		// this.mqttURI = nlb.loadBalancerDnsName
+		// const listener = nlb.addListener('mqtt-1883', {
+		// 	port: 1883,
+		// })
 
 		const sg = new EC2.SecurityGroup(this, 'sg', {
 			securityGroupName: 'mqtt',
@@ -135,22 +140,63 @@ topic # out 1
 			},
 		})
 
-		const mqttBridgeService = new ECS.FargateService(
-			this,
-			'mqttBridgeService',
-			{
-				cluster: cluster as ICluster,
-				taskDefinition: mqttBridgeTask,
-				desiredCount: 1,
-				serviceName: 'mqtt',
-				securityGroups: [sg],
-			},
-		)
+		// const mqttBridgeService = new ECS.FargateService(this, 'mqttBridgeService', {
+		new ECS.FargateService(this, 'mqttBridgeService', {
+			cluster: cluster as ICluster,
+			taskDefinition: mqttBridgeTask,
+			desiredCount: 1,
+			serviceName: 'mqtt',
+			securityGroups: [sg],
+			assignPublicIp: true,
+		})
 
-		listener.addTargets('mqttBridgeTargetGroup', {
-			targetGroupName: 'mqttBridgeTargetGroup',
-			port: 1883,
-			targets: [mqttBridgeService],
+		// Add fargate service as target group
+		// listener.addTargets('mqttBridgeTargetGroup', {
+		// 	targetGroupName: 'mqttBridgeTargetGroup',
+		// 	port: 1883,
+		// 	targets: [mqttBridgeService],
+		// })
+
+		// IoT rule
+		const q = new SQS.Queue(this, 'q', {
+			queueName: 'test',
+			retentionPeriod: Duration.days(1),
+		})
+		const iotActionRole = new IAM.Role(this, 'iot-action-role', {
+			assumedBy: new IAM.ServicePrincipal('iot.amazonaws.com') as IPrincipal,
+		})
+		q.grantSendMessages(iotActionRole)
+		new IoT.CfnTopicRule(this, 'TopicRule', {
+			topicRulePayload: {
+				description: `Publish mqtt topic to SQS`,
+				ruleDisabled: false,
+				awsIotSqlVersion: '2016-03-23',
+				sql: `
+					select
+						get((select lat, lon as lng, uncertainty from data), 0) as location,
+						topic(4) as deviceId,
+						timestamp() as timestamp
+					from 'data/+/+/+/c2d'
+					where isUndefined(data.lat) = false
+				`,
+				actions: [
+					{
+						sqs: {
+							queueUrl: q.queueUrl,
+							roleArn: iotActionRole.roleArn,
+						},
+					},
+				],
+			},
+		})
+
+		// new CfnOutput(this, 'service-ip', {
+		// 	exportName: 'mqtt-public-ip',
+		// 	value: mqttBridgeService.taskDefinition.
+		// })
+		new CfnOutput(this, 'queue', {
+			exportName: 'topicQueue',
+			value: q.queueUrl,
 		})
 	}
 

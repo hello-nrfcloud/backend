@@ -39,7 +39,8 @@ export class BackendStack extends Stack {
 			layers: [baseLayer, powerToolLayer],
 		})
 
-		const integration = new Integration(this, {
+		// const integration = new Integration(this, {
+		new Integration(this, {
 			mqttConfiguration,
 		})
 
@@ -49,11 +50,11 @@ export class BackendStack extends Stack {
 			description: 'The WSS Protocol URI to connect to',
 			value: api.websocketURI,
 		})
-		new CfnOutput(this, 'mqttURI', {
-			exportName: `${this.stackName}:MqttURI`,
-			description: 'The mqtt Protocol URI to connect to',
-			value: integration.mqttURI,
-		})
+		// new CfnOutput(this, 'mqttURI', {
+		// 	exportName: `${this.stackName}:MqttURI`,
+		// 	description: 'The mqtt Protocol URI to connect to',
+		// 	value: integration.mqttURI,
+		// })
 	}
 }
 
