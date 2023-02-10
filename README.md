@@ -11,3 +11,32 @@
 Cloud backend for [nRF.guide](https://github.com/NordicSemiconductor/nrf.guide)
 developed using [AWS CDK](https://aws.amazon.com/cdk) in
 [TypeScript](https://www.typescriptlang.org/).
+
+## Installation in your AWS account
+
+### Setup
+
+Provide your AWS credentials, for example using the `.envrc` (see
+[the example](.envrc.example)).
+
+Install the dependencies:
+
+```
+npm ci
+```
+
+### Run once
+
+To setup MQTT bridge, you have to run the below command to generate a
+certificate used by MQTT broker to connect nRF Cloud under your account. So, you
+need to prepare nRF Cloud API key.
+
+```
+npx tsx bin/index.cts <API key>
+```
+
+### Deploy
+
+```
+npx cdk deploy
+```
