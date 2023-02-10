@@ -32,24 +32,6 @@ export class Integration extends Construct {
 			vpc: vpc as IVpc,
 		})
 
-		// Network load balancer
-		// const nlb = new ELB.NetworkLoadBalancer(this, 'nlb', {
-		// 	loadBalancerName: 'mqttLoadBalancer',
-		// 	vpc: vpc as IVpc,
-		// 	internetFacing: true,
-		// })
-		// this.mqttURI = nlb.loadBalancerDnsName
-		// const listener = nlb.addListener('mqtt-1883', {
-		// 	port: 1883,
-		// })
-
-		const sg = new EC2.SecurityGroup(this, 'sg', {
-			securityGroupName: 'mqtt',
-			vpc: vpc as IVpc,
-			allowAllOutbound: true,
-		})
-		sg.addIngressRule(EC2.Peer.ipv4('0.0.0.0/0'), EC2.Port.tcp(1883), 'mqtt')
-
 		// Fargate
 		const mqttBridgeTask = new ECS.FargateTaskDefinition(this, 'mqttBridge')
 		mqttBridgeTask.addContainer('mqttBridgeContainer', {
@@ -140,22 +122,23 @@ topic # out 1
 			},
 		})
 
-		// const mqttBridgeService = new ECS.FargateService(this, 'mqttBridgeService', {
-		new ECS.FargateService(this, 'mqttBridgeService', {
-			cluster: cluster as ICluster,
-			taskDefinition: mqttBridgeTask,
-			desiredCount: 1,
-			serviceName: 'mqtt',
-			securityGroups: [sg],
-			assignPublicIp: true,
-		})
-
-		// Add fargate service as target group
-		// listener.addTargets('mqttBridgeTargetGroup', {
-		// 	targetGroupName: 'mqttBridgeTargetGroup',
-		// 	port: 1883,
-		// 	targets: [mqttBridgeService],
-		// })
+		const mqttBridgeService = new ECS.FargateService(
+			this,
+			'mqttBridgeService',
+			{
+				cluster: cluster as ICluster,
+				taskDefinition: mqttBridgeTask,
+				desiredCount: 1,
+				serviceName: 'mqtt',
+				assignPublicIp: true,
+			},
+		)
+		// Add inbound port to security group
+		mqttBridgeService.connections.allowFrom(
+			EC2.Peer.anyIpv4(),
+			EC2.Port.tcp(1883),
+			'inbound-mqtt',
+		)
 
 		// IoT rule
 		const q = new SQS.Queue(this, 'q', {
@@ -190,10 +173,7 @@ topic # out 1
 			},
 		})
 
-		// new CfnOutput(this, 'service-ip', {
-		// 	exportName: 'mqtt-public-ip',
-		// 	value: mqttBridgeService.taskDefinition.
-		// })
+		// TODO: To output assigned public ip from fargate
 		new CfnOutput(this, 'queue', {
 			exportName: 'topicQueue',
 			value: q.queueUrl,
