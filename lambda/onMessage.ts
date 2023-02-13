@@ -31,7 +31,7 @@ export const handler = async (
 			},
 		}),
 	)
-	const deviceId = Item?.deviceId?.S
+	const deviceId = Item?.deviceId?.S ?? 'unknown'
 
 	const body = JSON.parse(event.body!)
 	const action = body.action
@@ -45,12 +45,12 @@ export const handler = async (
 						Source: 'thingy.ws',
 						DetailType: 'message',
 						Detail: JSON.stringify({
-							context: {
-								deviceId,
+							sender: deviceId,
+							receivers: [deviceId],
+							payload,
+							meta: {
 								connectionId: event.requestContext.connectionId,
 							},
-							payload,
-							targets: [deviceId],
 						}),
 					},
 				],
@@ -64,11 +64,12 @@ export const handler = async (
 						Source: 'thingy.ws',
 						DetailType: 'message',
 						Detail: JSON.stringify({
-							context: {
-								deviceId,
+							sender: deviceId,
+							receivers: ['*'],
+							payload,
+							meta: {
 								connectionId: event.requestContext.connectionId,
 							},
-							payload,
 						}),
 					},
 				],

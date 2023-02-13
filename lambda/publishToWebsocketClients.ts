@@ -4,18 +4,19 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { logger } from './logger.js'
 import { notifyClients } from './notifyClients.js'
 
-type Event = {
+export type WebsocketPayload = {
+	sender: string
+	receivers: string[]
+	payload: Record<string, unknown>
+	meta?: Record<string, unknown>
+}
+
+type EventBridgeEvent = {
 	id: string
 	source: string
 	'detail-type'?: string
 	time: string
-	detail: {
-		context?: {
-			connectionId: string
-		}
-		payload?: Record<string, unknown>
-		targets?: string[]
-	}
+	detail: WebsocketPayload
 }
 
 const {
@@ -41,15 +42,18 @@ const notifier = notifyClients({
 	apiGwManagementClient,
 })
 
-export const handler = async (event: Event): Promise<void> => {
+export const handler = async (event: EventBridgeEvent): Promise<void> => {
 	log.info('publishToWebSocketClients event', { event })
 
-	const caller = event.detail.context?.connectionId ?? 'unknown'
-	const payload = event.detail.payload
+	const { sender, receivers, ...rest } = event.detail
 
-	if (event.detail.targets) {
-		await notifier({ caller, payload }, event.detail.targets)
-	} else {
-		await notifier({ caller, payload })
+	if (Array.isArray(receivers) && receivers.length) {
+		const isBroadcast = receivers[0] === '*'
+
+		if (isBroadcast) {
+			await notifier({ sender, ...rest })
+		} else {
+			await notifier({ sender, ...rest }, event.detail.receivers)
+		}
 	}
 }

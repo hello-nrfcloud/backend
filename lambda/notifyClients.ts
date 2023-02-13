@@ -12,7 +12,11 @@ import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { logger } from './logger.js'
 
 const log = logger('notifyClients')
-export type WSEvent = Record<string, unknown>
+
+type WebsocketEvent = {
+	sender: string | Record<string, unknown>
+	payload: Record<string, unknown>
+}
 
 export const notifyClients =
 	({
@@ -26,7 +30,7 @@ export const notifyClients =
 		connectionsIndexName: string
 		apiGwManagementClient: ApiGatewayManagementApiClient
 	}) =>
-	async (event: WSEvent, deviceIds?: string[]): Promise<void> => {
+	async (event: WebsocketEvent, deviceIds?: string[]): Promise<void> => {
 		const connectionIds: string[] = await getActiveConnections(
 			db,
 			connectionsTableName,
@@ -39,11 +43,7 @@ export const notifyClients =
 				await apiGwManagementClient.send(
 					new PostToConnectionCommand({
 						ConnectionId: connectionId,
-						Data: Buffer.from(
-							JSON.stringify({
-								...event,
-							}),
-						),
+						Data: Buffer.from(JSON.stringify(event)),
 					}),
 				)
 			} catch (err) {
@@ -66,10 +66,6 @@ export const notifyClients =
 			}
 		}
 	}
-
-// const getEventContext = (event: WSEvent): string | null => {
-// 	return 'https://thingy.rocks/event'
-// }
 
 export async function getActiveConnections(
 	db: DynamoDBClient,

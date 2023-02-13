@@ -5,8 +5,6 @@ import {
 	aws_iot as IoT,
 	aws_sqs as SQS,
 	aws_ssm as SSM,
-	CfnOutput,
-	Duration,
 	Stack,
 } from 'aws-cdk-lib'
 import type { IVpc } from 'aws-cdk-lib/aws-ec2'
@@ -20,7 +18,10 @@ export class Integration extends Construct {
 
 	public constructor(
 		parent: Stack,
-		{ mqttConfiguration }: { mqttConfiguration: MqttConfiguration },
+		{
+			mqttConfiguration,
+			websocketQueue,
+		}: { mqttConfiguration: MqttConfiguration; websocketQueue: SQS.Queue },
 	) {
 		super(parent, 'Integration')
 
@@ -141,42 +142,34 @@ topic # out 1
 		)
 
 		// IoT rule
-		const q = new SQS.Queue(this, 'q', {
-			queueName: 'test',
-			retentionPeriod: Duration.days(1),
-		})
 		const iotActionRole = new IAM.Role(this, 'iot-action-role', {
 			assumedBy: new IAM.ServicePrincipal('iot.amazonaws.com') as IPrincipal,
 		})
-		q.grantSendMessages(iotActionRole)
-		new IoT.CfnTopicRule(this, 'TopicRule', {
+		websocketQueue.grantSendMessages(iotActionRole)
+		new IoT.CfnTopicRule(this, 'topicRule', {
 			topicRulePayload: {
 				description: `Publish mqtt topic to SQS`,
 				ruleDisabled: false,
 				awsIotSqlVersion: '2016-03-23',
 				sql: `
 					select
-						get((select lat, lon as lng, uncertainty from data), 0) as location,
-						topic(4) as deviceId,
+						* as payload,
+						topic(4) as sender,
+						[topic(4)] as receivers,
+						topic() as topic,
 						timestamp() as timestamp
-					from 'data/+/+/+/c2d'
-					where isUndefined(data.lat) = false
+					from 'data/+/+/+/+'
+					where messageType = 'DATA'
 				`,
 				actions: [
 					{
 						sqs: {
-							queueUrl: q.queueUrl,
+							queueUrl: websocketQueue.queueUrl,
 							roleArn: iotActionRole.roleArn,
 						},
 					},
 				],
 			},
-		})
-
-		// TODO: To output assigned public ip from fargate
-		new CfnOutput(this, 'queue', {
-			exportName: 'topicQueue',
-			value: q.queueUrl,
 		})
 	}
 

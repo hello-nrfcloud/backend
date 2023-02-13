@@ -21,6 +21,7 @@ export class WebsocketAPI extends Construct {
 	public readonly connectionsTable: DynamoDB.Table
 	public readonly connectionsTableIndexName: string = 'connectionsByDeviceId'
 	public readonly eventBus: Events.IEventBus
+	public readonly websocketQueue: Sqs.Queue
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
 	public constructor(
@@ -299,7 +300,7 @@ export class WebsocketAPI extends Construct {
 
 		//  Pipe from SQS to event bridge
 		const websocketDLQ = new Sqs.Queue(this, 'websocketDLQ', {})
-		const websocketQueue = new Sqs.Queue(this, 'websocketQueue', {
+		this.websocketQueue = new Sqs.Queue(this, 'websocketQueue', {
 			deadLetterQueue: {
 				maxReceiveCount: 15,
 				queue: websocketDLQ,
@@ -310,7 +311,7 @@ export class WebsocketAPI extends Construct {
 		})
 		pipeRole.addToPolicy(
 			new IAM.PolicyStatement({
-				resources: [websocketQueue.queueArn],
+				resources: [this.websocketQueue.queueArn],
 				actions: [
 					'sqs:ReceiveMessage',
 					'sqs:DeleteMessage',
@@ -328,7 +329,7 @@ export class WebsocketAPI extends Construct {
 		)
 		new Pipes.CfnPipe(this, 'websocketPipe', {
 			roleArn: pipeRole.roleArn,
-			source: websocketQueue.queueArn,
+			source: this.websocketQueue.queueArn,
 			target: this.eventBus.eventBusArn,
 			targetParameters: {
 				eventBridgeEventBusParameters: {
@@ -336,10 +337,10 @@ export class WebsocketAPI extends Construct {
 					source: 'thingy.ws',
 				},
 				inputTemplate: `{
-					"context": {
-						"connectionId": "sqs"
-					},
-					"payload": <$.body>
+					"sender": <$.body.sender>,
+					"topic": <$.body.topic>,
+					"receivers": <$.body.receivers>,
+					"payload": <$.body.payload>
 				}`,
 			},
 		})

@@ -34,7 +34,7 @@ export class BackendStack extends Stack {
 			}:094274105915:layer:AWSLambdaPowertoolsTypeScript:7`,
 		)
 
-		const api = new WebsocketAPI(this, {
+		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			layers: [baseLayer, powerToolLayer],
 		})
@@ -42,19 +42,15 @@ export class BackendStack extends Stack {
 		// const integration = new Integration(this, {
 		new Integration(this, {
 			mqttConfiguration,
+			websocketQueue: websocketAPI.websocketQueue,
 		})
 
 		// Outputs
 		new CfnOutput(this, 'WebSocketURI', {
 			exportName: `${this.stackName}:WebSocketURI`,
 			description: 'The WSS Protocol URI to connect to',
-			value: api.websocketURI,
+			value: websocketAPI.websocketURI,
 		})
-		// new CfnOutput(this, 'mqttURI', {
-		// 	exportName: `${this.stackName}:MqttURI`,
-		// 	description: 'The mqtt Protocol URI to connect to',
-		// 	value: integration.mqttURI,
-		// })
 	}
 }
 
