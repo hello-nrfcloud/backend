@@ -41,7 +41,7 @@ npx tsx bin/index.cts <API key>
 npx cdk deploy
 ```
 
-## What MQTT bridge will forward to IoT core
+## What messages MQTT bridge forwards
 
 According to nRF Cloud documentation,
 [Setting up a message bridge](https://docs.nrfcloud.com/Devices/Messages/SetupMessageBridge/),
@@ -49,3 +49,41 @@ all messages under `<stage>/<team id>/m/#` are bridged. Since the messages are
 forwarded from nRF Cloud, therefore all messages are following the protocol
 described
 [here](https://github.com/nRFCloud/application-protocols/tree/v1/schemas).
+
+**Note** Shadow data will **NOT** be forwarded to MQTT bridge since they are
+using topic as `$aws/things/${deviceId}/shadow/update`
+
+## Websocket Protocol
+
+Message received from MQTT bridge will be published to websocket connection that
+associates with the same device id. The data format is
+
+```
+{
+  "sender": <deviceId>,
+  "topic": data/m/d/<deviceId>/<schema>,
+  "payload": <mqttPayload>
+}
+```
+
+- Payload: messages are following the nRF Cloud application protocol
+- Schema: `d2c` or `c2d`
+
+### Sample data
+
+```
+{
+  "sender": "nrf-350457794611739",
+  "topic": "data/m/d/nrf-350457794611739/c2d",
+  "payload": {
+    "appId": "GROUND_FIX",
+    "messageType": "DATA",
+    "data": {
+      "lat": 59.338048,
+      "lon": 18.008137,
+      "uncertainty": 1500,
+      "fulfilledWith": "MCELL"
+    }
+  }
+}
+```
