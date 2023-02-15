@@ -2,10 +2,13 @@ import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import { generateDeviceCertificate, getCACertificate } from './lib/cert.js'
 
-const client = new DynamoDBClient({})
 try {
+	let count = +(process.env.COUNT ?? '10')
+	count = isNaN(count) ? 10 : count
+
+	const client = new DynamoDBClient({})
 	const { key: caKey, cert: caCert } = await getCACertificate()
-	const count = isNaN(+process.env.COUNT) ? 10 : +process.env.COUNT
+
 	for (let i = 0; i < count; i++) {
 		const { imei, key, cert, signed } = await generateDeviceCertificate(
 			caKey,

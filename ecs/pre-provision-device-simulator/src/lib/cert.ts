@@ -4,21 +4,26 @@ import { rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { resolve } from 'path'
 
-const openssl = async (...args) => {
+type StringBuffer = string | Buffer
+
+const openssl = async (...args: readonly string[]): Promise<StringBuffer> => {
 	const { stdout } = await execa('openssl', args)
 	return stdout
 }
-const saveToTempDir = (data) => {
+const saveToTempDir = (data: StringBuffer): string => {
 	const keyFile = resolve(tmpdir(), randomUUID())
 	writeFileSync(keyFile, data)
 
 	return keyFile
 }
-const removeFromTempDir = (file) => {
+const removeFromTempDir = (file: string): void => {
 	rmSync(file, { force: true })
 }
 
-async function getCACertificate() {
+async function getCACertificate(): Promise<{
+	key: StringBuffer
+	cert: StringBuffer
+}> {
 	const key = await openssl('genrsa', '2048')
 	const keyFile = saveToTempDir(key)
 
@@ -43,7 +48,15 @@ async function getCACertificate() {
 	}
 }
 
-async function generateDeviceCertificate(caKey, caCert) {
+async function generateDeviceCertificate(
+	caKey: StringBuffer,
+	caCert: StringBuffer,
+): Promise<{
+	imei: string
+	key: StringBuffer
+	cert: StringBuffer
+	signed: StringBuffer
+}> {
 	const imei = `3566642${Math.floor(1e7 + Math.random() * (1e7 - 1))}`
 	const key = await openssl('ecparam', '-name', 'prime256v1', '-genkey')
 	const keyFile = saveToTempDir(key)
