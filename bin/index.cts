@@ -9,12 +9,12 @@ yargs
       return yargs
         .positional("apiKey", {
           type: "string",
-          description: "Your Nrfcloud apiKey",
+          description: "Your nRF Cloud apiKey",
           demandOption: true,
         })
         .option("endpoint", {
           type: "string",
-          description: "Nrfcloud endpoint",
+          description: "nRF Cloud endpoint",
           default: "https://api.nrfcloud.com",
           alias: "e",
         })
@@ -22,7 +22,7 @@ yargs
           type: "boolean",
           default: false,
           description:
-            "Regenerate all credentials. This will regenerate your nrfcloud account device certificates",
+            "Regenerate all credentials. This will regenerate your nRF Cloud account device certificates",
         });
     },
     initializeMQTTBridge
