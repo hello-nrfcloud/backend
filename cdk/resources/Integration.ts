@@ -10,6 +10,7 @@ import {
 import type { IVpc } from 'aws-cdk-lib/aws-ec2'
 import { ICluster, LogDriver } from 'aws-cdk-lib/aws-ecs'
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam'
+import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { Construct } from 'constructs'
 import type { MqttConfiguration } from '../backend'
 
@@ -40,6 +41,7 @@ export class Integration extends Construct {
 			memoryLimitMiB: 512,
 			logging: LogDriver.awsLogs({
 				streamPrefix: 'mqtt-bridge',
+				logRetention: RetentionDays.ONE_DAY,
 			}),
 			containerName: 'mqtt',
 			portMappings: [

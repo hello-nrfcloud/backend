@@ -1,0 +1,18 @@
+{
+  "name": "preprovision-device-simulator",
+  "version": "0.0.0-development",
+  "description": "Simulates a pre-provisioned device on nRF Cloud that is ready to connect",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nordic Semiconductor ASA | nordicsemi.no",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.267.0",
+    "@aws-sdk/client-ssm": "^3.267.0",
+    "@aws-sdk/util-dynamodb": "^3.271.0",
+    "execa": "^7.0.0"
+  }
+}

@@ -30,6 +30,7 @@
     "@aws-lambda-powertools/logger": "1.5.1",
     "@aws-sdk/client-apigatewaymanagementapi": "3.271.0",
     "@aws-sdk/client-dynamodb": "3.271.0",
+    "@aws-sdk/client-ecs": "^3.271.0",
     "@aws-sdk/client-eventbridge": "3.271.0",
     "@aws-sdk/util-dynamodb": "3.271.0",
     "@nordicsemiconductor/asset-tracker-cloud-code-style": "11.0.179",

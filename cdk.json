@@ -1,7 +1,7 @@
 {
   "app": "npx tsx cdk/backend.ts",
   "context": {
-    "log_level": "info",
+    "logLevel": "info",
     "isTest": true
   }
 }
