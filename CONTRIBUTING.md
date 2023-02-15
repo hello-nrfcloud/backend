@@ -7,11 +7,11 @@ nRF.guide codebase. As a first step, see
 ## Finding open issues
 
 A list of
-[help-wanted issues](https://github.com/orgs/NordicSemiconductor/projects/7/views/4)
-is maintained in the project board. These issues are good starting points for
+[help-wanted issues](https://github.com/orgs/bifravst/projects/2/views/4) is
+maintained in the project board. These issues are good starting points for
 contributing to the project. Some of them require in-depth knowledge about the
 technology in use.
 
 Issues tagged with
-[good first issues](https://github.com/orgs/NordicSemiconductor/projects/7/views/5)
-are very small issues that can help you to get familiar with the codebase.
+[good first issues](https://github.com/orgs/bifravst/projects/2/views/5) are
+very small issues that can help you to get familiar with the codebase.
