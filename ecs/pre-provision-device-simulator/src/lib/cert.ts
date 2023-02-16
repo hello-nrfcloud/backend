@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { execa } from 'execa'
+import { default as execa } from 'execa'
 import { rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { resolve } from 'path'
