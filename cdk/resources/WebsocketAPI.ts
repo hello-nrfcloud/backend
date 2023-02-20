@@ -52,6 +52,15 @@ export class WebsocketAPI extends Construct {
 		// Event bridge
 		this.eventBus = new Events.EventBus(this, 'eventBus', {})
 
+		// SQS Queue
+		const websocketDLQ = new Sqs.Queue(this, 'websocketDLQ', {})
+		this.websocketQueue = new Sqs.Queue(this, 'websocketQueue', {
+			deadLetterQueue: {
+				maxReceiveCount: 15,
+				queue: websocketDLQ,
+			},
+		})
+
 		// Databases
 		this.connectionsTable = new DynamoDB.Table(this, 'connectionsTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
@@ -99,6 +108,7 @@ export class WebsocketAPI extends Construct {
 			),
 			environment: {
 				TABLE_NAME: this.devicesTable.tableName,
+				QUEUE_URL: this.websocketQueue.queueUrl,
 				COUNT: `${this.node.tryGetContext('generatedDeviceCount')}`,
 			},
 			logging: new Ecs.AwsLogDriver({
@@ -107,6 +117,7 @@ export class WebsocketAPI extends Construct {
 			}),
 		})
 		this.devicesTable.grantFullAccess(deviceGeneratorTask.taskRole)
+		this.websocketQueue.grantSendMessages(deviceGeneratorTask.taskRole)
 
 		// OnConnect
 		const onConnect = new Lambda.Function(this, 'onConnect', {
@@ -348,13 +359,6 @@ export class WebsocketAPI extends Construct {
 		)
 
 		//  Pipe from SQS to event bridge
-		const websocketDLQ = new Sqs.Queue(this, 'websocketDLQ', {})
-		this.websocketQueue = new Sqs.Queue(this, 'websocketQueue', {
-			deadLetterQueue: {
-				maxReceiveCount: 15,
-				queue: websocketDLQ,
-			},
-		})
 		const pipeRole = new IAM.Role(this, 'pipeSqsToEventRole', {
 			assumedBy: new IAM.ServicePrincipal('pipes.amazonaws.com') as IPrincipal,
 		})

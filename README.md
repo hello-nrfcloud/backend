@@ -87,3 +87,19 @@ associates with the same device id. The data format is
   }
 }
 ```
+
+## Push data to websocket though SQS
+
+You can push data to specific websocket client or broadcast to everyone though
+SQS. The format is
+
+```
+{
+  "sender": <deviceId>,
+	"receivers": <deviceId[]>,
+	"payload": <payload>,
+  "meta": <meta>
+}
+```
+
+**remark** If you want to broadcast, set receivers as `['*']`

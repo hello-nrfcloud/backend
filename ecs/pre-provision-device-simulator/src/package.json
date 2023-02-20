@@ -11,9 +11,10 @@
   "license": "BSD-3-Clause",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.267.0",
-    "@aws-sdk/client-ssm": "^3.267.0",
+    "@aws-sdk/client-sqs": "^3.272.0",
     "@aws-sdk/util-dynamodb": "^3.271.0",
-    "execa": "^7.0.0"
+    "execa": "^7.0.0",
+    "joi": "^17.8.1"
   },
   "devDependencies": {
     "@types/node": "^18.13.0",

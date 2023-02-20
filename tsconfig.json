@@ -20,5 +20,6 @@
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "isolatedModules": true
-  }
+  },
+  "exclude": ["cdk.out/**/*"]
 }
