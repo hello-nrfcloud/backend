@@ -1,0 +1,132 @@
+config:
+  target: "mqtts://mqtt.nrfcloud.com"
+  defaults:
+    think:
+      jitter: 50%
+  phases:
+    - name: phase 1
+      duration: 60
+      arrivalRate: 1
+      maxVusers: 5
+  processor: "./processors/mqtt.js"
+  engines:
+    mqtt: {}
+  mqtt:
+    clean: true
+    protocolVersion: 4
+    auth:
+      clientId: ${deviceId}
+      ca: ${ca}
+      key: ${key}
+      cert: ${signed}
+  variables:
+    prefix: "prod/543c2184-c7fe-4ca6-a2a0-c06db425fbbf/"
+    ca: |
+      -----BEGIN CERTIFICATE-----
+      MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
+      ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
+      b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
+      MAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv
+      b3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj
+      ca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM
+      9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw
+      IFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6
+      VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L
+      93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm
+      jgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
+      AYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA
+      A4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI
+      U5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUs
+      N+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vv
+      o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
+      5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy
+      rqXRfboQnoZsG4q5WTP468SQvvG5
+      -----END CERTIFICATE-----
+  payload:
+    path: data.csv
+    fields:
+      - deviceId
+      - imei
+      - key
+      - signed
+    skipHeader: false
+    order: sequence
+
+scenarios:
+  - name: "IoT device simulator"
+    engine: mqtt
+    flow:
+      - function: "generateSensorVariables"
+      - publish:
+          topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+          payload:
+            appId: DEVICE
+            messageType: DATA
+            ts: "{{ mqtt_ts }}"
+            data:
+              deviceInfo:
+                imei: "{{ deviceId }}"
+                iccid: "8931080620054223678"
+                modemFirmware: "mfw_nrf9160_1.3.3"
+                board: "thingy91_nrf9160"
+                appVersion: "0.0.0-development"
+      - loop:
+          - publish:
+              topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+              payload:
+                appId: DEVICE
+                messageType: DATA
+                ts: "{{ mqtt_ts }}"
+                data:
+                  networkInfo:
+                    currentBand: 20
+                    networkMode: LTE-M
+                    rsrp: "-{{ $randomNumber(0, 120) }}"
+                    areaCode: 6
+                    mccmnc: 24001
+                    cellID: 56879116
+                    ipAddress: "{{ mqtt_ip }}"
+          - publish:
+              topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+              payload:
+                appId: BUTTON
+                messageType: DATA
+                data: "1"
+                ts: "{{ mqtt_ts }}"
+          # - log: "Client: {{ deviceId }} >> No. {{ $loopCount }}"
+          # - publish:
+          #     topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+          #     payload:
+          #       appId: GROUND_FIX
+          #       messageType: DATA
+          #       data:
+          #         lte:
+          #           - eci: 26182411
+          #             mcc: 240
+          #             mnc: 1
+          #             tac: 34
+          #             earfcn: 1300
+          #             rsrp: -91
+          #             rsrq: -4
+          #             adv: 47
+          #             nmr:
+          #               - earfcn: 1300
+          #                 pci: 130
+          #                 rsrp: -101
+          #                 rsrq: -13.5
+          #               - earfcn: 6300
+          #                 pci: 437
+          #                 rsrp: -98
+          #                 rsrq: -8.5
+          #     options:
+          #       qos: 0
+          # - think: 2
+          - publish:
+              topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+              payload:
+                appId: TEMP
+                messageType: DATA
+                ts: "{{ mqtt_ts }}"
+                data: "{{ $randomNumber(10, 15) }}"
+          - think: 2
+        count: 10
