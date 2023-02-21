@@ -8,7 +8,7 @@ index 9569231..2d94a44 100644
          } else {
 -          Engine = require(moduleName);
 +          // Engine = require(moduleName);
-+          Engine = require(path.join(process.env.ARTILLERY_ENGINE_PATH, moduleName));
++          Engine = require(path.join(__dirname, '../../../../engines', moduleName));
          }
          const engine = new Engine(script, ee, engineUtil);
          engine.__name = engineName;

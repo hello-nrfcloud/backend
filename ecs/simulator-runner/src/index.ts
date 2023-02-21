@@ -1,5 +1,5 @@
 import yargs from 'yargs/yargs'
-import { simulate } from './commands/simulate'
+import { simulate } from './commands/simulate.js'
 ;(async function runner() {
 	await yargs(process.argv.splice(2))
 		.command(

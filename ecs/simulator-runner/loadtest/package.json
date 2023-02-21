@@ -4,16 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "postinstall": "npx patch-package",
+    "postinstall": "patch-package",
     "load": "artillery run simulator.yml"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@faker-js/faker": "^7.6.0",
-    "artillery": "^2.0.0-30",
-    "chalk": "^5.2.0",
-    "mqtt": "^4.3.7"
+    "@faker-js/faker": "7.6.0",
+    "artillery": "2.0.0-30",
+    "mqtt": "4.3.7",
+    "patch-package": "6.5.1"
   }
 }

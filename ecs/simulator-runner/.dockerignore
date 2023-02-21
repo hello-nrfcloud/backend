@@ -1,2 +1,4 @@
-src/node_modules
+node_modules
+loadtest/node_modules
 dist
+Dockerfile

@@ -8,7 +8,6 @@ config:
       duration: 60
       arrivalRate: 1
       maxVusers: 5
-  processor: "./processors/mqtt.js"
   engines:
     mqtt: {}
   mqtt:
@@ -20,7 +19,6 @@ config:
       key: ${key}
       cert: ${signed}
   variables:
-    prefix: "prod/543c2184-c7fe-4ca6-a2a0-c06db425fbbf/"
     ca: |
       -----BEGIN CERTIFICATE-----
       MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
@@ -56,9 +54,15 @@ scenarios:
   - name: "IoT device simulator"
     engine: mqtt
     flow:
-      - function: "generateSensorVariables"
+      - faker:
+          name: "internet.ipv4"
+          store: "mqtt_ip"
+      - faker:
+          name: "timestamp"
+          store: "mqtt_ts"
       - publish:
-          topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+          topic:
+            "{{ $processEnvironment.MQTT_TOPIC_PREFIX }}m/d/{{ deviceId }}/d2c"
           payload:
             appId: DEVICE
             messageType: DATA
@@ -72,7 +76,9 @@ scenarios:
                 appVersion: "0.0.0-development"
       - loop:
           - publish:
-              topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+              topic:
+                "{{ $processEnvironment.MQTT_TOPIC_PREFIX }}m/d/{{ deviceId
+                }}/d2c"
               payload:
                 appId: DEVICE
                 messageType: DATA
@@ -87,15 +93,16 @@ scenarios:
                     cellID: 56879116
                     ipAddress: "{{ mqtt_ip }}"
           - publish:
-              topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+              topic:
+                "{{ $processEnvironment.MQTT_TOPIC_PREFIX }}m/d/{{ deviceId
+                }}/d2c"
               payload:
                 appId: BUTTON
                 messageType: DATA
                 data: "1"
                 ts: "{{ mqtt_ts }}"
-          # - log: "Client: {{ deviceId }} >> No. {{ $loopCount }}"
           # - publish:
-          #     topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+          #     topic: "{{ $processEnvironment.MQTT_TOPIC_PREFIX }}m/d/{{ deviceId }}/d2c"
           #     payload:
           #       appId: GROUND_FIX
           #       messageType: DATA
@@ -122,7 +129,9 @@ scenarios:
           #       qos: 0
           # - think: 2
           - publish:
-              topic: "{{ prefix }}m/d/{{ deviceId }}/d2c"
+              topic:
+                "{{ $processEnvironment.MQTT_TOPIC_PREFIX }}m/d/{{ deviceId
+                }}/d2c"
               payload:
                 appId: TEMP
                 messageType: DATA
