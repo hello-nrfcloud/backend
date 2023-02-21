@@ -69,15 +69,15 @@ export const handler = async (
 	const meta: Record<string, unknown> = {
 		connectionId: event.requestContext.connectionId,
 	}
-	let receivers: string[] = ['*']
+	const receivers: string[] = ['*']
 
-	const body = JSON.parse(event.body!)
+	const body = event.body !== undefined ? JSON.parse(event.body) : {}
 	const action = body.action
 	let payload = body.payload ?? {}
 
 	switch (action) {
 		case 'echo':
-			receivers = [deviceId]
+			receivers.push(deviceId)
 			break
 		case 'broadcast':
 			break
