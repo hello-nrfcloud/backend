@@ -1,7 +1,8 @@
-import yargs, { Argv } from "yargs";
+import type { Argv } from "yargs";
+import yargs from "yargs/yargs";
 import { initializeMQTTBridge } from "./initialize.js";
 
-yargs
+await yargs(process.argv.splice(2))
   .command(
     "$0 <apiKey>",
     "Initialize certificates used in MQTT bridge",

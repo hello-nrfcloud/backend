@@ -111,5 +111,5 @@ try {
 		)
 	}
 
-	console.error('ERROR: ', error)
+	console.error('ERROR: ', (error as Error).message)
 }
