@@ -27,7 +27,7 @@ export class Integration extends Construct {
 		super(parent, 'Integration')
 
 		const vpc = new EC2.Vpc(this, `vpc`, {
-			maxAzs: 2,
+			maxAzs: 1,
 		})
 
 		const cluster = new ECS.Cluster(this, `cluster`, {

@@ -87,7 +87,6 @@
     "@aws-sdk/client-iot": "3.272.0",
     "@aws-sdk/client-ssm": "3.272.0",
     "@nordicsemiconductor/from-env": "1.0.3",
-    "@nordicsemiconductor/timestream-helpers": "4.1.3",
     "@sinclair/typebox": "0.25.23",
     "ajv": "8.12.0",
     "needle": "^3.2.0",

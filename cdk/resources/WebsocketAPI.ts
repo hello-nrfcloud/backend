@@ -1,13 +1,10 @@
 import {
 	aws_apigatewayv2 as ApiGateway,
 	aws_dynamodb as DynamoDB,
-	aws_ec2 as Ec2,
-	aws_ecs as Ecs,
 	aws_events as Events,
 	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	aws_pipes as Pipes,
 	aws_sqs as Sqs,
 	Duration,
@@ -16,18 +13,13 @@ import {
 } from 'aws-cdk-lib'
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam/index.js'
 import { Construct } from 'constructs'
-import * as path from 'path'
-import { fileURLToPath } from 'url'
 import type { PackedLambda } from '../backend.js'
 import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 export class WebsocketAPI extends Construct {
 	public readonly websocketURI: string
 	public readonly connectionsTable: DynamoDB.Table
 	public readonly connectionsTableIndexName: string = 'connectionsByDeviceId'
-	public readonly devicesTable: DynamoDB.Table
 	public readonly eventBus: Events.IEventBus
 	public readonly websocketQueue: Sqs.Queue
 	public readonly websocketAPIArn: string
@@ -79,45 +71,6 @@ export class WebsocketAPI extends Construct {
 			},
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
-		this.devicesTable = new DynamoDB.Table(this, 'devicesTable', {
-			partitionKey: {
-				name: `deviceId`,
-				type: DynamoDB.AttributeType.STRING,
-			},
-			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
-			removalPolicy: RemovalPolicy.DESTROY,
-		})
-
-		// Fargate
-		const vpc = new Ec2.Vpc(this, 'vpc', { maxAzs: 2 })
-		const cluster = new Ecs.Cluster(this, 'cluster', {
-			vpc: vpc as Ec2.IVpc,
-		})
-
-		const deviceGeneratorTask = new Ecs.FargateTaskDefinition(
-			this,
-			'deviceGeneratorTask',
-			{
-				cpu: 256,
-				memoryLimitMiB: 512,
-			},
-		)
-		deviceGeneratorTask.addContainer('deviceGenerator', {
-			image: Ecs.ContainerImage.fromAsset(
-				path.resolve(__dirname, '../../ecs/pre-provision-device-simulator'),
-			),
-			environment: {
-				TABLE_NAME: this.devicesTable.tableName,
-				QUEUE_URL: this.websocketQueue.queueUrl,
-				COUNT: `${this.node.tryGetContext('generatedDeviceCount')}`,
-			},
-			logging: new Ecs.AwsLogDriver({
-				streamPrefix: 'deviceGenerator',
-				logRetention: Logs.RetentionDays.ONE_DAY,
-			}),
-		})
-		this.devicesTable.grantFullAccess(deviceGeneratorTask.taskRole)
-		this.websocketQueue.grantSendMessages(deviceGeneratorTask.taskRole)
 
 		// OnConnect
 		const onConnect = new Lambda.Function(this, 'onConnect', {
@@ -155,16 +108,12 @@ export class WebsocketAPI extends Construct {
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
-				CLUSTER_NAME: cluster.clusterName,
-				TASK_DEFINITION_ARN: deviceGeneratorTask.taskDefinitionArn,
-				SUBNETS: vpc.privateSubnets.map((subnet) => subnet.subnetId).join(','),
 			},
 			initialPolicy: [],
 			layers: layers,
 		})
 		this.connectionsTable.grantReadWriteData(onMessage)
 		this.eventBus.grantPutEventsTo(onMessage)
-		deviceGeneratorTask.grantRun(onMessage)
 		new LambdaLogGroup(this, 'onMessageLogs', onMessage)
 
 		// OnDisconnect

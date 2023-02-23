@@ -53,6 +53,9 @@ export const handler = async (
 	event: APIGatewayProxyWebsocketEventV2,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.info('onMessage event', { event })
+	if (event.body === undefined) {
+		return { statusCode: 400 }
+	}
 
 	// Query device id based on connection id
 	const { Item } = await db.send(
@@ -71,7 +74,7 @@ export const handler = async (
 	}
 	const receivers: string[] = ['*']
 
-	const body = event.body !== undefined ? JSON.parse(event.body) : {}
+	const body = JSON.parse(event.body)
 	const action = body.action
 	let payload = body.payload ?? {}
 
