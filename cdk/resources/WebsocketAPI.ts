@@ -19,7 +19,7 @@ import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 export class WebsocketAPI extends Construct {
 	public readonly websocketURI: string
 	public readonly connectionsTable: DynamoDB.Table
-	public readonly connectionsTableIndexName: string = 'connectionsByDeviceId'
+	public readonly connectionsTableIndexName: string = 'deviceIdIndex'
 	public readonly eventBus: Events.IEventBus
 	public readonly websocketQueue: Sqs.Queue
 	public readonly websocketAPIArn: string
@@ -29,6 +29,7 @@ export class WebsocketAPI extends Construct {
 		{
 			lambdaSources,
 			layers,
+			devicesTableName,
 		}: {
 			lambdaSources: {
 				onConnect: PackedLambda
@@ -37,16 +38,22 @@ export class WebsocketAPI extends Construct {
 				publishToWebsocketClients: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
+			devicesTableName: string
 		},
 	) {
 		super(parent, 'WebsocketAPI')
 
 		// Event bridge
-		this.eventBus = new Events.EventBus(this, 'eventBus', {})
+		this.eventBus = new Events.EventBus(this, 'eventBus', {
+			eventBusName: 'websocketEventBus',
+		})
 
 		// SQS Queue
-		const websocketDLQ = new Sqs.Queue(this, 'websocketDLQ', {})
+		const websocketDLQ = new Sqs.Queue(this, 'websocketDLQ', {
+			queueName: 'deadLetterWebsocketQueue',
+		})
 		this.websocketQueue = new Sqs.Queue(this, 'websocketQueue', {
+			queueName: 'websocketQueue',
 			deadLetterQueue: {
 				maxReceiveCount: 15,
 				queue: websocketDLQ,
@@ -55,6 +62,7 @@ export class WebsocketAPI extends Construct {
 
 		// Databases
 		this.connectionsTable = new DynamoDB.Table(this, 'connectionsTable', {
+			tableName: 'connectionsTable',
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
 				name: 'connectionId',
@@ -71,6 +79,12 @@ export class WebsocketAPI extends Construct {
 			},
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
+		// Import database from other stack
+		const devicesTable = DynamoDB.Table.fromTableName(
+			this,
+			'devicesTable',
+			devicesTableName,
+		)
 
 		// OnConnect
 		const onConnect = new Lambda.Function(this, 'onConnect', {
@@ -84,13 +98,20 @@ export class WebsocketAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				DEVICES_TABLE_NAME: devicesTableName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 			},
-			initialPolicy: [],
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['dynamodb:Query'],
+					resources: [`${devicesTable.tableArn}/index/*`],
+				}),
+			],
 			layers: layers,
 		})
 		this.connectionsTable.grantWriteData(onConnect)
+		devicesTable.grantReadData(onConnect)
 		this.eventBus.grantPutEventsTo(onConnect)
 		new LambdaLogGroup(this, 'onConnectLogs', onConnect)
 

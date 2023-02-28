@@ -13,10 +13,12 @@ export class BackendStack extends Stack {
 			lambdaSources,
 			layer,
 			mqttConfiguration,
+			devicesTableName,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
 			mqttConfiguration: MqttConfiguration
+			devicesTableName: string
 		},
 	) {
 		super(parent, STACK_NAME)
@@ -37,6 +39,7 @@ export class BackendStack extends Stack {
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			layers: [baseLayer, powerToolLayer],
+			devicesTableName,
 		})
 
 		// const integration = new Integration(this, {

@@ -9,12 +9,19 @@ export class BackendApp extends App {
 		lambdaSources,
 		layer,
 		mqttConfiguration,
+		devicesTableName,
 	}: {
 		lambdaSources: BackendLambdas
 		layer: PackedLayer
 		mqttConfiguration: MqttConfiguration
+		devicesTableName: string
 	}) {
 		super()
-		new BackendStack(this, { lambdaSources, layer, mqttConfiguration })
+		new BackendStack(this, {
+			lambdaSources,
+			layer,
+			mqttConfiguration,
+			devicesTableName,
+		})
 	}
 }

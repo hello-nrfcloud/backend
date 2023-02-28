@@ -1,4 +1,8 @@
-import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
+import {
+	DynamoDBClient,
+	PutItemCommand,
+	QueryCommand,
+} from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type {
@@ -6,8 +10,9 @@ import type {
 	APIGatewayProxyWebsocketEventV2,
 } from 'aws-lambda'
 import { logger } from './logger.js'
-const { TableName, EventBusName } = fromEnv({
+const { TableName, EventBusName, DevicesTableName } = fromEnv({
 	TableName: 'CONNECTIONS_TABLE_NAME',
+	DevicesTableName: 'DEVICES_TABLE_NAME',
 	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
@@ -23,12 +28,32 @@ export const handler = async (
 	log.info('onConnect event', { event })
 
 	// TODO: Validate token against DB
-	const deviceId = event.queryStringParameters?.deviceId ?? null
-	if (deviceId === null) {
-		log.warn('Device id is not found', { deviceId })
+	const code = event.queryStringParameters?.code
+	if (code === undefined) {
+		log.error(`Code cannot be empty`)
 		return {
-			statusCode: 400,
-			body: `Device id is not found`,
+			statusCode: 401,
+		}
+	}
+	const res = await db.send(
+		new QueryCommand({
+			TableName: DevicesTableName,
+			IndexName: 'secretIndex',
+			KeyConditionExpression: 'secret = :secret',
+			ExpressionAttributeValues: {
+				':secret': {
+					S: `${code}`,
+				},
+			},
+			ProjectionExpression: 'secret,deviceId,imei',
+		}),
+	)
+
+	const deviceId = res.Items?.[0]?.deviceId?.S
+	if (deviceId === undefined) {
+		log.error(`DeviceId is not found with`, { code })
+		return {
+			statusCode: 401,
 		}
 	}
 

@@ -1,4 +1,6 @@
 export const STACK_NAME = process.env.STACK_NAME ?? 'nrf-guide'
+export const STACK_SIMULATOR_NAME =
+	process.env.STACK_SIMULATOR_NAME ?? 'nrf-guide-device-simulator'
 
 export const NRFCLOUD_CLIENT_CERT_PARAM = 'NrfcloudClientCert'
 export const NRFCLOUD_CLIENT_KEY_PARAM = 'NrfcloudClientKey'

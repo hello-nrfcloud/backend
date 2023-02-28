@@ -31,6 +31,7 @@ export class Integration extends Construct {
 		})
 
 		const cluster = new ECS.Cluster(this, `cluster`, {
+			clusterName: 'mqttBridge',
 			vpc: vpc as IVpc,
 		})
 
@@ -133,7 +134,7 @@ topic # out 1
 				taskDefinition: mqttBridgeTask,
 				desiredCount: 1,
 				serviceName: 'mqtt',
-				assignPublicIp: true,
+				assignPublicIp: this.node.tryGetContext('isTest') ?? false,
 			},
 		)
 		// Add inbound port to security group
