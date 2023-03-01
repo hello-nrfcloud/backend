@@ -1,4 +1,6 @@
 export const STACK_NAME = process.env.STACK_NAME ?? 'nrf-guide'
+export const TEST_STACK_NAME = `${STACK_NAME}-test`
+
 export const STACK_SIMULATOR_NAME =
 	process.env.STACK_SIMULATOR_NAME ?? 'nrf-guide-device-simulator'
 

@@ -4,6 +4,7 @@ import {
 	QueryCommand,
 } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
+import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type {
 	APIGatewayProxyStructuredResultV2,
@@ -19,6 +20,34 @@ const { TableName, EventBusName, DevicesTableName } = fromEnv({
 const log = logger('connect')
 const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
+
+const publishToWebsocket = async ({
+	sender,
+	receivers,
+	payload,
+	meta,
+}: {
+	sender: string
+	receivers: string[]
+	payload: Record<string, any>
+	meta?: Record<string, any>
+}): Promise<void> => {
+	await eventBus.putEvents({
+		Entries: [
+			{
+				EventBusName: EventBusName,
+				Source: 'thingy.ws',
+				DetailType: 'message',
+				Detail: JSON.stringify({
+					sender,
+					receivers,
+					payload,
+					meta,
+				}),
+			},
+		],
+	})
+}
 
 export const handler = async (
 	event: APIGatewayProxyWebsocketEventV2 & {
@@ -45,12 +74,11 @@ export const handler = async (
 					S: `${code}`,
 				},
 			},
-			ProjectionExpression: 'secret,deviceId,imei',
 		}),
 	)
 
-	const deviceId = res.Items?.[0]?.deviceId?.S
-	if (deviceId === undefined) {
+	const device = res.Items?.[0] !== undefined ? unmarshall(res.Items[0]) : null
+	if (device === null) {
 		log.error(`DeviceId is not found with`, { code })
 		return {
 			statusCode: 401,
@@ -65,12 +93,19 @@ export const handler = async (
 				DetailType: 'connect',
 				Detail: JSON.stringify({
 					context: {
-						deviceId,
+						deviceId: device.deviceId,
 						connectionId: event.requestContext.connectionId,
 					},
 				}),
 			},
 		],
+	})
+
+	const { secret, ...rest } = device
+	await publishToWebsocket({
+		sender: device.deviceId,
+		receivers: [device.deviceId],
+		payload: rest,
 	})
 
 	await db.send(
@@ -81,7 +116,7 @@ export const handler = async (
 					S: event.requestContext.connectionId,
 				},
 				deviceId: {
-					S: deviceId,
+					S: device.deviceId,
 				},
 				lastSeen: {
 					S: new Date().toISOString(),
@@ -95,6 +130,6 @@ export const handler = async (
 
 	return {
 		statusCode: 200,
-		body: `Connected. Hello ${event.requestContext.connectionId}@${deviceId}!`,
+		body: `Connected. Hello ${event.requestContext.connectionId}@${device.deviceId}!`,
 	}
 }

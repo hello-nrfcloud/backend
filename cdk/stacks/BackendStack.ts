@@ -12,16 +12,16 @@ export class BackendStack extends Stack {
 		{
 			lambdaSources,
 			layer,
-			mqttConfiguration,
-			devicesTableName,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
-			mqttConfiguration: MqttConfiguration
-			devicesTableName: string
 		},
 	) {
 		super(parent, STACK_NAME)
+
+		const mqttConfiguration = this.node.tryGetContext(
+			'mqttConfiguration',
+		) as MqttConfiguration
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
 			code: Lambda.Code.fromAsset(layer.layerZipFile),
@@ -39,7 +39,6 @@ export class BackendStack extends Stack {
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			layers: [baseLayer, powerToolLayer],
-			devicesTableName,
 		})
 
 		// const integration = new Integration(this, {
@@ -49,14 +48,20 @@ export class BackendStack extends Stack {
 		})
 
 		// Outputs
-		new CfnOutput(this, 'WebSocketURI', {
+		new CfnOutput(this, 'webSocketURI', {
 			exportName: `${this.stackName}:WebSocketURI`,
 			description: 'The WSS Protocol URI to connect to',
 			value: websocketAPI.websocketURI,
+		})
+		new CfnOutput(this, 'devicesTable', {
+			exportName: `${this.stackName}:devicesTable`,
+			description: 'Device table name',
+			value: websocketAPI.devicesTable.tableName,
 		})
 	}
 }
 
 export type StackOutputs = {
-	WebSocketURI: string
+	webSocketURI: string
+	devicesTable: string
 }

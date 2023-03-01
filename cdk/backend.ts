@@ -1,6 +1,4 @@
-import { CloudFormationClient } from '@aws-sdk/client-cloudformation'
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm'
-import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { BackendApp } from './BackendApp.js'
@@ -13,7 +11,6 @@ import {
 	NRFCLOUD_ACCOUNT_INFO_PARAM,
 	NRFCLOUD_CLIENT_CERT_PARAM,
 	NRFCLOUD_CLIENT_KEY_PARAM,
-	STACK_SIMULATOR_NAME,
 } from './stacks/stackConfig'
 
 export type PackedLambda = { lambdaZipFile: string; handler: string }
@@ -37,15 +34,6 @@ export type MqttConfiguration = {
 		tenantId: string
 		accountDeviceClientId: string
 	}
-}
-
-type SimulatorStackOutputs = {
-	deviceSimulatorCluster: string
-	deviceSimulatorSubnet: string
-	deviceSimulatorTaskDef: string
-	deviceSimulatorContainer: string
-	devicesTable: string
-	deviceSimulatorQueue: string
 }
 
 const packagesInLayer: string[] = [
@@ -105,11 +93,6 @@ const getMqttConfiguration = async (): Promise<MqttConfiguration> => {
 	}
 }
 
-const cf = new CloudFormationClient({})
-const simulatorStackConfig = await stackOutput(cf)<SimulatorStackOutputs>(
-	STACK_SIMULATOR_NAME,
-)
-
 new BackendApp({
 	lambdaSources: {
 		onConnect: await pack('onConnect'),
@@ -121,6 +104,7 @@ new BackendApp({
 		id: 'baseLayer',
 		dependencies: packagesInLayer,
 	}),
-	mqttConfiguration: await getMqttConfiguration(),
-	devicesTableName: simulatorStackConfig.devicesTable,
+	context: {
+		mqttConfiguration: await getMqttConfiguration(),
+	},
 })

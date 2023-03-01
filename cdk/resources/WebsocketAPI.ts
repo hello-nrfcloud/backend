@@ -19,7 +19,9 @@ import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 export class WebsocketAPI extends Construct {
 	public readonly websocketURI: string
 	public readonly connectionsTable: DynamoDB.Table
-	public readonly connectionsTableIndexName: string = 'deviceIdIndex'
+	public readonly connectionsTableIndexName = 'deviceIdIndex'
+	public readonly devicesTable: DynamoDB.Table
+	public readonly devicesTableIndexName = 'secretIndex'
 	public readonly eventBus: Events.IEventBus
 	public readonly websocketQueue: Sqs.Queue
 	public readonly websocketAPIArn: string
@@ -29,7 +31,6 @@ export class WebsocketAPI extends Construct {
 		{
 			lambdaSources,
 			layers,
-			devicesTableName,
 		}: {
 			lambdaSources: {
 				onConnect: PackedLambda
@@ -38,7 +39,6 @@ export class WebsocketAPI extends Construct {
 				publishToWebsocketClients: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
-			devicesTableName: string
 		},
 	) {
 		super(parent, 'WebsocketAPI')
@@ -79,12 +79,27 @@ export class WebsocketAPI extends Construct {
 			},
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
-		// Import database from other stack
-		const devicesTable = DynamoDB.Table.fromTableName(
-			this,
-			'devicesTable',
-			devicesTableName,
-		)
+		this.devicesTable = new DynamoDB.Table(this, 'devicesTable', {
+			tableName: 'devicesTable',
+			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+			partitionKey: {
+				name: 'deviceId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			removalPolicy: RemovalPolicy.DESTROY,
+		})
+		this.devicesTable.addGlobalSecondaryIndex({
+			indexName: this.devicesTableIndexName,
+			partitionKey: {
+				name: 'secret',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			sortKey: {
+				name: 'deviceId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.ALL,
+		})
 
 		// OnConnect
 		const onConnect = new Lambda.Function(this, 'onConnect', {
@@ -98,20 +113,20 @@ export class WebsocketAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-				DEVICES_TABLE_NAME: devicesTableName,
+				DEVICES_TABLE_NAME: this.devicesTable.tableName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
 					actions: ['dynamodb:Query'],
-					resources: [`${devicesTable.tableArn}/index/*`],
+					resources: [`${this.devicesTable.tableArn}/index/*`],
 				}),
 			],
 			layers: layers,
 		})
 		this.connectionsTable.grantWriteData(onConnect)
-		devicesTable.grantReadData(onConnect)
+		this.devicesTable.grantReadData(onConnect)
 		this.eventBus.grantPutEventsTo(onConnect)
 		new LambdaLogGroup(this, 'onConnectLogs', onConnect)
 
