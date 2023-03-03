@@ -49,7 +49,7 @@ export class BackendStack extends Stack {
 
 		// Outputs
 		new CfnOutput(this, 'webSocketURI', {
-			exportName: `${this.stackName}:WebSocketURI`,
+			exportName: `${this.stackName}:webSocketURI`,
 			description: 'The WSS Protocol URI to connect to',
 			value: websocketAPI.websocketURI,
 		})
@@ -58,10 +58,17 @@ export class BackendStack extends Stack {
 			description: 'Device table name',
 			value: websocketAPI.devicesTable.tableName,
 		})
+		new CfnOutput(this, 'webSocketQueueURI', {
+			exportName: `${this.stackName}:webSocketQueueURI`,
+			description:
+				'SQS queue url in which used to publish to websocket clients',
+			value: websocketAPI.websocketQueue.queueUrl,
+		})
 	}
 }
 
 export type StackOutputs = {
 	webSocketURI: string
 	devicesTable: string
+	webSocketQueueURI: string
 }

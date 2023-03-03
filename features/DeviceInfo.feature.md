@@ -29,9 +29,9 @@ Given There is a device as this JSON
 
 ## Connect with a valid code
 
-When I connect to `${websocketUri}` with code `my-secret`
+When I connect websocket with code `my-secret`
 
-Then the response should equal to this JSON
+Then the connection response should equal to this JSON
 
 ```json
 {
@@ -50,3 +50,5 @@ Then the response should equal to this JSON
   "type": "Generic"
 }
 ```
+
+And I close connection
