@@ -4,7 +4,8 @@ import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import * as path from 'path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
-import { steps as websocketSteps } from './steps/websocket-steps.js'
+import { steps as deviceSteps } from './steps/device.js'
+import { steps as websocketSteps } from './steps/websocket.js'
 
 /**
  * This file configures the BDD Feature runner
@@ -27,7 +28,7 @@ const runner = await runFolder<World>({
 	name: 'nRF guide backend',
 })
 
-runner.addStepRunners(...websocketSteps())
+runner.addStepRunners(...websocketSteps()).addStepRunners(...deviceSteps())
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,

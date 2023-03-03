@@ -1,32 +1,12 @@
-# Websocket
+# Device Info
 
 > As the author of a software component  
-> I want to verify that websocket client can connect to API gateway with valid
-> code
+> I want to verify that I can connect websocket with valid code and get device
+> info
 
-## Verify data is saved into DB
+## Background
 
-When I create simulator device with this JSON
-
-```json
-{
-  "deviceId": "test-device-id",
-  "secret": "my-secret"
-}
-```
-
-Then I query database with key `test-device-id`, it should equal to this JSON
-
-```json
-{
-  "deviceId": "test-device-id",
-  "secret": "my-secret"
-}
-```
-
-## The websocket should be successfully connected and receive device detail with the correct code
-
-Given I create simulator device with this JSON
+Given There is a device as this JSON
 
 ```json
 {
@@ -47,9 +27,11 @@ Given I create simulator device with this JSON
 }
 ```
 
-When I connect websocket to `${websocketUri}` with code `my-secret`
+## Connect with a valid code
 
-Then the websocket response should equal to this JSON
+When I connect to `${websocketUri}` with code `my-secret`
+
+Then the response should equal to this JSON
 
 ```json
 {

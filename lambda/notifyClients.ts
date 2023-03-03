@@ -43,7 +43,7 @@ export const notifyClients =
 				await apiGwManagementClient.send(
 					new PostToConnectionCommand({
 						ConnectionId: connectionId,
-						Data: Buffer.from(JSON.stringify(event)),
+						Data: Buffer.from(JSON.stringify(event.payload)),
 					}),
 				)
 			} catch (err) {
