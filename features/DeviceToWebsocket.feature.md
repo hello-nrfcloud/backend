@@ -78,39 +78,43 @@ Then the response should equal to this JSON
 
 ```json
 {
-  "appId": "GROUND_FIX",
-  "messageType": "DATA",
-  "data": {
-    "doReply": false,
-    "wifi": {
-      "accessPoints": [
-        {
-          "macAddress": "fd:70:40:b9:58:dc"
-        },
-        {
-          "macAddress": "c5:ab:c7:55:8d:e3"
-        }
-      ]
-    },
-    "lte": [
-      {
-        "mnc": 260,
-        "mcc": 310,
-        "eci": 21858829,
-        "tac": 333,
-        "rsrp": -157,
-        "rsrq": -34.5,
-        "earfcn": 41490,
-        "nmr": [
+  "sender": "nrf-test-device-id",
+  "topic": "data/m/d/nrf-test-device-id/d2c",
+  "payload": {
+    "appId": "GROUND_FIX",
+    "messageType": "DATA",
+    "data": {
+      "doReply": false,
+      "wifi": {
+        "accessPoints": [
           {
-            "pci": 143,
-            "earfcn": 41490,
-            "rsrp": -44,
-            "rsrq": -3.5
+            "macAddress": "fd:70:40:b9:58:dc"
+          },
+          {
+            "macAddress": "c5:ab:c7:55:8d:e3"
           }
         ]
-      }
-    ]
+      },
+      "lte": [
+        {
+          "mnc": 260,
+          "mcc": 310,
+          "eci": 21858829,
+          "tac": 333,
+          "rsrp": -157,
+          "rsrq": -34.5,
+          "earfcn": 41490,
+          "nmr": [
+            {
+              "pci": 143,
+              "earfcn": 41490,
+              "rsrp": -44,
+              "rsrq": -3.5
+            }
+          ]
+        }
+      ]
+    }
   }
 }
 ```

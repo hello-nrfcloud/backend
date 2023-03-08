@@ -8,6 +8,7 @@ export type WebsocketPayload = {
 	sender: string
 	receivers: string[]
 	payload: Record<string, unknown>
+	topic?: string
 	meta?: Record<string, unknown>
 }
 

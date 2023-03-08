@@ -10,13 +10,11 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { logger } from './logger.js'
+import type { WebsocketPayload } from './publishToWebsocketClients.js'
 
 const log = logger('notifyClients')
 
-type WebsocketEvent = {
-	sender: string | Record<string, unknown>
-	payload: Record<string, unknown>
-}
+type WebsocketEvent = Omit<WebsocketPayload, 'receivers'>
 
 export const notifyClients =
 	({
@@ -43,7 +41,7 @@ export const notifyClients =
 				await apiGwManagementClient.send(
 					new PostToConnectionCommand({
 						ConnectionId: connectionId,
-						Data: Buffer.from(JSON.stringify(event.payload)),
+						Data: Buffer.from(JSON.stringify(event)),
 					}),
 				)
 			} catch (err) {

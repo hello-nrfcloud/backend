@@ -35,19 +35,22 @@ Then the connection response should equal to this JSON
 
 ```json
 {
-  "id": "nrf-test-device-id",
-  "deviceId": "nrf-test-device-id",
-  "name": "nrf-test-device-id",
-  "subType": "jitp-nordic-hardware",
-  "tags": ["temperature", "warehouse-east"],
-  "firmware": {
-    "supports": ["APP", "MODEM"],
-    "app": {
-      "version": "0.0.0-development"
+  "sender": "nrf-test-device-id",
+  "payload": {
+    "id": "nrf-test-device-id",
+    "deviceId": "nrf-test-device-id",
+    "name": "nrf-test-device-id",
+    "subType": "jitp-nordic-hardware",
+    "tags": ["temperature", "warehouse-east"],
+    "firmware": {
+      "supports": ["APP", "MODEM"],
+      "app": {
+        "version": "0.0.0-development"
+      },
+      "modem": "mfw_nrf9160_1.3.3"
     },
-    "modem": "mfw_nrf9160_1.3.3"
-  },
-  "type": "Generic"
+    "type": "Generic"
+  }
 }
 ```
 

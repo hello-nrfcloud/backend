@@ -37,21 +37,18 @@ And I send message to queue with this JSON
 {
   "sender": "nrf-test-device-id",
   "receivers": ["nrf-test-device-id"],
+  "topic": "data/m/d/nrf-test-device-id/d2c",
   "payload": {
-    "sender": "nrf-test-device-id",
-    "topic": "data/m/d/nrf-test-device-id/d2c",
-    "payload": {
-      "state": {
-        "desired": {
-          "pairing": {
-            "state": "paired",
-            "topics": {
-              "d2c": "prod/543c2184-c7fe-4ca6-a2a0-c06db425fbbf/m/d/nrf-test-device-id/d2c",
-              "c2d": "prod/543c2184-c7fe-4ca6-a2a0-c06db425fbbf/m/d/nrf-test-device-id/+/r"
-            }
-          },
-          "nrfcloud_mqtt_topic_prefix": "prod/543c2184-c7fe-4ca6-a2a0-c06db425fbbf/"
-        }
+    "state": {
+      "desired": {
+        "pairing": {
+          "state": "paired",
+          "topics": {
+            "d2c": "prod/543c2184-c7fe-4ca6-a2a0-c06db425fbbf/m/d/nrf-test-device-id/d2c",
+            "c2d": "prod/543c2184-c7fe-4ca6-a2a0-c06db425fbbf/m/d/nrf-test-device-id/+/r"
+          }
+        },
+        "nrfcloud_mqtt_topic_prefix": "prod/543c2184-c7fe-4ca6-a2a0-c06db425fbbf/"
       }
     }
   }

@@ -76,7 +76,6 @@ async function publishDeviceMessage({
 	log: {
 		step: { progress },
 	},
-	context: { devicesTable },
 }: StepRunnerArgs<World>): Promise<StepRunResult> {
 	const match =
 		/^a device with id `(?<id>[^`]+)` publishes to topic `(?<topic>[^`]+)` with a message as this JSON$/.exec(
