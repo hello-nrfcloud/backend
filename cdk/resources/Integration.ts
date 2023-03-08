@@ -51,21 +51,21 @@ export class Integration extends Construct {
 					hostPort: 1883,
 				},
 			],
-			image: ECS.ContainerImage.fromRegistry(
-				'public.ecr.aws/q9u9d6w7/nrfcloud-bridge:latest',
-			),
+			image: ECS.ContainerImage.fromAsset('./cdk/resources/containers/bridge'),
 			secrets: {
-				NRFCLOUD_CLIENT_CERT: this.getSecret(
+				ENV__FILE__NRFCLOUD_CLIENT_CRT: this.getSecret(
 					mqttConfiguration.SSMParams.nrfcloud.cert,
 				),
-				NRFCLOUD_CLIENT_KEY: this.getSecret(
+				ENV__FILE__NRFCLOUD_CLIENT_KEY: this.getSecret(
 					mqttConfiguration.SSMParams.nrfcloud.key,
 				),
-				IOT_CERT: this.getSecret(mqttConfiguration.SSMParams.iot.cert),
-				IOT_KEY: this.getSecret(mqttConfiguration.SSMParams.iot.key),
+				ENV__FILE__IOT_CRT: this.getSecret(
+					mqttConfiguration.SSMParams.iot.cert,
+				),
+				ENV__FILE__IOT_KEY: this.getSecret(mqttConfiguration.SSMParams.iot.key),
 			},
 			environment: {
-				NRFCLOUD_CA:
+				ENV__FILE__NRFCLOUD_CA_CRT:
 					'-----BEGIN CERTIFICATE-----\n' +
 					'MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF\n' +
 					'ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6\n' +
@@ -85,38 +85,36 @@ export class Integration extends Construct {
 					'o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU\n' +
 					'5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy\n' +
 					'rqXRfboQnoZsG4q5WTP468SQvvG5\n' +
-					'-----END CERTIFICATE-----',
-				MOSQUITTO_CONFIG: `
-listener 1883
-allow_anonymous true
+					'-----END CERTIFICATE-----\n',
+				MOSQUITTO_INCLUDE_DIR: `/mosquitto/config/sections/`,
+				MOSQUITTO__LOGGING__LOG_DEST: `stderr`,
+				MOSQUITTO__LOGGING__LOG_TYPE: `warning`,
+				MOSQUITTO__BRIDGE01__CONNECTION: `nrfcloud-bridge`,
+				MOSQUITTO__BRIDGE01__ADDRESS: `${mqttConfiguration.accountInfo.mqttEndpoint}:8883`,
+				MOSQUITTO__BRIDGE01__BRIDGE_PROTOCOL_VERSION: `mqttv311`,
+				MOSQUITTO__BRIDGE01__BRIDGE_CAFILE: `/mosquitto/security/nrfcloud_ca.crt`,
+				MOSQUITTO__BRIDGE01__BRIDGE_CERTFILE: `/mosquitto/security/nrfcloud_client.crt`,
+				MOSQUITTO__BRIDGE01__BRIDGE_KEYFILE: `/mosquitto/security/nrfcloud_client.key`,
+				MOSQUITTO__BRIDGE01__BRIDGE_INSECURE: `false`,
+				MOSQUITTO__BRIDGE01__START_TYPE: `automatic`,
+				MOSQUITTO__BRIDGE01__NOTIFICATIONS: `false`,
+				MOSQUITTO__BRIDGE01__CLEANSESSION: `true`,
+				MOSQUITTO__BRIDGE01__LOCAL_CLIENTID: `nrfcloud-bridge-local`,
+				MOSQUITTO__BRIDGE01__REMOTE_CLIENTID: `${mqttConfiguration.accountInfo.accountDeviceClientId}`,
+				MOSQUITTO__BRIDGE01__TOPIC: `m/# in 1 data/ ${mqttConfiguration.accountInfo.mqttTopicPrefix}`,
 
-connection nrfcloud-bridge
-address ${mqttConfiguration.accountInfo.mqttEndpoint}:8883
-local_clientid nrfcloud-bridge-local
-remote_clientid ${mqttConfiguration.accountInfo.accountDeviceClientId}
-bridge_protocol_version mqttv311
-bridge_cafile /mosquitto/config/nrfcloud_ca.crt
-bridge_certfile /mosquitto/config/nrfcloud_client_cert.crt
-bridge_keyfile /mosquitto/config/nrfcloud_client_key.key
-bridge_insecure false
-cleansession true
-start_type automatic
-notifications false
-
-topic m/# in 1 data/ ${mqttConfiguration.accountInfo.mqttTopicPrefix}
-
-connection iot-bridge
-address ${mqttConfiguration.iotInfo.mqttEndpoint}:8883
-bridge_cafile /mosquitto/config/nrfcloud_ca.crt
-bridge_certfile /mosquitto/config/iot_cert.crt
-bridge_keyfile /mosquitto/config/iot_key.key
-bridge_insecure false
-cleansession true
-start_type automatic
-notifications false
-
-topic # out 1
-`,
+				MOSQUITTO__BRIDGE02__CONNECTION: `iot-bridge`,
+				MOSQUITTO__BRIDGE02__ADDRESS: `${mqttConfiguration.iotInfo.mqttEndpoint}:8883`,
+				MOSQUITTO__BRIDGE02__BRIDGE_PROTOCOL_VERSION: `mqttv311`,
+				MOSQUITTO__BRIDGE02__BRIDGE_CAFILE: `/mosquitto/security/nrfcloud_ca.crt`,
+				MOSQUITTO__BRIDGE02__BRIDGE_CERTFILE: `/mosquitto/security/iot.crt`,
+				MOSQUITTO__BRIDGE02__BRIDGE_KEYFILE: `/mosquitto/security/iot.key`,
+				MOSQUITTO__BRIDGE02__BRIDGE_INSECURE: `false`,
+				MOSQUITTO__BRIDGE02__LOCAL_CLIENTID: `iot-bridge-local`,
+				MOSQUITTO__BRIDGE02__START_TYPE: `automatic`,
+				MOSQUITTO__BRIDGE02__NOTIFICATIONS: `false`,
+				MOSQUITTO__BRIDGE02__CLEANSESSION: `true`,
+				MOSQUITTO__BRIDGE02__TOPIC: `# out 1`,
 			},
 			healthCheck: {
 				command: [
