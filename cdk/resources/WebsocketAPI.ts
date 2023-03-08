@@ -44,16 +44,11 @@ export class WebsocketAPI extends Construct {
 		super(parent, 'WebsocketAPI')
 
 		// Event bridge
-		this.eventBus = new Events.EventBus(this, 'eventBus', {
-			eventBusName: 'websocketEventBus',
-		})
+		this.eventBus = new Events.EventBus(this, 'eventBus', {})
 
 		// SQS Queue
-		const websocketDLQ = new Sqs.Queue(this, 'websocketDLQ', {
-			queueName: 'deadLetterWebsocketQueue',
-		})
+		const websocketDLQ = new Sqs.Queue(this, 'websocketDLQ', {})
 		this.websocketQueue = new Sqs.Queue(this, 'websocketQueue', {
-			queueName: 'websocketQueue',
 			deadLetterQueue: {
 				maxReceiveCount: 15,
 				queue: websocketDLQ,
@@ -62,7 +57,6 @@ export class WebsocketAPI extends Construct {
 
 		// Databases
 		this.connectionsTable = new DynamoDB.Table(this, 'connectionsTable', {
-			tableName: 'connectionsTable',
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
 				name: 'connectionId',
@@ -80,7 +74,6 @@ export class WebsocketAPI extends Construct {
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
 		this.devicesTable = new DynamoDB.Table(this, 'devicesTable', {
-			tableName: 'devicesTable',
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
 				name: 'deviceId',

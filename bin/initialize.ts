@@ -43,7 +43,7 @@ async function ensureNrfcloudCredentials(
 
 async function ensureIotCredentials(input: CliInput, iotEndpoint: string) {
 	const res = await getIotCredentialsSSM()
-	if (res.privateKey == null || res.clientCert == null || input.reset) {
+	if (res.privateKey === '' || res.clientCert === '' || input.reset) {
 		console.log('Generating new IoT credentials')
 		const credentials = await generateIotCredentials()
 		await saveIotCredentialsSSM(credentials, iotEndpoint)

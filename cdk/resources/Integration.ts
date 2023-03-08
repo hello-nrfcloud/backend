@@ -31,7 +31,6 @@ export class Integration extends Construct {
 		})
 
 		const cluster = new ECS.Cluster(this, `cluster`, {
-			clusterName: 'mqttBridge',
 			vpc: vpc as IVpc,
 		})
 

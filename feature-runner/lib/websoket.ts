@@ -18,7 +18,7 @@ function defer(): ReturnDefer<any> {
 	const ret = {} as ReturnDefer<any>
 	const timer = setTimeout(() => {
 		ret.reject('Timeout')
-	}, 5000)
+	}, 10000)
 
 	const promise = new Promise<any>((_resolve, _reject) => {
 		ret.resolve = (v) => {
