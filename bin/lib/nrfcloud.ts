@@ -146,8 +146,19 @@ async function saveNrfcloudAccountInfosSSM(info: AccountInfo): Promise<void> {
 	)
 }
 
+async function getAccountInfoSSM(): Promise<AccountInfo> {
+	const info = await SSM.send(
+		new GetParameterCommand({
+			Name: `/${STACK_NAME}/${NRFCLOUD_ACCOUNT_INFO_PARAM}`,
+		}),
+	)
+
+	return JSON.parse(info.Parameter?.Value ?? 'null') as AccountInfo
+}
+
 export {
 	getAccountInfo,
+	getAccountInfoSSM,
 	getNrfcloudCredentialsSSM,
 	generateNrfcloudCredentials,
 	deleteNrfcloudCredentials,

@@ -7,6 +7,7 @@ import {
 	StepRunResult,
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
+import { randomUUID } from 'crypto'
 import { createWebsocketClient, WebSocketClient } from '../lib/websoket.js'
 import type { World } from '../run-features.js'
 
@@ -27,7 +28,7 @@ async function wsConnect({
 
 	progress(`Connect websocket to ${websocketUri}`)
 	wsClient = createWebsocketClient({
-		id: 'test',
+		id: randomUUID(),
 		url: `${websocketUri}?code=${match.groups?.code}`,
 	})
 
@@ -58,6 +59,7 @@ async function wsConnectionMessage({
 	)
 	if (match === null) return noMatch
 
+	progress(`Fetching ws connection message`)
 	const message = await wsClient.fetchConnectionMessage()
 	progress(`Received message`, message)
 	assert.deepEqual(JSON.parse(message), JSON.parse(codeBlockOrThrow(step).code))
@@ -73,7 +75,7 @@ async function wsMessage({
 	if (match === null) return noMatch
 
 	const message: string = await wsClient.fetchMessage()
-	progress(`Received message`, message)
+	progress(`Received ws message`, message)
 	assert.deepEqual(JSON.parse(message), JSON.parse(codeBlockOrThrow(step).code))
 }
 

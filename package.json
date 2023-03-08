@@ -33,6 +33,7 @@
     "@aws-sdk/client-dynamodb": "3.272.0",
     "@aws-sdk/client-ecs": "3.272.0",
     "@aws-sdk/client-eventbridge": "3.272.0",
+    "@aws-sdk/client-iot": "^3.283.0",
     "@aws-sdk/client-sqs": "^3.282.0",
     "@aws-sdk/util-dynamodb": "3.272.0",
     "@nordicsemiconductor/asset-tracker-cloud-code-style": "11.0.180",
@@ -54,6 +55,7 @@
     "glob": "8.1.0",
     "husky": "8.0.3",
     "jest": "29.4.3",
+    "mqtt": "^4.3.7",
     "prettier": "2.8.4",
     "tsx": "3.12.3",
     "typescript": "4.9.5",
@@ -90,7 +92,6 @@
   "prettier": "@nordicsemiconductor/asset-tracker-cloud-code-style/.prettierrc",
   "dependencies": {
     "@aws-sdk/client-cloudformation": "^3.279.0",
-    "@aws-sdk/client-iot": "3.272.0",
     "@aws-sdk/client-ssm": "3.272.0",
     "@nordicsemiconductor/cloudformation-helpers": "^7.0.7",
     "@nordicsemiconductor/from-env": "1.0.3",

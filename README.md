@@ -31,7 +31,7 @@ certificate used by MQTT broker to connect nRF Cloud under your account. So, you
 need to prepare nRF Cloud API key.
 
 ```
-npx tsx bin/index.cts <API key>
+npx tsx bin/index.ts <API key>
 ```
 
 ### Deploy

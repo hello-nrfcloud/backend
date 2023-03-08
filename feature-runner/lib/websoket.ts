@@ -18,7 +18,7 @@ function defer(): ReturnDefer<any> {
 	const ret = {} as ReturnDefer<any>
 	const timer = setTimeout(() => {
 		ret.reject('Timeout')
-	}, 3000)
+	}, 5000)
 
 	const promise = new Promise<any>((_resolve, _reject) => {
 		ret.resolve = (v) => {
@@ -61,6 +61,7 @@ export const createWebsocketClient = ({
 				void 0
 			})
 			.on('message', async (message) => {
+				if (message.toString() === '') return
 				if (firstMessage === false) {
 					firstMessage = true
 					onConnectMessageDeferred.resolve(message.toString())

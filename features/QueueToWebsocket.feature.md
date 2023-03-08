@@ -80,3 +80,5 @@ Then the response should equal to this JSON
   }
 }
 ```
+
+And I close connection

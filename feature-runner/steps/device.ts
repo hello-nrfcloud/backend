@@ -12,6 +12,7 @@ import {
 	StepRunResult,
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
+import { publishMessage } from '../lib/iot.js'
 import type { World } from '../run-features.js'
 
 const dbClient = new DynamoDBClient({})
@@ -70,6 +71,30 @@ async function getDevice({
 	)
 }
 
+async function publishDeviceMessage({
+	step,
+	log: {
+		step: { progress },
+	},
+	context: { devicesTable },
+}: StepRunnerArgs<World>): Promise<StepRunResult> {
+	const match =
+		/^a device with id `(?<id>[^`]+)` publishes to topic `(?<topic>[^`]+)` with a message as this JSON$/.exec(
+			step.title,
+		)
+	if (match === null) return noMatch
+
+	const message = JSON.parse(codeBlockOrThrow(step).code)
+	progress(
+		`Device id ${match.groups?.id} publishes to topic ${match.groups?.topic}`,
+	)
+	await publishMessage(
+		match.groups?.id ?? '',
+		match.groups?.topic ?? '',
+		message,
+	)
+}
+
 export const steps = (): StepRunner<World>[] => {
-	return [createDevice, getDevice]
+	return [createDevice, getDevice, publishDeviceMessage]
 }
