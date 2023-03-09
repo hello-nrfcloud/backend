@@ -47,8 +47,18 @@ jobs:
           role-session-name: github-action-nrf-guide-backend
           aws-region: ${{ env.AWS_REGION }}
 
+      - run: aws sts get-caller-identity
+
       - name: Run pre-test
         run: npm run pre-test
+
+      - name: Bootstrap AWS account for CDK
+        run: |
+          npx cdk bootstrap aws://`aws sts get-caller-identity | jq -r '.Account' | tr -d '\n'`/${{ env.AWS_REGION }}
+
+      - name: Deploy test stack
+        run: |
+          npx cdk deploy --require-approval never
 
       - name: Run end to end tests
         run: npm run test:e2e
