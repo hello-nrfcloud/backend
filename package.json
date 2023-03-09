@@ -4,6 +4,8 @@
   "description": "Cloud backend for nRF guide developed using AWS CDK in TypeScript",
   "type": "module",
   "scripts": {
+    "pre-test": "npx tsx ./e2e-tests/nrfcloud-mock/index.ts mock",
+    "post-test": "npx tsx ./e2e-tests/nrfcloud-mock/index.ts cleanup",
     "test": "jest --passWithNoTests",
     "test:e2e": "npx tsx ./feature-runner/run-features.ts | npx tsx ./feature-runner/console-reporter.ts",
     "prepare": "husky install && check-node-version --package",

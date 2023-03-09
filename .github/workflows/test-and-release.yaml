@@ -2,7 +2,20 @@ name: Test and Release
 
 on:
   push:
+    branches:
+      - features/github-action
   workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+  issues: write
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  AWS_REGION: eu-north-1
+  AWS_ROLE: arn:aws:iam::752072828702:role/GithubAction_for_nRF_Guide_Backend
+  STACK_NAME: nrf-guide-test
 
 jobs:
   tests:
@@ -19,7 +32,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.npm
-          key: build-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.OS }}-build-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
         run: npm ci --no-audit
@@ -27,7 +40,23 @@ jobs:
       - name: Run unit tests
         run: npm test
 
-      - name: Semantic release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          role-session-name: github-action-nrf-guide-backend
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run pre-test
+        run: npm run pre-test
+
+      - name: Run end to end tests
+        run: npm run test:e2e
+
+      - name: Run post-test
+        run: npm run post-test
+
+      # - name: Semantic release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: npx semantic-release

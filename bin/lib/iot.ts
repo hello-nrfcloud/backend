@@ -58,7 +58,7 @@ async function generateIotCredentials(): Promise<CertificateCredentials> {
 	const policyName = `${STACK_NAME}-mqtt-bridge-policy-${new Date()
 		.toISOString()
 		.replace(/T.+$/, '')}-${randomUUID()}`
-	console.log(`Creating iot policy ${policyName}`)
+	console.log(`Creating iot policy: ${policyName}`)
 	await Iot.send(
 		new CreatePolicyCommand({
 			policyDocument:
@@ -66,11 +66,15 @@ async function generateIotCredentials(): Promise<CertificateCredentials> {
 			policyName,
 		}),
 	)
+
+	console.log(`Creating iot certificate`)
 	const credentials = await Iot.send(
 		new CreateKeysAndCertificateCommand({
 			setAsActive: true,
 		}),
 	)
+
+	console.log(`Attaching policy to iot certificate`)
 	await Iot.send(
 		new AttachPolicyCommand({
 			policyName,

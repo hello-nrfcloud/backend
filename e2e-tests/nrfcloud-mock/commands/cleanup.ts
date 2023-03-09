@@ -55,7 +55,7 @@ export async function cleanup(): Promise<void> {
 		)
 
 		for (const target of targets.targets ?? []) {
-			console.log(`Detach policy ${policy.policyName} from ${target}`)
+			console.log(`Detaching "${policy.policyName}" policy from ${target}`)
 			await Iot.send(
 				new DetachPolicyCommand({
 					policyName: policy.policyName,
@@ -64,7 +64,7 @@ export async function cleanup(): Promise<void> {
 			)
 
 			const certificateId = target.split('/')[1]
-			console.log(`Inactive certificate ${certificateId}`)
+			console.log(`De-activating certificate "${certificateId}"`)
 			await Iot.send(
 				new UpdateCertificateCommand({
 					certificateId,
@@ -72,7 +72,7 @@ export async function cleanup(): Promise<void> {
 				}),
 			)
 
-			console.log(`Delete certificate ${certificateId}`)
+			console.log(`Deleting certificate "${certificateId}"`)
 			await Iot.send(
 				new DeleteCertificateCommand({
 					certificateId,
@@ -81,7 +81,7 @@ export async function cleanup(): Promise<void> {
 			)
 		}
 
-		console.log(`Delete policy ${policy.policyName}`)
+		console.log(`Deleting "${policy.policyName}" policy`)
 		await Iot.send(
 			new DeletePolicyCommand({
 				policyName: policy.policyName,
