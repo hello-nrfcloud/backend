@@ -60,11 +60,14 @@ jobs:
         run: |
           npx cdk deploy --require-approval never
 
-      - name: Run end to end tests
+      - name: Run End-to-End Tests
         run: npm run test:e2e
 
-      - name: Run post-test
-        run: npm run post-test
+      - name: Clean up End-to-End test resources
+        if: always()
+        run: |
+          npx cdk destroy -f
+          npm run post-test
 
       # - name: Semantic release
       #   env:
