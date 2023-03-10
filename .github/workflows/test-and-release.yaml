@@ -2,8 +2,6 @@ name: Test and Release
 
 on:
   push:
-    branches:
-      - features/github-action
   workflow_dispatch:
 
 permissions:
@@ -15,7 +13,6 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   AWS_REGION: eu-north-1
   AWS_ROLE: arn:aws:iam::752072828702:role/GithubAction_for_nRF_Guide_Backend
-  STACK_NAME: nrf-guide-test
 
 jobs:
   e2e-tests:
