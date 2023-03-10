@@ -25,12 +25,12 @@ const publishToWebsocket = async ({
 	sender,
 	receivers,
 	payload,
-	meta,
+	topic,
 }: {
 	sender: string
 	receivers: string[]
+	topic?: string
 	payload: Record<string, any>
-	meta?: Record<string, any>
 }): Promise<void> => {
 	await eventBus.putEvents({
 		Entries: [
@@ -42,7 +42,7 @@ const publishToWebsocket = async ({
 					sender,
 					receivers,
 					payload,
-					meta,
+					topic,
 				}),
 			},
 		],
@@ -85,26 +85,11 @@ export const handler = async (
 		}
 	}
 
-	await eventBus.putEvents({
-		Entries: [
-			{
-				EventBusName: EventBusName,
-				Source: 'thingy.ws',
-				DetailType: 'connect',
-				Detail: JSON.stringify({
-					context: {
-						deviceId: device.deviceId,
-						connectionId: event.requestContext.connectionId,
-					},
-				}),
-			},
-		],
-	})
-
 	const { secret, ...rest } = device
 	await publishToWebsocket({
 		sender: device.deviceId,
 		receivers: [device.deviceId],
+		topic: 'connection',
 		payload: rest,
 	})
 

@@ -47,8 +47,7 @@ export const createWebsocketClient = ({
 		const client = new WebSocket(url)
 		const onConnectDeferred = defer()
 		const onConnectMessageDeferred = defer()
-		const messages: string[] = []
-		let firstMessage = false
+		const messages: Record<string, unknown>[] = []
 		client
 			.on('open', () => {
 				messages.length = 0
@@ -60,13 +59,13 @@ export const createWebsocketClient = ({
 			.on('close', () => {
 				void 0
 			})
-			.on('message', async (message) => {
-				if (message.toString() === '') return
-				if (firstMessage === false) {
-					firstMessage = true
-					onConnectMessageDeferred.resolve(message.toString())
+			.on('message', async (msg) => {
+				const message = JSON.parse(msg.toString())
+				// console.log(`${id} <<`, JSON.stringify(message, null, 2))
+				if (message.topic === 'connection') {
+					onConnectMessageDeferred.resolve(message)
 				} else {
-					messages.push(message.toString())
+					messages.push(message)
 				}
 			})
 

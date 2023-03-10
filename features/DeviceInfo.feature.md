@@ -36,6 +36,7 @@ Then the connection response should equal to this JSON
 ```json
 {
   "sender": "nrf-test-device-id",
+  "topic": "connection",
   "payload": {
     "id": "nrf-test-device-id",
     "deviceId": "nrf-test-device-id",

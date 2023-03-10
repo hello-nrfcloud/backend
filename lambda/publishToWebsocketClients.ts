@@ -9,7 +9,6 @@ export type WebsocketPayload = {
 	receivers: string[]
 	payload: Record<string, unknown>
 	topic?: string
-	meta?: Record<string, unknown>
 }
 
 type EventBridgeEvent = {
@@ -46,15 +45,15 @@ const notifier = notifyClients({
 export const handler = async (event: EventBridgeEvent): Promise<void> => {
 	log.info('publishToWebSocketClients event', { event })
 
-	const { sender, receivers, ...rest } = event.detail
+	const { receivers, ...rest } = event.detail
 
 	if (Array.isArray(receivers) && receivers.length) {
 		const isBroadcast = receivers[0] === '*'
 
 		if (isBroadcast) {
-			await notifier({ sender, ...rest })
+			await notifier(rest)
 		} else {
-			await notifier({ sender, ...rest }, event.detail.receivers)
+			await notifier(rest, event.detail.receivers)
 		}
 	}
 }

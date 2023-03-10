@@ -8,7 +8,7 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
 import { randomUUID } from 'crypto'
-import { createWebsocketClient, WebSocketClient } from '../lib/websoket.js'
+import { createWebsocketClient, WebSocketClient } from '../lib/websocket.js'
 import type { World } from '../run-features.js'
 
 const sqsClient = new SQSClient({})
@@ -61,8 +61,8 @@ async function wsConnectionMessage({
 
 	progress(`Fetching ws connection message`)
 	const message = await wsClient.fetchConnectionMessage()
-	progress(`Received message`, message)
-	assert.deepEqual(JSON.parse(message), JSON.parse(codeBlockOrThrow(step).code))
+	progress(`Received message`, JSON.stringify(message, null, 2))
+	assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
 }
 
 async function wsMessage({
@@ -75,8 +75,8 @@ async function wsMessage({
 	if (match === null) return noMatch
 
 	const message: string = await wsClient.fetchMessage()
-	progress(`Received ws message`, message)
-	assert.deepEqual(JSON.parse(message), JSON.parse(codeBlockOrThrow(step).code))
+	progress(`Received ws message`, JSON.stringify(message, null, 2))
+	assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
 }
 
 async function sendToQueue({

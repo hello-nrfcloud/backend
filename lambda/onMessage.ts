@@ -25,12 +25,12 @@ const publishToWebsocket = async ({
 	sender,
 	receivers,
 	payload,
-	meta,
+	topic,
 }: {
 	sender: string
 	receivers: string[]
+	topic?: string
 	payload: Record<string, any>
-	meta?: Record<string, any>
 }): Promise<void> => {
 	await eventBus.putEvents({
 		Entries: [
@@ -42,7 +42,7 @@ const publishToWebsocket = async ({
 					sender,
 					receivers,
 					payload,
-					meta,
+					topic,
 				}),
 			},
 		],
@@ -69,9 +69,6 @@ export const handler = async (
 		}),
 	)
 	const deviceId = Item?.deviceId?.S ?? 'unknown'
-	const meta: Record<string, unknown> = {
-		connectionId: event.requestContext.connectionId,
-	}
 	const receivers: string[] = ['*']
 
 	const body = JSON.parse(event.body)
@@ -139,7 +136,7 @@ export const handler = async (
 		sender: deviceId,
 		receivers,
 		payload,
-		meta,
+		topic: `action:${action}`,
 	})
 
 	return {
