@@ -54,5 +54,3 @@ Then the connection response should equal to this JSON
   }
 }
 ```
-
-And I close connection

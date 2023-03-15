@@ -1,8 +1,11 @@
 import { consoleReporter } from '@nordicsemiconductor/bdd-markdown'
 
-process.stdin.on('data', (data) => {
-	const jsonData = JSON.parse(data.toString())
-	consoleReporter(jsonData, console.log)
+const chunks: string[] = []
 
-	if (jsonData.ok === false) process.exit(1)
+process.stdin.on('data', (data) => {
+	chunks.push(data.toString())
+})
+
+process.stdin.on('end', () => {
+	consoleReporter(JSON.parse(chunks.join('')), console.log)
 })

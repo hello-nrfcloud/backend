@@ -1,4 +1,3 @@
-import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs'
 import {
 	codeBlockOrThrow,
 	noMatch,
@@ -11,41 +10,33 @@ import { randomUUID } from 'crypto'
 import { createWebsocketClient, WebSocketClient } from '../lib/websocket.js'
 import type { World } from '../run-features.js'
 
-const sqsClient = new SQSClient({})
-let wsClient: WebSocketClient
+const wsClients: Record<string, WebSocketClient> = {}
 
 async function wsConnect({
 	step,
 	log: {
 		step: { progress },
 	},
-	context: { websocketUri },
+	context,
 }: StepRunnerArgs<World>): Promise<StepRunResult> {
 	const match = /^I connect websocket with code `(?<code>[^`]+)`$/.exec(
 		step.title,
 	)
 	if (match === null) return noMatch
 
-	progress(`Connect websocket to ${websocketUri}`)
-	wsClient = createWebsocketClient({
-		id: randomUUID(),
-		url: `${websocketUri}?code=${match.groups?.code}`,
-	})
+	const { websocketUri } = context
+	const wsURL = `${websocketUri}?code=${match.groups?.code}`
 
-	await wsClient.connect()
-}
+	if (wsClients[wsURL] === undefined) {
+		progress(`Connect websocket to ${websocketUri}`)
+		wsClients[wsURL] = createWebsocketClient({
+			id: match.groups?.code ?? randomUUID(),
+			url: wsURL,
+		})
+		await wsClients[wsURL]?.connect()
+	}
 
-async function wsClose({
-	step,
-	log: {
-		step: { progress },
-	},
-}: StepRunnerArgs<World>): Promise<StepRunResult> {
-	const match = /^I close connection$/.exec(step.title)
-	if (match === null) return noMatch
-
-	progress(`Close websocket`)
-	wsClient.close()
+	context.wsClient = wsClients[wsURL] as WebSocketClient
 }
 
 async function wsConnectionMessage({
@@ -53,6 +44,7 @@ async function wsConnectionMessage({
 	log: {
 		step: { progress },
 	},
+	context: { wsClient },
 }: StepRunnerArgs<World>): Promise<StepRunResult> {
 	const match = /^the connection response should equal to this JSON$/.exec(
 		step.title,
@@ -60,7 +52,7 @@ async function wsConnectionMessage({
 	if (match === null) return noMatch
 
 	progress(`Fetching ws connection message`)
-	const message = await wsClient.fetchConnectionMessage()
+	const message = await wsClient?.fetchConnectionMessage()
 	progress(`Received message`, JSON.stringify(message, null, 2))
 	assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
 }
@@ -70,34 +62,22 @@ async function wsMessage({
 	log: {
 		step: { progress },
 	},
+	context: { wsClient },
 }: StepRunnerArgs<World>): Promise<StepRunResult> {
 	const match = /^the response should equal to this JSON$/.exec(step.title)
 	if (match === null) return noMatch
 
-	const message: string = await wsClient.fetchMessage()
+	const message: string = await wsClient?.fetchMessage()
 	progress(`Received ws message`, JSON.stringify(message, null, 2))
 	assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
 }
 
-async function sendToQueue({
-	step,
-	log: {
-		step: { progress },
+export const websocketStepRunners = (): {
+	steps: StepRunner<World>[]
+	cleanup: () => Promise<void>
+} => ({
+	steps: [wsConnect, wsConnectionMessage, wsMessage],
+	cleanup: async (): Promise<void> => {
+		await Promise.all(Object.values(wsClients).map((client) => client.close()))
 	},
-	context: { websocketQueueUri },
-}: StepRunnerArgs<World>): Promise<StepRunResult> {
-	const match = /^I send message to queue with this JSON$/.exec(step.title)
-	if (match === null) return noMatch
-
-	progress(`Publish to queue ${websocketQueueUri}`)
-	await sqsClient.send(
-		new SendMessageCommand({
-			QueueUrl: websocketQueueUri,
-			MessageBody: codeBlockOrThrow(step).code,
-		}),
-	)
-}
-
-export const steps = (): StepRunner<World>[] => {
-	return [wsConnect, wsConnectionMessage, wsMessage, sendToQueue, wsClose]
-}
+})

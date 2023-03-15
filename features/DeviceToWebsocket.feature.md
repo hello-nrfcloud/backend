@@ -1,3 +1,8 @@
+---
+needs:
+  - Device Info
+---
+
 # Device to websocket
 
 > As the author of a software component  
@@ -30,9 +35,9 @@ Given There is a device as this JSON
 
 ## Verify a device sends a message to nRF Cloud, then I can receive the message via website
 
-When I connect websocket with code `my-secret`
+Given I connect websocket with code `my-secret`
 
-And a device with id `nrf-test-device-id` publishes to topic
+When a device with id `nrf-test-device-id` publishes to topic
 `m/d/nrf-test-device-id/d2c` with a message as this JSON
 
 ```json
@@ -118,5 +123,3 @@ Then the response should equal to this JSON
   }
 }
 ```
-
-And I close connection

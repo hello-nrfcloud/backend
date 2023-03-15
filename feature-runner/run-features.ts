@@ -4,8 +4,9 @@ import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
+import type { WebSocketClient } from './lib/websocket.js'
 import { steps as deviceSteps } from './steps/device.js'
-import { steps as websocketSteps } from './steps/websocket.js'
+import { websocketStepRunners } from './steps/websocket.js'
 /**
  * This file configures the BDD Feature runner
  * by loading the configuration for the test resources
@@ -21,6 +22,7 @@ export type World = {
 	websocketUri: string
 	devicesTable: string
 	websocketQueueUri: string
+	wsClient?: WebSocketClient
 }
 
 const runner = await runFolder<World>({
@@ -28,13 +30,21 @@ const runner = await runFolder<World>({
 	name: 'nRF guide backend',
 })
 
-runner.addStepRunners(...websocketSteps()).addStepRunners(...deviceSteps())
+const cleaners: (() => Promise<void>)[] = []
+
+const { steps: webSocketSteps, cleanup: websocketCleanup } =
+	websocketStepRunners()
+cleaners.push(websocketCleanup)
+
+runner.addStepRunners(...webSocketSteps).addStepRunners(...deviceSteps())
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,
 	devicesTable: config.devicesTable,
 	websocketQueueUri: config.webSocketQueueURI,
 })
+
+await Promise.all(cleaners.map(async (fn) => fn()))
 
 console.log(JSON.stringify(res, null, 2))
 
