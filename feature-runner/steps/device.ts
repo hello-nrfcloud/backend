@@ -7,9 +7,9 @@ import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import {
 	codeBlockOrThrow,
 	noMatch,
-	StepRunner,
-	StepRunnerArgs,
-	StepRunResult,
+	type StepRunResult,
+	type StepRunner,
+	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
 import { publishMessage } from '../lib/iot.js'

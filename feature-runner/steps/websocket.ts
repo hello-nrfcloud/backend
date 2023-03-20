@@ -1,13 +1,16 @@
 import {
 	codeBlockOrThrow,
 	noMatch,
-	StepRunner,
-	StepRunnerArgs,
-	StepRunResult,
+	type StepRunner,
+	type StepRunnerArgs,
+	type StepRunResult,
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
 import { randomUUID } from 'crypto'
-import { createWebsocketClient, WebSocketClient } from '../lib/websocket.js'
+import {
+	createWebsocketClient,
+	type WebSocketClient,
+} from '../lib/websocket.js'
 import type { World } from '../run-features.js'
 
 const wsClients: Record<string, WebSocketClient> = {}

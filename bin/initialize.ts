@@ -6,13 +6,13 @@ import {
 } from './lib/iot.js'
 
 import {
-	AccountInfo,
 	deleteNrfcloudCredentials,
 	generateNrfcloudCredentials,
 	getAccountInfo,
 	getNrfcloudCredentialsSSM,
 	saveNrfcloudAccountInfosSSM,
 	saveNrfcloudCredentialsSSM,
+	type AccountInfo,
 } from './lib/nrfcloud.js'
 
 type CliInput = {

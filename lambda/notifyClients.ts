@@ -6,7 +6,7 @@ import {
 	DeleteItemCommand,
 	DynamoDBClient,
 	ExecuteStatementCommand,
-	ExecuteStatementCommandOutput,
+	type ExecuteStatementCommandOutput,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { logger } from './logger.js'

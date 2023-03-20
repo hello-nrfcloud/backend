@@ -5,9 +5,9 @@ import {
 	saveIotCredentialsSSM,
 } from '../../../bin/lib/iot.js'
 import {
-	AccountInfo,
 	saveNrfcloudAccountInfosSSM,
 	saveNrfcloudCredentialsSSM,
+	type AccountInfo,
 } from '../../../bin/lib/nrfcloud.js'
 
 export async function mock(): Promise<void> {

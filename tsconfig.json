@@ -11,14 +11,13 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
-    "importsNotUsedAsValues": "error",
+    "verbatimModuleSyntax": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "isolatedModules": true
+    "noUnusedLocals": true
   },
   "exclude": ["cdk.out/**/*", "dist/**/*"]
 }

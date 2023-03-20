@@ -8,7 +8,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import type { IVpc } from 'aws-cdk-lib/aws-ec2'
-import { ICluster, LogDriver } from 'aws-cdk-lib/aws-ecs'
+import { LogDriver, type ICluster } from 'aws-cdk-lib/aws-ecs'
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { Construct } from 'constructs'
