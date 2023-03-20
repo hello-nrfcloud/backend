@@ -1,14 +1,14 @@
 import {
 	aws_apigatewayv2 as ApiGateway,
+	Duration,
 	aws_dynamodb as DynamoDB,
 	aws_events as Events,
 	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
 	aws_pipes as Pipes,
-	aws_sqs as Sqs,
-	Duration,
 	RemovalPolicy,
+	aws_sqs as Sqs,
 	Stack,
 } from 'aws-cdk-lib'
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam/index.js'

@@ -1,6 +1,6 @@
-import { App, aws_lambda as Lambda, CfnOutput, Stack } from 'aws-cdk-lib'
-import type { MqttConfiguration } from '../backend.js'
+import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
 import type { BackendLambdas } from '../BackendLambdas.js'
+import type { MqttConfiguration } from '../backend.js'
 import type { PackedLayer } from '../packLayer.js'
 import { Integration } from '../resources/Integration.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
