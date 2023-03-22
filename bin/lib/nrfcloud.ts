@@ -4,7 +4,6 @@ import {
 	PutParameterCommand,
 	SSMClient,
 } from '@aws-sdk/client-ssm'
-import needle from 'needle'
 import {
 	NRFCLOUD_ACCOUNT_INFO_PARAM,
 	NRFCLOUD_CLIENT_CERT_PARAM,
@@ -37,16 +36,17 @@ async function getAccountInfo({
 	apiKey: string
 	endpoint: string
 }): Promise<AccountInfo> {
-	const accountInfo = await needle('get', `${endpoint}/v1/account`, {
-		headers: {
-			Authorization: `Bearer ${apiKey}`,
-		},
-		json: true,
-	})
-	const tenantId = accountInfo.body.mqttTopicPrefix.split('/')[1]
+	const accountInfo = await (
+		await fetch(`${endpoint}/v1/account`, {
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+			},
+		})
+	).json()
+	const tenantId = accountInfo.mqttTopicPrefix.split('/')[1]
 	return {
-		mqttEndpoint: accountInfo.body.mqttEndpoint,
-		mqttTopicPrefix: accountInfo.body.mqttTopicPrefix,
+		mqttEndpoint: accountInfo.mqttEndpoint,
+		mqttTopicPrefix: accountInfo.mqttTopicPrefix,
 		tenantId,
 		accountDeviceClientId: `account-${tenantId}`,
 	}
@@ -79,21 +79,18 @@ async function generateNrfcloudCredentials({
 	apiKey: string
 	endpoint: string
 }): Promise<CertificateCredentials> {
-	const accountDevice = await needle(
-		'post',
-		`${endpoint}/v1/devices/account`,
-		null,
-		{
-			json: true,
+	const accountDevice = await (
+		await fetch(`${endpoint}/v1/devices/account`, {
+			method: 'POST',
 			headers: {
 				Authorization: `Bearer ${apiKey}`,
 			},
-		},
-	)
+		})
+	).json()
 
 	return {
-		clientCert: accountDevice.body.clientCert,
-		privateKey: accountDevice.body.privateKey,
+		clientCert: accountDevice.clientCert,
+		privateKey: accountDevice.privateKey,
 	}
 }
 
@@ -104,8 +101,8 @@ async function deleteNrfcloudCredentials({
 	apiKey: string
 	endpoint: string
 }): Promise<void> {
-	await needle('delete', `${endpoint}/v1/devices/account`, null, {
-		json: true,
+	await fetch(`${endpoint}/v1/devices/account`, {
+		method: 'DELETE',
 		headers: {
 			Authorization: `Bearer ${apiKey}`,
 		},
