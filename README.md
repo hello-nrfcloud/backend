@@ -20,7 +20,7 @@ Provide your AWS credentials, for example using the `.envrc` (see
 
 Install the dependencies:
 
-```
+```bash
 npm ci
 ```
 
@@ -30,13 +30,13 @@ To setup MQTT bridge, you have to run the below command to generate a
 certificate used by MQTT broker to connect nRF Cloud under your account. So, you
 need to prepare nRF Cloud API key.
 
-```
-npx tsx bin/index.ts <API key>
+```bash
+./cli.sh configure-nrfcloud <API key>
 ```
 
 ### Deploy
 
-```
+```bash
 npx cdk deploy
 ```
 
@@ -57,7 +57,7 @@ using topic as `$aws/things/${deviceId}/shadow/update`
 Message received from MQTT bridge will be published to websocket connection that
 associates with the same device id. The data format is
 
-```
+```json
 {
   "sender": <deviceId>,
   "topic": data/m/d/<deviceId>/<schema>,
@@ -70,7 +70,7 @@ associates with the same device id. The data format is
 
 ### Sample data
 
-```
+```json
 {
   "sender": "nrf-350457794611739",
   "topic": "data/m/d/nrf-350457794611739/c2d",
@@ -92,7 +92,7 @@ associates with the same device id. The data format is
 You can push data to specific websocket client or broadcast to everyone though
 SQS. The format is
 
-```
+```json
 {
   "sender": <deviceId>,
 	"receivers": <deviceId[]>,

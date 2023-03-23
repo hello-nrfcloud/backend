@@ -1,5 +1,9 @@
 {
   "extends": [
     "@nordicsemiconductor/eslint-config-asset-tracker-cloud-typescript"
-  ]
+  ],
+  "rules": {
+    "prefer-arrow/prefer-arrow-functions": ["error"]
+  },
+  "plugins": ["prefer-arrow"]
 }

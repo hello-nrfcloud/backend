@@ -15,13 +15,13 @@ import type { World } from '../run-features.js'
 
 const wsClients: Record<string, WebSocketClient> = {}
 
-async function wsConnect({
+const wsConnect = async ({
 	step,
 	log: {
 		step: { progress },
 	},
 	context,
-}: StepRunnerArgs<World>): Promise<StepRunResult> {
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match = /^I connect websocket with code `(?<code>[^`]+)`$/.exec(
 		step.title,
 	)
@@ -42,13 +42,13 @@ async function wsConnect({
 	context.wsClient = wsClients[wsURL] as WebSocketClient
 }
 
-async function wsConnectionMessage({
+const wsConnectionMessage = async ({
 	step,
 	log: {
 		step: { progress },
 	},
 	context: { wsClient },
-}: StepRunnerArgs<World>): Promise<StepRunResult> {
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match = /^the connection response should equal to this JSON$/.exec(
 		step.title,
 	)
@@ -60,13 +60,13 @@ async function wsConnectionMessage({
 	assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
 }
 
-async function wsMessage({
+const wsMessage = async ({
 	step,
 	log: {
 		step: { progress },
 	},
 	context: { wsClient },
-}: StepRunnerArgs<World>): Promise<StepRunResult> {
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match = /^the response should equal to this JSON$/.exec(step.title)
 	if (match === null) return noMatch
 

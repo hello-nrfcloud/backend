@@ -65,12 +65,12 @@ export const notifyClients =
 		}
 	}
 
-export async function getActiveConnections(
+export const getActiveConnections = async (
 	db: DynamoDBClient,
 	connectionsTableName: string,
 	connectionsIndexName: string,
 	deviceIds?: string[],
-): Promise<string[]> {
+): Promise<string[]> => {
 	let res: ExecuteStatementCommandOutput
 
 	if (deviceIds) {

@@ -1,41 +1,23 @@
-import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm'
+import { IoTClient } from '@aws-sdk/client-iot'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { GetCallerIdentityCommand, STS } from '@aws-sdk/client-sts'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
+import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
+import { ensureCA } from '../bridge/ensureCA.js'
+import { ensureMQTTBridgeCredentials } from '../bridge/ensureMQTTBridgeCredentials.js'
+import { debug } from '../cli/log.js'
+import { getSettings } from '../nrfcloud/settings.js'
 import { BackendApp } from './BackendApp.js'
 import { packLambda } from './packLambda.js'
 import { packLayer } from './packLayer.js'
-import {
-	IOT_CERT_PARAM,
-	IOT_ENDPOINT_PARAM,
-	IOT_KEY_PARAM,
-	NRFCLOUD_ACCOUNT_INFO_PARAM,
-	NRFCLOUD_CLIENT_CERT_PARAM,
-	NRFCLOUD_CLIENT_KEY_PARAM,
-	STACK_NAME,
-} from './stacks/stackConfig'
+import { STACK_NAME } from './stacks/stackConfig'
+
+const ssm = new SSMClient({})
+const iot = new IoTClient({})
+const sts = new STS({})
 
 export type PackedLambda = { lambdaZipFile: string; handler: string }
-export type MqttConfiguration = {
-	SSMParams: {
-		iot: {
-			cert: string
-			key: string
-		}
-		nrfcloud: {
-			cert: string
-			key: string
-		}
-	}
-	iotInfo: {
-		mqttEndpoint: string
-	}
-	accountInfo: {
-		mqttEndpoint: string
-		mqttTopicPrefix: string
-		tenantId: string
-		accountDeviceClientId: string
-	}
-}
 
 const packagesInLayer: string[] = [
 	'@nordicsemiconductor/from-env',
@@ -61,38 +43,21 @@ const pack = async (id: string, handler = 'handler'): Promise<PackedLambda> => {
 	}
 }
 
-const getMqttConfiguration = async (): Promise<MqttConfiguration> => {
-	const ssm = new SSMClient({})
+const settings = await getSettings({ ssm, stackName: STACK_NAME })()
 
-	const [nrfcloudAccountInfo, iotEndpoint] = await Promise.all([
-		ssm.send(
-			new GetParameterCommand({
-				Name: `/${STACK_NAME}/${NRFCLOUD_ACCOUNT_INFO_PARAM}`,
-			}),
-		),
-		ssm.send(
-			new GetParameterCommand({
-				Name: `/${STACK_NAME}/${IOT_ENDPOINT_PARAM}`,
-			}),
-		),
-	])
-	return {
-		SSMParams: {
-			iot: {
-				cert: `/${STACK_NAME}/${IOT_CERT_PARAM}`,
-				key: `/${STACK_NAME}/${IOT_KEY_PARAM}`,
-			},
-			nrfcloud: {
-				cert: `/${STACK_NAME}/${NRFCLOUD_CLIENT_CERT_PARAM}`,
-				key: `/${STACK_NAME}/${NRFCLOUD_CLIENT_KEY_PARAM}`,
-			},
-		},
-		iotInfo: {
-			mqttEndpoint: iotEndpoint.Parameter?.Value ?? '',
-		},
-		accountInfo: JSON.parse(nrfcloudAccountInfo?.Parameter?.Value ?? '{}'),
-	}
-}
+const accountId = (await sts.send(new GetCallerIdentityCommand({})))
+	.Account as string
+const certsDir = path.join(process.cwd(), 'certificates', accountId)
+const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
+	iot,
+	certsDir,
+	debug: debug('MQTT bridge'),
+})()
+const caCertificate = await ensureCA({
+	certsDir,
+	iot,
+	debug: debug('CA certificate'),
+})()
 
 new BackendApp({
 	lambdaSources: {
@@ -105,7 +70,8 @@ new BackendApp({
 		id: 'baseLayer',
 		dependencies: packagesInLayer,
 	}),
-	context: {
-		mqttConfiguration: await getMqttConfiguration(),
-	},
+	settings,
+	iotEndpoint: await getIoTEndpoint({ iot })(),
+	mqttBridgeCertificate,
+	caCertificate,
 })

@@ -12,18 +12,21 @@ import {
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
-import { publishMessage } from '../lib/iot.js'
+import mqtt from 'mqtt'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
 
 const dbClient = new DynamoDBClient({})
 
-async function createDevice({
+const createDevice = async ({
 	step,
 	log: {
 		step: { progress },
 	},
 	context: { devicesTable },
-}: StepRunnerArgs<World>): Promise<StepRunResult> {
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match = /^There is a device as this JSON$/.exec(step.title)
 	if (match === null) return noMatch
 
@@ -39,14 +42,13 @@ async function createDevice({
 
 	progress(`Request status: ${res.$metadata.httpStatusCode}`)
 }
-
-async function getDevice({
+const getDevice = async ({
 	step,
 	log: {
 		step: { progress },
 	},
 	context: { devicesTable },
-}: StepRunnerArgs<World>): Promise<StepRunResult> {
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match =
 		/^The device id `(?<key>[^`]+)` should equal to this JSON$/.exec(step.title)
 	if (match === null) return noMatch
@@ -71,29 +73,62 @@ async function getDevice({
 	)
 }
 
-async function publishDeviceMessage({
-	step,
-	log: {
-		step: { progress },
-	},
-}: StepRunnerArgs<World>): Promise<StepRunResult> {
-	const match =
-		/^a device with id `(?<id>[^`]+)` publishes to topic `(?<topic>[^`]+)` with a message as this JSON$/.exec(
-			step.title,
+const publishDeviceMessage =
+	(bridgeInfo: Settings) =>
+	async ({
+		step,
+		log: {
+			step: { progress, error },
+		},
+	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+		const match =
+			/^a device with id `(?<id>[^`]+)` publishes to topic `(?<topic>[^`]+)` with a message as this JSON$/.exec(
+				step.title,
+			)
+		if (match === null) return noMatch
+
+		const message = JSON.parse(codeBlockOrThrow(step).code)
+		progress(
+			`Device id ${match.groups?.id} publishes to topic ${match.groups?.topic}`,
 		)
-	if (match === null) return noMatch
+		await new Promise((resolve, reject) => {
+			const mqttClient = mqtt.connect({
+				host: bridgeInfo.mqttEndpoint,
+				port: 8883,
+				protocol: 'mqtts',
+				protocolVersion: 4,
+				clean: true,
+				clientId: match.groups?.id ?? '',
+				key: bridgeInfo.accountDevicePrivateKey,
+				cert: bridgeInfo.accountDeviceClientCert,
+				ca: readFileSync(
+					path.join(process.cwd(), 'data', 'AmazonRootCA1.pem'),
+					'utf-8',
+				),
+			})
 
-	const message = JSON.parse(codeBlockOrThrow(step).code)
-	progress(
-		`Device id ${match.groups?.id} publishes to topic ${match.groups?.topic}`,
-	)
-	await publishMessage(
-		match.groups?.id ?? '',
-		match.groups?.topic ?? '',
-		message,
-	)
-}
+			mqttClient.on('connect', () => {
+				progress('connected')
+				const topic = `${bridgeInfo.mqttTopicPrefix}${
+					match.groups?.topic ?? ''
+				}`
+				progress('publishing', message, topic)
+				mqttClient.publish(topic, JSON.stringify(message), (error) => {
+					if (error) return reject(error)
+					mqttClient.end()
+					return resolve(void 0)
+				})
+			})
 
-export const steps = (): StepRunner<World>[] => {
-	return [createDevice, getDevice, publishDeviceMessage]
-}
+			mqttClient.on('error', (err) => {
+				error(err)
+				reject(err)
+			})
+		})
+	}
+
+export const steps = (bridgeInfo: Settings): StepRunner<World>[] => [
+	createDevice,
+	getDevice,
+	publishDeviceMessage(bridgeInfo),
+]

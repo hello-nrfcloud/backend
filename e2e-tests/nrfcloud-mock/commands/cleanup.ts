@@ -8,34 +8,12 @@ import {
 	ListTargetsForPolicyCommand,
 	UpdateCertificateCommand,
 } from '@aws-sdk/client-iot'
-import {
-	DeleteParametersCommand,
-	GetParametersByPathCommand,
-	SSMClient,
-} from '@aws-sdk/client-ssm'
 
 import { STACK_NAME } from '../../../cdk/stacks/stackConfig.js'
 
-const SSM = new SSMClient({})
 const Iot = new IoTClient({})
 
-export async function cleanup(): Promise<void> {
-	// Clean parameter store
-	const parameters = await SSM.send(
-		new GetParametersByPathCommand({
-			Path: `/${STACK_NAME}`,
-		}),
-	)
-
-	const names = parameters.Parameters?.map((p) => p.Name)
-	if (names !== undefined && names?.length > 0) {
-		await SSM.send(
-			new DeleteParametersCommand({
-				Names: names as string[],
-			}),
-		)
-	}
-
+export const cleanup = async (): Promise<void> => {
 	// Clean IoT policies
 	const allPolicies = await Iot.send(
 		new ListPoliciesCommand({

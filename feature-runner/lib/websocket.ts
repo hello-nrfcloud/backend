@@ -14,7 +14,7 @@ type ReturnDefer<T> = {
 	reject: (reason: any) => void
 }
 
-function defer(): ReturnDefer<any> {
+const defer = (): ReturnDefer<any> => {
 	const ret = {} as ReturnDefer<any>
 	const timer = setTimeout(() => {
 		ret.reject('Timeout')

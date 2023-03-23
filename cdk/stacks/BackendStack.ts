@@ -1,6 +1,7 @@
 import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
+import { type CAFiles } from '../../bridge/caLocation.js'
+import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
-import type { MqttConfiguration } from '../backend.js'
 import type { PackedLayer } from '../packLayer.js'
 import { Integration } from '../resources/Integration.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
@@ -12,16 +13,18 @@ export class BackendStack extends Stack {
 		{
 			lambdaSources,
 			layer,
+			iotEndpoint,
+			mqttBridgeCertificate,
+			caCertificate,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
+			iotEndpoint: string
+			mqttBridgeCertificate: CertificateFiles
+			caCertificate: CAFiles
 		},
 	) {
 		super(parent, STACK_NAME)
-
-		const mqttConfiguration = this.node.tryGetContext(
-			'mqttConfiguration',
-		) as MqttConfiguration
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
 			code: Lambda.Code.fromAsset(layer.layerZipFile),
@@ -43,8 +46,10 @@ export class BackendStack extends Stack {
 
 		// const integration = new Integration(this, {
 		new Integration(this, {
-			mqttConfiguration,
 			websocketQueue: websocketAPI.websocketQueue,
+			iotEndpoint,
+			mqttBridgeCertificate,
+			caCertificate,
 		})
 
 		// Outputs
@@ -71,4 +76,6 @@ export type StackOutputs = {
 	webSocketURI: string
 	devicesTable: string
 	webSocketQueueURI: string
+	bridgePolicyName: string
+	bridgeCertificatePEM: string
 }
