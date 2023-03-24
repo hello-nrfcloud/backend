@@ -3,9 +3,7 @@ import { createWriteStream } from 'fs'
 import { copyFile, mkdir, readFile, rm, writeFile } from 'fs/promises'
 import glob from 'glob'
 import path from 'path'
-import { promisify } from 'util'
 import { ZipFile } from 'yazl'
-const globAsync = promisify(glob)
 
 export type PackedLayer = { layerZipFile: string }
 
@@ -76,7 +74,7 @@ export const packLayer = async ({
 		})
 	})
 
-	const filesToAdd = await globAsync(`**`, {
+	const filesToAdd = await glob(`**`, {
 		cwd: layerDir,
 		nodir: true,
 	})

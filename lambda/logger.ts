@@ -7,7 +7,7 @@ const { level } = fromEnv({
 
 export const logger = (serviceName: string): Logger => {
 	return new Logger({
-		logLevel: level ?? 'info',
+		logLevel: (level as any) ?? 'INFO',
 		serviceName,
 	})
 }
