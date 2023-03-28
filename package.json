@@ -47,7 +47,6 @@
     "@types/aws-lambda": "8.10.114",
     "@types/glob": "8.1.0",
     "@types/jest": "29.5.0",
-    "@types/needle": "^3.2.0",
     "@types/ws": "^8.5.4",
     "@types/yazl": "2.4.2",
     "aws-cdk-lib": "2.70.0",
