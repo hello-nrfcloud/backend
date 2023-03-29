@@ -75,11 +75,26 @@ const wsMessage = async ({
 	assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
 }
 
+const wsMessageTimeout = async ({
+	step,
+	log: {
+		step: { progress },
+	},
+	context: { wsClient },
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	const match = /^the response should equal to empty string$/.exec(step.title)
+	if (match === null) return noMatch
+
+	const message: string = await wsClient?.fetchMessage()
+	progress(`Received ws message`)
+	assert.deepEqual(message, '')
+}
+
 export const websocketStepRunners = (): {
 	steps: StepRunner<World>[]
 	cleanup: () => Promise<void>
 } => ({
-	steps: [wsConnect, wsConnectionMessage, wsMessage],
+	steps: [wsConnect, wsConnectionMessage, wsMessage, wsMessageTimeout],
 	cleanup: async (): Promise<void> => {
 		await Promise.all(Object.values(wsClients).map((client) => client.close()))
 	},

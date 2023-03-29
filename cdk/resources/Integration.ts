@@ -214,7 +214,6 @@ export class Integration extends Construct {
 				streamPrefix: 'mqtt-bridge',
 				logRetention: RetentionDays.ONE_DAY,
 			}),
-			containerName: 'mqtt',
 			portMappings: [
 				{
 					containerPort: 1883,
@@ -252,7 +251,6 @@ export class Integration extends Construct {
 				cluster: cluster as ICluster,
 				taskDefinition: mqttBridgeTask,
 				desiredCount: 1,
-				serviceName: 'mqtt',
 				assignPublicIp: this.node.tryGetContext('isTest') ?? false,
 			},
 		)

@@ -65,6 +65,8 @@ new BackendApp({
 		onMessage: await pack('onMessage'),
 		onDisconnect: await pack('onDisconnect'),
 		publishToWebsocketClients: await pack('publishToWebsocketClients'),
+		prepareDeviceShadow: await pack('prepareDeviceShadow'),
+		fetchDeviceShadow: await pack('fetchDeviceShadow'),
 	},
 	layer: await packLayer({
 		id: 'baseLayer',
@@ -74,4 +76,5 @@ new BackendApp({
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
 	caCertificate,
+	shadowFetchingInterval: Number(process.env.SHADOW_FETCHING_INTERVAL ?? 60),
 })

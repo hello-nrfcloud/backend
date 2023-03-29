@@ -14,10 +14,17 @@ type ReturnDefer<T> = {
 	reject: (reason: any) => void
 }
 
+class TimeoutError extends Error {
+	constructor(message = 'Timeout') {
+		super(message)
+		Object.setPrototypeOf(this, TimeoutError.prototype)
+	}
+}
+
 const defer = (): ReturnDefer<any> => {
 	const ret = {} as ReturnDefer<any>
 	const timer = setTimeout(() => {
-		ret.reject('Timeout')
+		ret.reject(new TimeoutError())
 	}, 10000)
 
 	const promise = new Promise<any>((_resolve, _reject) => {
@@ -78,17 +85,25 @@ export const createWebsocketClient = ({
 			},
 			fetchMessage: async () => {
 				const deferred = defer()
+				let fetchTimer: NodeJS.Timeout
 				const _fetch = () => {
 					const message = messages.shift()
 					if (message === undefined) {
-						setTimeout(_fetch, 500)
+						fetchTimer = setTimeout(_fetch, 500)
 					} else {
 						deferred.resolve(message)
 					}
 				}
 
 				_fetch()
-				return deferred.promise
+				return deferred.promise.catch((error) => {
+					clearTimeout(fetchTimer)
+					if (error instanceof TimeoutError) {
+						return ''
+					} else {
+						throw error
+					}
+				})
 			},
 			close: () => {
 				client.terminate()

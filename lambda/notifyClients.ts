@@ -29,19 +29,24 @@ export const notifyClients =
 		apiGwManagementClient: ApiGatewayManagementApiClient
 	}) =>
 	async (event: WebsocketEvent, deviceIds?: string[]): Promise<void> => {
-		const connectionIds: string[] = await getActiveConnections(
-			db,
-			connectionsTableName,
-			connectionsIndexName,
-			deviceIds,
-		)
+		// TONOTE:: If topic is `connection`, we will send data to the sender (connection id), not device id because it is connection data
+		const { senderConnectionId, ...rest } = event
+		const connectionIds: string[] =
+			senderConnectionId !== undefined && senderConnectionId !== ''
+				? [senderConnectionId]
+				: await getActiveConnections(
+						db,
+						connectionsTableName,
+						connectionsIndexName,
+						deviceIds,
+				  )
 
 		for (const connectionId of connectionIds) {
 			try {
 				await apiGwManagementClient.send(
 					new PostToConnectionCommand({
 						ConnectionId: connectionId,
-						Data: Buffer.from(JSON.stringify(event)),
+						Data: Buffer.from(JSON.stringify({ ...rest })),
 					}),
 				)
 			} catch (err) {

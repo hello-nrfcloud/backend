@@ -7,6 +7,7 @@ import {
 
 export type Settings = {
 	apiEndpoint: string
+	apiKey: string
 	accountDeviceClientCert: string
 	accountDevicePrivateKey: string
 	accountDeviceClientId: string
@@ -31,6 +32,7 @@ export const getSettings = ({
 		const p = await settingsReader()
 		const {
 			apiEndpoint,
+			apiKey,
 			accountDeviceClientCert,
 			accountDevicePrivateKey,
 			mqttEndpoint,
@@ -39,6 +41,8 @@ export const getSettings = ({
 		} = p
 		if (apiEndpoint === undefined)
 			throw new Error(`No nRF Cloud API endpoint configured!`)
+		if (apiKey === undefined)
+			throw new Error(`No nRF Cloud API key configured!`)
 		if (accountDeviceClientCert === undefined)
 			throw new Error(`No nRF Cloud account device clientCert configured!`)
 		if (accountDevicePrivateKey === undefined)
@@ -52,6 +56,7 @@ export const getSettings = ({
 
 		return {
 			apiEndpoint,
+			apiKey,
 			mqttEndpoint,
 			accountDeviceClientCert,
 			accountDevicePrivateKey,

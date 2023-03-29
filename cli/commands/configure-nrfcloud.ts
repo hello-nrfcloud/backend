@@ -85,6 +85,7 @@ export const configureNrfCloudCommand = ({
 
 			await updateSettings({ ssm, stackName: STACK_NAME })({
 				apiEndpoint: slashless(effectiveEndpoint),
+				apiKey: apiKey,
 				accountDeviceClientCert: credentials.clientCert,
 				accountDevicePrivateKey: credentials.privateKey,
 				accountDeviceClientId: `account-${accountInfo.tenantId}`,

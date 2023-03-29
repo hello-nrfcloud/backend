@@ -2,6 +2,7 @@ import {
 	aws_apigatewayv2 as ApiGateway,
 	Duration,
 	aws_dynamodb as DynamoDB,
+	aws_lambda_event_sources as EventSources,
 	aws_events as Events,
 	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
@@ -9,10 +10,12 @@ import {
 	aws_pipes as Pipes,
 	RemovalPolicy,
 	aws_sqs as Sqs,
+	aws_ssm as Ssm,
 	Stack,
 } from 'aws-cdk-lib'
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam/index.js'
 import { Construct } from 'constructs'
+import { parameterName, type Settings } from '../../nrfcloud/settings'
 import type { PackedLambda } from '../backend.js'
 import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 
@@ -31,17 +34,28 @@ export class WebsocketAPI extends Construct {
 		{
 			lambdaSources,
 			layers,
+			shadowFetchingInterval,
 		}: {
 			lambdaSources: {
 				onConnect: PackedLambda
 				onMessage: PackedLambda
 				onDisconnect: PackedLambda
 				publishToWebsocketClients: PackedLambda
+				prepareDeviceShadow: PackedLambda
+				fetchDeviceShadow: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
+			shadowFetchingInterval: Duration
 		},
 	) {
 		super(parent, 'WebsocketAPI')
+
+		const nrfCloudSetting = (property: keyof Settings) =>
+			Ssm.StringParameter.fromStringParameterName(
+				this,
+				`${property}Parameter`,
+				parameterName(parent.stackName, property),
+			)
 
 		// Event bridge
 		this.eventBus = new Events.EventBus(this, 'eventBus', {})
@@ -53,6 +67,11 @@ export class WebsocketAPI extends Construct {
 				maxReceiveCount: 15,
 				queue: websocketDLQ,
 			},
+		})
+
+		const shadowQueue = new Sqs.Queue(this, 'shadowQueue', {
+			retentionPeriod: shadowFetchingInterval,
+			visibilityTimeout: shadowFetchingInterval,
 		})
 
 		// Databases
@@ -369,11 +388,97 @@ export class WebsocketAPI extends Construct {
 				},
 				inputTemplate: `{
 					"sender": <$.body.sender>,
+					"senderConnectionId": <$.body.senderConnectionId>,
 					"topic": <$.body.topic>,
 					"receivers": <$.body.receivers>,
 					"payload": <$.body.payload>
 				}`,
 			},
+		})
+
+		// Device shadow
+		// prepareDeviceShadow
+		const prepareDeviceShadow = new Lambda.Function(
+			this,
+			'prepareDeviceShadow',
+			{
+				handler: lambdaSources.prepareDeviceShadow.handler,
+				architecture: Lambda.Architecture.ARM_64,
+				runtime: Lambda.Runtime.NODEJS_18_X,
+				timeout: shadowFetchingInterval,
+				memorySize: 1792,
+				code: Lambda.Code.fromAsset(
+					lambdaSources.prepareDeviceShadow.lambdaZipFile,
+				),
+				description: 'Get all active devices to be used to fetch shadow data',
+				environment: {
+					VERSION: this.node.tryGetContext('version'),
+					CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+					CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
+					QUEUE_URL: shadowQueue.queueUrl,
+					LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				},
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						effect: IAM.Effect.ALLOW,
+						resources: [
+							`${this.connectionsTable.tableArn}`,
+							`${this.connectionsTable.tableArn}/*`,
+						],
+						actions: ['dynamodb:PartiQLSelect'],
+					}),
+				],
+				layers: layers,
+			},
+		)
+		this.connectionsTable.grantWriteData(prepareDeviceShadow)
+		shadowQueue.grantSendMessages(prepareDeviceShadow)
+		new LambdaLogGroup(this, 'prepareDeviceShadowLogs', prepareDeviceShadow)
+
+		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
+			handler: lambdaSources.fetchDeviceShadow.handler,
+			architecture: Lambda.Architecture.ARM_64,
+			runtime: Lambda.Runtime.NODEJS_18_X,
+			timeout: shadowFetchingInterval,
+			memorySize: 1792,
+			code: Lambda.Code.fromAsset(
+				lambdaSources.fetchDeviceShadow.lambdaZipFile,
+			),
+			description: `Fetch devices' shadow and publish to websocket`,
+			environment: {
+				VERSION: this.node.tryGetContext('version'),
+				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
+				QUEUE_URL: this.websocketQueue.queueUrl,
+				NRF_CLOUD_ENDPOINT: nrfCloudSetting('apiEndpoint').stringValue,
+				API_KEY: nrfCloudSetting('apiKey').stringValue,
+				LOG_LEVEL: this.node.tryGetContext('logLevel'),
+			},
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					effect: IAM.Effect.ALLOW,
+					resources: [
+						`${this.connectionsTable.tableArn}`,
+						`${this.connectionsTable.tableArn}/*`,
+					],
+					actions: ['dynamodb:PartiQLSelect', 'dynamodb:PartiQLUpdate'],
+				}),
+			],
+			layers: layers,
+		})
+		fetchDeviceShadow.addEventSource(
+			new EventSources.SqsEventSource(shadowQueue, {
+				batchSize: 1, // TONOTE: Using batch size as 1 because this task is time consume
+			}),
+		)
+		this.websocketQueue.grantSendMessages(fetchDeviceShadow)
+		new LambdaLogGroup(this, 'fetchDeviceShadowLogs', fetchDeviceShadow)
+
+		// Scheduler
+		new Events.Rule(this, 'scheduler', {
+			description: `Schedule every minute to fetch devices's shadow`,
+			schedule: Events.Schedule.rate(shadowFetchingInterval),
+			targets: [new EventsTargets.LambdaFunction(prepareDeviceShadow)],
 		})
 	}
 }

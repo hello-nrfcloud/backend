@@ -163,6 +163,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			accountDevicePrivateKey: pk,
 			accountDeviceClientId: `account-${tenantId}`,
 			apiEndpoint: 'https://example.com',
+			apiKey: 'apiKey',
 			mqttEndpoint: await getIoTEndpoint({ iot })(),
 			mqttTopicPrefix: `prod/${tenantId}/`,
 		}

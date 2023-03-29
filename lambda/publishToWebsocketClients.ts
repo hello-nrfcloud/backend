@@ -6,6 +6,7 @@ import { notifyClients } from './notifyClients.js'
 
 export type WebsocketPayload = {
 	sender: string
+	senderConnectionId?: string
 	receivers: string[]
 	payload: Record<string, unknown>
 	topic?: string

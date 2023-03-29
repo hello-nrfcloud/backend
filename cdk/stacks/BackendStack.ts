@@ -1,4 +1,10 @@
-import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
+import {
+	App,
+	CfnOutput,
+	Duration,
+	aws_lambda as Lambda,
+	Stack,
+} from 'aws-cdk-lib'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
@@ -16,12 +22,14 @@ export class BackendStack extends Stack {
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
+			shadowFetchingInterval,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
+			shadowFetchingInterval: number
 		},
 	) {
 		super(parent, STACK_NAME)
@@ -42,6 +50,7 @@ export class BackendStack extends Stack {
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			layers: [baseLayer, powerToolLayer],
+			shadowFetchingInterval: Duration.seconds(shadowFetchingInterval),
 		})
 
 		// const integration = new Integration(this, {

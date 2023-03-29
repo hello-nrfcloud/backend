@@ -5,4 +5,6 @@ type BackendLambdas = {
 	onMessage: PackedLambda
 	onDisconnect: PackedLambda
 	publishToWebsocketClients: PackedLambda
+	prepareDeviceShadow: PackedLambda
+	fetchDeviceShadow: PackedLambda
 }
