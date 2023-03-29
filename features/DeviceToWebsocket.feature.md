@@ -18,7 +18,7 @@ Given There is a device as this JSON
 {
   "id": "nrf-test-device-id",
   "deviceId": "nrf-test-device-id",
-  "secret": "my-secret",
+  "secret": "42.d3adbeef",
   "name": "nrf-test-device-id",
   "subType": "jitp-nordic-hardware",
   "tags": ["temperature", "warehouse-east"],
@@ -35,7 +35,7 @@ Given There is a device as this JSON
 
 ## Verify a device sends a message to nRF Cloud, then I can receive the message via website
 
-Given I connect websocket with code `my-secret`
+Given I connect websocket with code `42.d3adbeef`
 
 When a device with id `nrf-test-device-id` publishes to topic
 `m/d/nrf-test-device-id/d2c` with a message as this JSON

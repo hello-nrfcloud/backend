@@ -11,7 +11,7 @@ Given There is a device as this JSON
 {
   "id": "nrf-test-shadow-device-id",
   "deviceId": "nrf-test-shadow-device-id",
-  "secret": "my-secret-shadow",
+  "secret": "42.d3c4fb4d",
   "name": "nrf-test-shadow-device-id",
   "subType": "jitp-nordic-hardware",
   "tags": ["temperature", "warehouse-east"],
@@ -277,7 +277,7 @@ as this JSON
 
 ## Verify a device sends shadow data to nRF Cloud, then I can receive the message via website
 
-Given I connect websocket with code `my-secret-shadow`
+Given I connect websocket with code `42.d3c4fb4d`
 
 Then wait for `1` minute(s)
 
@@ -346,7 +346,7 @@ Then the response should equal to this JSON
 
 ## Verify I will not receive the device shadow if the version is not updated
 
-Given I connect websocket with code `my-secret-shadow`
+Given I connect websocket with code `42.d3c4fb4d`
 
 And wait for `1` minute(s)
 
