@@ -4,6 +4,7 @@ import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation'
 import type { Settings } from '../nrfcloud/settings'
 import type { BackendLambdas } from './BackendLambdas.js'
 import type { PackedLayer } from './helpers/lambdas/packLayer'
+import type { BridgeImageSettings } from './resources/Integration.js'
 import { BackendStack } from './stacks/BackendStack.js'
 
 export class BackendApp extends App {
@@ -14,6 +15,7 @@ export class BackendApp extends App {
 		mqttBridgeCertificate,
 		caCertificate,
 		shadowFetchingInterval,
+		bridgeImageSettings,
 	}: {
 		lambdaSources: BackendLambdas
 		layer: PackedLayer
@@ -22,6 +24,7 @@ export class BackendApp extends App {
 		mqttBridgeCertificate: CertificateFiles
 		caCertificate: CAFiles
 		shadowFetchingInterval: number
+		bridgeImageSettings: BridgeImageSettings
 	}) {
 		super()
 
@@ -32,6 +35,7 @@ export class BackendApp extends App {
 			mqttBridgeCertificate,
 			caCertificate,
 			shadowFetchingInterval,
+			bridgeImageSettings,
 		})
 	}
 }

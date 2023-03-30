@@ -9,7 +9,10 @@ import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
-import { Integration } from '../resources/Integration.js'
+import {
+	Integration,
+	type BridgeImageSettings,
+} from '../resources/Integration.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { STACK_NAME } from './stackConfig.js'
 
@@ -23,6 +26,7 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			shadowFetchingInterval,
+			bridgeImageSettings,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
@@ -30,6 +34,7 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
 			shadowFetchingInterval: number
+			bridgeImageSettings: BridgeImageSettings
 		},
 	) {
 		super(parent, STACK_NAME)
@@ -53,12 +58,12 @@ export class BackendStack extends Stack {
 			shadowFetchingInterval: Duration.seconds(shadowFetchingInterval),
 		})
 
-		// const integration = new Integration(this, {
 		new Integration(this, {
 			websocketQueue: websocketAPI.websocketQueueMessages,
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
+			bridgeImageSettings,
 		})
 
 		// Outputs
@@ -80,4 +85,7 @@ export type StackOutputs = {
 	devicesTable: string
 	bridgePolicyName: string
 	bridgeCertificatePEM: string
+	bridgeDockerRepositoryName?: string
+	bridgeDockerTag?: string
+	bridgeMosquittoDockerVersion?: string
 }
