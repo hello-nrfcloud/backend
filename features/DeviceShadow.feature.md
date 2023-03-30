@@ -11,7 +11,7 @@ Given There is a device as this JSON
 {
   "id": "nrf-test-shadow-device-id",
   "deviceId": "nrf-test-shadow-device-id",
-  "secret": "42.d3c4fb4d",
+  "code": "42.d3c4fb4d",
   "name": "nrf-test-shadow-device-id",
   "subType": "jitp-nordic-hardware",
   "tags": ["temperature", "warehouse-east"],

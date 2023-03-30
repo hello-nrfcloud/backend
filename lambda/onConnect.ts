@@ -11,11 +11,14 @@ import type {
 	APIGatewayProxyWebsocketEventV2,
 } from 'aws-lambda'
 import { logger } from './logger.js'
-const { TableName, EventBusName, DevicesTableName } = fromEnv({
-	TableName: 'CONNECTIONS_TABLE_NAME',
-	DevicesTableName: 'DEVICES_TABLE_NAME',
-	EventBusName: 'EVENTBUS_NAME',
-})(process.env)
+const { TableName, EventBusName, DevicesTableName, DevicesIndexName } = fromEnv(
+	{
+		TableName: 'CONNECTIONS_TABLE_NAME',
+		DevicesTableName: 'DEVICES_TABLE_NAME',
+		DevicesIndexName: 'DEVICES_INDEX_NAME',
+		EventBusName: 'EVENTBUS_NAME',
+	},
+)(process.env)
 
 const log = logger('connect')
 const db = new DynamoDBClient({})
@@ -56,21 +59,20 @@ export const handler = async (
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.info('onConnect event', { event })
 
-	// TODO: Validate token against DB
 	const code = event.queryStringParameters?.code
 	if (code === undefined) {
 		log.error(`Code cannot be empty`)
 		return {
-			statusCode: 401,
+			statusCode: 403, // Forbidden error
 		}
 	}
 	const res = await db.send(
 		new QueryCommand({
 			TableName: DevicesTableName,
-			IndexName: 'secretIndex',
-			KeyConditionExpression: 'secret = :secret',
+			IndexName: DevicesIndexName,
+			KeyConditionExpression: 'code = :code',
 			ExpressionAttributeValues: {
-				':secret': {
+				':code': {
 					S: `${code}`,
 				},
 			},
@@ -81,11 +83,11 @@ export const handler = async (
 	if (device === null) {
 		log.error(`DeviceId is not found with`, { code })
 		return {
-			statusCode: 401,
+			statusCode: 403, // Forbidden error
 		}
 	}
 
-	const { secret, ...rest } = device
+	const { code: _, ...rest } = device
 	await publishToWebsocket({
 		sender: device.deviceId,
 		receivers: [device.deviceId],

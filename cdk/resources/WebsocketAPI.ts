@@ -24,7 +24,7 @@ export class WebsocketAPI extends Construct {
 	public readonly connectionsTable: DynamoDB.Table
 	public readonly connectionsTableIndexName = 'deviceIdIndex'
 	public readonly devicesTable: DynamoDB.Table
-	public readonly devicesTableIndexName = 'secretIndex'
+	public readonly devicesTableIndexName = 'codeIndex'
 	public readonly eventBus: Events.IEventBus
 	public readonly websocketQueue: Sqs.Queue
 	public readonly websocketAPIArn: string
@@ -103,7 +103,7 @@ export class WebsocketAPI extends Construct {
 		this.devicesTable.addGlobalSecondaryIndex({
 			indexName: this.devicesTableIndexName,
 			partitionKey: {
-				name: 'secret',
+				name: 'code',
 				type: DynamoDB.AttributeType.STRING,
 			},
 			sortKey: {
@@ -126,6 +126,7 @@ export class WebsocketAPI extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				DEVICES_TABLE_NAME: this.devicesTable.tableName,
+				DEVICES_INDEX_NAME: this.devicesTableIndexName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 			},
