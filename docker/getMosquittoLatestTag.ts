@@ -1,4 +1,4 @@
-import { compareSemanticVersions } from './compareSematicVerions.js'
+import { compareSemanticVersions } from './compareSemanticVersions.js'
 import { getAllImageTags } from './getAllImageTags.js'
 
 const mosquittoImageName = 'eclipse-mosquitto'

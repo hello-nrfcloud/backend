@@ -1,7 +1,7 @@
-import { compareSemanticVersions } from './compareSematicVerions.js'
+import { compareSemanticVersions } from './compareSemanticVersions.js'
 
 describe('compareSemanticVersions', () => {
-	it('should sort sematic version', () => {
+	it('should sort semantic versions', () => {
 		const versions = ['1', '1.0.0', '1.0.1', '0.0.1']
 
 		expect(versions.sort(compareSemanticVersions)).toEqual([
