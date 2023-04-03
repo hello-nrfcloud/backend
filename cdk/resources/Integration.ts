@@ -156,6 +156,19 @@ export class Integration extends Construct {
 			repositoryUrl.pathname.replace(/^\//, ''),
 		)
 
+		const repositoryUrl = new URL(
+			bridgeImageSettings.repositoryUri.replace(
+				/^(?<protocol>https?:\/\/)?(?<rest>.+)/,
+				'https://$2',
+			),
+		)
+		this.bridgeImageTag = bridgeImageSettings.imageTag
+		this.bridgeRepository = ECR.Repository.fromRepositoryName(
+			this,
+			'repo',
+			repositoryUrl.pathname.replace(/^\//, ''),
+		)
+
 		const nrfCloudSetting = (property: keyof nRFCloudSettings) =>
 			StringParameter.fromStringParameterName(
 				this,
