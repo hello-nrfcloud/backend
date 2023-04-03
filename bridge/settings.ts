@@ -6,8 +6,8 @@ import {
 } from '../util/settings.js'
 
 export type Settings = {
-	repositoryName: string
-	bridgeVersion: string
+	imageTag: string
+	repositoryUri: string
 }
 
 const scope = 'context'
@@ -28,15 +28,14 @@ export const getSettings = ({
 	})
 	return async (): Promise<Settings> => {
 		const p = await settingsReader()
-		const { bridgeVersion, repositoryName } = p
-		if (bridgeVersion === undefined)
-			throw new Error(`No bridge version configured!`)
-		if (repositoryName === undefined)
-			throw new Error(`No repository name configured!`)
+		const { imageTag, repositoryUri } = p
+		if (imageTag === undefined) throw new Error(`No image tag configured!`)
+		if (repositoryUri === undefined)
+			throw new Error(`No repository uri configured!`)
 
 		return {
-			bridgeVersion,
-			repositoryName,
+			imageTag,
+			repositoryUri,
 		}
 	}
 }

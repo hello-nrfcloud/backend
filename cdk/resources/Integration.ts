@@ -8,13 +8,14 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import type { IVpc } from 'aws-cdk-lib/aws-ec2'
-import { DockerImageAsset, Platform } from 'aws-cdk-lib/aws-ecr-assets'
-import { ContainerImage, LogDriver, type ICluster } from 'aws-cdk-lib/aws-ecs'
+import type { IRepository } from 'aws-cdk-lib/aws-ecr'
+import { LogDriver, type ICluster } from 'aws-cdk-lib/aws-ecs'
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 import { Construct } from 'constructs'
 import { readFileSync } from 'node:fs'
+import { URL } from 'node:url'
 import { type CAFiles } from '../../bridge/caLocation'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation'
 import { type Settings as BridgeSettings } from '../../bridge/settings'
@@ -24,18 +25,12 @@ import {
 } from '../../nrfcloud/settings'
 import { settingsPath } from '../../util/settings'
 
-type Optional<T> = {
-	[P in keyof T]?: T[P]
-}
-
-export type BridgeImageSettings = {
-	mosquittoVersion: string
-} & Optional<BridgeSettings>
+export type BridgeImageSettings = BridgeSettings
 
 export class Integration extends Construct {
 	public readonly bridgeCertificate: IoT.CfnCertificate
-	public readonly docker?: DockerImageAsset
-	public readonly mosquittoVersion?: string
+	public readonly bridgeRepository: IRepository
+	public readonly bridgeImageTag: string
 	public constructor(
 		parent: Stack,
 		{
@@ -153,6 +148,19 @@ export class Integration extends Construct {
 
 		const mqttBridgeTask = new ECS.FargateTaskDefinition(this, 'mqttBridge')
 
+		const repositoryUrl = new URL(
+			bridgeImageSettings.repositoryUri.replace(
+				/^(?<protocol>https?:\/\/)?(?<rest>.+)/,
+				'https://$2',
+			),
+		)
+		this.bridgeImageTag = bridgeImageSettings.imageTag
+		this.bridgeRepository = ECR.Repository.fromRepositoryName(
+			this,
+			'repo',
+			repositoryUrl.pathname.replace(/^\//, ''),
+		)
+
 		const nrfCloudSetting = (property: keyof nRFCloudSettings) =>
 			StringParameter.fromStringParameterName(
 				this,
@@ -225,31 +233,6 @@ export class Integration extends Construct {
 			environment.MOSQUITTO__SECURITY__ALLOW_ANONYMOUS = `true`
 		}
 
-		let containerImage: ContainerImage
-		if (
-			bridgeImageSettings.bridgeVersion === undefined ||
-			bridgeImageSettings.bridgeVersion !== bridgeImageSettings.mosquittoVersion
-		) {
-			this.docker = new DockerImageAsset(this, 'docker', {
-				directory: './cdk/resources/containers/bridge',
-				buildArgs: {
-					MOSQUITTO_VERSION: bridgeImageSettings.mosquittoVersion,
-				},
-				platform: Platform.LINUX_AMD64,
-			})
-			this.mosquittoVersion = bridgeImageSettings.mosquittoVersion
-			containerImage = ECS.ContainerImage.fromDockerImageAsset(this.docker)
-		} else {
-			containerImage = ECS.ContainerImage.fromEcrRepository(
-				ECR.Repository.fromRepositoryName(
-					this,
-					'repo',
-					bridgeImageSettings.repositoryName ?? '',
-				),
-				bridgeImageSettings.bridgeVersion,
-			)
-		}
-
 		mqttBridgeTask.addContainer('mqttBridgeContainer', {
 			cpu: 256,
 			memoryLimitMiB: 512,
@@ -263,7 +246,10 @@ export class Integration extends Construct {
 					hostPort: 1883,
 				},
 			],
-			image: containerImage,
+			image: ECS.ContainerImage.fromEcrRepository(
+				this.bridgeRepository,
+				this.bridgeImageTag,
+			),
 			secrets: {
 				ENV__FILE__NRFCLOUD_CLIENT_CRT: nrfCloudSettingSecret(
 					'accountDeviceClientCert',

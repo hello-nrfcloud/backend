@@ -73,20 +73,6 @@ jobs:
       - name: Run End-to-End Tests
         run: npm run test:e2e
 
-      - name: Save success docker image version
-        run: |
-          OUTPUTS=`aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query 'Stacks[*].Outputs'`
-          DOCKER_TAG=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeDockerTag").OutputValue'`
-          REPOSITORY_NAME=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeDockerRepositoryName").OutputValue'`
-          MOSQUITTO_VERSION=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeMosquittoDockerVersion").OutputValue'`
-          if [[ -n $DOCKER_TAG ]]; then
-            MANIFEST=`aws ecr batch-get-image --repository-name ${REPOSITORY_NAME} --image-ids imageTag=${DOCKER_TAG} | jq -r '.images[].imageManifest'`
-            aws ecr put-image --repository-name ${REPOSITORY_NAME} --image-tag ${MOSQUITTO_VERSION} --image-manifest "${MANIFEST}" > /dev/null
-
-            ./cli.sh configure context stack repositoryName ${REPOSITORY_NAME}
-            ./cli.sh configure context stack bridgeVersion ${MOSQUITTO_VERSION}
-          fi
-
       - name: Clean up End-to-End test resources
         if: always()
         run: |

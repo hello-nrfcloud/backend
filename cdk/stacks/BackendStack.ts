@@ -85,7 +85,6 @@ export type StackOutputs = {
 	devicesTable: string
 	bridgePolicyName: string
 	bridgeCertificatePEM: string
-	bridgeDockerRepositoryName?: string
-	bridgeDockerTag?: string
-	bridgeMosquittoDockerVersion?: string
+	bridgeRepositoryURI: string
+	bridgeImageTag: string
 }
