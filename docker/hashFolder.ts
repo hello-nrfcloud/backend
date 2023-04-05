@@ -50,7 +50,7 @@ export const hashFolder = async (path: string): Promise<string> => {
 			a[0].toLocaleLowerCase().localeCompare(b[0].toLocaleLowerCase()),
 		)
 		.forEach(([file, hash]) => {
-			hashMD5.update(`${hash} ${file}`)
+			hashMD5.update(`${hash} ${file.replace(path, '')}`)
 		})
 
 	return hashMD5.digest('hex')

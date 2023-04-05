@@ -1,10 +1,10 @@
 import path from 'node:path'
 import { hashFolder } from './hashFolder'
 
-describe.skip('hashFolder', () => {
+describe('hashFolder', () => {
 	test('should calculate correct MD5 hash value for folder with files', async () => {
 		const folderPath = path.join(process.cwd(), 'docker', 'test-folder')
-		const expectedMd5 = '64c0ce0d8eb5e2073bf63f26f4283aca'
+		const expectedMd5 = '2446ef9dbaecdce8dbf59fdfb68b0f81'
 
 		const actualMd5 = await hashFolder(folderPath)
 
