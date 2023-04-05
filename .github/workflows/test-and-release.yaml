@@ -22,6 +22,10 @@ jobs:
 
     timeout-minutes: 30
 
+    outputs:
+      image_tag: ${{ steps.stack_outputs.outputs.image_tag }}
+      repository_name: ${{ steps.stack_outputs.outputs.repository_name }}
+
     steps:
       - uses: actions/checkout@v3
 
@@ -73,6 +77,16 @@ jobs:
       - name: Run End-to-End Tests
         run: npm run test:e2e
 
+      - name: Save stack outputs
+        id: stack_outputs
+        run: |
+          OUTPUTS=`aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query 'Stacks[*].Outputs'`
+          IMAGE_TAG=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeImageTag").OutputValue'`
+          REPOSITORY_URI=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeRepositoryURI").OutputValue'`
+          REPOSITORY_NAME=`echo "$REPOSITORY_URI" | sed 's/^.*amazonaws\.com\///g'`
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "repository_name=$REPOSITORY_NAME" >> $GITHUB_OUTPUT
+
       - name: Clean up End-to-End test resources
         if: always()
         run: |
@@ -108,3 +122,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          role-session-name: github-action-nrf-guide-backend
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Tag mqtt bridge image version
+        run: |
+          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          # Remove exiting image tag version if any
+          aws ecr batch-delete-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=$LATEST_TAG > /dev/null
+          MANIFEST=$( aws ecr batch-get-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=${{ needs.e2e-tests.outputs.image_tag }} | jq -r --join-output '.images[].imageManifest' )
+          aws ecr put-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-tag $LATEST_TAG --image-manifest "$MANIFEST" > /dev/null
