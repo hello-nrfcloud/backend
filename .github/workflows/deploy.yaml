@@ -1,0 +1,63 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - "feature/docker-cd"
+    tags:
+      - "vt*.*.*"
+      - "v*.*.*"
+
+permissions:
+  id-token: write
+
+env:
+  STACK_NAME: nrf-guide-deploy
+  AWS_REGION: eu-north-1
+  AWS_ROLE: arn:aws:iam::752072828702:role/GithubAction_for_nRF_Guide_Backend
+  CI: 1
+  FORCE_COLOR: 3
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+
+      - name: Keep npm cache around to speed up installs
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: build-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          role-session-name: github-action-nrf-guide-backend
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get tag name
+        run: |
+          CURRENT_TAG=`echo ${{ github.ref }} | sed 's/refs\/tags\///'`
+          echo "Deploy version ${CURRENT_TAG}"
+          echo "RELEASE_IMAGE_TAG=${CURRENT_TAG}" >> $GITHUB_ENV
+
+      # During e2e test the MQTT bridge will connect to the AWS IoT broker
+      - name: Initial solution stack
+        run: |
+          CURRENT_STACK_NAME=`aws cloudformation describe-stacks --stack-name ${STACK_NAME} | jq -r '.Stacks[].StackName'` >> /dev/null 2>&1
+          if [[ -z $CURRENT_STACK_NAME ]]; then
+            ./cli.sh fake-nrfcloud-account-device
+          fi
+
+      - name: Deploy solution stack
+        run: npx cdk deploy --require-approval never

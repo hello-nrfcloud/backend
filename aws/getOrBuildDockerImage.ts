@@ -2,22 +2,51 @@ import {
 	DescribeImagesCommand,
 	ECRClient,
 	GetAuthorizationTokenCommand,
-	ImageNotFoundException,
 } from '@aws-sdk/client-ecr'
 import type { logFn } from '../cli/log'
 import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag'
 import { hashFolder } from '../docker/hashFolder'
+import { hasValues } from '../util/hasValues'
+import { isFirstElementInArrayNotEmpty } from '../util/isFirstElementInArrayNotEmpty'
 import { run } from '../util/run'
+
+const imageTagOfRepositoryExists =
+	({ ecr, repositoryName }: { repositoryName: string; ecr: ECRClient }) =>
+	async (imageTag: string): Promise<boolean> => {
+		try {
+			const result = await ecr.send(
+				new DescribeImagesCommand({
+					repositoryName,
+					imageIds: [{ imageTag }],
+				}),
+			)
+
+			if (
+				hasValues(result, 'imageDetails') &&
+				isFirstElementInArrayNotEmpty(result.imageDetails, 'imageTags')
+			) {
+				return result.imageDetails[0].imageTags.includes(imageTag)
+			}
+
+			return false
+		} catch (error) {
+			console.warn(
+				`Error when checking image tag ${imageTag} in ${repositoryName}`,
+				error,
+			)
+			return false
+		}
+	}
 
 export const getOrBuildDockerImage =
 	({
 		ecr,
+		releaseImageTag,
 		debug,
-		error: logError,
 	}: {
 		ecr: ECRClient
+		releaseImageTag?: string
 		debug?: logFn
-		error?: logFn
 	}) =>
 	async ({
 		repositoryUri,
@@ -28,85 +57,90 @@ export const getOrBuildDockerImage =
 		repositoryName: string
 		dockerFilePath: string
 	}): Promise<{ imageTag: string }> => {
+		const imageTagExists = imageTagOfRepositoryExists({ ecr, repositoryName })
+
+		// Deployment phase
+		if (releaseImageTag !== undefined) {
+			debug?.(
+				`Checking release image tag: ${releaseImageTag} in ${repositoryName} repository`,
+			)
+			const exists = await imageTagExists(releaseImageTag)
+			if (exists === false)
+				throw new Error(
+					`Release image tag ${releaseImageTag} is not found in ${repositoryName} repository`,
+				)
+
+			return { imageTag: releaseImageTag }
+		}
+
+		// During develop phase
 		const hash = await hashFolder(dockerFilePath)
 		const baseVersion = await getMosquittoLatestTag()
 		const imageTag = `${hash}_${baseVersion}`
 
-		try {
-			debug?.(`Checking image tag: ${imageTag}`)
-			await ecr.send(
-				new DescribeImagesCommand({
-					repositoryName,
-					imageIds: [{ imageTag }],
-				}),
-			)
-
+		debug?.(`Checking image tag: ${imageTag}`)
+		const exists = await imageTagExists(imageTag)
+		if (exists === true) {
 			debug?.(`Image tag ${imageTag} exists on ${repositoryUri}`)
 			return { imageTag }
-		} catch (error) {
-			if (error instanceof ImageNotFoundException) {
-				debug?.(`Image tag ${imageTag} does not exist on ${repositoryUri}`)
+		} else {
+			debug?.(`Image tag ${imageTag} does not exist on ${repositoryUri}`)
+			// Create a docker image
+			debug?.(`Building docker image with tag ${imageTag}`)
+			await run({
+				command: 'docker',
+				args: [
+					'build',
+					'--platform',
+					'linux/amd64',
+					'--build-arg',
+					`MOSQUITTO_VERSION=${baseVersion}`,
+					'-t',
+					imageTag,
+					dockerFilePath,
+				],
+			})
 
-				// Create a docker image
-				debug?.(`Building docker image with tag ${imageTag}`)
+			const tokenResult = await ecr.send(new GetAuthorizationTokenCommand({}))
+			if (
+				hasValues(tokenResult, 'authorizationData') &&
+				isFirstElementInArrayNotEmpty(
+					tokenResult.authorizationData,
+					'authorizationToken',
+				)
+			) {
+				const authToken = Buffer.from(
+					tokenResult.authorizationData[0].authorizationToken,
+					'base64',
+				)
+					.toString()
+					.split(':')
+
+				debug?.(`Login to ECR`)
 				await run({
 					command: 'docker',
 					args: [
-						'build',
-						'--platform',
-						'linux/amd64',
-						'--build-arg',
-						`MOSQUITTO_VERSION=${baseVersion}`,
-						'-t',
-						imageTag,
-						dockerFilePath,
+						'login',
+						'--username',
+						authToken[0] ?? '',
+						'--password',
+						authToken[1] ?? '',
+						repositoryUri,
 					],
 				})
 
-				const tokenResult = await ecr.send(new GetAuthorizationTokenCommand({}))
+				await run({
+					command: 'docker',
+					args: ['tag', `${imageTag}:latest`, `${repositoryUri}:${imageTag}`],
+				})
 
-				if (
-					tokenResult.authorizationData !== undefined &&
-					tokenResult.authorizationData.length > 0 &&
-					typeof tokenResult.authorizationData[0]?.authorizationToken ===
-						'string'
-				) {
-					const authToken = Buffer.from(
-						tokenResult.authorizationData[0].authorizationToken,
-						'base64',
-					)
-						.toString()
-						.split(':')
-
-					debug?.(`Login to ECR`)
-					await run({
-						command: 'docker',
-						args: [
-							'login',
-							'--username',
-							authToken[0] ?? '',
-							'--password',
-							authToken[1] ?? '',
-							repositoryUri,
-						],
-					})
-
-					await run({
-						command: 'docker',
-						args: ['tag', `${imageTag}:latest`, `${repositoryUri}:${imageTag}`],
-					})
-
-					debug?.(`Push local image to ECR`)
-					await run({
-						command: 'docker',
-						args: ['push', `${repositoryUri}:${imageTag}`],
-					})
-				}
-
-				return { imageTag }
-			} else {
-				logError?.(error)
-				throw error
+				debug?.(`Push local image to ECR`)
+				await run({
+					command: 'docker',
+					args: ['push', `${repositoryUri}:${imageTag}`],
+				})
 			}
+
+			return { imageTag }
 		}
 	}

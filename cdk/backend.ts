@@ -44,6 +44,7 @@ const caCertificate = await ensureCA({
 const repositoryUri = await getOrCreateRepository({ ecr })(ECR_NAME)
 const { imageTag } = await getOrBuildDockerImage({
 	ecr,
+	releaseImageTag: process.env.RELEASE_IMAGE_TAG,
 	debug: debug('Docker image'),
 })({
 	repositoryUri,
