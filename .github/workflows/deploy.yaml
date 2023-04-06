@@ -10,6 +10,7 @@ on:
 
 permissions:
   id-token: write
+  contents: write
 
 env:
   STACK_NAME: nrf-guide-deploy
@@ -19,7 +20,7 @@ env:
   FORCE_COLOR: 3
 
 jobs:
-  release:
+  deploy:
     runs-on: ubuntu-22.04
 
     steps:
