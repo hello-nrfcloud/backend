@@ -2,11 +2,8 @@ name: Deployment
 
 on:
   push:
-    branches:
-      - "feature/docker-cd"
     tags:
       - "vt*.*.*"
-      - "v*.*.*"
 
 permissions:
   id-token: write
