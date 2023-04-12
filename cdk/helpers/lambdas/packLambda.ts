@@ -1,8 +1,26 @@
 import swc from '@swc/core'
 import { createWriteStream } from 'node:fs'
 import { parse } from 'path'
-import * as yazl from 'yazl'
+import yazl from 'yazl'
+import { commonParent } from './commonParent'
 import { findDependencies } from './findDependencies'
+
+export type PackedLambda = { zipFile: string; handler: string }
+
+const removeCommonAncestor =
+	(parentDir: string) =>
+	(file: string): string => {
+		const p = parse(file)
+		const jsFileName = [
+			p.dir.replace(parentDir.slice(0, parentDir.length - 1), ''),
+			`${p.name}.js`,
+		]
+			.join('/')
+			// Replace leading slash
+			.replace(/^\//, '')
+
+		return jsFileName
+	}
 
 /**
  * In the bundle we only include code that's not in the layer.
@@ -17,10 +35,12 @@ export const packLambda = async ({
 	zipFile: string
 	debug?: (label: string, info: string) => void
 	progress?: (label: string, info: string) => void
-}): Promise<void> => {
+}): Promise<{ handler: string }> => {
 	const lambdaFiles = [sourceFile, ...findDependencies(sourceFile)]
 
 	const zipfile = new yazl.ZipFile()
+
+	const stripCommon = removeCommonAncestor(commonParent(lambdaFiles))
 
 	for (const file of lambdaFiles) {
 		const compiled = (
@@ -31,7 +51,7 @@ export const packLambda = async ({
 			})
 		).code
 		debug?.(`compiled`, compiled)
-		const jsFileName = `${parse(file).name}.js`
+		const jsFileName = stripCommon(file)
 		zipfile.addBuffer(Buffer.from(compiled, 'utf-8'), jsFileName)
 		progress?.(`added`, jsFileName)
 	}
@@ -55,4 +75,6 @@ export const packLambda = async ({
 		zipfile.end()
 	})
 	progress?.(`written`, zipFile)
+
+	return { handler: stripCommon(sourceFile) }
 }

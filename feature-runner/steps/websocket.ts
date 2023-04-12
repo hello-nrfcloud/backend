@@ -19,6 +19,7 @@ const wsConnect = async ({
 	step,
 	log: {
 		step: { progress },
+		feature: { progress: featureProgress },
 	},
 	context,
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
@@ -35,6 +36,7 @@ const wsConnect = async ({
 		wsClients[wsURL] = createWebsocketClient({
 			id: match.groups?.code ?? randomUUID(),
 			url: wsURL,
+			debug: (...args) => featureProgress('[ws]', ...args),
 		})
 		await wsClients[wsURL]?.connect()
 	}

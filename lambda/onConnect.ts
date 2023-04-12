@@ -10,6 +10,7 @@ import type {
 	APIGatewayProxyStructuredResultV2,
 	APIGatewayProxyWebsocketEventV2,
 } from 'aws-lambda'
+import { Context } from '../protocol/Context.js'
 import { logger } from './logger.js'
 const { TableName, EventBusName, DevicesTableName, DevicesIndexName } = fromEnv(
 	{
@@ -25,12 +26,11 @@ const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
 const publishToWebsocket = async ({
-	sender,
+	deviceId,
 	receivers,
 	payload,
-	topic,
 }: {
-	sender: string
+	deviceId: string
 	receivers: string[]
 	topic?: string
 	payload: Record<string, any>
@@ -40,12 +40,12 @@ const publishToWebsocket = async ({
 			{
 				EventBusName: EventBusName,
 				Source: 'thingy.ws',
-				DetailType: 'message',
+				DetailType: 'connect',
 				Detail: JSON.stringify({
-					sender,
+					'@context': Context.Success,
+					deviceId,
 					receivers,
 					payload,
-					topic,
 				}),
 			},
 		],
@@ -57,7 +57,7 @@ export const handler = async (
 		queryStringParameters?: Record<string, any>
 	},
 ): Promise<APIGatewayProxyStructuredResultV2> => {
-	log.info('onConnect event', { event })
+	log.debug('onConnect event', { event })
 
 	const code = event.queryStringParameters?.code
 	if (code === undefined) {
@@ -88,10 +88,15 @@ export const handler = async (
 	}
 
 	const { code: _, ...rest } = device
-	await publishToWebsocket({
-		sender: device.deviceId,
+	log.debug('websocket message', {
+		context: Context.Success,
+		deviceId: device.deviceId,
 		receivers: [device.deviceId],
-		topic: 'connection',
+		payload: rest,
+	})
+	await publishToWebsocket({
+		deviceId: device.deviceId,
+		receivers: [device.deviceId],
 		payload: rest,
 	})
 

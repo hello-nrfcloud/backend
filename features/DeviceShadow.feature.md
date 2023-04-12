@@ -1,7 +1,7 @@
 # Device Shadow
 
-> As the author of a software component  
-> I want to verify that I can connect websocket and get device shadow
+> After connecting to the websocket with a device code, the device shadow is
+> returned
 
 ## Background
 
@@ -285,8 +285,8 @@ Then the response should equal to this JSON
 
 ```json
 {
-  "sender": "nrf-test-shadow-device-id",
-  "topic": "data/m/d/nrf-test-shadow-device-id/d2c",
+  "@context": "https://github.com/bifravst/nrf.guide-backend/device-shadow",
+  "deviceId": "nrf-test-shadow-device-id",
   "payload": {
     "state": {
       "reported": {

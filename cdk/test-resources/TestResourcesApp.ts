@@ -1,6 +1,6 @@
 import { App } from 'aws-cdk-lib'
-import type { PackedLambda } from '../backend'
-import type { PackedLayer } from '../packLayer.js'
+import type { PackedLambda } from '../helpers/lambdas/packLambda'
+import type { PackedLayer } from '../helpers/lambdas/packLayer'
 import { TestResourcesStack } from './TestResourcesStack.js'
 
 export class TestResources extends App {

@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { runFolder } from '@nordicsemiconductor/bdd-markdown'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
+import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
@@ -38,7 +39,6 @@ const tenantId = randomUUID()
 export type World = {
 	websocketUri: string
 	devicesTable: string
-	websocketQueueUri: string
 	wsClient?: WebSocketClient
 	tenantId: string
 	responsesTableName: string
@@ -51,9 +51,34 @@ const accountDeviceSettings = await getSettings({
 })()
 const db = new DynamoDBClient({})
 
+const print = (arg: unknown) =>
+	typeof arg === 'object' ? JSON.stringify(arg) : arg
+
 const runner = await runFolder<World>({
 	folder: path.join(process.cwd(), 'features'),
 	name: 'nRF guide backend',
+	logObserver: {
+		onDebug: (info, ...args) =>
+			console.error(
+				chalk.magenta(info.context.keyword),
+				...args.map((arg) => chalk.cyan(print(arg))),
+			),
+		onError: (info, ...args) =>
+			console.error(
+				chalk.magenta(info.context.keyword),
+				...args.map((arg) => chalk.red(print(arg))),
+			),
+		onInfo: (info, ...args) =>
+			console.error(
+				chalk.magenta(info.context.keyword),
+				...args.map((arg) => chalk.green(print(arg))),
+			),
+		onProgress: (info, ...args) =>
+			console.error(
+				chalk.magenta(info.context.keyword),
+				...args.map((arg) => chalk.yellow(print(arg))),
+			),
+	},
 })
 
 const cleaners: (() => Promise<void>)[] = []
@@ -70,7 +95,6 @@ runner
 const res = await runner.run({
 	websocketUri: config.webSocketURI,
 	devicesTable: config.devicesTable,
-	websocketQueueUri: config.webSocketQueueURI,
 	tenantId,
 	responsesTableName: testConfig.responsesTableName,
 	requestsTableName: testConfig.requestsTableName,
@@ -78,6 +102,9 @@ const res = await runner.run({
 
 await Promise.all(cleaners.map(async (fn) => fn()))
 
-console.log(JSON.stringify(res, null, 2))
+process.stdout.write(JSON.stringify(res, null, 2))
 
-if (!res.ok) process.exit(1)
+if (!res.ok) {
+	console.error(chalk.red('Tests failed'))
+	process.exit(1)
+}

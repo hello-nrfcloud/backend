@@ -29,7 +29,7 @@ export const notifyClients =
 		apiGwManagementClient: ApiGatewayManagementApiClient
 	}) =>
 	async (event: WebsocketEvent, deviceIds?: string[]): Promise<void> => {
-		// TONOTE:: If topic is `connection`, we will send data to the sender (connection id), not device id because it is connection data
+		// TONOTE:: If context is Context.Success, we will send data to the sender (connection id), not device id because it is connection data
 		const { senderConnectionId, ...rest } = event
 		const connectionIds: string[] =
 			senderConnectionId !== undefined && senderConnectionId !== ''

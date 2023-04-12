@@ -59,7 +59,7 @@ associates with the same device id. The data format is
 
 ```json
 {
-  "sender": <deviceId>,
+  "deviceId": <deviceId>,
   "topic": data/m/d/<deviceId>/<schema>,
   "payload": <mqttPayload>
 }
@@ -72,7 +72,7 @@ associates with the same device id. The data format is
 
 ```json
 {
-  "sender": "nrf-350457794611739",
+  "deviceId": "nrf-350457794611739",
   "topic": "data/m/d/nrf-350457794611739/c2d",
   "payload": {
     "appId": "GROUND_FIX",
@@ -94,7 +94,7 @@ SQS. The format is
 
 ```json
 {
-  "sender": <deviceId>,
+  "deviceId": <deviceId>,
 	"receivers": <deviceId[]>,
 	"payload": <payload>,
   "meta": <meta>

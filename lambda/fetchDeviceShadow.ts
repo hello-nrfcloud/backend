@@ -88,9 +88,8 @@ export const handler = async (event: DeviceShadowEvent): Promise<void> => {
 				state: { reported },
 			} = shadow
 			const body = {
-				sender: shadow.id,
+				deviceId: shadow.id,
 				receivers: [shadow.id],
-				topic: `data/m/d/${shadow.id}/d2c`,
 				payload: { state: { reported } },
 			}
 

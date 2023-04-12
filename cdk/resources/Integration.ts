@@ -274,7 +274,7 @@ export class Integration extends Construct {
 				sql: `
 					select
 						* as payload,
-						topic(4) as sender,
+						topic(4) as deviceId,
 						[topic(4)] as receivers,
 						topic() as topic,
 						timestamp() as timestamp

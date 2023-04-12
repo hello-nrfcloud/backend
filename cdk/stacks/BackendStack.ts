@@ -8,7 +8,7 @@ import {
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
-import type { PackedLayer } from '../packLayer.js'
+import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { Integration } from '../resources/Integration.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { STACK_NAME } from './stackConfig.js'
@@ -55,7 +55,7 @@ export class BackendStack extends Stack {
 
 		// const integration = new Integration(this, {
 		new Integration(this, {
-			websocketQueue: websocketAPI.websocketQueue,
+			websocketQueue: websocketAPI.websocketQueueMessages,
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
@@ -72,19 +72,12 @@ export class BackendStack extends Stack {
 			description: 'Device table name',
 			value: websocketAPI.devicesTable.tableName,
 		})
-		new CfnOutput(this, 'webSocketQueueURI', {
-			exportName: `${this.stackName}:webSocketQueueURI`,
-			description:
-				'SQS queue url in which used to publish to websocket clients',
-			value: websocketAPI.websocketQueue.queueUrl,
-		})
 	}
 }
 
 export type StackOutputs = {
 	webSocketURI: string
 	devicesTable: string
-	webSocketQueueURI: string
 	bridgePolicyName: string
 	bridgeCertificatePEM: string
 }

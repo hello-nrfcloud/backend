@@ -1,4 +1,5 @@
 import WebSocket from 'ws'
+import { Context } from '../../protocol/Context'
 
 export type WebSocketClient = {
 	connect: () => Promise<any>
@@ -46,9 +47,11 @@ const defer = (): ReturnDefer<any> => {
 export const createWebsocketClient = ({
 	id,
 	url,
+	debug,
 }: {
 	id: string
 	url: string
+	debug?: (...args: string[]) => void
 }): WebSocketClient => {
 	if (clients[id] === undefined) {
 		const client = new WebSocket(url)
@@ -68,8 +71,8 @@ export const createWebsocketClient = ({
 			})
 			.on('message', async (msg) => {
 				const message = JSON.parse(msg.toString())
-				// console.log(`${id} <<`, JSON.stringify(message, null, 2))
-				if (message.topic === 'connection') {
+				debug?.(msg.toString())
+				if (message['@context'] === Context.Success) {
 					onConnectMessageDeferred.resolve(message)
 				} else {
 					messages.push(message)

@@ -1,8 +1,7 @@
 # Device Info
 
-> As the author of a software component  
-> I want to verify that I can connect websocket with valid code and get device
-> info
+> After connecting to the websocket with a device code, the device info is
+> returned
 
 ## Background
 
@@ -35,8 +34,8 @@ Then the connection response should equal to this JSON
 
 ```json
 {
-  "sender": "nrf-test-device-id",
-  "topic": "connection",
+  "@context": "https://github.com/bifravst/nrf.guide-backend/websocket-connection-success",
+  "deviceId": "nrf-test-device-id",
   "payload": {
     "id": "nrf-test-device-id",
     "deviceId": "nrf-test-device-id",

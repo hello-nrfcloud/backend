@@ -22,12 +22,12 @@ const eventBus = new EventBridge({})
 const ecs = new ECSClient({})
 
 const publishToWebsocket = async ({
-	sender,
+	deviceId,
 	receivers,
 	payload,
 	topic,
 }: {
-	sender: string
+	deviceId: string
 	receivers: string[]
 	topic?: string
 	payload: Record<string, any>
@@ -39,7 +39,7 @@ const publishToWebsocket = async ({
 				Source: 'thingy.ws',
 				DetailType: 'message',
 				Detail: JSON.stringify({
-					sender,
+					deviceId,
 					receivers,
 					payload,
 					topic,
@@ -133,7 +133,7 @@ export const handler = async (
 	}
 
 	await publishToWebsocket({
-		sender: deviceId,
+		deviceId,
 		receivers,
 		payload,
 		topic: `action:${action}`,

@@ -1,6 +1,6 @@
 import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
-import type { PackedLambda } from '../backend.js'
-import type { PackedLayer } from '../packLayer.js'
+import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
+import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { TEST_RESOURCES_STACK_NAME } from '../stacks/stackConfig.js'
 import { HttpApiMock } from './HttpApiMock.js'
 

@@ -179,6 +179,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				Name: fakeTenantParameter,
 				Value: tenantId,
 				Type: 'String',
+				Overwrite: true,
 			}),
 		)
 	},

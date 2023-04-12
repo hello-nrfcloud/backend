@@ -16,7 +16,8 @@ import {
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam/index.js'
 import { Construct } from 'constructs'
 import { parameterName, type Settings } from '../../nrfcloud/settings'
-import type { PackedLambda } from '../backend.js'
+import { Context } from '../../protocol/Context'
+import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 
 export class WebsocketAPI extends Construct {
@@ -26,7 +27,8 @@ export class WebsocketAPI extends Construct {
 	public readonly devicesTable: DynamoDB.Table
 	public readonly devicesTableIndexName = 'codeIndex'
 	public readonly eventBus: Events.IEventBus
-	public readonly websocketQueue: Sqs.Queue
+	public readonly websocketQueueMessages: Sqs.Queue
+	public readonly websocketQueueShadows: Sqs.Queue
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
 	public constructor(
@@ -60,14 +62,11 @@ export class WebsocketAPI extends Construct {
 		// Event bridge
 		this.eventBus = new Events.EventBus(this, 'eventBus', {})
 
-		// SQS Queue
-		const websocketDLQ = new Sqs.Queue(this, 'websocketDLQ', {})
-		this.websocketQueue = new Sqs.Queue(this, 'websocketQueue', {
-			deadLetterQueue: {
-				maxReceiveCount: 15,
-				queue: websocketDLQ,
-			},
-		})
+		// SQS Queues
+		// Two queues are needed so we can distinguish messages which have topics, and which do not.
+		// This becomes relevant in the pipe definition below
+		this.websocketQueueMessages = new Sqs.Queue(this, 'websocketQueueMessages')
+		this.websocketQueueShadows = new Sqs.Queue(this, 'websocketQueueShadows')
 
 		const shadowQueue = new Sqs.Queue(this, 'shadowQueue', {
 			retentionPeriod: shadowFetchingInterval,
@@ -120,7 +119,7 @@ export class WebsocketAPI extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onConnect.lambdaZipFile),
+			code: Lambda.Code.fromAsset(lambdaSources.onConnect.zipFile),
 			description: 'Registers new clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
@@ -150,7 +149,7 @@ export class WebsocketAPI extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onMessage.lambdaZipFile),
+			code: Lambda.Code.fromAsset(lambdaSources.onMessage.zipFile),
 			description: 'Receives messages from clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
@@ -172,7 +171,7 @@ export class WebsocketAPI extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onDisconnect.lambdaZipFile),
+			code: Lambda.Code.fromAsset(lambdaSources.onDisconnect.zipFile),
 			description: 'De-registers clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
@@ -294,7 +293,7 @@ export class WebsocketAPI extends Construct {
 				timeout: Duration.minutes(1),
 				memorySize: 1792,
 				code: Lambda.Code.fromAsset(
-					lambdaSources.publishToWebsocketClients.lambdaZipFile,
+					lambdaSources.publishToWebsocketClients.zipFile,
 				),
 				description: 'Publish event to web socket clients',
 				environment: {
@@ -341,7 +340,10 @@ export class WebsocketAPI extends Construct {
 			this,
 			'publishToWebsocketClientsRule',
 			{
-				eventPattern: { source: ['thingy.ws'], detailType: ['message'] },
+				eventPattern: {
+					source: ['thingy.ws'],
+					detailType: ['message', 'connect'],
+				},
 				targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
 				eventBus: this.eventBus,
 			},
@@ -362,7 +364,10 @@ export class WebsocketAPI extends Construct {
 		})
 		pipeRole.addToPolicy(
 			new IAM.PolicyStatement({
-				resources: [this.websocketQueue.queueArn],
+				resources: [
+					this.websocketQueueMessages.queueArn,
+					this.websocketQueueShadows.queueArn,
+				],
 				actions: [
 					'sqs:ReceiveMessage',
 					'sqs:DeleteMessage',
@@ -378,9 +383,10 @@ export class WebsocketAPI extends Construct {
 				effect: IAM.Effect.ALLOW,
 			}),
 		)
-		new Pipes.CfnPipe(this, 'websocketPipe', {
+		// Pipe messages (they have topics)
+		new Pipes.CfnPipe(this, 'websocketMessagePipe', {
 			roleArn: pipeRole.roleArn,
-			source: this.websocketQueue.queueArn,
+			source: this.websocketQueueMessages.queueArn,
 			target: this.eventBus.eventBusArn,
 			targetParameters: {
 				eventBridgeEventBusParameters: {
@@ -388,7 +394,8 @@ export class WebsocketAPI extends Construct {
 					source: 'thingy.ws',
 				},
 				inputTemplate: `{
-					"sender": <$.body.sender>,
+					"deviceId": <$.body.deviceId>,
+					"@context": "${Context.Message}",
 					"senderConnectionId": <$.body.senderConnectionId>,
 					"topic": <$.body.topic>,
 					"receivers": <$.body.receivers>,
@@ -397,6 +404,25 @@ export class WebsocketAPI extends Construct {
 			},
 		})
 
+		// Pipe shadow messages (no topic)
+		new Pipes.CfnPipe(this, 'websocketShadowPipe', {
+			roleArn: pipeRole.roleArn,
+			source: this.websocketQueueShadows.queueArn,
+			target: this.eventBus.eventBusArn,
+			targetParameters: {
+				eventBridgeEventBusParameters: {
+					detailType: 'connect',
+					source: 'thingy.ws',
+				},
+				inputTemplate: `{
+					"@context": "${Context.Shadow}",
+					"deviceId": <$.body.deviceId>,
+					"senderConnectionId": <$.body.senderConnectionId>,
+					"receivers": <$.body.receivers>,
+					"payload": <$.body.payload>
+				}`,
+			},
+		})
 		// Device shadow
 		// prepareDeviceShadow
 		const prepareDeviceShadow = new Lambda.Function(
@@ -408,9 +434,7 @@ export class WebsocketAPI extends Construct {
 				runtime: Lambda.Runtime.NODEJS_18_X,
 				timeout: shadowFetchingInterval,
 				memorySize: 1792,
-				code: Lambda.Code.fromAsset(
-					lambdaSources.prepareDeviceShadow.lambdaZipFile,
-				),
+				code: Lambda.Code.fromAsset(lambdaSources.prepareDeviceShadow.zipFile),
 				description: 'Get all active devices to be used to fetch shadow data',
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
@@ -442,15 +466,13 @@ export class WebsocketAPI extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: shadowFetchingInterval,
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(
-				lambdaSources.fetchDeviceShadow.lambdaZipFile,
-			),
+			code: Lambda.Code.fromAsset(lambdaSources.fetchDeviceShadow.zipFile),
 			description: `Fetch devices' shadow and publish to websocket`,
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
-				QUEUE_URL: this.websocketQueue.queueUrl,
+				QUEUE_URL: this.websocketQueueShadows.queueUrl,
 				NRF_CLOUD_ENDPOINT: nrfCloudSetting('apiEndpoint').stringValue,
 				API_KEY: nrfCloudSetting('apiKey').stringValue,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
@@ -472,7 +494,7 @@ export class WebsocketAPI extends Construct {
 				batchSize: 1, // TONOTE: Using batch size as 1 because this task is time consume
 			}),
 		)
-		this.websocketQueue.grantSendMessages(fetchDeviceShadow)
+		this.websocketQueueShadows.grantSendMessages(fetchDeviceShadow)
 		new LambdaLogGroup(this, 'fetchDeviceShadowLogs', fetchDeviceShadow)
 
 		// Scheduler
