@@ -5,9 +5,10 @@ import {
 	ImageTagMutability,
 	RepositoryNotFoundException,
 } from '@aws-sdk/client-ecr'
+import type { logFn } from '../cli/log'
 
 export const getOrCreateRepository =
-	({ ecr }: { ecr: ECRClient }) =>
+	({ ecr, error: logError }: { ecr: ECRClient; error?: logFn }) =>
 	async (repositoryName: string): Promise<string> => {
 		try {
 			const result = await ecr.send(
@@ -32,7 +33,7 @@ export const getOrCreateRepository =
 
 				return result.repository?.repositoryUri ?? ''
 			} else {
-				console.error(error)
+				logError?.(error)
 				throw error
 			}
 		}

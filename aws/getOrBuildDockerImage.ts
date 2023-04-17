@@ -10,7 +10,15 @@ import { hashFolder } from '../docker/hashFolder'
 import { run } from '../util/run'
 
 export const getOrBuildDockerImage =
-	({ ecr, debug }: { ecr: ECRClient; debug?: logFn }) =>
+	({
+		ecr,
+		debug,
+		error: logError,
+	}: {
+		ecr: ECRClient
+		debug?: logFn
+		error?: logFn
+	}) =>
 	async ({
 		repositoryUri,
 		repositoryName,
@@ -19,7 +27,7 @@ export const getOrBuildDockerImage =
 		repositoryUri: string
 		repositoryName: string
 		dockerFilePath: string
-	}): Promise<string> => {
+	}): Promise<{ imageTag: string }> => {
 		const hash = await hashFolder(dockerFilePath)
 		const baseVersion = await getMosquittoLatestTag()
 		const imageTag = `${hash}_${baseVersion}`
@@ -34,7 +42,7 @@ export const getOrBuildDockerImage =
 			)
 
 			debug?.(`Image tag ${imageTag} exists on ${repositoryUri}`)
-			return imageTag
+			return { imageTag }
 		} catch (error) {
 			if (error instanceof ImageNotFoundException) {
 				debug?.(`Image tag ${imageTag} does not exist on ${repositoryUri}`)
@@ -95,9 +103,9 @@ export const getOrBuildDockerImage =
 					})
 				}
 
-				return imageTag
+				return { imageTag }
 			} else {
-				console.error(error)
+				logError?.(error)
 				throw error
 			}
 		}

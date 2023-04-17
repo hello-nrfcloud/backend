@@ -11,7 +11,9 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # TODO: use ${{ vars.AWS_REGION }}
   AWS_REGION: eu-north-1
+  # TODO: use ${{ secrets.AWS_ROLE }}
   AWS_ROLE: arn:aws:iam::752072828702:role/GithubAction_for_nRF_Guide_Backend
   CI: 1
   FORCE_COLOR: 3
@@ -133,7 +135,7 @@ jobs:
       - name: Tag mqtt bridge image version
         run: |
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          # Remove exiting image tag version if any
+          # Remove existing image tag version if any
           aws ecr batch-delete-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=$LATEST_TAG > /dev/null
           MANIFEST=$( aws ecr batch-get-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=${{ needs.e2e-tests.outputs.image_tag }} | jq -r --join-output '.images[].imageManifest' )
           aws ecr put-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-tag $LATEST_TAG --image-manifest "$MANIFEST" > /dev/null

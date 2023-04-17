@@ -13,7 +13,7 @@ import { getSettings } from '../nrfcloud/settings.js'
 import { BackendApp } from './BackendApp.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
-import { REPOSITORY_NAME, STACK_NAME } from './stacks/stackConfig'
+import { ECR_NAME, STACK_NAME } from './stacks/stackConfig'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -41,13 +41,13 @@ const caCertificate = await ensureCA({
 })()
 
 // Prebuild / reuse docker image
-const repositoryUri = await getOrCreateRepository({ ecr })(REPOSITORY_NAME)
-const imageTag = await getOrBuildDockerImage({
+const repositoryUri = await getOrCreateRepository({ ecr })(ECR_NAME)
+const { imageTag } = await getOrBuildDockerImage({
 	ecr,
 	debug: debug('Docker image'),
 })({
 	repositoryUri,
-	repositoryName: REPOSITORY_NAME,
+	repositoryName: ECR_NAME,
 	dockerFilePath: path.join(
 		process.cwd(),
 		'cdk',
@@ -69,7 +69,7 @@ new BackendApp({
 	caCertificate,
 	shadowFetchingInterval: Number(process.env.SHADOW_FETCHING_INTERVAL ?? 60),
 	bridgeImageSettings: {
-		imageTag: `${imageTag}`,
-		repositoryUri: repositoryUri,
+		imageTag,
+		repositoryUri,
 	},
 })

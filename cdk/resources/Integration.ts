@@ -30,7 +30,6 @@ export type BridgeImageSettings = BridgeSettings
 export class Integration extends Construct {
 	public readonly bridgeCertificate: IoT.CfnCertificate
 	public readonly bridgeRepository: IRepository
-	public readonly bridgeImageTag: string
 	public constructor(
 		parent: Stack,
 		{
@@ -149,12 +148,8 @@ export class Integration extends Construct {
 		const mqttBridgeTask = new ECS.FargateTaskDefinition(this, 'mqttBridge')
 
 		const repositoryUrl = new URL(
-			bridgeImageSettings.repositoryUri.replace(
-				/^(?<protocol>https?:\/\/)?(?<rest>.+)/,
-				'https://$2',
-			),
+			bridgeImageSettings.repositoryUri.replace(/^http:/, 'https:'),
 		)
-		this.bridgeImageTag = bridgeImageSettings.imageTag
 		this.bridgeRepository = ECR.Repository.fromRepositoryName(
 			this,
 			'repo',
@@ -248,7 +243,7 @@ export class Integration extends Construct {
 			],
 			image: ECS.ContainerImage.fromEcrRepository(
 				this.bridgeRepository,
-				this.bridgeImageTag,
+				bridgeImageSettings.imageTag,
 			),
 			secrets: {
 				ENV__FILE__NRFCLOUD_CLIENT_CRT: nrfCloudSettingSecret(
