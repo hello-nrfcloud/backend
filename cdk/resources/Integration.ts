@@ -146,9 +146,9 @@ export class Integration extends Construct {
 		})
 
 		const mqttBridgeTask = new ECS.FargateTaskDefinition(this, 'mqttBridge')
-
+		// Repository uri does not have protocol part while URL requires protocol
 		const repositoryUrl = new URL(
-			bridgeImageSettings.repositoryUri.replace(/^http:/, 'https:'),
+			`https://${bridgeImageSettings.repositoryUri}`,
 		)
 		this.bridgeRepository = ECR.Repository.fromRepositoryName(
 			this,
