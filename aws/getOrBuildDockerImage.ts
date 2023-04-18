@@ -11,7 +11,15 @@ import { isFirstElementInArrayNotEmpty } from '../util/isFirstElementInArrayNotE
 import { run } from '../util/run'
 
 const imageTagOfRepositoryExists =
-	({ ecr, repositoryName }: { repositoryName: string; ecr: ECRClient }) =>
+	({
+		ecr,
+		repositoryName,
+		error: logError,
+	}: {
+		repositoryName: string
+		ecr: ECRClient
+		error?: logFn
+	}) =>
 	async (imageTag: string): Promise<boolean> => {
 		try {
 			const result = await ecr.send(
@@ -30,7 +38,7 @@ const imageTagOfRepositoryExists =
 
 			return false
 		} catch (error) {
-			console.warn(
+			logError?.(
 				`Error when checking image tag ${imageTag} in ${repositoryName}`,
 				error,
 			)
@@ -43,10 +51,12 @@ export const getOrBuildDockerImage =
 		ecr,
 		releaseImageTag,
 		debug,
+		error: logError,
 	}: {
 		ecr: ECRClient
 		releaseImageTag?: string
 		debug?: logFn
+		error?: logFn
 	}) =>
 	async ({
 		repositoryUri,
@@ -57,7 +67,11 @@ export const getOrBuildDockerImage =
 		repositoryName: string
 		dockerFilePath: string
 	}): Promise<{ imageTag: string }> => {
-		const imageTagExists = imageTagOfRepositoryExists({ ecr, repositoryName })
+		const imageTagExists = imageTagOfRepositoryExists({
+			ecr,
+			repositoryName,
+			error: logError,
+		})
 
 		// Deployment phase
 		if (releaseImageTag !== undefined) {

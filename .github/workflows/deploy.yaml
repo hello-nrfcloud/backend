@@ -1,21 +1,19 @@
 name: Deployment
 
 on:
-  push:
-    tags:
-      - "vt*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "TAG you want to deploy"
+        required: false
 
 permissions:
   id-token: write
   contents: write
 
 env:
-  STACK_NAME: nrf-guide-deploy
-  AWS_REGION: eu-north-1
-  AWS_ROLE: arn:aws:iam::752072828702:role/GithubAction_for_nRF_Guide_Backend
+  STACK_NAME: ${{ vars.STACK_NAME }}
   FORCE_COLOR: 3
-  # IS_TEST must be removed in production
-  IS_TEST: 1
 
 jobs:
   deploy:
@@ -40,23 +38,19 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: github-action-nrf-guide-backend
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Get tag name
         run: |
-          CURRENT_TAG=`echo ${{ github.ref }} | sed 's/refs\/tags\///'`
+          CURRENT_TAG=${{ github.event.inputs.tag }}
           echo "Deploy version ${CURRENT_TAG}"
           echo "RELEASE_IMAGE_TAG=${CURRENT_TAG}" >> $GITHUB_ENV
 
       - name: Initial solution stack
         run: |
-          if [[ -z ${{ env.IS_TEST }} ]]; then
-            ./cli.sh configure-nrfcloud ${{ secrets.PISUT_NRF_CLOUD_API_KEY }}
-          else
-            ./cli.sh configure-nrfcloud ${{ secrets.NRF_CLOUD_API_KEY }}
-          fi
+          ./cli.sh configure-nrfcloud ${{ secrets.NRF_CLOUD_API_KEY }}
 
       - name: Deploy solution stack
         run: npx cdk deploy --require-approval never

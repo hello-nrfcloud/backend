@@ -13,7 +13,7 @@ import { getSettings } from '../nrfcloud/settings.js'
 import { BackendApp } from './BackendApp.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
-import { ECR_NAME, STACK_NAME } from './stacks/stackConfig'
+import { ECR_NAME, STACK_NAME } from './stacks/stackConfig.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -41,10 +41,13 @@ const caCertificate = await ensureCA({
 })()
 
 // Prebuild / reuse docker image
+// NOTE: It is intention that release image tag can be undefined during the development,
+// then the system will create image based on the folder hash
+const releaseImageTag = process.env.RELEASE_IMAGE_TAG
 const repositoryUri = await getOrCreateRepository({ ecr })(ECR_NAME)
 const { imageTag } = await getOrBuildDockerImage({
 	ecr,
-	releaseImageTag: process.env.RELEASE_IMAGE_TAG,
+	releaseImageTag,
 	debug: debug('Docker image'),
 })({
 	repositoryUri,

@@ -2,8 +2,6 @@ name: Test and Release
 
 on:
   push:
-    branches-ignore:
-      - "feature/docker-cd"
   workflow_dispatch:
 
 permissions:
