@@ -56,7 +56,7 @@ jobs:
       - name: Generate Stack ID
         run: |
           RANDOM_STRING=`node -e "const crypto = require('crypto'); process.stdout.write(crypto.randomBytes(Math.ceil(8 * 0.5)).toString('hex').slice(0, 8));"`
-          echo "STACK_NAME=${{ env.STACK_NAME }}-${RANDOM_STRING}" >> $GITHUB_ENV
+          echo "STACK_NAME=${{ vars.STACK_NAME }}-${RANDOM_STRING}" >> $GITHUB_ENV
 
       # During e2e test the MQTT bridge will connect to the AWS IoT broker
       - name: Fake nRF Cloud account device
