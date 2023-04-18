@@ -11,6 +11,7 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  CI: 1
   FORCE_COLOR: 3
 
 jobs:
