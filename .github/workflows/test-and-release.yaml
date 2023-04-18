@@ -11,11 +11,6 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # TODO: use ${{ vars.AWS_REGION }}
-  AWS_REGION: eu-north-1
-  # TODO: use ${{ secrets.AWS_ROLE }}
-  AWS_ROLE: arn:aws:iam::752072828702:role/GithubAction_for_nRF_Guide_Backend
-  CI: 1
   FORCE_COLOR: 3
 
 jobs:
@@ -53,14 +48,14 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: github-action-nrf-guide-backend
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Generate Stack ID
         run: |
           RANDOM_STRING=`node -e "const crypto = require('crypto'); process.stdout.write(crypto.randomBytes(Math.ceil(8 * 0.5)).toString('hex').slice(0, 8));"`
-          echo "STACK_NAME=nrf-guide-test-${RANDOM_STRING}" >> $GITHUB_ENV
+          echo "STACK_NAME=${{ env.STACK_NAME }}-${RANDOM_STRING}" >> $GITHUB_ENV
 
       # During e2e test the MQTT bridge will connect to the AWS IoT broker
       - name: Fake nRF Cloud account device
@@ -70,7 +65,7 @@ jobs:
       - name: Deploy test resources stack
         run: |
           npx cdk --app "npx tsx cdk/test-resources.ts" deploy --require-approval never
-          MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${STACK_NAME}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
+          MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
           ./cli.sh configure thirdParty nrfcloud apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
 
       - name: Deploy solution stack
@@ -82,7 +77,7 @@ jobs:
       - name: Save stack outputs
         id: stack_outputs
         run: |
-          OUTPUTS=`aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query 'Stacks[*].Outputs'`
+          OUTPUTS=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} --query 'Stacks[*].Outputs'`
           IMAGE_TAG=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeImageTag").OutputValue'`
           REPOSITORY_URI=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeRepositoryURI").OutputValue'`
           REPOSITORY_NAME=`echo "$REPOSITORY_URI" | sed 's/^.*amazonaws\.com\///g'`

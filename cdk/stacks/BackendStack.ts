@@ -77,6 +77,16 @@ export class BackendStack extends Stack {
 			description: 'Device table name',
 			value: websocketAPI.devicesTable.tableName,
 		})
+		new CfnOutput(this, 'bridgeRepositoryURI', {
+			exportName: `${this.stackName}:bridgeRepositoryURI`,
+			description: 'ECR name',
+			value: bridgeImageSettings.repositoryUri,
+		})
+		new CfnOutput(this, 'bridgeImageTag', {
+			exportName: `${this.stackName}:bridgeImageTag`,
+			description: 'Mqtt bridge image tag',
+			value: bridgeImageSettings.imageTag,
+		})
 	}
 }
 
