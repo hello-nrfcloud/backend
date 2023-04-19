@@ -132,6 +132,7 @@ jobs:
         run: |
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
           # Remove existing image tag version if any
-          aws ecr batch-delete-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=$LATEST_TAG > /dev/null
+          aws ecr batch-delete-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=latest imageTag=$LATEST_TAG > /dev/null
           MANIFEST=$( aws ecr batch-get-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=${{ needs.e2e-tests.outputs.image_tag }} | jq -r --join-output '.images[].imageManifest' )
+          aws ecr put-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-tag latest --image-manifest "$MANIFEST" > /dev/null
           aws ecr put-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-tag $LATEST_TAG --image-manifest "$MANIFEST" > /dev/null

@@ -4,8 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "TAG you want to deploy"
-        required: false
+        description: "Tag to deploy (leave empty to use latest)"
+        default: "latest"
+        required: true
 
 permissions:
   id-token: write
@@ -42,15 +43,11 @@ jobs:
           role-session-name: github-action-nrf-guide-backend
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Get tag name
-        run: |
-          CURRENT_TAG=${{ github.event.inputs.tag }}
-          echo "Deploy version ${CURRENT_TAG}"
-          echo "RELEASE_IMAGE_TAG=${CURRENT_TAG}" >> $GITHUB_ENV
-
       - name: Initial solution stack
         run: |
           ./cli.sh configure-nrfcloud ${{ secrets.NRF_CLOUD_API_KEY }}
 
       - name: Deploy solution stack
+        env:
+          RELEASE_IMAGE_TAG: ${{ github.event.inputs.tag }}
         run: npx cdk deploy --require-approval never
