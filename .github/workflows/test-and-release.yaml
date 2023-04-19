@@ -130,6 +130,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Tag mqtt bridge image version
+        id: tag-mqtt-bridge-image-version
         run: |
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
           # Remove existing image tag version if any
