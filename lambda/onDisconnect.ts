@@ -23,7 +23,7 @@ export const handler = async (
 	await eventBus.putEvents({
 		Entries: [
 			{
-				EventBusName: EventBusName,
+				EventBusName,
 				Source: 'thingy.ws',
 				DetailType: 'disconnect',
 				Detail: JSON.stringify({

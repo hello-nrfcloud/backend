@@ -1,4 +1,4 @@
-import { slashless } from './slashless'
+import { slashless } from './slashless.js'
 
 describe('slashless()', () => {
 	it('should remove the slash from an URL and convert it to a string', () =>

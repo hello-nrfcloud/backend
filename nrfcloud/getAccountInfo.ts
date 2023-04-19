@@ -1,4 +1,4 @@
-import { slashless } from '../util/slashless'
+import { slashless } from '../util/slashless.js'
 
 export type AccountInfo = {
 	mqttEndpoint: string

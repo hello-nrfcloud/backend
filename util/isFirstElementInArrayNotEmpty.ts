@@ -1,4 +1,4 @@
-import { hasValues, type AssertObject } from './hasValues'
+import { hasValues, type AssertObject } from './hasValues.js'
 
 export const isFirstElementInArrayNotEmpty = <T>(
 	arr: readonly T[],

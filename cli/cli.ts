@@ -4,9 +4,9 @@ import chalk from 'chalk'
 import { program } from 'commander'
 import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition'
-import { configureCommand } from './commands/configure'
-import { configureNrfCloudCommand } from './commands/configure-nrfcloud'
-import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials'
+import { configureNrfCloudCommand } from './commands/configure-nrfcloud.js'
+import { configureCommand } from './commands/configure.js'
+import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})

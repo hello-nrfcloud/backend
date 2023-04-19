@@ -15,8 +15,8 @@ import {
 } from 'aws-cdk-lib'
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam/index.js'
 import { Construct } from 'constructs'
-import { parameterName, type Settings } from '../../nrfcloud/settings'
-import { Context } from '../../protocol/Context'
+import { parameterName, type Settings } from '../../nrfcloud/settings.js'
+import { Context } from '../../protocol/Context.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 
@@ -135,7 +135,7 @@ export class WebsocketAPI extends Construct {
 					resources: [`${this.devicesTable.tableArn}/index/*`],
 				}),
 			],
-			layers: layers,
+			layers,
 		})
 		this.connectionsTable.grantWriteData(onConnect)
 		this.devicesTable.grantReadData(onConnect)
@@ -158,7 +158,7 @@ export class WebsocketAPI extends Construct {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 			},
 			initialPolicy: [],
-			layers: layers,
+			layers,
 		})
 		this.connectionsTable.grantReadWriteData(onMessage)
 		this.eventBus.grantPutEventsTo(onMessage)
@@ -180,7 +180,7 @@ export class WebsocketAPI extends Construct {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 			},
 			initialPolicy: [],
-			layers: layers,
+			layers,
 		})
 		this.connectionsTable.grantWriteData(onDisconnect)
 		this.eventBus.grantPutEventsTo(onDisconnect)
@@ -327,7 +327,7 @@ export class WebsocketAPI extends Construct {
 						},
 					}),
 				],
-				layers: layers,
+				layers,
 			},
 		)
 		this.connectionsTable.grantReadData(publishToWebsocketClients)
@@ -453,7 +453,7 @@ export class WebsocketAPI extends Construct {
 						actions: ['dynamodb:PartiQLSelect'],
 					}),
 				],
-				layers: layers,
+				layers,
 			},
 		)
 		this.connectionsTable.grantWriteData(prepareDeviceShadow)
@@ -487,7 +487,7 @@ export class WebsocketAPI extends Construct {
 					actions: ['dynamodb:PartiQLSelect', 'dynamodb:PartiQLUpdate'],
 				}),
 			],
-			layers: layers,
+			layers,
 		})
 		fetchDeviceShadow.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {

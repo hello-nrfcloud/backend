@@ -16,14 +16,14 @@ import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 import { Construct } from 'constructs'
 import { readFileSync } from 'node:fs'
 import { URL } from 'node:url'
-import { type CAFiles } from '../../bridge/caLocation'
+import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation'
-import { type Settings as BridgeSettings } from '../../bridge/settings'
+import { type Settings as BridgeSettings } from '../../bridge/settings.js'
 import {
 	parameterName,
 	type Settings as nRFCloudSettings,
-} from '../../nrfcloud/settings'
-import { settingsPath } from '../../util/settings'
+} from '../../nrfcloud/settings.js'
+import { settingsPath } from '../../util/settings.js'
 
 export type BridgeImageSettings = BridgeSettings
 

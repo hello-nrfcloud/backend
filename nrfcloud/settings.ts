@@ -96,7 +96,7 @@ export const parameterName = (
 	parameterName: keyof Settings,
 ): string =>
 	settingsPath({
-		stackName: stackName,
+		stackName,
 		scope: 'thirdParty',
 		system: 'nrfcloud',
 		property: parameterName,

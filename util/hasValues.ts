@@ -1,4 +1,4 @@
-import { isNullOrUndefined } from './isNullOrUndefined'
+import { isNullOrUndefined } from './isNullOrUndefined.js'
 
 type PartialObject<T> = {
 	[K in keyof T]?: T[K]

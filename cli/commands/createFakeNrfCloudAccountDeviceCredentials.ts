@@ -19,11 +19,11 @@ import {
 } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
-import { getIoTEndpoint } from '../../aws/getIoTEndpoint'
-import { STACK_NAME } from '../../cdk/stacks/stackConfig'
-import { updateSettings, type Settings } from '../../nrfcloud/settings'
-import { isString } from '../../util/isString'
-import { settingsPath } from '../../util/settings'
+import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
+import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
+import { isString } from '../../util/isString.js'
+import { settingsPath } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
@@ -57,7 +57,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			const policyName = `fake-nrfcloud-account-device-policy-${fakeTenant}`
 			const targets = await iot.send(
 				new ListTargetsForPolicyCommand({
-					policyName: policyName,
+					policyName,
 				}),
 			)
 
@@ -67,7 +67,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				)
 				await iot.send(
 					new DetachPolicyCommand({
-						policyName: policyName,
+						policyName,
 						target,
 					}),
 				)
@@ -95,7 +95,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			console.debug(chalk.magenta(`Deleting "${policyName}" policy`))
 			await iot.send(
 				new DeletePolicyCommand({
-					policyName: policyName,
+					policyName,
 				}),
 			)
 

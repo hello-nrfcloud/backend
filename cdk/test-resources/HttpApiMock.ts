@@ -67,7 +67,7 @@ export class HttpApiMock extends Resource {
 			description:
 				'Mocks a HTTP API and stores all requests in SQS for inspection, and optionally replies with enqued responses',
 			code: Lambda.Code.fromAsset(lambdaSources.httpApiMock.zipFile),
-			layers: layers,
+			layers,
 			handler: lambdaSources.httpApiMock.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_18_X,

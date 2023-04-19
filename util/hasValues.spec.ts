@@ -1,4 +1,4 @@
-import { hasValues } from './hasValues'
+import { hasValues } from './hasValues.js'
 
 describe('hasValues', () => {
 	type TestObject = {

@@ -4,11 +4,11 @@ import {
 	GetAuthorizationTokenCommand,
 } from '@aws-sdk/client-ecr'
 import type { logFn } from '../cli/log'
-import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag'
-import { hashFolder } from '../docker/hashFolder'
-import { hasValues } from '../util/hasValues'
-import { isFirstElementInArrayNotEmpty } from '../util/isFirstElementInArrayNotEmpty'
-import { run } from '../util/run'
+import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
+import { hashFolder } from '../docker/hashFolder.js'
+import { hasValues } from '../util/hasValues.js'
+import { isFirstElementInArrayNotEmpty } from '../util/isFirstElementInArrayNotEmpty.js'
+import { run } from '../util/run.js'
 
 const imageTagOfRepositoryExists =
 	({

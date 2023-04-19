@@ -1,17 +1,17 @@
 import { IoTClient } from '@aws-sdk/client-iot'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
-import { getIoTEndpoint } from '../../aws/getIoTEndpoint'
-import { STACK_NAME } from '../../cdk/stacks/stackConfig'
-import { createAccountDevice } from '../../nrfcloud/createAccountDevice'
-import { deleteAccountDevice } from '../../nrfcloud/deleteNrfcloudCredentials'
-import { getAccountInfo } from '../../nrfcloud/getAccountInfo'
+import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
+import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { createAccountDevice } from '../../nrfcloud/createAccountDevice.js'
+import { deleteAccountDevice } from '../../nrfcloud/deleteNrfcloudCredentials.js'
+import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
 import {
 	getSettings,
 	updateSettings,
 	type Settings,
 } from '../../nrfcloud/settings.js'
-import { slashless } from '../../util/slashless'
+import { slashless } from '../../util/slashless.js'
 import type { CommandDefinition } from './CommandDefinition'
 
 const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
@@ -85,7 +85,7 @@ export const configureNrfCloudCommand = ({
 
 			await updateSettings({ ssm, stackName: STACK_NAME })({
 				apiEndpoint: slashless(effectiveEndpoint),
-				apiKey: apiKey,
+				apiKey,
 				accountDeviceClientCert: credentials.clientCert,
 				accountDevicePrivateKey: credentials.privateKey,
 				accountDeviceClientId: `account-${accountInfo.tenantId}`,

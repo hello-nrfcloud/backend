@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { hashFolder } from './hashFolder'
+import { hashFolder } from './hashFolder.js'
 
 describe('hashFolder', () => {
 	test('should calculate correct MD5 hash value for folder with files', async () => {

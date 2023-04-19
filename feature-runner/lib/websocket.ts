@@ -1,5 +1,5 @@
 import WebSocket from 'ws'
-import { Context } from '../../protocol/Context'
+import { Context } from '../../protocol/Context.js'
 
 export type WebSocketClient = {
 	connect: () => Promise<any>

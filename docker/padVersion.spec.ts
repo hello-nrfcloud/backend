@@ -1,4 +1,4 @@
-import { padVersion } from './padVersion'
+import { padVersion } from './padVersion.js'
 
 describe('padVersion()', () => {
 	it.each([

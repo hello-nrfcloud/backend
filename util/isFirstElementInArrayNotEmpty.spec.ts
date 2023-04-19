@@ -1,4 +1,4 @@
-import { isFirstElementInArrayNotEmpty } from './isFirstElementInArrayNotEmpty'
+import { isFirstElementInArrayNotEmpty } from './isFirstElementInArrayNotEmpty.js'
 
 describe('isFirstElementInArrayNotEmpty', () => {
 	type TestObject = {

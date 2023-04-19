@@ -35,7 +35,7 @@ const publishToWebsocket = async ({
 	await eventBus.putEvents({
 		Entries: [
 			{
-				EventBusName: EventBusName,
+				EventBusName,
 				Source: 'thingy.ws',
 				DetailType: 'message',
 				Detail: JSON.stringify({

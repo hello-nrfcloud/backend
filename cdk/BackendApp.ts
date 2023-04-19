@@ -1,5 +1,5 @@
 import { App } from 'aws-cdk-lib'
-import { type CAFiles } from '../bridge/caLocation'
+import { type CAFiles } from '../bridge/caLocation.js'
 import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation'
 import type { Settings } from '../nrfcloud/settings'
 import type { BackendLambdas } from './BackendLambdas.js'
