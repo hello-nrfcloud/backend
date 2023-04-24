@@ -11,13 +11,14 @@ permissions:
   actions: write
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   CI: 1
   FORCE_COLOR: 3
 
 jobs:
   e2e-tests:
     runs-on: ubuntu-22.04
+
+    environment: ci
 
     timeout-minutes: 30
 
@@ -100,6 +101,8 @@ jobs:
     runs-on: ubuntu-22.04
 
     if: github.ref == 'refs/heads/saga'
+
+    environment: production
 
     steps:
       - uses: actions/checkout@v3
