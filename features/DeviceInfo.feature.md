@@ -34,7 +34,7 @@ Then the connection response should equal to this JSON
 
 ```json
 {
-  "@context": "https://github.com/bifravst/nrf.guide-backend/websocket-connection-success",
+  "@context": "https://github.com/bifravst/nRF-Guide-backend/websocket-connection-success",
   "deviceId": "nrf-test-device-id",
   "payload": {
     "id": "nrf-test-device-id",

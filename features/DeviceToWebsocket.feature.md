@@ -83,7 +83,7 @@ Then the response should equal to this JSON
 
 ```json
 {
-  "@context": "https://github.com/bifravst/nrf.guide-backend/device-message",
+  "@context": "https://github.com/bifravst/nRF-Guide-backend/device-message",
   "deviceId": "nrf-test-device-id",
   "topic": "data/m/d/nrf-test-device-id/d2c",
   "payload": {

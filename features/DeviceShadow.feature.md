@@ -285,7 +285,7 @@ Then the response should equal to this JSON
 
 ```json
 {
-  "@context": "https://github.com/bifravst/nrf.guide-backend/device-shadow",
+  "@context": "https://github.com/bifravst/nRF-Guide-backend/device-shadow",
   "deviceId": "nrf-test-shadow-device-id",
   "payload": {
     "state": {

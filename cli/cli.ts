@@ -26,7 +26,7 @@ console.log('')
 const nrfGuideBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 	program.name('./cli.sh')
 	program.description(
-		`nRF.guide backend ${psjon.version} Command Line Interface`,
+		`nRF Guide backend ${psjon.version} Command Line Interface`,
 	)
 	program.version(psjon.version)
 

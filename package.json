@@ -12,12 +12,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bifravst/nrf.guide-backend.git"
+    "url": "git+https://github.com/bifravst/nRF-Guide-backend.git"
   },
   "bugs": {
-    "url": "https://github.com/bifravst/nrf.guide-backend/issues"
+    "url": "https://github.com/bifravst/nRF-Guide-backend/issues"
   },
-  "homepage": "https://github.com/bifravst/nrf.guide-backend#readme",
+  "homepage": "https://github.com/bifravst/nRF-Guide-backend#readme",
   "keywords": [
     "nordicsemiconductor",
     "cellular-iot",

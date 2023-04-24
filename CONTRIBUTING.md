@@ -1,8 +1,7 @@
 # Contributing to the project
 
-This guide is intended for providing information on contributing to the
-nRF.guide codebase. As a first step, see
-[Code of Conduct](./CODE_OF_CONDUCT.md).
+This guide is intended for providing information on contributing to the nRF
+Guide codebase. As a first step, see [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ## Finding open issues
 
