@@ -14,11 +14,14 @@ permissions:
 
 env:
   STACK_NAME: ${{ vars.STACK_NAME }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
   FORCE_COLOR: 3
 
 jobs:
   deploy:
     runs-on: ubuntu-22.04
+
+    environment: production
 
     steps:
       - uses: actions/checkout@v3
