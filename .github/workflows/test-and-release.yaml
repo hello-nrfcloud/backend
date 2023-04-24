@@ -102,7 +102,7 @@ jobs:
 
     if: github.ref == 'refs/heads/saga'
 
-    environment: production
+    environment: ci
 
     steps:
       - uses: actions/checkout@v3
