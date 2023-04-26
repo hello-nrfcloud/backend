@@ -10,7 +10,7 @@ import type {
 	Context,
 } from 'aws-lambda'
 import { URLSearchParams } from 'url'
-import { logger } from './logger.js'
+import { logger } from '../../lambda/logger.js'
 import { splitMockResponse } from './splitMockResponse.js'
 
 const db = new DynamoDBClient({})

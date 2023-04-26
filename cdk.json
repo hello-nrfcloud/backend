@@ -1,6 +1,3 @@
 {
-  "app": "npx tsx cdk/backend.ts",
-  "context": {
-    "logLevel": "info"
-  }
+  "app": "npx tsx cdk/backend.ts"
 }

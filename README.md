@@ -55,37 +55,10 @@ using topic as `$aws/things/${deviceId}/shadow/update`
 ## Websocket Protocol
 
 Message received from MQTT bridge will be published to websocket connection that
-associates with the same device id. The data format is
+associates with the same device id.
 
-```json
-{
-  "deviceId": <deviceId>,
-  "topic": data/m/d/<deviceId>/<schema>,
-  "payload": <mqttPayload>
-}
-```
-
-- Payload: messages are following the nRF Cloud application protocol
-- Schema: `d2c` or `c2d`
-
-### Sample data
-
-```json
-{
-  "deviceId": "nrf-350457794611739",
-  "topic": "data/m/d/nrf-350457794611739/c2d",
-  "payload": {
-    "appId": "GROUND_FIX",
-    "messageType": "DATA",
-    "data": {
-      "lat": 59.338048,
-      "lon": 18.008137,
-      "uncertainty": 1500,
-      "fulfilledWith": "MCELL"
-    }
-  }
-}
-```
+Messages will be converted using
+[`@nrf-guide/proto`](https://github.com/bifravst/nRF-Guide-proto).
 
 ## Push data to websocket though SQS
 
@@ -95,10 +68,6 @@ SQS. The format is
 ```json
 {
   "deviceId": <deviceId>,
-	"receivers": <deviceId[]>,
-	"payload": <payload>,
-  "meta": <meta>
+	"message": <message>
 }
 ```
-
-**remark** If you want to broadcast, set receivers as `['*']`

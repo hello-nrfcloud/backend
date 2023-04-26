@@ -24,6 +24,7 @@ const packagesInLayer: string[] = [
 	'@nordicsemiconductor/from-env',
 	'@sinclair/typebox',
 	'ajv',
+	'@nrf-guide/proto',
 ]
 const settings = await getSettings({ ssm, stackName: STACK_NAME })()
 const accountId = (await sts.send(new GetCallerIdentityCommand({})))

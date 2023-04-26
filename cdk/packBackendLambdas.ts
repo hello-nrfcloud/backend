@@ -20,4 +20,8 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'fetchDeviceShadow',
 		'lambda/fetchDeviceShadow.ts',
 	),
+	onDeviceMessage: await packLambdaFromPath(
+		'onDeviceMessage',
+		'lambda/onDeviceMessage.ts',
+	),
 })

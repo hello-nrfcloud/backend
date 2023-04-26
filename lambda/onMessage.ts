@@ -2,6 +2,7 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
 import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { proto } from '@nrf-guide/proto/nrfGuide/proto.js'
 import type {
 	APIGatewayProxyStructuredResultV2,
 	APIGatewayProxyWebsocketEventV2,
@@ -23,14 +24,10 @@ const ecs = new ECSClient({})
 
 const publishToWebsocket = async ({
 	deviceId,
-	receivers,
-	payload,
-	topic,
+	message,
 }: {
 	deviceId: string
-	receivers: string[]
-	topic?: string
-	payload: Record<string, any>
+	message: Record<string, any>
 }): Promise<void> => {
 	await eventBus.putEvents({
 		Entries: [
@@ -40,9 +37,7 @@ const publishToWebsocket = async ({
 				DetailType: 'message',
 				Detail: JSON.stringify({
 					deviceId,
-					receivers,
-					payload,
-					topic,
+					message,
 				}),
 			},
 		],
@@ -69,20 +64,17 @@ export const handler = async (
 		}),
 	)
 	const deviceId = Item?.deviceId?.S ?? 'unknown'
-	const receivers: string[] = ['*']
+	const model = Item?.model?.S ?? 'generic'
 
 	const body = JSON.parse(event.body)
 	const action = body.action
-	let payload = body.payload ?? {}
+	let message = body.message ?? {}
 
 	switch (action) {
-		case 'echo':
-			receivers.push(deviceId)
-			break
 		case 'broadcast':
 			break
 		case 'create': {
-			const { apiKey, count } = payload
+			const { apiKey, count } = message
 			if (apiKey !== undefined && count !== undefined && /\d+/.test(count)) {
 				await ecs.send(
 					new RunTaskCommand({
@@ -120,11 +112,11 @@ export const handler = async (
 					}),
 				)
 
-				payload = {
+				message = {
 					message: `Request to create simulator devices is received`,
 				}
 			} else {
-				payload = {
+				message = {
 					error: `apiKey or count is missing`,
 				}
 			}
@@ -132,12 +124,15 @@ export const handler = async (
 		}
 	}
 
-	await publishToWebsocket({
-		deviceId,
-		receivers,
-		payload,
-		topic: `action:${action}`,
-	})
+	for (const transformed of await proto({
+		onError: (message, model, error) =>
+			log.error('Could not transform message', { message, model, error }),
+	})(model, message)) {
+		await publishToWebsocket({
+			deviceId,
+			message: transformed,
+		})
+	}
 
 	return {
 		statusCode: 200,

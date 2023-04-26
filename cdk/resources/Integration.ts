@@ -2,15 +2,12 @@ import {
 	aws_ec2 as EC2,
 	aws_ecr as ECR,
 	aws_ecs as ECS,
-	aws_iam as IAM,
 	aws_iot as IoT,
-	aws_sqs as SQS,
 	Stack,
 } from 'aws-cdk-lib'
 import type { IVpc } from 'aws-cdk-lib/aws-ec2'
 import type { IRepository } from 'aws-cdk-lib/aws-ecr'
 import { LogDriver, type ICluster } from 'aws-cdk-lib/aws-ecs'
-import type { IPrincipal } from 'aws-cdk-lib/aws-iam'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 import { Construct } from 'constructs'
@@ -33,13 +30,11 @@ export class Integration extends Construct {
 	public constructor(
 		parent: Stack,
 		{
-			websocketQueue,
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
 		}: {
-			websocketQueue: SQS.Queue
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
@@ -284,36 +279,5 @@ export class Integration extends Construct {
 			EC2.Port.tcp(1883),
 			'inbound-mqtt',
 		)
-
-		// IoT rule
-		const iotActionRole = new IAM.Role(this, 'iot-action-role', {
-			assumedBy: new IAM.ServicePrincipal('iot.amazonaws.com') as IPrincipal,
-		})
-		websocketQueue.grantSendMessages(iotActionRole)
-		new IoT.CfnTopicRule(this, 'topicRule', {
-			topicRulePayload: {
-				description: `Publish mqtt topic to SQS`,
-				ruleDisabled: false,
-				awsIotSqlVersion: '2016-03-23',
-				sql: `
-					select
-						* as payload,
-						topic(4) as deviceId,
-						[topic(4)] as receivers,
-						topic() as topic,
-						timestamp() as timestamp
-					from 'data/+/+/+/+'
-					where messageType = 'DATA'
-				`,
-				actions: [
-					{
-						sqs: {
-							queueUrl: websocketQueue.queueUrl,
-							roleArn: iotActionRole.roleArn,
-						},
-					},
-				],
-			},
-		})
 	}
 }

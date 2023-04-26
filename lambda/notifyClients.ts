@@ -6,15 +6,12 @@ import {
 	DeleteItemCommand,
 	DynamoDBClient,
 	ExecuteStatementCommand,
-	type ExecuteStatementCommandOutput,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 
 const log = logger('notifyClients')
-
-type WebsocketEvent = Omit<WebsocketPayload, 'receivers'>
 
 export const notifyClients =
 	({
@@ -28,17 +25,16 @@ export const notifyClients =
 		connectionsIndexName: string
 		apiGwManagementClient: ApiGatewayManagementApiClient
 	}) =>
-	async (event: WebsocketEvent, deviceIds?: string[]): Promise<void> => {
-		// TONOTE:: If context is Context.Success, we will send data to the sender (connection id), not device id because it is connection data
-		const { senderConnectionId, ...rest } = event
+	async (event: WebsocketPayload): Promise<void> => {
+		const { connectionId, deviceId, message } = event
 		const connectionIds: string[] =
-			senderConnectionId !== undefined && senderConnectionId !== ''
-				? [senderConnectionId]
+			connectionId !== undefined && connectionId !== ''
+				? [connectionId]
 				: await getActiveConnections(
 						db,
 						connectionsTableName,
 						connectionsIndexName,
-						deviceIds,
+						deviceId,
 				  )
 
 		for (const connectionId of connectionIds) {
@@ -46,7 +42,7 @@ export const notifyClients =
 				await apiGwManagementClient.send(
 					new PostToConnectionCommand({
 						ConnectionId: connectionId,
-						Data: Buffer.from(JSON.stringify({ ...rest })),
+						Data: Buffer.from(JSON.stringify(message)),
 					}),
 				)
 			} catch (err) {
@@ -74,26 +70,14 @@ export const getActiveConnections = async (
 	db: DynamoDBClient,
 	connectionsTableName: string,
 	connectionsIndexName: string,
-	deviceIds?: string[],
+	deviceId: string,
 ): Promise<string[]> => {
-	let res: ExecuteStatementCommandOutput
-
-	if (deviceIds) {
-		res = await db.send(
-			new ExecuteStatementCommand({
-				Statement: `select connectionId from "${connectionsTableName}"."${connectionsIndexName}" where deviceId in (${deviceIds
-					.map(() => '?')
-					.join(',')})`,
-				Parameters: deviceIds.map((deviceId) => ({ S: deviceId })),
-			}),
-		)
-	} else {
-		res = await db.send(
-			new ExecuteStatementCommand({
-				Statement: `select connectionId from "${connectionsTableName}"`,
-			}),
-		)
-	}
+	const res = await db.send(
+		new ExecuteStatementCommand({
+			Statement: `select connectionId from "${connectionsTableName}"."${connectionsIndexName}" where deviceId = ?`,
+			Parameters: [{ S: deviceId }],
+		}),
+	)
 
 	const connectionIds = res?.Items?.reduce<string[]>((acc, item) => {
 		const { connectionId } = unmarshall(item)

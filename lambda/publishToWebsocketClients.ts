@@ -5,12 +5,10 @@ import { logger } from './logger.js'
 import { notifyClients } from './notifyClients.js'
 
 export type WebsocketPayload = {
-	[`@context`]: string
 	deviceId: string
-	senderConnectionId?: string
-	receivers: string[]
-	payload: Record<string, unknown>
-	topic?: string
+	// If present, only send payload to this specific connection
+	connectionId?: string
+	message: Record<string, unknown>
 }
 
 type EventBridgeEvent = {
@@ -46,16 +44,5 @@ const notifier = notifyClients({
 
 export const handler = async (event: EventBridgeEvent): Promise<void> => {
 	log.info('publishToWebSocketClients event', { event })
-
-	const { receivers, ...rest } = event.detail
-
-	if (Array.isArray(receivers) && receivers.length) {
-		const isBroadcast = receivers[0] === '*'
-
-		if (isBroadcast) {
-			await notifier(rest)
-		} else {
-			await notifier(rest, event.detail.receivers)
-		}
-	}
+	await notifier(event.detail)
 }

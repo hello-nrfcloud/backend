@@ -16,7 +16,6 @@ import {
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam/index.js'
 import { Construct } from 'constructs'
 import { parameterName, type Settings } from '../../nrfcloud/settings.js'
-import { Context } from '../../protocol/Context.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 
@@ -25,10 +24,9 @@ export class WebsocketAPI extends Construct {
 	public readonly connectionsTable: DynamoDB.Table
 	public readonly connectionsTableIndexName = 'deviceIdIndex'
 	public readonly devicesTable: DynamoDB.Table
-	public readonly devicesTableIndexName = 'codeIndex'
+	public readonly devicesTableCodeIndexName = 'codeIndex'
 	public readonly eventBus: Events.IEventBus
-	public readonly websocketQueueMessages: Sqs.Queue
-	public readonly websocketQueueShadows: Sqs.Queue
+	public readonly websocketQueue: Sqs.Queue
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
 	public constructor(
@@ -63,11 +61,7 @@ export class WebsocketAPI extends Construct {
 		this.eventBus = new Events.EventBus(this, 'eventBus', {})
 
 		// SQS Queues
-		// Two queues are needed so we can distinguish messages which have topics, and which do not.
-		// This becomes relevant in the pipe definition below
-		this.websocketQueueMessages = new Sqs.Queue(this, 'websocketQueueMessages')
-		this.websocketQueueShadows = new Sqs.Queue(this, 'websocketQueueShadows')
-
+		this.websocketQueue = new Sqs.Queue(this, 'websocketQueueMessages')
 		const shadowQueue = new Sqs.Queue(this, 'shadowQueue', {
 			retentionPeriod: shadowFetchingInterval,
 			visibilityTimeout: shadowFetchingInterval,
@@ -91,6 +85,7 @@ export class WebsocketAPI extends Construct {
 			},
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
+		// FIXME: make a standalone resources, because this is needed by other constructs as well, and is the primary data source for nRF Guide
 		this.devicesTable = new DynamoDB.Table(this, 'devicesTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
@@ -100,7 +95,7 @@ export class WebsocketAPI extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 		})
 		this.devicesTable.addGlobalSecondaryIndex({
-			indexName: this.devicesTableIndexName,
+			indexName: this.devicesTableCodeIndexName,
 			partitionKey: {
 				name: 'code',
 				type: DynamoDB.AttributeType.STRING,
@@ -125,7 +120,7 @@ export class WebsocketAPI extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				DEVICES_TABLE_NAME: this.devicesTable.tableName,
-				DEVICES_INDEX_NAME: this.devicesTableIndexName,
+				DEVICES_INDEX_NAME: this.devicesTableCodeIndexName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 			},
@@ -364,10 +359,7 @@ export class WebsocketAPI extends Construct {
 		})
 		pipeRole.addToPolicy(
 			new IAM.PolicyStatement({
-				resources: [
-					this.websocketQueueMessages.queueArn,
-					this.websocketQueueShadows.queueArn,
-				],
+				resources: [this.websocketQueue.queueArn],
 				actions: [
 					'sqs:ReceiveMessage',
 					'sqs:DeleteMessage',
@@ -383,10 +375,10 @@ export class WebsocketAPI extends Construct {
 				effect: IAM.Effect.ALLOW,
 			}),
 		)
-		// Pipe messages (they have topics)
+		// Pipe messages
 		new Pipes.CfnPipe(this, 'websocketMessagePipe', {
 			roleArn: pipeRole.roleArn,
-			source: this.websocketQueueMessages.queueArn,
+			source: this.websocketQueue.queueArn,
 			target: this.eventBus.eventBusArn,
 			targetParameters: {
 				eventBridgeEventBusParameters: {
@@ -395,34 +387,12 @@ export class WebsocketAPI extends Construct {
 				},
 				inputTemplate: `{
 					"deviceId": <$.body.deviceId>,
-					"@context": "${Context.Message}",
-					"senderConnectionId": <$.body.senderConnectionId>,
-					"topic": <$.body.topic>,
-					"receivers": <$.body.receivers>,
-					"payload": <$.body.payload>
+					"connectionId": <$.body.connectionId>,
+					"message": <$.body.message>
 				}`,
 			},
 		})
 
-		// Pipe shadow messages (no topic)
-		new Pipes.CfnPipe(this, 'websocketShadowPipe', {
-			roleArn: pipeRole.roleArn,
-			source: this.websocketQueueShadows.queueArn,
-			target: this.eventBus.eventBusArn,
-			targetParameters: {
-				eventBridgeEventBusParameters: {
-					detailType: 'connect',
-					source: 'thingy.ws',
-				},
-				inputTemplate: `{
-					"@context": "${Context.Shadow}",
-					"deviceId": <$.body.deviceId>,
-					"senderConnectionId": <$.body.senderConnectionId>,
-					"receivers": <$.body.receivers>,
-					"payload": <$.body.payload>
-				}`,
-			},
-		})
 		// Device shadow
 		// prepareDeviceShadow
 		const prepareDeviceShadow = new Lambda.Function(
@@ -472,10 +442,11 @@ export class WebsocketAPI extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
-				QUEUE_URL: this.websocketQueueShadows.queueUrl,
 				NRF_CLOUD_ENDPOINT: nrfCloudSetting('apiEndpoint').stringValue,
 				API_KEY: nrfCloudSetting('apiKey').stringValue,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				DEVICES_TABLE_NAME: this.devicesTable.tableName,
+				EVENTBUS_NAME: this.eventBus.eventBusName,
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
@@ -494,8 +465,9 @@ export class WebsocketAPI extends Construct {
 				batchSize: 1, // TONOTE: Using batch size as 1 because this task is time consume
 			}),
 		)
-		this.websocketQueueShadows.grantSendMessages(fetchDeviceShadow)
+		this.eventBus.grantPutEventsTo(fetchDeviceShadow)
 		new LambdaLogGroup(this, 'fetchDeviceShadowLogs', fetchDeviceShadow)
+		this.devicesTable.grantReadData(fetchDeviceShadow)
 
 		// Scheduler
 		new Events.Rule(this, 'scheduler', {

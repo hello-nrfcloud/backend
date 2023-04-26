@@ -2,10 +2,13 @@ import {
 	DynamoDBClient,
 	ExecuteStatementCommand,
 } from '@aws-sdk/client-dynamodb'
-import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
+import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { proto } from '@nrf-guide/proto/nrfGuide'
 import { deviceShadow } from './getDeviceShadowFromnRFCloud.js'
+import { getModelForDevice } from './getModelForDevice.js'
 import { logger } from './logger.js'
+import type { WebsocketPayload } from './publishToWebsocketClients.js'
 
 type DeviceShadowEvent = {
 	Records: {
@@ -25,24 +28,33 @@ type EventBody = {
 	version?: number
 }
 
-const { queueUrl, connectionsTableName, nrfCloudEndpoint, apiKey } = fromEnv({
-	queueUrl: 'QUEUE_URL',
+const {
+	EventBusName,
+	connectionsTableName,
+	nrfCloudEndpoint,
+	apiKey,
+	DevicesTableName,
+} = fromEnv({
 	connectionsTableName: 'CONNECTIONS_TABLE_NAME',
 	connectionsIndexName: 'CONNECTIONS_INDEX_NAME',
 	nrfCloudEndpoint: 'NRF_CLOUD_ENDPOINT',
 	apiKey: 'API_KEY',
+	DevicesTableName: 'DEVICES_TABLE_NAME',
+	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
 const db = new DynamoDBClient({})
-const queue = new SQSClient({})
 const log = logger('fetchDeviceShadow')
 const QUEUE_THRESHOLD = 40 * 1000 // 40 seconds
+const eventBus = new EventBridge({})
 
 const fetchDeviceShadow = deviceShadow({
 	endpoint: nrfCloudEndpoint,
 	apiKey,
 	log,
 })
+
+const modelFetcher = getModelForDevice({ db, DevicesTableName })
 
 const updateDeviceVersion = async (
 	connectionId: string,
@@ -83,16 +95,6 @@ export const handler = async (event: DeviceShadowEvent): Promise<void> => {
 		})
 		const shadowData = await fetchDeviceShadow([...devices])
 		for (const shadow of shadowData) {
-			// Publish only reported state
-			const {
-				state: { reported },
-			} = shadow
-			const body = {
-				deviceId: shadow.id,
-				receivers: [shadow.id],
-				payload: { state: { reported } },
-			}
-
 			const willUpdateShadow = data.filter(
 				(item) =>
 					item?.version === undefined || item?.version < shadow.state.version,
@@ -104,18 +106,37 @@ export const handler = async (event: DeviceShadowEvent): Promise<void> => {
 						device?.version ?? 0
 					}) with shadow data version ${shadow.state.version}`,
 				)
-				await Promise.all([
-					queue.send(
-						new SendMessageCommand({
-							QueueUrl: queueUrl,
-							MessageBody: JSON.stringify({
-								senderConnectionId: device.connectionId,
-								...body,
-							}),
+
+				const { model } = await modelFetcher(device.deviceId)
+				const converted = await proto({
+					onError: (message, model, error) =>
+						log.error(
+							`Failed to convert message ${JSON.stringify(
+								message,
+							)} from model ${model}: ${error}`,
+						),
+				})(model, shadow.state)
+
+				for (const message of converted) {
+					log.debug('websocket message', { message })
+					await Promise.all([
+						eventBus.putEvents({
+							Entries: [
+								{
+									EventBusName,
+									Source: 'thingy.ws',
+									DetailType: 'message',
+									Detail: JSON.stringify(<WebsocketPayload>{
+										deviceId: device.deviceId,
+										connectionId: device.connectionId,
+										message,
+									}),
+								},
+							],
 						}),
-					),
-					updateDeviceVersion(device.connectionId, shadow.state.version),
-				])
+						updateDeviceVersion(device.connectionId, shadow.state.version),
+					])
+				}
 			}
 		}
 	}

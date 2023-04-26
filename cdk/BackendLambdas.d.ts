@@ -7,4 +7,5 @@ type BackendLambdas = {
 	publishToWebsocketClients: PackedLambda
 	prepareDeviceShadow: PackedLambda
 	fetchDeviceShadow: PackedLambda
+	onDeviceMessage: PackedLambda
 }

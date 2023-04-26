@@ -5,10 +5,8 @@ needs:
 
 # Device to websocket
 
-> As the author of a software component  
-> I want to verify that device can connect and publish a message to nRF Cloud
-> infrastructure. The device messages should > be delivered to website though
-> websocket protocol
+> Device messages published on nRF Cloud should be delivered to the websocket
+> API
 
 ## Background
 
@@ -16,20 +14,9 @@ Given There is a device as this JSON
 
 ```json
 {
-  "id": "nrf-test-device-id",
   "deviceId": "nrf-test-device-id",
   "code": "42.d3adbeef",
-  "name": "nrf-test-device-id",
-  "subType": "jitp-nordic-hardware",
-  "tags": ["temperature", "warehouse-east"],
-  "firmware": {
-    "supports": ["APP", "MODEM"],
-    "app": {
-      "version": "0.0.0-development"
-    },
-    "modem": "mfw_nrf9160_1.3.3"
-  },
-  "type": "Generic"
+  "model": "PCA20035+solar"
 }
 ```
 
@@ -42,40 +29,10 @@ When a device with id `nrf-test-device-id` publishes to topic
 
 ```json
 {
-  "appId": "GROUND_FIX",
+  "appId": "SOLAR",
   "messageType": "DATA",
-  "data": {
-    "doReply": false,
-    "wifi": {
-      "accessPoints": [
-        {
-          "macAddress": "fd:70:40:b9:58:dc"
-        },
-        {
-          "macAddress": "c5:ab:c7:55:8d:e3"
-        }
-      ]
-    },
-    "lte": [
-      {
-        "mnc": 260,
-        "mcc": 310,
-        "eci": 21858829,
-        "tac": 333,
-        "rsrp": -157,
-        "rsrq": -34.5,
-        "earfcn": 41490,
-        "nmr": [
-          {
-            "pci": 143,
-            "earfcn": 41490,
-            "rsrp": -44,
-            "rsrq": -3.5
-          }
-        ]
-      }
-    ]
-  }
+  "ts": 1681985624779,
+  "data": "3.123456"
 }
 ```
 
@@ -83,44 +40,8 @@ Then the response should equal to this JSON
 
 ```json
 {
-  "@context": "https://github.com/bifravst/nRF-Guide-backend/device-message",
-  "deviceId": "nrf-test-device-id",
-  "topic": "data/m/d/nrf-test-device-id/d2c",
-  "payload": {
-    "appId": "GROUND_FIX",
-    "messageType": "DATA",
-    "data": {
-      "doReply": false,
-      "wifi": {
-        "accessPoints": [
-          {
-            "macAddress": "fd:70:40:b9:58:dc"
-          },
-          {
-            "macAddress": "c5:ab:c7:55:8d:e3"
-          }
-        ]
-      },
-      "lte": [
-        {
-          "mnc": 260,
-          "mcc": 310,
-          "eci": 21858829,
-          "tac": 333,
-          "rsrp": -157,
-          "rsrq": -34.5,
-          "earfcn": 41490,
-          "nmr": [
-            {
-              "pci": 143,
-              "earfcn": 41490,
-              "rsrp": -44,
-              "rsrq": -3.5
-            }
-          ]
-        }
-      ]
-    }
-  }
+  "@context": "https://github.com/bifravst/nRF-Guide-proto/transformed/PCA20035%2Bsolar/gain",
+  "ts": 1681985624779,
+  "mA": 3.123456
 }
 ```

@@ -9,6 +9,7 @@ import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
+import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
 import {
 	Integration,
 	type BridgeImageSettings,
@@ -59,11 +60,16 @@ export class BackendStack extends Stack {
 		})
 
 		new Integration(this, {
-			websocketQueue: websocketAPI.websocketQueueMessages,
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
+		})
+
+		new ConvertDeviceMessages(this, {
+			websocketAPI,
+			lambdaSources,
+			layers: [baseLayer, powerToolLayer],
 		})
 
 		// Outputs

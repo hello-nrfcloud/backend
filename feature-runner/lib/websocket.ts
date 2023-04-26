@@ -1,5 +1,5 @@
+import { Context } from '@nrf-guide/proto/nrfGuide'
 import WebSocket from 'ws'
-import { Context } from '../../protocol/Context.js'
 
 export type WebSocketClient = {
 	connect: () => Promise<any>
@@ -72,7 +72,7 @@ export const createWebsocketClient = ({
 			.on('message', async (msg) => {
 				const message = JSON.parse(msg.toString())
 				debug?.(msg.toString())
-				if (message['@context'] === Context.Success) {
+				if (message['@context'] === Context.deviceIdentity.toString()) {
 					onConnectMessageDeferred.resolve(message)
 				} else {
 					messages.push(message)
