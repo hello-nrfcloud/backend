@@ -325,7 +325,7 @@ export class WebsocketAPI extends Construct {
 				layers,
 			},
 		)
-		this.connectionsTable.grantReadData(publishToWebsocketClients)
+		this.connectionsTable.grantReadWriteData(publishToWebsocketClients)
 		new LambdaLogGroup(
 			this,
 			'publishToWebsocketClientsLogs',
