@@ -24,18 +24,7 @@ export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
 		if (match === null) return noMatch
 
 		const data = codeBlockOrThrow(step).code
-
-		const params: { [K: string]: any } = {
-			includeState: true,
-			pageLimit: 100,
-			deviceIds: match.groups?.deviceId,
-		}
-		const queryString = Object.entries(params)
-			.sort((a, b) => a[0].localeCompare(b[0]))
-			.map((kv) => kv.map(encodeURIComponent).join('='))
-			.join('&')
-
-		const methodPathQuery = `GET v1/devices?${queryString}`
+		const methodPathQuery = `GET v1/devices/${match.groups?.deviceId}`
 		progress(`Mock http url: ${methodPathQuery}`)
 		await db.send(
 			new PutItemCommand({

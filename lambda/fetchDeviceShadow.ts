@@ -68,7 +68,7 @@ const updateDeviceVersion = async (
 }
 
 export const handler = async (event: DeviceShadowEvent): Promise<void> => {
-	log.info('fetchDeviceShadow event')
+	log.info('fetchDeviceShadow event', { event })
 
 	for (const record of event.Records) {
 		const messageCreatedAt = Number(
@@ -89,55 +89,70 @@ export const handler = async (event: DeviceShadowEvent): Promise<void> => {
 		}
 
 		const data: EventBody[] = JSON.parse(record.body)
-		const devices = new Set<string>()
-		data.forEach((device) => {
-			devices.add(device.deviceId)
-		})
-		const shadowData = await fetchDeviceShadow([...devices])
-		for (const shadow of shadowData) {
-			const willUpdateShadow = data.filter(
-				(item) =>
-					item?.version === undefined || item?.version < shadow.state.version,
-			)
-			log.info(`Devices to be updated shadow data: ${willUpdateShadow.length}`)
-			for (const device of willUpdateShadow) {
-				log.info(
-					`Sending device shadow of ${device.deviceId}(v.${
-						device?.version ?? 0
-					}) with shadow data version ${shadow.state.version}`,
-				)
-
-				const { model } = await modelFetcher(device.deviceId)
-				const converted = await proto({
-					onError: (message, model, error) =>
-						log.error(
-							`Failed to convert message ${JSON.stringify(
-								message,
-							)} from model ${model}: ${error}`,
-						),
-				})(model, shadow.state)
-
-				for (const message of converted) {
-					log.debug('websocket message', { message })
-					await Promise.all([
-						eventBus.putEvents({
-							Entries: [
-								{
-									EventBusName,
-									Source: 'thingy.ws',
-									DetailType: 'message',
-									Detail: JSON.stringify(<WebsocketPayload>{
-										deviceId: device.deviceId,
-										connectionId: device.connectionId,
-										message,
-									}),
-								},
-							],
-						}),
-						updateDeviceVersion(device.connectionId, shadow.state.version),
-					])
+		const deviceIds = new Set<string>(data.map(({ deviceId }) => deviceId))
+		await Promise.all(
+			[...deviceIds].map(async (deviceId) => {
+				let shadow: any
+				try {
+					shadow = await fetchDeviceShadow(deviceId)
+				} catch (error) {
+					log.error(`Failed to fetch shadow for device ${deviceId}`, { error })
+					return
 				}
-			}
-		}
+				const willUpdateShadow = data.filter(
+					(item) =>
+						item?.version === undefined || item?.version < shadow.state.version,
+				)
+				log.info(
+					`Devices to be updated shadow data: ${willUpdateShadow.length}`,
+				)
+				log.debug(`Shadow`, { shadow })
+				for (const device of willUpdateShadow) {
+					const { model } = await modelFetcher(device.deviceId)
+					const converted = await proto({
+						onError: (message, model, error) =>
+							log.error(
+								`Failed to convert message ${JSON.stringify(
+									message,
+								)} from model ${model}: ${error}`,
+							),
+					})(model, shadow.state)
+
+					if (converted.length === 0) {
+						log.debug('shadow was not converted to any message for device', {
+							model,
+							device: device.deviceId,
+						})
+					} else {
+						log.info(
+							`Sending device shadow of ${device.deviceId}(v.${
+								device?.version ?? 0
+							}) with shadow data version ${shadow.state.version}`,
+						)
+					}
+
+					for (const message of converted) {
+						log.debug('websocket message', { message })
+						await Promise.all([
+							eventBus.putEvents({
+								Entries: [
+									{
+										EventBusName,
+										Source: 'thingy.ws',
+										DetailType: 'message',
+										Detail: JSON.stringify(<WebsocketPayload>{
+											deviceId: device.deviceId,
+											connectionId: device.connectionId,
+											message,
+										}),
+									},
+								],
+							}),
+							updateDeviceVersion(device.connectionId, shadow.state.version),
+						])
+					}
+				}
+			}),
+		)
 	}
 }
