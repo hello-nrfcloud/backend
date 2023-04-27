@@ -1,15 +1,10 @@
-import {
-	App,
-	CfnOutput,
-	Duration,
-	aws_lambda as Lambda,
-	Stack,
-} from 'aws-cdk-lib'
+import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
+import { DeviceShadow } from '../resources/DeviceShadow.js'
 import {
 	Integration,
 	type BridgeImageSettings,
@@ -26,7 +21,6 @@ export class BackendStack extends Stack {
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
-			shadowFetchingInterval,
 			bridgeImageSettings,
 		}: {
 			lambdaSources: BackendLambdas
@@ -34,7 +28,6 @@ export class BackendStack extends Stack {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
-			shadowFetchingInterval: number
 			bridgeImageSettings: BridgeImageSettings
 		},
 	) {
@@ -56,7 +49,12 @@ export class BackendStack extends Stack {
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			layers: [baseLayer, powerToolLayer],
-			shadowFetchingInterval: Duration.seconds(shadowFetchingInterval),
+		})
+
+		new DeviceShadow(this, {
+			websocketAPI,
+			layers: [baseLayer, powerToolLayer],
+			lambdaSources,
 		})
 
 		new Integration(this, {

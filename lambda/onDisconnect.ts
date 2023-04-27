@@ -20,22 +20,7 @@ export const handler = async (
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.info('onDisconnect event', { event })
 
-	await eventBus.putEvents({
-		Entries: [
-			{
-				EventBusName,
-				Source: 'thingy.ws',
-				DetailType: 'disconnect',
-				Detail: JSON.stringify({
-					context: {
-						connectionId: event.requestContext.connectionId,
-					},
-				}),
-			},
-		],
-	})
-
-	await db.send(
+	const result = await db.send(
 		new DeleteItemCommand({
 			TableName,
 			Key: {
@@ -43,8 +28,25 @@ export const handler = async (
 					S: event.requestContext.connectionId,
 				},
 			},
+			ReturnValues: 'ALL_OLD',
 		}),
 	)
+
+	if (result.Attributes?.deviceId?.S !== undefined) {
+		await eventBus.putEvents({
+			Entries: [
+				{
+					EventBusName,
+					Source: 'thingy.ws',
+					DetailType: 'disconnect',
+					Detail: JSON.stringify({
+						deviceId: result.Attributes.deviceId.S,
+						connectionId: event.requestContext.connectionId,
+					}),
+				},
+			],
+		})
+	}
 
 	return {
 		statusCode: 200,

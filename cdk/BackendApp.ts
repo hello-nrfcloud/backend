@@ -14,7 +14,6 @@ export class BackendApp extends App {
 		iotEndpoint,
 		mqttBridgeCertificate,
 		caCertificate,
-		shadowFetchingInterval,
 		bridgeImageSettings,
 	}: {
 		lambdaSources: BackendLambdas
@@ -23,7 +22,6 @@ export class BackendApp extends App {
 		iotEndpoint: string
 		mqttBridgeCertificate: CertificateFiles
 		caCertificate: CAFiles
-		shadowFetchingInterval: number
 		bridgeImageSettings: BridgeImageSettings
 	}) {
 		super()
@@ -34,7 +32,6 @@ export class BackendApp extends App {
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
-			shadowFetchingInterval,
 			bridgeImageSettings,
 		})
 	}

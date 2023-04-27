@@ -25,6 +25,7 @@ const packagesInLayer: string[] = [
 	'@sinclair/typebox',
 	'ajv',
 	'@bifravst/muninn-proto',
+	'p-limit',
 ]
 const settings = await getSettings({ ssm, stackName: STACK_NAME })()
 const accountId = (await sts.send(new GetCallerIdentityCommand({})))
@@ -72,7 +73,6 @@ new BackendApp({
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
 	caCertificate,
-	shadowFetchingInterval: Number(process.env.SHADOW_FETCHING_INTERVAL ?? 60),
 	bridgeImageSettings: {
 		imageTag,
 		repositoryUri,

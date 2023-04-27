@@ -2,20 +2,14 @@ import {
 	aws_apigatewayv2 as ApiGateway,
 	Duration,
 	aws_dynamodb as DynamoDB,
-	aws_lambda_event_sources as EventSources,
 	aws_events as Events,
 	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_pipes as Pipes,
 	RemovalPolicy,
-	aws_sqs as Sqs,
-	aws_ssm as Ssm,
 	Stack,
 } from 'aws-cdk-lib'
-import type { IPrincipal } from 'aws-cdk-lib/aws-iam/index.js'
 import { Construct } from 'constructs'
-import { parameterName, type Settings } from '../../nrfcloud/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 
@@ -26,7 +20,6 @@ export class WebsocketAPI extends Construct {
 	public readonly devicesTable: DynamoDB.Table
 	public readonly devicesTableCodeIndexName = 'codeIndex'
 	public readonly eventBus: Events.IEventBus
-	public readonly websocketQueue: Sqs.Queue
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
 	public constructor(
@@ -34,38 +27,20 @@ export class WebsocketAPI extends Construct {
 		{
 			lambdaSources,
 			layers,
-			shadowFetchingInterval,
 		}: {
 			lambdaSources: {
 				onConnect: PackedLambda
 				onMessage: PackedLambda
 				onDisconnect: PackedLambda
 				publishToWebsocketClients: PackedLambda
-				prepareDeviceShadow: PackedLambda
-				fetchDeviceShadow: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
-			shadowFetchingInterval: Duration
 		},
 	) {
 		super(parent, 'WebsocketAPI')
 
-		const nrfCloudSetting = (property: keyof Settings) =>
-			Ssm.StringParameter.fromStringParameterName(
-				this,
-				`${property}Parameter`,
-				parameterName(parent.stackName, property),
-			)
-
-		// Event bridge
+		// Event bridge for publishing message though websocket
 		this.eventBus = new Events.EventBus(this, 'eventBus', {})
-
-		// SQS Queues
-		this.websocketQueue = new Sqs.Queue(this, 'websocketQueueMessages')
-		const shadowQueue = new Sqs.Queue(this, 'shadowQueue', {
-			retentionPeriod: shadowFetchingInterval,
-			visibilityTimeout: shadowFetchingInterval,
-		})
 
 		// Databases
 		this.connectionsTable = new DynamoDB.Table(this, 'connectionsTable', {
@@ -296,6 +271,7 @@ export class WebsocketAPI extends Construct {
 					CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 					CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
 					WEBSOCKET_MANAGEMENT_API_URL: this.websocketManagementAPIURL,
+					EVENTBUS_NAME: this.eventBus.eventBusName,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				},
 				initialPolicy: [
@@ -331,149 +307,13 @@ export class WebsocketAPI extends Construct {
 			'publishToWebsocketClientsLogs',
 			publishToWebsocketClients,
 		)
-		const publishToWebsocketClientsRule = new Events.Rule(
-			this,
-			'publishToWebsocketClientsRule',
-			{
-				eventPattern: {
-					source: ['thingy.ws'],
-					detailType: ['message', 'connect'],
-				},
-				targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
-				eventBus: this.eventBus,
+		new Events.Rule(this, 'publishToWebsocketClientsRule', {
+			eventPattern: {
+				source: ['thingy.ws'],
+				detailType: ['message', 'connect'],
 			},
-		)
-		publishToWebsocketClients.addPermission(
-			'publishToWebSocketClientsInvokePermission',
-			{
-				principal: new IAM.ServicePrincipal(
-					'events.amazonaws.com',
-				) as IPrincipal,
-				sourceArn: publishToWebsocketClientsRule.ruleArn,
-			},
-		)
-
-		//  Pipe from SQS to event bridge
-		const pipeRole = new IAM.Role(this, 'pipeSqsToEventRole', {
-			assumedBy: new IAM.ServicePrincipal('pipes.amazonaws.com') as IPrincipal,
-		})
-		pipeRole.addToPolicy(
-			new IAM.PolicyStatement({
-				resources: [this.websocketQueue.queueArn],
-				actions: [
-					'sqs:ReceiveMessage',
-					'sqs:DeleteMessage',
-					'sqs:GetQueueAttributes',
-				],
-				effect: IAM.Effect.ALLOW,
-			}),
-		)
-		pipeRole.addToPolicy(
-			new IAM.PolicyStatement({
-				resources: [this.eventBus.eventBusArn],
-				actions: ['events:PutEvents'],
-				effect: IAM.Effect.ALLOW,
-			}),
-		)
-		// Pipe messages
-		new Pipes.CfnPipe(this, 'websocketMessagePipe', {
-			roleArn: pipeRole.roleArn,
-			source: this.websocketQueue.queueArn,
-			target: this.eventBus.eventBusArn,
-			targetParameters: {
-				eventBridgeEventBusParameters: {
-					detailType: 'message',
-					source: 'thingy.ws',
-				},
-				inputTemplate: `{
-					"deviceId": <$.body.deviceId>,
-					"connectionId": <$.body.connectionId>,
-					"message": <$.body.message>
-				}`,
-			},
-		})
-
-		// Device shadow
-		// prepareDeviceShadow
-		const prepareDeviceShadow = new Lambda.Function(
-			this,
-			'prepareDeviceShadow',
-			{
-				handler: lambdaSources.prepareDeviceShadow.handler,
-				architecture: Lambda.Architecture.ARM_64,
-				runtime: Lambda.Runtime.NODEJS_18_X,
-				timeout: shadowFetchingInterval,
-				memorySize: 1792,
-				code: Lambda.Code.fromAsset(lambdaSources.prepareDeviceShadow.zipFile),
-				description: 'Get all active devices to be used to fetch shadow data',
-				environment: {
-					VERSION: this.node.tryGetContext('version'),
-					CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-					CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
-					QUEUE_URL: shadowQueue.queueUrl,
-					LOG_LEVEL: this.node.tryGetContext('logLevel'),
-				},
-				initialPolicy: [
-					new IAM.PolicyStatement({
-						effect: IAM.Effect.ALLOW,
-						resources: [
-							`${this.connectionsTable.tableArn}`,
-							`${this.connectionsTable.tableArn}/*`,
-						],
-						actions: ['dynamodb:PartiQLSelect'],
-					}),
-				],
-				layers,
-			},
-		)
-		this.connectionsTable.grantWriteData(prepareDeviceShadow)
-		shadowQueue.grantSendMessages(prepareDeviceShadow)
-		new LambdaLogGroup(this, 'prepareDeviceShadowLogs', prepareDeviceShadow)
-
-		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
-			handler: lambdaSources.fetchDeviceShadow.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: shadowFetchingInterval,
-			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.fetchDeviceShadow.zipFile),
-			description: `Fetch devices' shadow and publish to websocket`,
-			environment: {
-				VERSION: this.node.tryGetContext('version'),
-				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-				CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
-				NRF_CLOUD_ENDPOINT: nrfCloudSetting('apiEndpoint').stringValue,
-				API_KEY: nrfCloudSetting('apiKey').stringValue,
-				LOG_LEVEL: this.node.tryGetContext('logLevel'),
-				DEVICES_TABLE_NAME: this.devicesTable.tableName,
-				EVENTBUS_NAME: this.eventBus.eventBusName,
-			},
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					effect: IAM.Effect.ALLOW,
-					resources: [
-						`${this.connectionsTable.tableArn}`,
-						`${this.connectionsTable.tableArn}/*`,
-					],
-					actions: ['dynamodb:PartiQLSelect', 'dynamodb:PartiQLUpdate'],
-				}),
-			],
-			layers,
-		})
-		fetchDeviceShadow.addEventSource(
-			new EventSources.SqsEventSource(shadowQueue, {
-				batchSize: 1, // TONOTE: Using batch size as 1 because this task is time consume
-			}),
-		)
-		this.eventBus.grantPutEventsTo(fetchDeviceShadow)
-		new LambdaLogGroup(this, 'fetchDeviceShadowLogs', fetchDeviceShadow)
-		this.devicesTable.grantReadData(fetchDeviceShadow)
-
-		// Scheduler
-		new Events.Rule(this, 'scheduler', {
-			description: `Schedule every minute to fetch devices's shadow`,
-			schedule: Events.Schedule.rate(shadowFetchingInterval),
-			targets: [new EventsTargets.LambdaFunction(prepareDeviceShadow)],
+			targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
+			eventBus: this.eventBus,
 		})
 	}
 }

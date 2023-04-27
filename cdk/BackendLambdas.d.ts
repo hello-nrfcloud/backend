@@ -8,4 +8,5 @@ type BackendLambdas = {
 	prepareDeviceShadow: PackedLambda
 	fetchDeviceShadow: PackedLambda
 	onDeviceMessage: PackedLambda
+	onDeviceConnectOrDisconnect: PackedLambda
 }

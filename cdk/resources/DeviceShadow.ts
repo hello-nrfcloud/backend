@@ -1,0 +1,183 @@
+import {
+	Duration,
+	aws_dynamodb as DynamoDB,
+	aws_lambda_event_sources as EventSources,
+	aws_events_targets as EventTargets,
+	aws_events as Events,
+	aws_lambda as Lambda,
+	RemovalPolicy,
+	aws_sqs as SQS,
+	aws_ssm as Ssm,
+	Stack,
+} from 'aws-cdk-lib'
+import { Construct } from 'constructs'
+import { parameterName, type Settings } from '../../nrfcloud/settings.js'
+import type { PackedLambda } from '../helpers/lambdas/packLambda'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
+import type { WebsocketAPI } from './WebsocketAPI.js'
+
+export class DeviceShadow extends Construct {
+	public constructor(
+		parent: Stack,
+		{
+			websocketAPI,
+			lambdaSources,
+			layers,
+		}: {
+			websocketAPI: WebsocketAPI
+			lambdaSources: {
+				onDeviceConnectOrDisconnect: PackedLambda
+				prepareDeviceShadow: PackedLambda
+				fetchDeviceShadow: PackedLambda
+			}
+			layers: Lambda.ILayerVersion[]
+		},
+	) {
+		super(parent, 'DeviceShadow')
+
+		// The duration to allow lambda to process device shadow
+		const processDeviceShadowTimeout = Duration.minutes(1)
+
+		// Get nRF Cloud config from parameter store
+		const nrfCloudSetting = (property: keyof Settings) =>
+			Ssm.StringParameter.fromStringParameterName(
+				this,
+				`${property}Parameter`,
+				parameterName(parent.stackName, property),
+			)
+
+		// Scheduler
+		// The lower bound of event schedule is 60 seconds.
+		// Therefore, to achieve the lower interval, we will use delayed queue along with event schedule
+		const scheduleDuration = Duration.seconds(60)
+		const scheduler = new Events.Rule(this, 'scheduler', {
+			description: `Scheduler to fetch devices's shadow`,
+			schedule: Events.Schedule.rate(scheduleDuration),
+		})
+
+		// Working queue to fetch device shadow
+		const shadowQueue = new SQS.Queue(this, 'shadowQueue', {
+			retentionPeriod: scheduleDuration,
+			removalPolicy: RemovalPolicy.DESTROY,
+			visibilityTimeout: processDeviceShadowTimeout,
+		})
+
+		// Distribution lock database
+		const lockTable = new DynamoDB.Table(this, 'lockTable', {
+			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+			partitionKey: {
+				name: 'lockName',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			removalPolicy: RemovalPolicy.DESTROY,
+			timeToLiveAttribute: 'ttl',
+		})
+
+		// Tracking device database
+		const devicesTable = new DynamoDB.Table(this, 'devicesTable', {
+			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+			partitionKey: {
+				name: 'deviceId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			sortKey: {
+				name: 'connectionId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			removalPolicy: RemovalPolicy.DESTROY,
+		})
+
+		// Lambda functions
+		const onDeviceConnectOrDisconnect = new Lambda.Function(
+			this,
+			'onDeviceConnectOrDisconnect',
+			{
+				handler: lambdaSources.onDeviceConnectOrDisconnect.handler,
+				architecture: Lambda.Architecture.ARM_64,
+				runtime: Lambda.Runtime.NODEJS_18_X,
+				timeout: Duration.seconds(5),
+				memorySize: 1792,
+				code: Lambda.Code.fromAsset(
+					lambdaSources.onDeviceConnectOrDisconnect.zipFile,
+				),
+				description: 'Subscribe to device connection or disconnection',
+				environment: {
+					VERSION: this.node.tryGetContext('version'),
+					DEVICES_TABLE_NAME: devicesTable.tableName,
+					LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				},
+				initialPolicy: [],
+				layers,
+			},
+		)
+		new Events.Rule(this, 'connectOrDisconnectRule', {
+			eventPattern: {
+				source: ['thingy.ws'],
+				detailType: ['disconnect', 'connect'],
+			},
+			targets: [new EventTargets.LambdaFunction(onDeviceConnectOrDisconnect)],
+			eventBus: websocketAPI.eventBus,
+		})
+		devicesTable.grantReadWriteData(onDeviceConnectOrDisconnect)
+		new LambdaLogGroup(
+			this,
+			'onDeviceConnectOrDisconnectLog',
+			onDeviceConnectOrDisconnect,
+		)
+
+		const prepareDeviceShadow = new Lambda.Function(
+			this,
+			'prepareDeviceShadow',
+			{
+				handler: lambdaSources.prepareDeviceShadow.handler,
+				architecture: Lambda.Architecture.ARM_64,
+				runtime: Lambda.Runtime.NODEJS_18_X,
+				timeout: Duration.seconds(5),
+				memorySize: 1792,
+				code: Lambda.Code.fromAsset(lambdaSources.prepareDeviceShadow.zipFile),
+				description: 'Generate queue to fetch the shadow data',
+				environment: {
+					VERSION: this.node.tryGetContext('version'),
+					QUEUE_URL: shadowQueue.queueUrl,
+					LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				},
+				initialPolicy: [],
+				layers,
+			},
+		)
+		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
+		shadowQueue.grantSendMessages(prepareDeviceShadow)
+		new LambdaLogGroup(this, 'prepareDeviceShadowLogs', prepareDeviceShadow)
+
+		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
+			handler: lambdaSources.fetchDeviceShadow.handler,
+			architecture: Lambda.Architecture.ARM_64,
+			runtime: Lambda.Runtime.NODEJS_18_X,
+			timeout: processDeviceShadowTimeout,
+			memorySize: 1792,
+			code: Lambda.Code.fromAsset(lambdaSources.fetchDeviceShadow.zipFile),
+			description: `Fetch devices' shadow from nRF Cloud`,
+			environment: {
+				VERSION: this.node.tryGetContext('version'),
+				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
+				DEVICES_TABLE: devicesTable.tableName,
+				LOCK_TABLE: lockTable.tableName,
+				NRF_CLOUD_ENDPOINT: nrfCloudSetting('apiEndpoint').stringValue,
+				API_KEY: nrfCloudSetting('apiKey').stringValue,
+				LOG_LEVEL: this.node.tryGetContext('logLevel'),
+			},
+			initialPolicy: [],
+			layers,
+		})
+		websocketAPI.eventBus.grantPutEventsTo(fetchDeviceShadow)
+		devicesTable.grantReadWriteData(fetchDeviceShadow)
+		lockTable.grantReadWriteData(fetchDeviceShadow)
+		fetchDeviceShadow.addEventSource(
+			new EventSources.SqsEventSource(shadowQueue, {
+				batchSize: 10,
+				maxConcurrency: 2,
+			}),
+		)
+		new LambdaLogGroup(this, 'fetchDeviceShadowLogs', fetchDeviceShadow)
+	}
+}

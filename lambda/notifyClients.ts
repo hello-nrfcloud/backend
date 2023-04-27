@@ -7,11 +7,16 @@ import {
 	DynamoDBClient,
 	ExecuteStatementCommand,
 } from '@aws-sdk/client-dynamodb'
+import {
+	EventBridgeClient,
+	PutEventsCommand,
+} from '@aws-sdk/client-eventbridge'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 
 const log = logger('notifyClients')
+const eventBus = new EventBridgeClient({})
 
 export const notifyClients =
 	({
@@ -19,11 +24,13 @@ export const notifyClients =
 		connectionsTableName,
 		connectionsIndexName,
 		apiGwManagementClient,
+		eventBusName,
 	}: {
 		db: DynamoDBClient
 		connectionsTableName: string
 		connectionsIndexName: string
 		apiGwManagementClient: ApiGatewayManagementApiClient
+		eventBusName: string
 	}) =>
 	async (event: WebsocketPayload): Promise<void> => {
 		const { connectionId, deviceId, message } = event
@@ -49,16 +56,33 @@ export const notifyClients =
 				const error = err as Error
 				if (error.name === 'GoneException') {
 					log.warn(`Client is gone`, connectionId)
-					await db.send(
-						new DeleteItemCommand({
-							TableName: connectionsTableName,
-							Key: {
-								connectionId: {
-									S: connectionId,
+					await Promise.all([
+						eventBus.send(
+							new PutEventsCommand({
+								Entries: [
+									{
+										EventBusName: eventBusName,
+										Source: 'thingy.ws',
+										DetailType: 'disconnect',
+										Detail: JSON.stringify(<WebsocketPayload>{
+											deviceId,
+											connectionId,
+										}),
+									},
+								],
+							}),
+						),
+						db.send(
+							new DeleteItemCommand({
+								TableName: connectionsTableName,
+								Key: {
+									connectionId: {
+										S: connectionId,
+									},
 								},
-							},
-						}),
-					)
+							}),
+						),
+					])
 					continue
 				}
 				log.error(error.message, { error })

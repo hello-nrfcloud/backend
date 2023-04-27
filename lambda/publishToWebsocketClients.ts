@@ -1,6 +1,7 @@
 import { ApiGatewayManagementApi } from '@aws-sdk/client-apigatewaymanagementapi'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import type { EventBridgeEvent } from 'aws-lambda'
 import { logger } from './logger.js'
 import { notifyClients } from './notifyClients.js'
 
@@ -11,22 +12,16 @@ export type WebsocketPayload = {
 	message: Record<string, unknown>
 }
 
-type EventBridgeEvent = {
-	id: string
-	source: string
-	'detail-type'?: string
-	time: string
-	detail: WebsocketPayload
-}
-
 const {
 	connectionsTableName,
 	websocketManagementAPIURL,
 	connectionsIndexName,
+	eventBusName,
 } = fromEnv({
 	connectionsTableName: 'CONNECTIONS_TABLE_NAME',
 	connectionsIndexName: 'CONNECTIONS_INDEX_NAME',
 	websocketManagementAPIURL: 'WEBSOCKET_MANAGEMENT_API_URL',
+	eventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
 const log = logger('publishToWebsockets')
@@ -40,9 +35,19 @@ const notifier = notifyClients({
 	connectionsTableName,
 	connectionsIndexName,
 	apiGwManagementClient,
+	eventBusName,
 })
 
-export const handler = async (event: EventBridgeEvent): Promise<void> => {
+export const handler = async (
+	event: EventBridgeEvent<
+		'message' | 'connect' | 'disconnect',
+		WebsocketPayload
+	>,
+): Promise<void> => {
 	log.info('publishToWebSocketClients event', { event })
+
+	// Do not publish websocket for disconnect type
+	if (event['detail-type'] === 'disconnect') return
+
 	await notifier(event.detail)
 }
