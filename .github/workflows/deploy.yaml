@@ -5,8 +5,7 @@ on:
     inputs:
       tag:
         description: "Tag to deploy (leave empty to use latest)"
-        default: "latest"
-        required: true
+        required: false
 
 permissions:
   id-token: write
