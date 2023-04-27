@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "jest",
-    "test:e2e": "npx tsx ./feature-runner/run-features.ts | npx tsx ./feature-runner/console-reporter.ts",
+    "test:e2e": "$(set -o pipefail && npx tsx ./feature-runner/run-features.ts | npx tsx ./feature-runner/console-reporter.ts)",
     "prepare": "husky install && check-node-version --package",
     "deploy": "cdk deploy",
     "synth": "cdk synth"
