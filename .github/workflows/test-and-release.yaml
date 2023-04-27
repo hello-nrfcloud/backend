@@ -75,7 +75,9 @@ jobs:
         run: npx cdk deploy --require-approval never
 
       - name: Run End-to-End Tests
-        run: npm run test:e2e
+        run: |
+          npm config set script-shell `which bash`
+          npm run test:e2e
 
       - name: Save stack outputs
         id: stack_outputs
