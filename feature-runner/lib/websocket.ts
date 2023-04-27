@@ -1,4 +1,4 @@
-import { Context } from '@nrf-guide/proto/nrfGuide'
+import { Context } from '@bifravst/muninn-proto/Muninn'
 import WebSocket from 'ws'
 
 export type WebSocketClient = {

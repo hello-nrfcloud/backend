@@ -85,7 +85,7 @@ export class WebsocketAPI extends Construct {
 			},
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
-		// FIXME: make a standalone resources, because this is needed by other constructs as well, and is the primary data source for nRF Guide
+		// FIXME: make a standalone resources, because this is needed by other constructs as well, and is the primary data source for Muninn
 		this.devicesTable = new DynamoDB.Table(this, 'devicesTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {

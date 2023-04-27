@@ -52,7 +52,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: github-action-nrf-guide-backend
+          role-session-name: github-action-muninn-backend
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Generate Stack ID
@@ -131,7 +131,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: github-action-nrf-guide-backend
+          role-session-name: github-action-muninn-backend
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Tag mqtt bridge image version

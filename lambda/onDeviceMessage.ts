@@ -1,7 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
+import { proto } from '@bifravst/muninn-proto/Muninn'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { proto } from '@nrf-guide/proto/nrfGuide'
 import { getModelForDevice } from './getModelForDevice.js'
 import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'

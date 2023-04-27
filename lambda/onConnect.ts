@@ -5,8 +5,8 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { Context, DeviceIdentity } from '@bifravst/muninn-proto/Muninn'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { Context, DeviceIdentity } from '@nrf-guide/proto/nrfGuide'
 import type { Static } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyStructuredResultV2,

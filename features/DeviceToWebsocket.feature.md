@@ -40,7 +40,7 @@ Then the response should equal to this JSON
 
 ```json
 {
-  "@context": "https://github.com/bifravst/nRF-Guide-proto/transformed/PCA20035%2Bsolar/gain",
+  "@context": "https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/gain",
   "ts": 1681985624779,
   "mA": 3.123456
 }
