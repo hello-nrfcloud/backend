@@ -6,17 +6,15 @@ import {
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
+import type { PersistedDeviceSubscription } from './onDeviceConnectOrDisconnect'
 
 export type Device = {
 	deviceId: string
 	connectionId: string
-	device: {
-		model: string
-	}
+	model: string
 	version?: number
 	count?: number
-	updatedAt?: Date
-	createdAt?: Date
+	updatedAt: Date
 }
 
 export const createDevicesRepository: (
@@ -53,10 +51,13 @@ export const createDevicesRepository: (
 				}),
 			)
 
-			Items?.forEach((item) => {
-				const device = unmarshall(item) as Device
-				devices.push(device)
-			})
+			for (const item of Items ?? []) {
+				const device = unmarshall(item) as PersistedDeviceSubscription
+				devices.push({
+					...device,
+					updatedAt: new Date(device.updatedAt),
+				})
+			}
 
 			lastKey = LastEvaluatedKey
 		} while (lastKey !== undefined)

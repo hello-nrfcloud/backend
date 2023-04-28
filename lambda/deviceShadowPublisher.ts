@@ -13,7 +13,7 @@ const eventBus = new EventBridgeClient({})
 
 export const createDeviceShadowPublisher = (eventBusName: string) => {
 	return async (device: Device, shadow: DeviceShadow): Promise<void> => {
-		const model = device.device.model ?? 'default'
+		const model = device.model ?? 'default'
 		const converted = await proto({
 			onError: (message, model, error) =>
 				log.error(

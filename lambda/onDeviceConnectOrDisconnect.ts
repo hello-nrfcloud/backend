@@ -4,11 +4,10 @@ import {
 	PutItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { marshall } from '@aws-sdk/util-dynamodb'
+import type { DeviceIdentity } from '@bifravst/muninn-proto/Muninn/MuninnMessage.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import type {
-	APIGatewayProxyStructuredResultV2,
-	EventBridgeEvent,
-} from 'aws-lambda'
+import type { Static } from '@sinclair/typebox'
+import type { EventBridgeEvent } from 'aws-lambda'
 import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 const { DevicesTableName } = fromEnv({
@@ -18,31 +17,41 @@ const { DevicesTableName } = fromEnv({
 const log = logger('DeviceTracking')
 const db = new DynamoDBClient({})
 
+export type PersistedDeviceSubscription = {
+	deviceId: string
+	connectionId: string
+	model: string
+	updatedAt: string
+}
+
 export const handler = async (
 	event: EventBridgeEvent<'connect' | 'disconnect', WebsocketPayload>,
-): Promise<APIGatewayProxyStructuredResultV2> => {
+): Promise<void> => {
 	log.info('DeviceTracking event', { event })
 
-	log.info(
-		`${event.detail.deviceId} (${
-			event.detail.connectionId ?? 'without connection id'
-		}) is ${event['detail-type']}`,
-	)
+	if (event.detail.connectionId === undefined) {
+		log.error(
+			`${event.detail.deviceId} (${
+				event.detail.connectionId ?? 'without connection id'
+			}) is ${event['detail-type']}`,
+		)
+		return
+	}
 
-	const deviceData = { ...event.detail.message }
-	delete deviceData['@context']
+	const subscription: PersistedDeviceSubscription = {
+		deviceId: event.detail.deviceId,
+		// Needed for Global Secondary Index
+		updatedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+		connectionId: event.detail.connectionId,
+		model: (event.detail.message as Static<typeof DeviceIdentity>).model,
+	}
+
 	switch (event['detail-type']) {
 		case 'connect':
 			await db.send(
 				new PutItemCommand({
 					TableName: DevicesTableName,
-					Item: marshall({
-						deviceId: event.detail.deviceId,
-						connectionId: event.detail.connectionId,
-						device: deviceData,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date(1900, 1, 1).toISOString(),
-					}),
+					Item: marshall(subscription),
 				}),
 			)
 			break
@@ -61,9 +70,5 @@ export const handler = async (
 			break
 		default:
 			log.warn(`Event is not recognized`, { event })
-	}
-
-	return {
-		statusCode: 200,
 	}
 }
