@@ -16,6 +16,7 @@ export const deviceShadowFetcher =
 	async (devices: string[]): Promise<DeviceShadow[]> => {
 		const params = {
 			includeState: true,
+			includeStateMeta: true,
 			pageLimit: 100,
 			deviceIds: devices.join(','),
 		}

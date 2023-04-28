@@ -27,6 +27,7 @@ export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
 
 		const params: { [K: string]: any } = {
 			includeState: true,
+			includeStateMeta: true,
 			pageLimit: 100,
 			deviceIds: match.groups?.deviceId,
 		}

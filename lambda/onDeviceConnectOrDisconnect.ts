@@ -38,16 +38,16 @@ export const handler = async (
 		return
 	}
 
-	const subscription: PersistedDeviceSubscription = {
-		deviceId: event.detail.deviceId,
-		// Needed for Global Secondary Index
-		updatedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-		connectionId: event.detail.connectionId,
-		model: (event.detail.message as Static<typeof DeviceIdentity>).model,
-	}
-
+	let subscription: PersistedDeviceSubscription
 	switch (event['detail-type']) {
 		case 'connect':
+			subscription = {
+				deviceId: event.detail.deviceId,
+				// Needed for Global Secondary Index
+				updatedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+				connectionId: event.detail.connectionId,
+				model: (event.detail.message as Static<typeof DeviceIdentity>).model,
+			}
 			await db.send(
 				new PutItemCommand({
 					TableName: DevicesTableName,

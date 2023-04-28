@@ -75,9 +75,11 @@ export const handler = async (): Promise<void> => {
 		const chunkedDevices = chunkArray(devices, 50)
 		const shadows = (
 			await Promise.all(
-				chunkedDevices.map(async (devices, index) => limit(async () =>
+				chunkedDevices.map(async (devices, index) =>
+					limit(async () =>
 						deviceShadow(devices.map((device) => device.deviceId)),
-					)),
+					),
+				),
 			)
 		).flat()
 
@@ -88,6 +90,7 @@ export const handler = async (): Promise<void> => {
 				log.info(`Checking shadow version`, {
 					deviceId: d.deviceId,
 					deviceVersion: d.version,
+					model: d.model,
 					shadowVersion: shadow.state.version,
 					isChanged: d.version !== shadow.state.version,
 				})

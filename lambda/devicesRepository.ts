@@ -42,11 +42,6 @@ export const createDevicesRepository: (
 			} = await db.send(
 				new ScanCommand({
 					TableName: tableName,
-					ProjectionExpression:
-						'deviceId, connectionId, device, version, #count',
-					ExpressionAttributeNames: {
-						'#count': 'count',
-					},
 					ExclusiveStartKey: lastKey,
 				}),
 			)
