@@ -48,7 +48,6 @@ jobs:
       - name: Initial solution stack
         run: |
           ./cli.sh configure-nrfcloud ${{ secrets.NRF_CLOUD_API_KEY }}
-          ./cli.sh configure config stack shadowFetchingInterval 10
 
       - name: Deploy solution stack
         env:

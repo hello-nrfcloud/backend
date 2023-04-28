@@ -6,6 +6,7 @@ const { queueUrl } = fromEnv({
 })(process.env)
 
 const queue = new SQSClient({})
+// TODO: Dynamic change the heart beat in runtime
 const heartbeat = 5 // 5 seconds
 
 export const handler = async (): Promise<void> => {

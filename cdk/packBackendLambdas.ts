@@ -24,8 +24,8 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'onDeviceMessage',
 		'lambda/onDeviceMessage.ts',
 	),
-	onDeviceConnectOrDisconnect: await packLambdaFromPath(
-		'onDeviceConnectOrDisconnect',
-		'lambda/onDeviceConnectOrDisconnect.ts',
+	onWebsocketConnectOrDisconnect: await packLambdaFromPath(
+		'onWebsocketConnectOrDisconnect',
+		'lambda/onWebsocketConnectOrDisconnect.ts',
 	),
 })

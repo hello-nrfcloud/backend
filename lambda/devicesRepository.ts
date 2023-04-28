@@ -6,7 +6,7 @@ import {
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import type { PersistedDeviceSubscription } from './onDeviceConnectOrDisconnect'
+import type { PersistedDeviceSubscription } from './onWebsocketConnectOrDisconnect'
 
 export type Device = {
 	deviceId: string

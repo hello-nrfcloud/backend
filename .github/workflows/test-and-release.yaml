@@ -64,7 +64,6 @@ jobs:
       - name: Fake nRF Cloud account device
         run: |
           ./cli.sh fake-nrfcloud-account-device
-          ./cli.sh configure config stack shadowFetchingInterval 5
 
       - name: Deploy test resources stack
         run: |
@@ -96,7 +95,6 @@ jobs:
           npx cdk destroy -f
           npx cdk --app 'npx tsx cdk/test-resources.ts' destroy -f
           ./cli.sh fake-nrfcloud-account-device --remove
-          ./cli.sh configure config stack shadowFetchingInterval --deleteParameter
 
   release:
     needs:

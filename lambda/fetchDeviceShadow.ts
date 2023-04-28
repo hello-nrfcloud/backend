@@ -86,7 +86,7 @@ export const handler = async (): Promise<void> => {
 		for (const shadow of shadows) {
 			// In case multiple web sockets per device
 			const device = devicesMap[shadow.id]
-			device?.forEach(async (d) => {
+			for (const d of device ?? []) {
 				log.info(`Checking shadow version`, {
 					deviceId: d.deviceId,
 					deviceVersion: d.version,
@@ -102,7 +102,7 @@ export const handler = async (): Promise<void> => {
 				if (isUpdated === true) {
 					await deviceShadowPublisher(d, shadow)
 				}
-			})
+			}
 		}
 	} finally {
 		await lock.releaseLock(lockName)

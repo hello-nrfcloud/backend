@@ -26,7 +26,7 @@ export class DeviceShadow extends Construct {
 		}: {
 			websocketAPI: WebsocketAPI
 			lambdaSources: {
-				onDeviceConnectOrDisconnect: PackedLambda
+				onWebsocketConnectOrDisconnect: PackedLambda
 				prepareDeviceShadow: PackedLambda
 				fetchDeviceShadow: PackedLambda
 			}
@@ -63,6 +63,7 @@ export class DeviceShadow extends Construct {
 		})
 
 		// Distribution lock database
+		// The reason why we need lock is the fact that the lower bound of SQS lambda invocation is 2
 		const lockTable = new DynamoDB.Table(this, 'lockTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
@@ -88,17 +89,17 @@ export class DeviceShadow extends Construct {
 		})
 
 		// Lambda functions
-		const onDeviceConnectOrDisconnect = new Lambda.Function(
+		const onWebsocketConnectOrDisconnect = new Lambda.Function(
 			this,
-			'onDeviceConnectOrDisconnect',
+			'onWebsocketConnectOrDisconnect',
 			{
-				handler: lambdaSources.onDeviceConnectOrDisconnect.handler,
+				handler: lambdaSources.onWebsocketConnectOrDisconnect.handler,
 				architecture: Lambda.Architecture.ARM_64,
 				runtime: Lambda.Runtime.NODEJS_18_X,
 				timeout: Duration.seconds(5),
 				memorySize: 1792,
 				code: Lambda.Code.fromAsset(
-					lambdaSources.onDeviceConnectOrDisconnect.zipFile,
+					lambdaSources.onWebsocketConnectOrDisconnect.zipFile,
 				),
 				description: 'Subscribe to device connection or disconnection',
 				environment: {
@@ -115,14 +116,16 @@ export class DeviceShadow extends Construct {
 				source: ['thingy.ws'],
 				detailType: ['disconnect', 'connect'],
 			},
-			targets: [new EventTargets.LambdaFunction(onDeviceConnectOrDisconnect)],
+			targets: [
+				new EventTargets.LambdaFunction(onWebsocketConnectOrDisconnect),
+			],
 			eventBus: websocketAPI.eventBus,
 		})
-		devicesTable.grantReadWriteData(onDeviceConnectOrDisconnect)
+		devicesTable.grantReadWriteData(onWebsocketConnectOrDisconnect)
 		new LambdaLogGroup(
 			this,
-			'onDeviceConnectOrDisconnectLog',
-			onDeviceConnectOrDisconnect,
+			'onWebsocketConnectOrDisconnectLog',
+			onWebsocketConnectOrDisconnect,
 		)
 
 		const prepareDeviceShadow = new Lambda.Function(
