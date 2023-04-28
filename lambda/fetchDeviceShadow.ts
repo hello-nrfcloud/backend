@@ -75,11 +75,9 @@ export const handler = async (): Promise<void> => {
 		const chunkedDevices = chunkArray(devices, 50)
 		const shadows = (
 			await Promise.all(
-				chunkedDevices.map(async (devices, index) => {
-					return limit(async () =>
+				chunkedDevices.map(async (devices, index) => limit(async () =>
 						deviceShadow(devices.map((device) => device.deviceId)),
-					)
-				}),
+					)),
 			)
 		).flat()
 
