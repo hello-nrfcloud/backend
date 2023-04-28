@@ -9,14 +9,14 @@ Given There is a device as this JSON
 
 ```json
 {
-  "deviceId": "nrf-test-shadow-device-id",
+  "deviceId": "nrf-352656108602296",
   "code": "42.d3c4fb4d",
   "model": "PCA20035+solar"
 }
 ```
 
-And there is a shadow data of device id `nrf-test-shadow-device-id` in nRF Cloud
-as this JSON
+And there is a shadow data of device id `nrf-352656108602296` in nRF Cloud as
+this JSON
 
 ```json
 {
