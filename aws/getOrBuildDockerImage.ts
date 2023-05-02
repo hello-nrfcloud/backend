@@ -74,7 +74,7 @@ export const getOrBuildDockerImage =
 		})
 
 		// Deployment phase
-		if (releaseImageTag !== undefined) {
+		if (releaseImageTag !== undefined && releaseImageTag !== '') {
 			debug?.(
 				`Checking release image tag: ${releaseImageTag} in ${repositoryName} repository`,
 			)
