@@ -21,6 +21,7 @@ export type PersistedDeviceSubscription = {
 	deviceId: string
 	connectionId: string
 	model: string
+	staticKey: string
 	updatedAt: string
 }
 
@@ -45,8 +46,12 @@ export const handler = async (
 				deviceId: event.detail.deviceId,
 				// Needed for Global Secondary Index
 				updatedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+				// Needed for Global Secondary Index as partition key
+				staticKey: 'Muninn',
 				connectionId: event.detail.connectionId,
-				model: (event.detail.message as Static<typeof DeviceIdentity>).model,
+				model:
+					(event.detail.message as Static<typeof DeviceIdentity>).model ??
+					'default',
 			}
 			await db.send(
 				new PutItemCommand({

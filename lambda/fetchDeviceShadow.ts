@@ -3,16 +3,33 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import pLimit from 'p-limit'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
 import { createDeviceShadowPublisher } from './deviceShadowPublisher.js'
+import { deviceShadowUpdateChecker } from './deviceShadowUpdateChecker.js'
 import { createDevicesRepository } from './devicesRepository.js'
 import { deviceShadowFetcher } from './getDeviceShadowFromnRFCloud.js'
 import { getNRFCloudSSMParameters } from './getSSMParameter.js'
 import { createLock } from './lock.js'
 import { logger } from './logger.js'
 
+<<<<<<< HEAD
 const { devicesTable, lockTable, eventBusName, stackName } = fromEnv({
 	stackName: 'STACK_NAME',
 	devicesTable: 'DEVICES_TABLE',
 	lockTable: 'LOCK_TABLE',
+=======
+const {
+	devicesTable,
+	devicesIndexName,
+	lockTable,
+	nrfCloudEndpoint,
+	apiKey,
+	eventBusName,
+} = fromEnv({
+	devicesTable: 'DEVICES_TABLE',
+	devicesIndexName: 'DEVICES_INDEX_NAME',
+	lockTable: 'LOCK_TABLE',
+	nrfCloudEndpoint: 'NRF_CLOUD_ENDPOINT',
+	apiKey: 'API_KEY',
+>>>>>>> 4b41af4 (feat: update fetching interval in run time)
 	eventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
@@ -21,9 +38,10 @@ const db = new DynamoDBClient({})
 const log = logger('fetchDeviceShadow')
 
 const lockName = 'fetch-shadow'
-const lockTTL = 30
+const lockTTL = 3 // seconds
 const lock = createLock(db, lockTable)
 
+<<<<<<< HEAD
 const deviceRepository = createDevicesRepository(db, devicesTable)
 const deviceShadowPromise = (async () => {
 	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
@@ -38,6 +56,17 @@ const deviceShadowPromise = (async () => {
 		apiKey,
 	})
 })()
+=======
+const deviceRepository = createDevicesRepository(
+	db,
+	devicesTable,
+	devicesIndexName,
+)
+const deviceShadow = deviceShadowFetcher({
+	endpoint: nrfCloudEndpoint,
+	apiKey,
+})
+>>>>>>> 4b41af4 (feat: update fetching interval in run time)
 const deviceShadowPublisher = createDeviceShadowPublisher(eventBusName)
 
 const chunkArray = <T>(arr: T[], size: number): T[][] => {
@@ -77,8 +106,20 @@ export const handler = async (): Promise<void> => {
 	}
 
 	try {
-		const devices = await deviceRepository.getAll()
-		log.info(`Found ${devices.length} active devices`)
+		const onlineDevices = await deviceRepository.getAll()
+		log.info(`Found ${onlineDevices.length} online devices`)
+
+		// Filter based on the configuration
+		const devices = onlineDevices.filter(async (device) => {
+			const willUpdated = await deviceShadowUpdateChecker({
+				model: device.model,
+				updatedAt: device.updatedAt,
+				count: device.count ?? 0,
+			})
+
+			return willUpdated
+		})
+		log.info(`Found ${devices.length} devices to get shadow`)
 		const devicesMap = convertToMap(devices, 'deviceId')
 
 		// Bulk fetching device shadow to avoid rate limit

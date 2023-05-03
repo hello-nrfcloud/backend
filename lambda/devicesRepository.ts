@@ -1,11 +1,13 @@
 import {
 	AttributeValue,
 	ConditionalCheckFailedException,
+	QueryCommand,
 	ScanCommand,
 	UpdateItemCommand,
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { ensureNumber } from '../util/ensureNumber.js'
 import type { PersistedDeviceSubscription } from './onWebsocketConnectOrDisconnect'
 
 export type Device = {
@@ -20,15 +22,17 @@ export type Device = {
 export const createDevicesRepository: (
 	db: DynamoDBClient,
 	tableName: string,
+	indexName: string,
 ) => {
 	getAll: () => Promise<Device[]>
+	getWillUpdatedDevice: (threshold: Date) => Promise<Device[]>
 	updateDevice: (
 		deviceId: string,
 		connectionId: string,
 		version: number,
 	) => Promise<boolean>
-} = (db: DynamoDBClient, tableName: string) => {
-	const getAll = async () => {
+} = (db, tableName, indexName) => ({
+	getAll: async () => {
 		const devices: Device[] = []
 		let lastKey: Record<string, AttributeValue> | undefined = undefined
 
@@ -58,15 +62,59 @@ export const createDevicesRepository: (
 		} while (lastKey !== undefined)
 
 		return devices
-	}
+	},
 
-	const updateDevice = async (
+	getWillUpdatedDevice: async (threshold) => {
+		const staticKey = 'Muninn'
+		const devices: Device[] = []
+		let lastKey: Record<string, AttributeValue> | undefined = undefined
+
+		do {
+			const {
+				Items,
+				LastEvaluatedKey,
+			}: {
+				Items?: Record<string, AttributeValue>[]
+				LastEvaluatedKey?: Record<string, AttributeValue>
+			} = await db.send(
+				new QueryCommand({
+					TableName: tableName,
+					IndexName: indexName,
+					KeyConditionExpression:
+						'#staticKey = :staticKey AND #updatedAt <= :updatedAt',
+					ExpressionAttributeNames: {
+						'#staticKey': 'staticKey',
+						'#updatedAt': 'updatedAt',
+					},
+					ExpressionAttributeValues: {
+						':staticKey': { S: staticKey },
+						':updatedAt': { S: threshold.toISOString() },
+					},
+					ExclusiveStartKey: lastKey,
+				}),
+			)
+
+			for (const item of Items ?? []) {
+				const device = unmarshall(item) as PersistedDeviceSubscription
+				devices.push({
+					...device,
+					updatedAt: new Date(device.updatedAt),
+				})
+			}
+
+			lastKey = LastEvaluatedKey
+		} while (lastKey !== undefined)
+
+		return devices
+	},
+
+	updateDevice: async (
 		deviceId: string,
 		connectionId: string,
 		version: number,
 	): Promise<boolean> => {
 		try {
-			await db.send(
+			const result = await db.send(
 				new UpdateItemCommand({
 					TableName: tableName,
 					Key: {
@@ -86,11 +134,12 @@ export const createDevicesRepository: (
 						':increase': { N: '1' },
 					},
 					ConditionExpression:
-						'attribute_not_exists(#version) OR :version > #version',
+						'attribute_not_exists(#version) OR #version <= :version',
+					ReturnValues: 'ALL_OLD',
 				}),
 			)
 
-			return true
+			return version > ensureNumber(result.Attributes?.version?.N, 0)
 		} catch (error) {
 			if (error instanceof ConditionalCheckFailedException) {
 				return false
@@ -98,10 +147,5 @@ export const createDevicesRepository: (
 
 			throw error
 		}
-	}
-
-	return {
-		getAll,
-		updateDevice,
-	}
-}
+	},
+})

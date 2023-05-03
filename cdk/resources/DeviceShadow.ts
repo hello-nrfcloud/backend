@@ -12,10 +12,12 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
+import { STACK_NAME } from '../stacks/stackConfig.js'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 export class DeviceShadow extends Construct {
+	private readonly devicesTableIndexName = 'model-updatedAt-index'
 	public constructor(
 		parent: Construct,
 		{
@@ -77,6 +79,19 @@ export class DeviceShadow extends Construct {
 				type: DynamoDB.AttributeType.STRING,
 			},
 			removalPolicy: RemovalPolicy.DESTROY,
+		})
+		// The staticKey will be the same for all records, then we can filter using updatedAt field
+		devicesTable.addGlobalSecondaryIndex({
+			indexName: this.devicesTableIndexName,
+			partitionKey: {
+				name: 'staticKey',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			sortKey: {
+				name: 'updatedAt',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.ALL,
 		})
 
 		// Lambda functions
@@ -155,8 +170,10 @@ export class DeviceShadow extends Construct {
 			description: `Fetch devices' shadow from nRF Cloud`,
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
+				STACK_NAME,
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
 				DEVICES_TABLE: devicesTable.tableName,
+				DEVICES_INDEX_NAME: this.devicesTableIndexName,
 				LOCK_TABLE: lockTable.tableName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
@@ -174,6 +191,14 @@ export class DeviceShadow extends Construct {
 			],
 			layers,
 		})
+		const ssmReadPolicy = new IAM.PolicyStatement({
+			effect: IAM.Effect.ALLOW,
+			actions: ['ssm:GetParametersByPath'],
+			resources: [
+				`arn:aws:ssm:${parent.region}:${parent.account}:parameter/${STACK_NAME}/config/stack`,
+			],
+		})
+		fetchDeviceShadow.addToRolePolicy(ssmReadPolicy)
 		websocketAPI.eventBus.grantPutEventsTo(fetchDeviceShadow)
 		devicesTable.grantReadWriteData(fetchDeviceShadow)
 		lockTable.grantReadWriteData(fetchDeviceShadow)
