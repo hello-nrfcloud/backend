@@ -5,6 +5,7 @@ import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
 import { DeviceShadow } from '../resources/DeviceShadow.js'
+import { DeviceStorage } from '../resources/DeviceStorage.js'
 import {
 	Integration,
 	type BridgeImageSettings,
@@ -46,8 +47,11 @@ export class BackendStack extends Stack {
 			}:094274105915:layer:AWSLambdaPowertoolsTypeScript:7`,
 		)
 
+		const deviceStorage = new DeviceStorage(this)
+
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
+			deviceStorage,
 			layers: [baseLayer, powerToolLayer],
 		})
 
@@ -65,6 +69,7 @@ export class BackendStack extends Stack {
 		})
 
 		new ConvertDeviceMessages(this, {
+			deviceStorage,
 			websocketAPI,
 			lambdaSources,
 			layers: [baseLayer, powerToolLayer],
@@ -79,7 +84,7 @@ export class BackendStack extends Stack {
 		new CfnOutput(this, 'devicesTable', {
 			exportName: `${this.stackName}:devicesTable`,
 			description: 'Device table name',
-			value: websocketAPI.devicesTable.tableName,
+			value: deviceStorage.devicesTable.tableName,
 		})
 		new CfnOutput(this, 'bridgeRepositoryURI', {
 			exportName: `${this.stackName}:bridgeRepositoryURI`,

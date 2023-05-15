@@ -7,6 +7,7 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
+import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
@@ -20,7 +21,9 @@ export class ConvertDeviceMessages extends Construct {
 			lambdaSources,
 			layers,
 			websocketAPI,
+			deviceStorage,
 		}: {
+			deviceStorage: DeviceStorage
 			websocketAPI: WebsocketAPI
 			lambdaSources: {
 				onDeviceMessage: PackedLambda
@@ -42,14 +45,14 @@ export class ConvertDeviceMessages extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
-				DEVICES_TABLE_NAME: websocketAPI.devicesTable.tableName,
-				DEVICES_INDEX_NAME: websocketAPI.devicesTableCodeIndexName,
+				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+				DEVICES_INDEX_NAME: deviceStorage.devicesTableCodeIndexName,
 			},
 			layers,
 		})
 		new LambdaLogGroup(this, 'onDeviceMessageLogs', onDeviceMessage)
 		websocketAPI.eventBus.grantPutEventsTo(onDeviceMessage)
-		websocketAPI.devicesTable.grantReadData(onDeviceMessage)
+		deviceStorage.devicesTable.grantReadData(onDeviceMessage)
 
 		const iotActionRole = new IAM.Role(this, 'iot-action-role', {
 			assumedBy: new IAM.ServicePrincipal(

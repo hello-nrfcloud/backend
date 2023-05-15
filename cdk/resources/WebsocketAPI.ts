@@ -12,22 +12,23 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
+import type { DeviceStorage } from './DeviceStorage.js'
 
 export class WebsocketAPI extends Construct {
 	public readonly websocketURI: string
 	public readonly connectionsTable: DynamoDB.Table
 	public readonly connectionsTableIndexName = 'deviceIdIndex'
-	public readonly devicesTable: DynamoDB.Table
-	public readonly devicesTableCodeIndexName = 'codeIndex'
 	public readonly eventBus: Events.IEventBus
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
 	public constructor(
 		parent: Stack,
 		{
+			deviceStorage,
 			lambdaSources,
 			layers,
 		}: {
+			deviceStorage: DeviceStorage
 			lambdaSources: {
 				onConnect: PackedLambda
 				onMessage: PackedLambda
@@ -60,27 +61,6 @@ export class WebsocketAPI extends Construct {
 			},
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
-		// FIXME: make a standalone resources, because this is needed by other constructs as well, and is the primary data source for Muninn
-		this.devicesTable = new DynamoDB.Table(this, 'devicesTable', {
-			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
-			partitionKey: {
-				name: 'deviceId',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			removalPolicy: RemovalPolicy.DESTROY,
-		})
-		this.devicesTable.addGlobalSecondaryIndex({
-			indexName: this.devicesTableCodeIndexName,
-			partitionKey: {
-				name: 'code',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			sortKey: {
-				name: 'deviceId',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			projectionType: DynamoDB.ProjectionType.ALL,
-		})
 
 		// OnConnect
 		const onConnect = new Lambda.Function(this, 'onConnect', {
@@ -94,21 +74,21 @@ export class WebsocketAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-				DEVICES_TABLE_NAME: this.devicesTable.tableName,
-				DEVICES_INDEX_NAME: this.devicesTableCodeIndexName,
+				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+				DEVICES_INDEX_NAME: deviceStorage.devicesTableCodeIndexName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
 					actions: ['dynamodb:Query'],
-					resources: [`${this.devicesTable.tableArn}/index/*`],
+					resources: [`${deviceStorage.devicesTable.tableArn}/index/*`],
 				}),
 			],
 			layers,
 		})
 		this.connectionsTable.grantWriteData(onConnect)
-		this.devicesTable.grantReadData(onConnect)
+		deviceStorage.devicesTable.grantReadData(onConnect)
 		this.eventBus.grantPutEventsTo(onConnect)
 		new LambdaLogGroup(this, 'onConnectLogs', onConnect)
 
