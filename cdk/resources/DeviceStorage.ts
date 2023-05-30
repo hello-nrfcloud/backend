@@ -14,6 +14,7 @@ export class DeviceStorage extends Construct {
 				type: DynamoDB.AttributeType.STRING,
 			},
 			removalPolicy: RemovalPolicy.RETAIN,
+			pointInTimeRecovery: true,
 		})
 		this.devicesTable.addGlobalSecondaryIndex({
 			indexName: this.devicesTableCodeIndexName,
