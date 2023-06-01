@@ -48,7 +48,7 @@ export const getSettings =
 		scope: Scopes
 		system: Systems
 	}) =>
-	async (errorNotFound = true): Promise<Settings> => {
+	async (): Promise<Settings> => {
 		const Path = settingsPath({ stackName, scope, system })
 		const Parameters: Parameter[] = []
 		await paginate({
@@ -68,7 +68,7 @@ export const getSettings =
 					}),
 		})
 
-		if (errorNotFound === true && Parameters.length === 0)
+		if (Parameters.length === 0)
 			throw new Error(`System not configured: ${Path}!`)
 
 		return Parameters.map(({ Name, ...rest }) => ({

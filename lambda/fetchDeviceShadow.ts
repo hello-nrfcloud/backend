@@ -3,7 +3,7 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import pLimit from 'p-limit'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
 import { createDeviceShadowPublisher } from './deviceShadowPublisher.js'
-import { deviceShadowUpdateChecker } from './deviceShadowUpdateChecker.js'
+import { createDeviceUpdateChecker } from './deviceShadowUpdateChecker.js'
 import { createDevicesRepository } from './devicesRepository.js'
 import { deviceShadowFetcher } from './getDeviceShadowFromnRFCloud.js'
 import { getNRFCloudSSMParameters } from './getSSMParameter.js'
@@ -104,20 +104,25 @@ export const handler = async (): Promise<void> => {
 		log.info(`Other process is still running, then ignore`)
 		return
 	}
+	const executionTime = new Date()
 
 	try {
 		const onlineDevices = await deviceRepository.getAll()
 		log.info(`Found ${onlineDevices.length} online devices`)
+		if (onlineDevices.length === 0) return
 
 		// Filter based on the configuration
-		const devices = onlineDevices.filter(async (device) => {
-			const willUpdated = await deviceShadowUpdateChecker({
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			executionTime,
+		)
+		const devices = onlineDevices.filter((device) => {
+			const shouldUpdate = deviceShadowUpdateChecker({
 				model: device.model,
 				updatedAt: device.updatedAt,
 				count: device.count ?? 0,
 			})
 
-			return willUpdated
+			return shouldUpdate
 		})
 		log.info(`Found ${devices.length} devices to get shadow`)
 		const devicesMap = convertToMap(devices, 'deviceId')
@@ -149,6 +154,7 @@ export const handler = async (): Promise<void> => {
 					d.deviceId,
 					d.connectionId,
 					shadow.state.version,
+					executionTime,
 				)
 				if (isUpdated === true) {
 					await deviceShadowPublisher(d, shadow)

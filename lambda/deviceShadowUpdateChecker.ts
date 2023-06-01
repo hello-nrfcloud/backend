@@ -1,8 +1,7 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { ensureNumber } from '../util/ensureNumber.js'
-import { createInMemoryCache } from '../util/inMemoryCache.js'
-import { getSettings } from '../util/settings.js'
+import { getSettingsOptional } from '../util/settings.js'
 import { logger } from './logger.js'
 
 // Format:
@@ -26,7 +25,10 @@ const log = logger('deviceShadowUpdateChecker')
 
 const jitter = 200 // The time we compensate for execution time
 const ssm = new SSMClient({})
-const stackConfig = getSettings<ParameterConfig>({
+const stackConfig = getSettingsOptional<
+	ParameterConfig,
+	{ [k: string]: string }
+>({
 	ssm,
 	stackName: STACK_NAME,
 	scope: 'config',
@@ -81,42 +83,34 @@ export const parseConfig = (config: ParameterConfig): ScheduleConfig => {
 	return parsedConfig
 }
 
-const cache = createInMemoryCache<ScheduleConfig>()
-const cacheKey = 'schedule-config'
-const cacheTTL = 300 // 5 mins
 const getScheduleConfig = async (): Promise<ScheduleConfig> => {
-	let scheduleConfig = cache.get(cacheKey)
-	if (scheduleConfig === null) {
-		const parameterConfig = await stackConfig(false)
-		log.info(`Cache expired (${cacheTTL}s), fetching new one`, {
-			parameterConfig,
-		})
-		scheduleConfig = parseConfig(parameterConfig)
-		cache.set(cacheKey, scheduleConfig, cacheTTL)
-	}
-
-	return scheduleConfig
+	const parameterConfig = await stackConfig({})
+	log.info(`Fetching configuration from parameter store`, {
+		parameterConfig,
+	})
+	return parseConfig(parameterConfig)
 }
 
-export const deviceShadowUpdateChecker = async (
-	device: WillUpdatedDevice,
-): Promise<boolean> => {
+export const createDeviceUpdateChecker = async (
+	referenceTime: Date,
+): Promise<(device: WillUpdatedDevice) => boolean> => {
 	const config = await getScheduleConfig()
-	const currentDate = Date.now()
-
-	// The default is 5 seconds rate
-	const defaultStep = config['default'] ?? [
-		{ count: Number.MAX_SAFE_INTEGER, interval: 5 },
-	]
-	const modelStep = config[device.model] ?? defaultStep
-	for (const step of modelStep) {
-		if (device.count <= step.count) {
-			return (
-				device.updatedAt <=
-				new Date(currentDate - step.interval * 1000 + jitter)
-			)
+	return (device) => {
+		// The default is 5 seconds rate
+		const defaultStep = config['default'] ?? [
+			{ count: Number.MAX_SAFE_INTEGER, interval: 5 },
+		]
+		const modelStep =
+			config[device.model?.replace(/[^\w.-]/g, '_')] ?? defaultStep
+		for (const step of modelStep) {
+			if (device.count <= step.count) {
+				return (
+					device.updatedAt <=
+					new Date(referenceTime.getTime() - step.interval * 1000 + jitter)
+				)
+			}
 		}
-	}
 
-	return false
+		return false
+	}
 }

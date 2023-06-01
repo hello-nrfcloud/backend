@@ -30,6 +30,7 @@ export const createDevicesRepository: (
 		deviceId: string,
 		connectionId: string,
 		version: number,
+		executionTime: Date,
 	) => Promise<boolean>
 } = (db, tableName, indexName) => ({
 	getAll: async () => {
@@ -112,6 +113,7 @@ export const createDevicesRepository: (
 		deviceId: string,
 		connectionId: string,
 		version: number,
+		executionTime: Date,
 	): Promise<boolean> => {
 		try {
 			const result = await db.send(
@@ -130,7 +132,7 @@ export const createDevicesRepository: (
 					},
 					ExpressionAttributeValues: {
 						':version': { N: version.toString() },
-						':updatedAt': { S: new Date().toISOString() },
+						':updatedAt': { S: executionTime.toISOString() },
 						':increase': { N: '1' },
 					},
 					ConditionExpression:

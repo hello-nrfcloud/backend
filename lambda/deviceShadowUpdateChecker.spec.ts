@@ -1,10 +1,10 @@
 import {
-	deviceShadowUpdateChecker,
+	createDeviceUpdateChecker,
 	parseConfig,
 } from './deviceShadowUpdateChecker.js'
 let returnedMockData: unknown
 jest.mock('../util/settings.js', () => ({
-	getSettings: () => async () => returnedMockData,
+	getSettingsOptional: () => async () => returnedMockData,
 }))
 jest.mock('../util/inMemoryCache.js', () => ({
 	createInMemoryCache: () => ({
@@ -82,26 +82,32 @@ describe('deviceShadowUpdateChecker', () => {
 	it('returns true if the device has not been updated in the given interval with no configuration', async () => {
 		// Default is 5 seconds
 		returnedMockData = {}
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			new Date(),
+		)
 
 		const device = {
 			model: 'test-model',
 			updatedAt: new Date(Date.now() - 6000), // 6 seconds ago
 			count: 0,
 		}
-		const result = await deviceShadowUpdateChecker(device)
+		const result = deviceShadowUpdateChecker(device)
 		expect(result).toBe(true)
 	})
 
 	it('returns false if the device has been updated more recently than the given interval with no configuration', async () => {
 		// Default is 5 seconds
 		returnedMockData = {}
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			new Date(),
+		)
 
 		const device = {
 			model: 'test-model',
 			updatedAt: new Date(Date.now() - 4000), // 4 seconds ago
 			count: 0,
 		}
-		const result = await deviceShadowUpdateChecker(device)
+		const result = deviceShadowUpdateChecker(device)
 		expect(result).toBe(false)
 	})
 
@@ -110,13 +116,16 @@ describe('deviceShadowUpdateChecker', () => {
 			'test-model': '20',
 			default: '6:10',
 		}
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			new Date(),
+		)
 
 		const device = {
 			model: 'unknown-model',
 			updatedAt: new Date(Date.now() - 6000), // 6 seconds ago
 			count: 1,
 		}
-		const result = await deviceShadowUpdateChecker(device)
+		const result = deviceShadowUpdateChecker(device)
 		expect(result).toBe(true)
 	})
 
@@ -125,13 +134,16 @@ describe('deviceShadowUpdateChecker', () => {
 			'test-model': '20',
 			default: '2:10, 6:15',
 		}
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			new Date(),
+		)
 
 		const device = {
 			model: 'unknown-model',
 			updatedAt: new Date(Date.now() - 6000), // 6 seconds ago
 			count: 20,
 		}
-		const result = await deviceShadowUpdateChecker(device)
+		const result = deviceShadowUpdateChecker(device)
 		expect(result).toBe(true)
 	})
 
@@ -140,13 +152,16 @@ describe('deviceShadowUpdateChecker', () => {
 			'test-model': '4',
 			default: '6:10',
 		}
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			new Date(),
+		)
 
 		const device = {
 			model: 'test-model',
 			updatedAt: new Date(Date.now() - 4000), // 4 seconds ago
 			count: 3,
 		}
-		const result = await deviceShadowUpdateChecker(device)
+		const result = deviceShadowUpdateChecker(device)
 		expect(result).toBe(true)
 	})
 
@@ -154,13 +169,16 @@ describe('deviceShadowUpdateChecker', () => {
 		returnedMockData = {
 			'test-model': '1:2, 6:10',
 		}
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			new Date(),
+		)
 
 		const device = {
 			model: 'test-model',
 			updatedAt: new Date(Date.now() - 6000), // 6 seconds ago
 			count: 3,
 		}
-		const result = await deviceShadowUpdateChecker(device)
+		const result = deviceShadowUpdateChecker(device)
 		expect(result).toBe(true)
 	})
 
@@ -168,6 +186,9 @@ describe('deviceShadowUpdateChecker', () => {
 		returnedMockData = {
 			default: '6',
 		}
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			new Date(),
+		)
 
 		const device1 = {
 			model: 'test-model1',
@@ -180,10 +201,10 @@ describe('deviceShadowUpdateChecker', () => {
 			count: 3,
 		}
 
-		const result1 = await deviceShadowUpdateChecker(device1)
+		const result1 = deviceShadowUpdateChecker(device1)
 		expect(result1).toBe(true)
 
-		const result2 = await deviceShadowUpdateChecker(device2)
+		const result2 = deviceShadowUpdateChecker(device2)
 		expect(result2).toBe(false)
 	})
 })

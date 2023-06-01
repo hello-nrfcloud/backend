@@ -14,7 +14,9 @@ import {
 } from '../cdk/stacks/stackConfig.js'
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
 import { getSettings } from '../nrfcloud/settings.js'
+import { putSettings } from '../util/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
+import { steps as configSteps } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
@@ -47,12 +49,20 @@ export type World = {
 	tenantId: string
 	responsesTableName: string
 	requestsTableName: string
+	configWriter: ReturnType<typeof putSettings>
 }
 
 const accountDeviceSettings = await getSettings({
 	ssm,
 	stackName: STACK_NAME,
 })()
+const configWriter = putSettings({
+	ssm,
+	stackName: STACK_NAME,
+	scope: 'config',
+	system: 'stack',
+})
+
 const db = new DynamoDBClient({})
 const timestream = await queryClient()
 
@@ -98,6 +108,7 @@ runner
 	.addStepRunners(...mocknRFCloudSteps({ db }))
 	.addStepRunners(...historicalSteps({ timestream }))
 	.addStepRunners(...storageSteps())
+	.addStepRunners(...configSteps())
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,
@@ -106,6 +117,7 @@ const res = await runner.run({
 	responsesTableName: testConfig.responsesTableName,
 	requestsTableName: testConfig.requestsTableName,
 	historicalDataTableInfo: config.historicalDataTableInfo,
+	configWriter,
 })
 
 await Promise.all(cleaners.map(async (fn) => fn()))
