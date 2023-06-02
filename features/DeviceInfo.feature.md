@@ -1,7 +1,7 @@
 # Device Info
 
-> After connecting to the websocket with a device code, the device info is
-> returned
+> After connecting to the websocket with a device fingerprint, the device info
+> is returned
 
 ## Background
 
@@ -10,14 +10,14 @@ Given There is a device as this JSON
 ```json
 {
   "deviceId": "nrf-test-device-id",
-  "code": "42.d3adbeef",
+  "fingerprint": "2a.c4ff33",
   "model": "PCA20035+solar"
 }
 ```
 
-## Connect with a valid code
+## Connect with a valid fingerprint
 
-When I connect websocket with code `42.d3adbeef`
+When I connect websocket with fingerprint `2a.c4ff33`
 
 Then the connection response should equal to this JSON
 

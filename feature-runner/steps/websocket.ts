@@ -23,18 +23,19 @@ const wsConnect = async ({
 	},
 	context,
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^I connect websocket with code `(?<code>[^`]+)`$/.exec(
-		step.title,
-	)
+	const match =
+		/^I connect websocket with fingerprint `(?<fingerprint>[^`]+)`$/.exec(
+			step.title,
+		)
 	if (match === null) return noMatch
 
 	const { websocketUri } = context
-	const wsURL = `${websocketUri}?code=${match.groups?.code}`
+	const wsURL = `${websocketUri}?fingerprint=${match.groups?.fingerprint}`
 
 	if (wsClients[wsURL] === undefined) {
 		progress(`Connect websocket to ${websocketUri}`)
 		wsClients[wsURL] = createWebsocketClient({
-			id: match.groups?.code ?? randomUUID(),
+			id: match.groups?.fingerprint ?? randomUUID(),
 			url: wsURL,
 			debug: (...args) => featureProgress('[ws]', ...args),
 		})

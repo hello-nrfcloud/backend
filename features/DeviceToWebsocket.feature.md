@@ -15,14 +15,14 @@ Given There is a device as this JSON
 ```json
 {
   "deviceId": "nrf-test-device-id",
-  "code": "42.d3adbeef",
+  "fingerprint": "2a.c4ff33",
   "model": "PCA20035+solar"
 }
 ```
 
 ## Verify a device sends a message to nRF Cloud, then I can receive the message via website
 
-Given I connect websocket with code `42.d3adbeef`
+Given I connect websocket with fingerprint `2a.c4ff33`
 
 When a device with id `nrf-test-device-id` publishes to topic
 `m/d/nrf-test-device-id/d2c` with a message as this JSON

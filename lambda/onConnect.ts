@@ -34,9 +34,9 @@ export const handler = async (
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.debug('onConnect event', { event })
 
-	const code = event.queryStringParameters?.code
-	if (code === undefined) {
-		log.error(`Code cannot be empty`)
+	const fingerprint = event.queryStringParameters?.fingerprint
+	if (fingerprint === undefined) {
+		log.error(`Fingerprint cannot be empty`)
 		return {
 			statusCode: 403, // Forbidden error
 		}
@@ -45,13 +45,13 @@ export const handler = async (
 		new QueryCommand({
 			TableName: DevicesTableName,
 			IndexName: DevicesIndexName,
-			KeyConditionExpression: '#code = :code',
+			KeyConditionExpression: '#fingerprint = :fingerprint',
 			ExpressionAttributeNames: {
-				'#code': 'code',
+				'#fingerprint': 'fingerprint',
 			},
 			ExpressionAttributeValues: {
-				':code': {
-					S: code,
+				':fingerprint': {
+					S: fingerprint,
 				},
 			},
 		}),
@@ -59,13 +59,13 @@ export const handler = async (
 
 	const device = res.Items?.[0] !== undefined ? unmarshall(res.Items[0]) : null
 	if (device === null) {
-		log.error(`DeviceId is not found with`, { code })
+		log.error(`DeviceId is not found with`, { fingerprint })
 		return {
 			statusCode: 403, // Forbidden error
 		}
 	}
 
-	const { code: _, ...rest } = device
+	const { fingerprint: _, ...rest } = device
 
 	const message: Static<typeof DeviceIdentity> = {
 		'@context': Context.deviceIdentity.toString(),

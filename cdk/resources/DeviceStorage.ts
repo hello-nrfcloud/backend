@@ -3,7 +3,7 @@ import { Construct } from 'constructs'
 
 export class DeviceStorage extends Construct {
 	public readonly devicesTable: DynamoDB.Table
-	public readonly devicesTableCodeIndexName = 'codeIndex'
+	public readonly devicesTableFingerprintIndexName = 'fingerprintIndex'
 	public constructor(parent: Stack) {
 		super(parent, 'DevicesTable')
 
@@ -17,9 +17,9 @@ export class DeviceStorage extends Construct {
 			pointInTimeRecovery: true,
 		})
 		this.devicesTable.addGlobalSecondaryIndex({
-			indexName: this.devicesTableCodeIndexName,
+			indexName: this.devicesTableFingerprintIndexName,
 			partitionKey: {
-				name: 'code',
+				name: 'fingerprint',
 				type: DynamoDB.AttributeType.STRING,
 			},
 			sortKey: {

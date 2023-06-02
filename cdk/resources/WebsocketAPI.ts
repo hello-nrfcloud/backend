@@ -75,7 +75,7 @@ export class WebsocketAPI extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-				DEVICES_INDEX_NAME: deviceStorage.devicesTableCodeIndexName,
+				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 			},

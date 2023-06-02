@@ -1,7 +1,7 @@
 # Device Shadow
 
-> After connecting to the websocket with a device code, the device shadow is
-> returned
+> After connecting to the websocket with a device fingerprint, the device shadow
+> is returned
 
 ## Background
 
@@ -10,7 +10,7 @@ Given There is a device as this JSON
 ```json
 {
   "deviceId": "nrf-352656108602296",
-  "code": "42.d3c4fb4d",
+  "fingerprint": "2a.b4ff3d",
   "model": "PCA20035+solar"
 }
 ```
@@ -286,7 +286,7 @@ this JSON
 
 ## Verify a device sends shadow data to nRF Cloud, then I can receive the message via website
 
-Given I connect websocket with code `42.d3c4fb4d`
+Given I connect websocket with fingerprint `2a.b4ff3d`
 
 Then wait for `5` second(s)
 
@@ -341,7 +341,7 @@ Then the response should equal to this JSON
 
 ## Verify I will not receive the device shadow if the version is not updated
 
-Given I connect websocket with code `42.d3c4fb4d`
+Given I connect websocket with fingerprint `2a.b4ff3d`
 
 And wait for `5` second(s)
 

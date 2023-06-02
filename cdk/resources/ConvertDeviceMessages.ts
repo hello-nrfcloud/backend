@@ -46,7 +46,7 @@ export class ConvertDeviceMessages extends Construct {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-				DEVICES_INDEX_NAME: deviceStorage.devicesTableCodeIndexName,
+				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 			},
 			layers,
 		})
