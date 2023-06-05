@@ -59,15 +59,3 @@ associates with the same device id.
 
 Messages will be converted using
 [`@bifravst/muninn-proto`](https://github.com/bifravst/Muninn-proto).
-
-## Push data to websocket though SQS
-
-You can push data to specific websocket client or broadcast to everyone though
-SQS. The format is
-
-```json
-{
-  "deviceId": <deviceId>,
-	"message": <message>
-}
-```
