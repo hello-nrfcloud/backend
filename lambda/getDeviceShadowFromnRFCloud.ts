@@ -39,7 +39,10 @@ export const deviceShadowFetcher =
 			const data = await res.json()
 			return data.items as DeviceShadow[]
 		} else {
-			const error = await res.json()
-			throw new Error(`${error.code}: ${error.message}`)
+			log.error(`Fetching shadow error`, {
+				status: res.status,
+				statusText: res.statusText,
+			})
+			return []
 		}
 	}

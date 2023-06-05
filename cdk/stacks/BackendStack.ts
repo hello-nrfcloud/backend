@@ -1,6 +1,7 @@
 import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
+import type { Settings } from '../../nrfcloud/settings.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
@@ -23,6 +24,7 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
+			nRFCloudSettings,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
@@ -30,6 +32,7 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
 			bridgeImageSettings: BridgeImageSettings
+			nRFCloudSettings: Settings
 		},
 	) {
 		super(parent, STACK_NAME)
@@ -73,6 +76,7 @@ export class BackendStack extends Stack {
 			websocketAPI,
 			lambdaSources,
 			layers: [baseLayer, powerToolLayer],
+			nRFCloudSettings,
 		})
 
 		// Outputs

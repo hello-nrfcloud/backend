@@ -28,10 +28,12 @@ npm ci
 
 To setup MQTT bridge, you have to run the below command to generate a
 certificate used by MQTT broker to connect nRF Cloud under your account. So, you
-need to prepare nRF Cloud API key.
+need to prepare nRF Cloud API key and service key. The service key is used to
+resolve ground fix location.
 
 ```bash
-./cli.sh configure-nrfcloud <API key>
+./cli.sh configure-nrfcloud apiKey <API key>
+cat location of your Service key file | ./cli.sh configure-nrfcloud serviceKey
 ```
 
 ### Deploy

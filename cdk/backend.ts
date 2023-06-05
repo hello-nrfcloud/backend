@@ -26,6 +26,7 @@ const packagesInLayer: string[] = [
 	'ajv',
 	'@bifravst/muninn-proto',
 	'p-limit',
+	'jsonwebtoken',
 ]
 const settings = await getSettings({ ssm, stackName: STACK_NAME })()
 const accountId = (await sts.send(new GetCallerIdentityCommand({})))
@@ -69,7 +70,7 @@ new BackendApp({
 		id: 'baseLayer',
 		dependencies: packagesInLayer,
 	}),
-	settings,
+	nRFCloudSettings: settings,
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
 	caCertificate,

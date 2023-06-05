@@ -15,7 +15,7 @@ import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/Tes
 import { getSettings } from '../nrfcloud/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
 import { steps as deviceSteps } from './steps/device.js'
-import { steps as shadowSteps } from './steps/shadow.js'
+import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { websocketStepRunners } from './steps/websocket.js'
 
 const ssm = new SSMClient({})
@@ -90,7 +90,7 @@ cleaners.push(websocketCleanup)
 runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(...deviceSteps(accountDeviceSettings))
-	.addStepRunners(...shadowSteps({ db }))
+	.addStepRunners(...mocknRFCloudSteps({ db }))
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,

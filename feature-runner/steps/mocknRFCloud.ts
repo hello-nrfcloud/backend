@@ -6,7 +6,6 @@ import {
 	type StepRunner,
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
-import { setTimeout } from 'node:timers/promises'
 import type { World } from '../run-features.js'
 
 export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
@@ -68,20 +67,51 @@ ${data}
 		)
 	}
 
-	const waitForScheduler = async ({
+	const mockGroundFix = async ({
 		step,
 		log: {
 			step: { progress },
 		},
+		context: { responsesTableName },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match = /^wait for `(?<time>\d+)` second\(s\)$/.exec(step.title)
+		const match = /^there is a ground fix API response as this JSON$/.exec(
+			step.title,
+		)
 		if (match === null) return noMatch
 
-		const waitingTime = Number(match.groups?.time ?? 1)
+		const data = codeBlockOrThrow(step).code
 
-		progress(`Waiting for ${waitingTime} second(s)`)
-		await setTimeout(waitingTime * 1000)
+		const methodPathQuery = `POST v1/location/ground-fix`
+		progress(`Mock http url: ${methodPathQuery}`)
+		await db.send(
+			new PutItemCommand({
+				TableName: responsesTableName,
+				Item: {
+					methodPathQuery: {
+						S: methodPathQuery,
+					},
+					timestamp: {
+						S: new Date().toISOString(),
+					},
+					statusCode: {
+						N: `200`,
+					},
+					body: {
+						S: `Content-Type: application/json
+
+${data}
+						`,
+					},
+					ttl: {
+						N: `${Math.round(Date.now() / 1000) + 5 * 60}`,
+					},
+					keep: {
+						BOOL: false,
+					},
+				},
+			}),
+		)
 	}
 
-	return [mockShadowData, waitForScheduler]
+	return [mockShadowData, mockGroundFix]
 }

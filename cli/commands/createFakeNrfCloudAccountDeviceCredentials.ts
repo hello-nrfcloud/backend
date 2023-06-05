@@ -23,6 +23,7 @@ import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
+import { run } from '../../util/run.js'
 import { settingsPath } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition'
 
@@ -158,12 +159,19 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			throw new Error(`Failed to create certificate!`)
 		}
 
+		console.debug(chalk.magenta(`Create nRF Cloud service key pair`))
+		const serviceKey = await run({
+			command: 'openssl',
+			args: ['ecparam', '-name', 'prime256v1', '-genkey'],
+		})
 		const settings: Settings = {
 			accountDeviceClientCert: credentials.certificatePem,
 			accountDevicePrivateKey: pk,
 			accountDeviceClientId: `account-${tenantId}`,
 			apiEndpoint: 'https://example.com',
 			apiKey: 'apiKey',
+			serviceKey,
+			teamId: tenantId,
 			mqttEndpoint: await getIoTEndpoint({ iot })(),
 			mqttTopicPrefix: `prod/${tenantId}/`,
 		}

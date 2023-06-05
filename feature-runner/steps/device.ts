@@ -15,6 +15,7 @@ import assert from 'assert/strict'
 import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { setTimeout } from 'node:timers/promises'
 import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
 
@@ -127,8 +128,24 @@ const publishDeviceMessage =
 		})
 	}
 
+const waitForScheduler = async ({
+	step,
+	log: {
+		step: { progress },
+	},
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	const match = /^wait for `(?<time>\d+)` second\(s\)$/.exec(step.title)
+	if (match === null) return noMatch
+
+	const waitingTime = Number(match.groups?.time ?? 1)
+
+	progress(`Waiting for ${waitingTime} second(s)`)
+	await setTimeout(waitingTime * 1000)
+}
+
 export const steps = (bridgeInfo: Settings): StepRunner<World>[] => [
 	createDevice,
 	getDevice,
+	waitForScheduler,
 	publishDeviceMessage(bridgeInfo),
 ]

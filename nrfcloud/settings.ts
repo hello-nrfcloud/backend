@@ -8,6 +8,8 @@ import {
 export type Settings = {
 	apiEndpoint: string
 	apiKey: string
+	serviceKey: string
+	teamId: string
 	accountDeviceClientCert: string
 	accountDevicePrivateKey: string
 	accountDeviceClientId: string
@@ -38,11 +40,17 @@ export const getSettings = ({
 			mqttEndpoint,
 			accountDeviceClientId,
 			mqttTopicPrefix,
+			serviceKey,
+			teamId,
 		} = p
 		if (apiEndpoint === undefined)
 			throw new Error(`No nRF Cloud API endpoint configured!`)
 		if (apiKey === undefined)
 			throw new Error(`No nRF Cloud API key configured!`)
+		if (serviceKey === undefined)
+			throw new Error(`No nRF Cloud ground fix service key configured!`)
+		if (teamId === undefined)
+			throw new Error(`No nRF Cloud team id configured!`)
 		if (accountDeviceClientCert === undefined)
 			throw new Error(`No nRF Cloud account device clientCert configured!`)
 		if (accountDevicePrivateKey === undefined)
@@ -62,6 +70,8 @@ export const getSettings = ({
 			accountDevicePrivateKey,
 			accountDeviceClientId,
 			mqttTopicPrefix,
+			serviceKey,
+			teamId,
 		}
 	}
 }
@@ -72,14 +82,16 @@ export const updateSettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-}): ((settings: Settings) => Promise<void>) => {
+}): ((
+	settings: Omit<Settings, 'serviceKey'> | Pick<Settings, 'serviceKey'>,
+) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
 		stackName,
 		scope: 'thirdParty',
 		system: 'nrfcloud',
 	})
-	return async (settings: Settings): Promise<void> => {
+	return async (settings): Promise<void> => {
 		await Promise.all(
 			Object.entries(settings).map(async ([k, v]) =>
 				settingsWriter({

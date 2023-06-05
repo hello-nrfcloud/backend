@@ -15,10 +15,11 @@ export class BackendApp extends App {
 		mqttBridgeCertificate,
 		caCertificate,
 		bridgeImageSettings,
+		nRFCloudSettings,
 	}: {
 		lambdaSources: BackendLambdas
 		layer: PackedLayer
-		settings: Settings
+		nRFCloudSettings: Settings
 		iotEndpoint: string
 		mqttBridgeCertificate: CertificateFiles
 		caCertificate: CAFiles
@@ -33,6 +34,7 @@ export class BackendApp extends App {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
+			nRFCloudSettings,
 		})
 	}
 }

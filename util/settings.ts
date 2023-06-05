@@ -151,3 +151,18 @@ export const deleteSettings =
 		)
 		return { name: Name }
 	}
+
+export const getSettingsOptional =
+	<Settings extends Record<string, string>, Default>(
+		args: Parameters<typeof getSettings>[0],
+	) =>
+	/**
+	 * In case of an unconfigured stack, returns default values
+	 */
+	async (defaultValue: Default): Promise<Settings | Default> => {
+		try {
+			return await getSettings<Settings>(args)()
+		} catch {
+			return defaultValue
+		}
+	}

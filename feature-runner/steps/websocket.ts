@@ -6,12 +6,17 @@ import {
 	type StepRunResult,
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
+import * as chai from 'chai'
+import { expect } from 'chai'
+import chaiSubset from 'chai-subset'
 import { randomUUID } from 'crypto'
 import {
 	createWebsocketClient,
 	type WebSocketClient,
 } from '../lib/websocket.js'
 import type { World } from '../run-features.js'
+
+chai.use(chaiSubset)
 
 const wsClients: Record<string, WebSocketClient> = {}
 
@@ -70,12 +75,20 @@ const wsMessage = async ({
 	},
 	context: { wsClient },
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^the response should equal to this JSON$/.exec(step.title)
+	const match =
+		/^the response should (?<equalOrMatch>equal|match)(?: to)? this JSON$/.exec(
+			step.title,
+		)
 	if (match === null) return noMatch
 
-	const message: string = await wsClient?.fetchMessage()
+	const message: Record<string, unknown> = await wsClient?.fetchMessage()
 	progress(`Received ws message`, JSON.stringify(message, null, 2))
-	assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
+
+	if (match?.groups?.equalOrMatch === 'match') {
+		expect(message).to.containSubset(JSON.parse(codeBlockOrThrow(step).code))
+	} else {
+		assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
+	}
 }
 
 const wsMessageTimeout = async ({
