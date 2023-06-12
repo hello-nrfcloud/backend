@@ -28,4 +28,8 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'onWebsocketConnectOrDisconnect',
 		'lambda/onWebsocketConnectOrDisconnect.ts',
 	),
+	storeMessagesInTimestream: await packLambdaFromPath(
+		'storeMessagesInTimestream',
+		'lambda/storeMessagesInTimestream.ts',
+	),
 })

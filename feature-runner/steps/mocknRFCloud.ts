@@ -24,18 +24,7 @@ export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
 
 		const data = codeBlockOrThrow(step).code
 
-		const params: { [K: string]: any } = {
-			includeState: true,
-			includeStateMeta: true,
-			pageLimit: 100,
-			deviceIds: match.groups?.deviceId,
-		}
-		const queryString = Object.entries(params)
-			.sort((a, b) => a[0].localeCompare(b[0]))
-			.map((kv) => kv.map(encodeURIComponent).join('='))
-			.join('&')
-
-		const methodPathQuery = `GET v1/devices?${queryString}`
+		const methodPathQuery = `GET v1/devices`
 		progress(`Mock http url: ${methodPathQuery}`)
 		await db.send(
 			new PutItemCommand({
@@ -55,6 +44,14 @@ export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
 
 ${data}
 						`,
+					},
+					queryParams: {
+						M: {
+							includeState: { BOOL: true },
+							includeStateMeta: { BOOL: true },
+							pageLimit: { N: `100` },
+							deviceIds: { S: `/\\b${match.groups?.deviceId}\\b/` },
+						},
 					},
 					ttl: {
 						N: `${Math.round(Date.now() / 1000) + 5 * 60}`,

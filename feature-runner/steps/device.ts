@@ -89,6 +89,7 @@ const publishDeviceMessage =
 		if (match === null) return noMatch
 
 		const message = JSON.parse(codeBlockOrThrow(step).code)
+
 		progress(
 			`Device id ${match.groups?.id} publishes to topic ${match.groups?.topic}`,
 		)

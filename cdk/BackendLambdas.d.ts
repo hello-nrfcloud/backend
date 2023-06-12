@@ -9,4 +9,5 @@ type BackendLambdas = {
 	fetchDeviceShadow: PackedLambda
 	onDeviceMessage: PackedLambda
 	onWebsocketConnectOrDisconnect: PackedLambda
+	storeMessagesInTimestream: PackedLambda
 }

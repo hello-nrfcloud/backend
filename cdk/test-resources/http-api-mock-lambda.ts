@@ -4,6 +4,7 @@ import {
 	PutItemCommand,
 	QueryCommand,
 } from '@aws-sdk/client-dynamodb'
+import { unmarshall } from '@aws-sdk/util-dynamodb'
 import type {
 	APIGatewayEvent,
 	APIGatewayProxyResult,
@@ -11,6 +12,7 @@ import type {
 } from 'aws-lambda'
 import { URLSearchParams } from 'url'
 import { logger } from '../../lambda/logger.js'
+import { checkMatchingQueryParams } from './checkMatchingQueryParams.js'
 import { splitMockResponse } from './splitMockResponse.js'
 
 const db = new DynamoDBClient({})
@@ -65,21 +67,34 @@ export const handler = async (
 	log.info(
 		`Checking if response exists for ${event.httpMethod} ${pathWithQuery}...`,
 	)
+	// Query using httpMethod and path only
 	const { Items } = await db.send(
 		new QueryCommand({
 			TableName: process.env.RESPONSES_TABLE_NAME,
 			KeyConditionExpression: 'methodPathQuery = :methodPathQuery',
 			ExpressionAttributeValues: {
 				[':methodPathQuery']: {
-					S: `${event.httpMethod} ${pathWithQuery}`,
+					S: `${event.httpMethod} ${event.path.replace(/^\//, '')}`,
 				},
 			},
 			ScanIndexForward: false,
-			Limit: 1,
 		}),
 	)
-	if (Items?.[0] !== undefined) {
-		const Item = Items[0]
+	log.debug(`Found response items: ${Items?.length}`)
+
+	let res: APIGatewayProxyResult | undefined
+	for (const Item of Items ?? []) {
+		const objItem = unmarshall(Item)
+		const hasExpectedQueryParams = 'queryParams' in objItem
+		const matchedQueryParams = hasExpectedQueryParams
+			? checkMatchingQueryParams(
+					event.queryStringParameters,
+					objItem.queryParams,
+					log,
+			  )
+			: true
+		if (matchedQueryParams === false) continue
+
 		if (
 			Item?.methodPathQuery !== undefined &&
 			Item?.timestamp !== undefined &&
@@ -100,7 +115,7 @@ export const handler = async (
 
 		// Send as binary, if mock response is HEX encoded. See https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-payload-encodings.html
 		const isBinary = /^[0-9a-f]+$/.test(body)
-		const res = {
+		res = {
 			statusCode: parseInt(Item.statusCode?.N ?? '200', 10),
 			headers: isBinary
 				? {
@@ -115,10 +130,13 @@ export const handler = async (
 		}
 		log.info(`Return response`, { response: res })
 
-		return res
-	} else {
-		log.warn('No responses found')
+		break
 	}
 
+	if (res !== undefined) {
+		return res
+	}
+
+	log.warn('No responses found')
 	return { statusCode: 404, body: '' }
 }

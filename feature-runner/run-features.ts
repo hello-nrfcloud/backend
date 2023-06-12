@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { runFolder } from '@nordicsemiconductor/bdd-markdown'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
+import { queryClient } from '@nordicsemiconductor/timestream-helpers'
 import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
@@ -15,7 +16,9 @@ import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/Tes
 import { getSettings } from '../nrfcloud/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
 import { steps as deviceSteps } from './steps/device.js'
+import { steps as historicalSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
+import { steps as storageSteps } from './steps/storage.js'
 import { websocketStepRunners } from './steps/websocket.js'
 
 const ssm = new SSMClient({})
@@ -39,6 +42,7 @@ const tenantId = randomUUID()
 export type World = {
 	websocketUri: string
 	devicesTable: string
+	historicalDataTableInfo: string
 	wsClient?: WebSocketClient
 	tenantId: string
 	responsesTableName: string
@@ -50,6 +54,7 @@ const accountDeviceSettings = await getSettings({
 	stackName: STACK_NAME,
 })()
 const db = new DynamoDBClient({})
+const timestream = await queryClient()
 
 const print = (arg: unknown) =>
 	typeof arg === 'object' ? JSON.stringify(arg) : arg
@@ -91,6 +96,8 @@ runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(...deviceSteps(accountDeviceSettings))
 	.addStepRunners(...mocknRFCloudSteps({ db }))
+	.addStepRunners(...historicalSteps({ timestream }))
+	.addStepRunners(...storageSteps())
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,
@@ -98,6 +105,7 @@ const res = await runner.run({
 	tenantId,
 	responsesTableName: testConfig.responsesTableName,
 	requestsTableName: testConfig.requestsTableName,
+	historicalDataTableInfo: config.historicalDataTableInfo,
 })
 
 await Promise.all(cleaners.map(async (fn) => fn()))

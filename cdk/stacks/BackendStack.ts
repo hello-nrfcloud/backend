@@ -7,6 +7,7 @@ import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
 import { DeviceShadow } from '../resources/DeviceShadow.js'
 import { DeviceStorage } from '../resources/DeviceStorage.js'
+import { HistoricalData } from '../resources/HistoricalData.js'
 import {
 	Integration,
 	type BridgeImageSettings,
@@ -79,6 +80,12 @@ export class BackendStack extends Stack {
 			nRFCloudSettings,
 		})
 
+		const historicalData = new HistoricalData(this, {
+			lambdaSources,
+			websocketAPI,
+			layers: [baseLayer, powerToolLayer],
+		})
+
 		// Outputs
 		new CfnOutput(this, 'webSocketURI', {
 			exportName: `${this.stackName}:webSocketURI`,
@@ -100,12 +107,19 @@ export class BackendStack extends Stack {
 			description: 'Mqtt bridge image tag',
 			value: bridgeImageSettings.imageTag,
 		})
+		new CfnOutput(this, 'historicalDataTableInfo', {
+			exportName: `${this.stackName}:historicalDataTableInfo`,
+			description:
+				'DB and Name of the Timestream table that stores historical device messages',
+			value: historicalData.table.ref,
+		})
 	}
 }
 
 export type StackOutputs = {
 	webSocketURI: string
 	devicesTable: string
+	historicalDataTableInfo: string
 	bridgePolicyName: string
 	bridgeCertificatePEM: string
 	bridgeRepositoryURI: string

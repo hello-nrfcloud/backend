@@ -22,6 +22,7 @@ const ecr = new ECRClient({})
 
 const packagesInLayer: string[] = [
 	'@nordicsemiconductor/from-env',
+	'@nordicsemiconductor/timestream-helpers',
 	'@sinclair/typebox',
 	'ajv',
 	'@bifravst/muninn-proto',
