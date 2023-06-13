@@ -77,6 +77,33 @@ export const getSettings = ({
 	}
 }
 
+export const getAPISettings = ({
+	ssm,
+	stackName,
+}: {
+	ssm: SSMClient
+	stackName: string
+}): (() => Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>>) => {
+	const settingsReader = getSSMSettings({
+		ssm,
+		stackName,
+		scope: 'thirdParty',
+		system: 'nrfcloud',
+	})
+	return async (): Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>> => {
+		const p = await settingsReader()
+		const { apiEndpoint, apiKey } = p
+		if (apiKey === undefined)
+			throw new Error(`No nRF Cloud API key configured!`)
+
+		return {
+			apiEndpoint:
+				apiEndpoint === undefined ? defaultApiEndpoint : new URL(apiEndpoint),
+			apiKey,
+		}
+	}
+}
+
 export const updateSettings = ({
 	ssm,
 	stackName,

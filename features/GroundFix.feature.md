@@ -10,15 +10,8 @@ needs:
 
 ## Background
 
-Given There is a device as this JSON
-
-```json
-{
-  "deviceId": "nrf-groundfix-device-id",
-  "fingerprint": "2a.b4ff3e",
-  "model": "PCA20035+solar"
-}
-```
+Given a `PCA20035+solar` device with the ID `nrf-groundfix-device-id` is
+registered with the fingerprint `2a.b4ff3e`
 
 And there is a ground fix API response as this JSON
 

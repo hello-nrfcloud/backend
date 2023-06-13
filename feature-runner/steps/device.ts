@@ -1,9 +1,5 @@
-import {
-	DynamoDBClient,
-	GetItemCommand,
-	PutItemCommand,
-} from '@aws-sdk/client-dynamodb'
-import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
+import { unmarshall } from '@aws-sdk/util-dynamodb'
 import {
 	codeBlockOrThrow,
 	noMatch,
@@ -16,6 +12,7 @@ import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
+import { registerDevice } from '../../devices/register-device.js'
 import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
 
@@ -28,20 +25,21 @@ const createDevice = async ({
 	},
 	context: { devicesTable },
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^There is a device as this JSON$/.exec(step.title)
+	const match =
+		/^a `(?<model>[^`]+)` device with the ID `(?<id>[^`]+)` is registered with the fingerprint `(?<fingerprint>[^`]+)`$/.exec(
+			step.title,
+		)
 	if (match === null) return noMatch
+	const { id, model, fingerprint } = match.groups as Record<string, string>
 
-	const data = codeBlockOrThrow(step).code
+	progress(`Registering device ${id} into table ${devicesTable}`)
+	await registerDevice({ db: dbClient, devicesTableName: devicesTable })({
+		id: id as string,
+		model: model as string,
+		fingerprint: fingerprint as string,
+	})
 
-	progress(`Put data into database ${devicesTable}`)
-	const res = await dbClient.send(
-		new PutItemCommand({
-			TableName: devicesTable,
-			Item: marshall(JSON.parse(data)),
-		}),
-	)
-
-	progress(`Request status: ${res.$metadata.httpStatusCode}`)
+	progress(`Device registered: ${match.groups?.deviceId}`)
 }
 const getDevice = async ({
 	step,

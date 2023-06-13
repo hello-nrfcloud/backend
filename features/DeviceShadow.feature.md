@@ -5,15 +5,8 @@
 
 ## Background
 
-Given There is a device as this JSON
-
-```json
-{
-  "deviceId": "nrf-352656108602296",
-  "fingerprint": "2a.b4ff3d",
-  "model": "PCA20035+solar"
-}
-```
+Given a `PCA20035+solar` device with the ID `nrf-352656108602296` is registered
+with the fingerprint `2a.b4ff3d`
 
 And there is a shadow data of device id `nrf-352656108602296` in nRF Cloud as
 this JSON

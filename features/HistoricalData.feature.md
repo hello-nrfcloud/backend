@@ -4,15 +4,8 @@
 
 ## Background
 
-Given There is a device as this JSON
-
-```json
-{
-  "deviceId": "nrf-historical-device-id",
-  "fingerprint": "2a.d795c7",
-  "model": "PCA20035+solar"
-}
-```
+Given a `PCA20035+solar` device with the ID `nrf-historical-device-id` is
+registered with the fingerprint `2a.d795c7`
 
 ## Verify a device sends a message to nRF Cloud, then I can query historical messages
 

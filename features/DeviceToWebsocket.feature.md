@@ -10,15 +10,8 @@ needs:
 
 ## Background
 
-Given There is a device as this JSON
-
-```json
-{
-  "deviceId": "nrf-test-device-id",
-  "fingerprint": "2a.c4ff33",
-  "model": "PCA20035+solar"
-}
-```
+Given a `PCA20035+solar` device with the ID `nrf-test-device-id` is registered
+with the fingerprint `2a.c4ff33`
 
 ## Verify a device sends a message to nRF Cloud, then I can receive the message via website
 
