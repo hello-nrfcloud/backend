@@ -37,6 +37,12 @@ cat serviceKeyFile.pem | ./cli.sh configure thirdParty nrfcloud serviceKey
 ./cli.sh initialize-nrfcloud-account
 ```
 
+Finally the team ID of the team that owns the devices has to be configured:
+
+```bash
+./cli.sh configure thirdParty nrfcloud teamId <team ID>
+```
+
 ### Deploy
 
 ```bash
