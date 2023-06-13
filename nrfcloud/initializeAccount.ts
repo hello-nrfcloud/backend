@@ -92,7 +92,6 @@ export const initializeAccount =
 			console.debug(chalk.magenta('Creating bridge credentials ...'))
 
 			await updateSettings({ ssm, stackName: STACK_NAME })({
-				teamId: accountInfo.tenantId,
 				accountDeviceClientCert: credentials.clientCert,
 				accountDevicePrivateKey: credentials.privateKey,
 				accountDeviceClientId: `account-${accountInfo.tenantId}`,

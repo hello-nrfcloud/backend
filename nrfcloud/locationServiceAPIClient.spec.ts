@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { locationServiceAPIClient } from './locationServiceAPIClient.js' // Replace "your-module" with the actual path to your module
 jest.mock('./createToken.js', () => ({
 	createToken: jest.fn().mockReturnValue('token'),
@@ -7,7 +8,7 @@ const fetch = (global.fetch = jest.fn())
 describe('locationServiceAPIClient', () => {
 	const endpoint = new URL('https://example.com')
 	const serviceKey = 'your-service-key'
-	const teamId = 'your-team-id'
+	const teamId = randomUUID()
 
 	describe('groundFix', () => {
 		const payload = {

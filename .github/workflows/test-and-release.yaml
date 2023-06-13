@@ -70,6 +70,7 @@ jobs:
           npx cdk --app "npx tsx cdk/test-resources.ts" deploy --require-approval never
           MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
           ./cli.sh configure thirdParty nrfcloud apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          openssl ecparam -name prime256v1 -genkey | ./cli.sh configure thirdParty nrfcloud serviceKey
 
       - name: Deploy solution stack
         run: npx cdk deploy --require-approval never
