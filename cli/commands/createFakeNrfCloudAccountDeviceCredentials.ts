@@ -168,7 +168,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			accountDeviceClientCert: credentials.certificatePem,
 			accountDevicePrivateKey: pk,
 			accountDeviceClientId: `account-${tenantId}`,
-			apiEndpoint: 'https://example.com',
+			apiEndpoint: new URL('https://example.com'),
 			apiKey: 'apiKey',
 			serviceKey,
 			teamId: tenantId,

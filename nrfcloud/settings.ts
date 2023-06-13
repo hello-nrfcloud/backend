@@ -5,8 +5,10 @@ import {
 	settingsPath,
 } from '../util/settings.js'
 
+export const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
+
 export type Settings = {
-	apiEndpoint: string
+	apiEndpoint: URL
 	apiKey: string
 	serviceKey: string
 	teamId: string
@@ -43,8 +45,6 @@ export const getSettings = ({
 			serviceKey,
 			teamId,
 		} = p
-		if (apiEndpoint === undefined)
-			throw new Error(`No nRF Cloud API endpoint configured!`)
 		if (apiKey === undefined)
 			throw new Error(`No nRF Cloud API key configured!`)
 		if (serviceKey === undefined)
@@ -63,7 +63,8 @@ export const getSettings = ({
 			throw new Error(`No nRF Cloud MQTT endpoint configured!`)
 
 		return {
-			apiEndpoint,
+			apiEndpoint:
+				apiEndpoint === undefined ? defaultApiEndpoint : new URL(apiEndpoint),
 			apiKey,
 			mqttEndpoint,
 			accountDeviceClientCert,
@@ -94,7 +95,7 @@ export const updateSettings = ({
 			Object.entries(settings).map(async ([k, v]) =>
 				settingsWriter({
 					property: k,
-					value: v,
+					value: v.toString(),
 				}),
 			),
 		)

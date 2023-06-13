@@ -8,12 +8,11 @@ import { createAccountDevice } from './createAccountDevice.js'
 import { deleteAccountDevice } from './deleteNrfcloudCredentials.js'
 import { getAccountInfo } from './getAccountInfo.js'
 import {
+	defaultApiEndpoint,
 	getSettings as getNRFCloudSettings,
 	updateSettings,
 	type Settings,
 } from './settings.js'
-
-const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
 
 /**
  * Initializes the nRF Cloud Account

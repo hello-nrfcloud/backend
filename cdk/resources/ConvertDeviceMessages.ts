@@ -48,7 +48,7 @@ export class ConvertDeviceMessages extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
-				NRFCLOUD_ENDPOINT: nRFCloudSettings.apiEndpoint,
+				NRFCLOUD_ENDPOINT: nRFCloudSettings.apiEndpoint.toString(),
 				NRFCLOUD_SERVICE_KEY: nRFCloudSettings.serviceKey,
 				NRFCLOUD_TEAM_ID: nRFCloudSettings.teamId,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
