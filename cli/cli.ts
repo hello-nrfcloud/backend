@@ -2,11 +2,12 @@ import { IoTClient } from '@aws-sdk/client-iot'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { program } from 'commander'
+import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition'
-import { configureNrfCloudCommand } from './commands/configure-nrfcloud.js'
 import { configureCommand } from './commands/configure.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials.js'
+import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -40,9 +41,10 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 		)
 	} else {
 		commands.push(
-			configureNrfCloudCommand({
+			initializeNRFCloudAccountCommand({
 				ssm,
 				iot,
+				stackName: STACK_NAME,
 			}),
 		)
 	}

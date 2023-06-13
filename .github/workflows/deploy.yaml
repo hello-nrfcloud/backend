@@ -47,7 +47,8 @@ jobs:
 
       - name: Initial solution stack
         run: |
-          ./cli.sh configure-nrfcloud ${{ secrets.NRF_CLOUD_API_KEY }}
+          ./cli.sh configure thirdParty nrfcloud ${{ secrets.NRF_CLOUD_API_KEY }}
+          ./cli.sh initialize-nrfcloud-account
 
       - name: Deploy solution stack
         env:

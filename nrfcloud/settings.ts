@@ -82,9 +82,7 @@ export const updateSettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-}): ((
-	settings: Omit<Settings, 'serviceKey'> | Pick<Settings, 'serviceKey'>,
-) => Promise<void>) => {
+}): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
 		stackName,

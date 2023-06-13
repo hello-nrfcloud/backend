@@ -32,8 +32,9 @@ need to prepare nRF Cloud API key and service key. The service key is used to
 resolve ground fix location.
 
 ```bash
-./cli.sh configure-nrfcloud apiKey <API key>
-cat location of your Service key file | ./cli.sh configure-nrfcloud serviceKey
+./cli.sh configure thirdParty nrfcloud apiKey <API key>
+cat serviceKeyFile.pem | ./cli.sh configure thirdParty nrfcloud serviceKey
+./cli.sh initialize-nrfcloud-account
 ```
 
 ### Deploy
