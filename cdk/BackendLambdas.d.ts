@@ -1,4 +1,4 @@
-import type { PackedLambda } from './backend'
+import type { PackedLambda } from './helpers/lambdas/packLambda'
 
 type BackendLambdas = {
 	onConnect: PackedLambda
