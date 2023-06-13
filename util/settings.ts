@@ -144,11 +144,19 @@ export const deleteSettings =
 	}) =>
 	async ({ property }: { property: string }): Promise<{ name: string }> => {
 		const Name = settingsName({ stackName, scope, system, property })
-		await ssm.send(
-			new DeleteParameterCommand({
-				Name,
-			}),
-		)
+		try {
+			await ssm.send(
+				new DeleteParameterCommand({
+					Name,
+				}),
+			)
+		} catch (error) {
+			if ((error as Error).name === 'ParameterNotFound') {
+				// pass
+			} else {
+				throw error
+			}
+		}
 		return { name: Name }
 	}
 
