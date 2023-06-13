@@ -37,12 +37,12 @@ const validator = <T extends TSchema>(
 		  }
 }
 
-export const apiClint = ({
+export const locationServiceAPIClient = ({
 	endpoint,
 	serviceKey,
 	teamId,
 }: {
-	endpoint: string
+	endpoint: URL
 	serviceKey: string
 	teamId: string
 }): {
@@ -51,7 +51,7 @@ export const apiClint = ({
 		ts: number,
 	) => Promise<GroundFixMessage>
 } => {
-	const normalizedEndpoint = slashless(new URL(endpoint))
+	const normalizedEndpoint = slashless(endpoint)
 
 	return {
 		groundFix: async (payload, ts) => {

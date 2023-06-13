@@ -3,7 +3,7 @@ import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { proto, type MuninnMessage } from '@bifravst/muninn-proto/Muninn'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
-import { apiClint } from '../nrfcloud/apiClient.js'
+import { locationServiceAPIClient } from '../nrfcloud/locationServiceAPIClient.js'
 import { getModelForDevice } from './getModelForDevice.js'
 import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
@@ -30,8 +30,8 @@ const eventBus = new EventBridge({})
 
 const modelFetcher = getModelForDevice({ db, DevicesTableName })
 
-const apiClient = apiClint({
-	endpoint: nRFCloudEndpoint,
+const apiClient = locationServiceAPIClient({
+	endpoint: new URL(nRFCloudEndpoint),
 	serviceKey: nRFCloudServiceKey,
 	teamId: nrfCloudTeamId,
 })
