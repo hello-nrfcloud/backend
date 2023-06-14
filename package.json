@@ -36,6 +36,7 @@
     "@aws-sdk/client-ecr": "3.352.0",
     "@aws-sdk/client-ecs": "3.352.0",
     "@aws-sdk/client-eventbridge": "3.352.0",
+    "@aws-sdk/client-iam": "3.352.0",
     "@aws-sdk/client-iot": "3.352.0",
     "@aws-sdk/client-sqs": "3.352.0",
     "@aws-sdk/client-ssm": "3.352.0",

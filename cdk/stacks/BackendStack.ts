@@ -3,6 +3,7 @@ import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
+import { ContinuousDeployment } from '../resources/ContinuousDeployment.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
 import { DeviceShadow } from '../resources/DeviceShadow.js'
 import { DeviceStorage } from '../resources/DeviceStorage.js'
@@ -26,6 +27,8 @@ export class BackendStack extends Stack {
 			caCertificate,
 			bridgeImageSettings,
 			region,
+			repository,
+			gitHubOICDProviderArn,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
@@ -34,6 +37,11 @@ export class BackendStack extends Stack {
 			caCertificate: CAFiles
 			bridgeImageSettings: BridgeImageSettings
 			region: string
+			gitHubOICDProviderArn: string
+			repository: {
+				owner: string
+				repo: string
+			}
 		},
 	) {
 		super(parent, STACK_NAME, {
@@ -101,6 +109,11 @@ export class BackendStack extends Stack {
 			layers: lambdaLayers,
 		})
 
+		const cd = new ContinuousDeployment(this, {
+			repository,
+			gitHubOICDProviderArn,
+		})
+
 		// Outputs
 		new CfnOutput(this, 'webSocketURI', {
 			exportName: `${this.stackName}:webSocketURI`,
@@ -128,6 +141,11 @@ export class BackendStack extends Stack {
 				'DB and Name of the Timestream table that stores historical device messages',
 			value: historicalData.table.ref,
 		})
+		new CfnOutput(this, 'cdRoleArn', {
+			exportName: `${this.stackName}:cdRoleArn`,
+			description: 'Role ARN to use in the deploy GitHub Actions Workflow',
+			value: cd.role.roleArn,
+		})
 	}
 }
 
@@ -139,4 +157,5 @@ export type StackOutputs = {
 	bridgeCertificatePEM: string
 	bridgeRepositoryURI: string
 	bridgeImageTag: string
+	cdRoleArn: string
 }

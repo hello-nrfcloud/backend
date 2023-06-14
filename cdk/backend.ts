@@ -1,4 +1,5 @@
 import { ECRClient } from '@aws-sdk/client-ecr'
+import { IAMClient } from '@aws-sdk/client-iam'
 import { IoTClient } from '@aws-sdk/client-iot'
 import { GetCallerIdentityCommand, STS } from '@aws-sdk/client-sts'
 import path from 'node:path'
@@ -8,14 +9,24 @@ import { getOrCreateRepository } from '../aws/getOrCreateRepository.js'
 import { ensureCA } from '../bridge/ensureCA.js'
 import { ensureMQTTBridgeCredentials } from '../bridge/ensureMQTTBridgeCredentials.js'
 import { debug } from '../cli/log.js'
+import pJSON from '../package.json'
 import { BackendApp } from './BackendApp.js'
+import { ensureGitHubOIDCProvider } from './ensureGitHubOIDCProvider.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { ECR_NAME } from './stacks/stackConfig.js'
 
+const repoUrl = new URL(pJSON.repository.url)
+const repository = {
+	owner: repoUrl.pathname.split('/')[1] ?? 'bifravst',
+	repo:
+		repoUrl.pathname.split('/')[2]?.replace(/\.git$/, '') ?? 'Muninn-backend',
+}
+
 const iot = new IoTClient({})
 const sts = new STS({})
 const ecr = new ECRClient({})
+const iam = new IAMClient({})
 
 const packagesInLayer: string[] = [
 	'@nordicsemiconductor/from-env',
@@ -76,4 +87,8 @@ new BackendApp({
 	},
 	region:
 		process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION ?? 'eu-west-1',
+	repository,
+	gitHubOICDProviderArn: await ensureGitHubOIDCProvider({
+		iam,
+	}),
 })

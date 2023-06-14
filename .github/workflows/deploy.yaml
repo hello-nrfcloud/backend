@@ -45,11 +45,6 @@ jobs:
           role-session-name: github-action-muninn-backend
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Initial solution stack
-        run: |
-          ./cli.sh configure thirdParty nrfcloud ${{ secrets.NRF_CLOUD_API_KEY }}
-          ./cli.sh initialize-nrfcloud-account
-
       - name: Deploy solution stack
         env:
           RELEASE_IMAGE_TAG: ${{ github.event.inputs.tag }}
