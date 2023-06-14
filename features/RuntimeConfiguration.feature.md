@@ -5,17 +5,10 @@
 
 ## Background
 
-Given There is a device as this JSON
+Given a `PCA20030+solar` device with the ID `nrf-352656108602276` is registered
+with the fingerprint `2a.a4ff3e`
 
-```json
-{
-  "deviceId": "nrf-352656108602276",
-  "fingerprint": "2a.b4ff3e",
-  "model": "PCA20035+solar"
-}
-```
-
-And device shadow fetching for model `PCA20035+solar` is `5` seconds
+And device shadow fetching for model `PCA20030+solar` is `5` seconds
 
 And I store `$millis()` into `ts`
 
@@ -27,7 +20,7 @@ this JSON
   "items": [
     {
       "id": "nrf-352656108602276",
-      "tags": ["configuration:solar-shield", "model:PCA20035"],
+      "tags": ["configuration:solar-shield", "model:PCA20030"],
       "tenantId": "a0673464-e4e1-4b87-bffd-6941a012067b",
       "$meta": {
         "updatedAt": "2023-04-20T07:29:46.467Z",
@@ -290,7 +283,7 @@ this JSON
 
 ## Verify device shadow requests should be fired 2 times
 
-Given I connect websocket with fingerprint `2a.b4ff3e`
+Given I connect websocket with fingerprint `2a.a4ff3e`
 
 Then wait for `15` second(s)
 
@@ -299,9 +292,9 @@ Then the duration between 2 consecutive device shadow requests for
 
 ## Verify if changing fetching interval to 10 seconds, device shadow requests should be fired 1 time in 10 seconds
 
-Given I connect websocket with fingerprint `2a.b4ff3e`
+Given I connect websocket with fingerprint `2a.a4ff3e`
 
-And device shadow fetching for model `PCA20035+solar` is `10` seconds
+And device shadow fetching for model `PCA20030+solar` is `10` seconds
 
 And I store `$millis()` into `ts`
 

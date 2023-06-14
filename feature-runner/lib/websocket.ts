@@ -60,6 +60,7 @@ export const createWebsocketClient = ({
 		const messages: Record<string, unknown>[] = []
 		client
 			.on('open', () => {
+				debug?.(`${id}: connected`)
 				messages.length = 0
 				onConnectDeferred.resolve(void 0)
 			})
@@ -67,11 +68,12 @@ export const createWebsocketClient = ({
 				onConnectDeferred.reject(error)
 			})
 			.on('close', () => {
+				debug?.(`${id}: disconnected`)
 				void 0
 			})
 			.on('message', async (msg) => {
 				const message = JSON.parse(msg.toString())
-				debug?.(msg.toString())
+				debug?.(`${id} << ${msg.toString()}`)
 				if (message['@context'] === Context.deviceIdentity.toString()) {
 					onConnectMessageDeferred.resolve(message)
 				} else {

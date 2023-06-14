@@ -162,7 +162,6 @@ ${data}
 
 		const methodPathQuery = `GET v1/devices?${queryString}`
 		progress(`Mock http url: ${methodPathQuery}`)
-		progress(`Query mock requests with timestamp: ${timestamp}`)
 		const result = await db.send(
 			new QueryCommand({
 				TableName: requestsTableName,
@@ -182,6 +181,10 @@ ${data}
 			}),
 		)
 		const resultObj = result?.Items?.map((item) => unmarshall(item))
+		progress(`Query mock requests with timestamp: ${timestamp}`)
+		progress(
+			`Query mock requests result: ${JSON.stringify(resultObj, null, 2)}`,
+		)
 
 		assert.equal(resultObj?.length, 2)
 		if (resultObj !== undefined && resultObj.length == 2) {
