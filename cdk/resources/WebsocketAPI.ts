@@ -78,6 +78,7 @@ export class WebsocketAPI extends Construct {
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				NODE_NO_WARNINGS: '1',
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
@@ -106,6 +107,7 @@ export class WebsocketAPI extends Construct {
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				NODE_NO_WARNINGS: '1',
 			},
 			initialPolicy: [],
 			layers,
@@ -128,6 +130,7 @@ export class WebsocketAPI extends Construct {
 				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				NODE_NO_WARNINGS: '1',
 			},
 			initialPolicy: [],
 			layers,
@@ -277,6 +280,7 @@ export class WebsocketAPI extends Construct {
 					WEBSOCKET_MANAGEMENT_API_URL: this.websocketManagementAPIURL,
 					EVENTBUS_NAME: this.eventBus.eventBusName,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
+					NODE_NO_WARNINGS: '1',
 				},
 				initialPolicy: [
 					new IAM.PolicyStatement({

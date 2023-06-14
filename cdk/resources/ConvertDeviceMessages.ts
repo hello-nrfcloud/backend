@@ -53,6 +53,7 @@ export class ConvertDeviceMessages extends Construct {
 				NRFCLOUD_TEAM_ID: nRFCloudSettings.teamId,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
+				NODE_NO_WARNINGS: '1',
 			},
 			layers,
 		})

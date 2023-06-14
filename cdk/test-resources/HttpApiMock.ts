@@ -76,6 +76,7 @@ export class HttpApiMock extends Resource {
 				REQUESTS_TABLE_NAME: this.requestsTable.tableName,
 				RESPONSES_TABLE_NAME: this.responsesTable.tableName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				NODE_NO_WARNINGS: '1',
 			},
 		})
 		this.responsesTable.grantReadWriteData(lambda)
