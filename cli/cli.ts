@@ -1,4 +1,5 @@
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation'
+import { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { IoTClient } from '@aws-sdk/client-iot'
 import { SSMClient } from '@aws-sdk/client-ssm'
@@ -13,11 +14,14 @@ import { configureCommand } from './commands/configure.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials.js'
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 import { listNRFCloudDevicesCommand } from './commands/list-nrfcloud-devices.js'
+import { logsCommand } from './commands/logs.js'
 import { registerDeviceCommand } from './commands/register-device.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
 const db = new DynamoDBClient({})
+const cf = new CloudFormationClient({})
+const logs = new CloudWatchLogsClient({})
 
 const die = (err: Error, origin: any) => {
 	console.error(`An unhandled exception occurred!`)
@@ -36,7 +40,10 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 	program.description(`Muninn backend ${psjon.version} Command Line Interface`)
 	program.version(psjon.version)
 
-	const commands: CommandDefinition[] = [configureCommand({ ssm })]
+	const commands: CommandDefinition[] = [
+		configureCommand({ ssm }),
+		logsCommand({ stackName: STACK_NAME, cf, logs }),
+	]
 
 	if (isCI) {
 		console.error('Running on CI...')

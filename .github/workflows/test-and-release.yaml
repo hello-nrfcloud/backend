@@ -82,6 +82,10 @@ jobs:
           set -o pipefail
           npx tsx ./feature-runner/run-features.ts | npx tsx ./feature-runner/console-reporter.ts
 
+      - name: Get logs
+        if: failure()
+        run: ./cli.sh logs
+
       - name: Save stack outputs
         id: stack_outputs
         run: |
