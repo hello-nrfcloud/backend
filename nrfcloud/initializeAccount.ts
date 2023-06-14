@@ -83,17 +83,21 @@ export const initializeAccount =
 			console.debug(
 				chalk.magenta(`Generating new account device credentials ...`),
 			)
-			const credentials = await createAccountDevice({
+			const { clientCert, privateKey } = await createAccountDevice({
 				apiKey,
 				endpoint: effectiveEndpoint,
 			})
+			if (privateKey === undefined) {
+				console.error(chalk.red('⚠️'), chalk.red('Account device exists'))
+				throw new Error(
+					`Account device exists in account ${accountInfo.tenantId}`,
+				)
+			}
 			console.log(chalk.green(`Account device created.`))
 
-			console.debug(chalk.magenta('Creating bridge credentials ...'))
-
 			await updateSettings({ ssm, stackName: STACK_NAME })({
-				accountDeviceClientCert: credentials.clientCert,
-				accountDevicePrivateKey: credentials.privateKey,
+				accountDeviceClientCert: clientCert,
+				accountDevicePrivateKey: privateKey,
 				accountDeviceClientId: `account-${accountInfo.tenantId}`,
 				mqttEndpoint: accountInfo.mqttEndpoint,
 				mqttTopicPrefix: accountInfo.mqttTopicPrefix,

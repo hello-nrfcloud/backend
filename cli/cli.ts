@@ -47,26 +47,32 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 			}),
 		)
 	} else {
-		const outputs = await stackOutput(
-			new CloudFormationClient({}),
-		)<StackOutputs>(STACK_NAME)
 		commands.push(
 			initializeNRFCloudAccountCommand({
 				ssm,
 				iot,
 				stackName: STACK_NAME,
 			}),
-			listNRFCloudDevicesCommand({
-				ssm,
-				stackName: STACK_NAME,
-				db,
-				devicesTableName: outputs.devicesTable,
-			}),
-			registerDeviceCommand({
-				db,
-				devicesTableName: outputs.devicesTable,
-			}),
 		)
+		try {
+			const outputs = await stackOutput(
+				new CloudFormationClient({}),
+			)<StackOutputs>(STACK_NAME)
+			commands.push(
+				listNRFCloudDevicesCommand({
+					ssm,
+					stackName: STACK_NAME,
+					db,
+					devicesTableName: outputs.devicesTable,
+				}),
+				registerDeviceCommand({
+					db,
+					devicesTableName: outputs.devicesTable,
+				}),
+			)
+		} catch (error) {
+			console.warn(chalk.yellow('⚠️'), chalk.yellow((error as Error).message))
+		}
 	}
 
 	let ran = false

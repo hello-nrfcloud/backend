@@ -47,6 +47,7 @@ cat serviceKeyFile.pem | ./cli.sh configure thirdParty nrfcloud serviceKey
 ### Deploy
 
 ```bash
+npx cdk bootstrap # if this is the first time you use CDK in this account
 npx cdk deploy
 ```
 
