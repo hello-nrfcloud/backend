@@ -17,7 +17,7 @@ import type { WebsocketAPI } from './WebsocketAPI.js'
  */
 export class ConvertDeviceMessages extends Construct {
 	public constructor(
-		parent: Stack,
+		parent: Construct,
 		{
 			lambdaSources,
 			layers,
@@ -70,7 +70,9 @@ export class ConvertDeviceMessages extends Construct {
 						new IAM.PolicyStatement({
 							actions: ['iot:Publish'],
 							resources: [
-								`arn:aws:iot:${parent.region}:${parent.account}:topic/errors`,
+								`arn:aws:iot:${Stack.of(this).region}:${
+									Stack.of(this).account
+								}:topic/errors`,
 							],
 						}),
 					],

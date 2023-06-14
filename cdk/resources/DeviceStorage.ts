@@ -1,10 +1,10 @@
-import { aws_dynamodb as DynamoDB, RemovalPolicy, Stack } from 'aws-cdk-lib'
+import { aws_dynamodb as DynamoDB, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 
 export class DeviceStorage extends Construct {
 	public readonly devicesTable: DynamoDB.Table
 	public readonly devicesTableFingerprintIndexName = 'fingerprintIndex'
-	public constructor(parent: Stack) {
+	public constructor(parent: Construct) {
 		super(parent, 'DevicesTable')
 
 		this.devicesTable = new DynamoDB.Table(this, 'devicesTable', {

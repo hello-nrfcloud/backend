@@ -18,7 +18,7 @@ import type { WebsocketAPI } from './WebsocketAPI.js'
 
 export class DeviceShadow extends Construct {
 	public constructor(
-		parent: Stack,
+		parent: Construct,
 		{
 			websocketAPI,
 			lambdaSources,
@@ -43,7 +43,7 @@ export class DeviceShadow extends Construct {
 			Ssm.StringParameter.fromStringParameterName(
 				this,
 				`${property}Parameter`,
-				parameterName(parent.stackName, property),
+				parameterName(Stack.of(this).stackName, property),
 			)
 
 		// Scheduler

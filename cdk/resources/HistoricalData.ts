@@ -5,7 +5,6 @@ import {
 	aws_iam as IAM,
 	aws_lambda as Lambda,
 	RemovalPolicy,
-	Stack,
 	aws_timestream as Timestream,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -19,7 +18,7 @@ import type { WebsocketAPI } from './WebsocketAPI.js'
 export class HistoricalData extends Construct {
 	public readonly table: Timestream.CfnTable
 	public constructor(
-		parent: Stack,
+		parent: Construct,
 		{
 			lambdaSources,
 			layers,

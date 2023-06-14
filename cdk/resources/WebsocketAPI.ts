@@ -22,7 +22,7 @@ export class WebsocketAPI extends Construct {
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
 	public constructor(
-		parent: Stack,
+		parent: Construct,
 		{
 			deviceStorage,
 			lambdaSources,
@@ -150,7 +150,11 @@ export class WebsocketAPI extends Construct {
 				apiId: api.ref,
 				description: 'Connect integration',
 				integrationType: 'AWS_PROXY',
-				integrationUri: `arn:aws:apigateway:${parent.region}:lambda:path/2015-03-31/functions/${onConnect.functionArn}/invocations`,
+				integrationUri: `arn:aws:apigateway:${
+					Stack.of(this).region
+				}:lambda:path/2015-03-31/functions/${
+					onConnect.functionArn
+				}/invocations`,
 			},
 		)
 		const connectRoute = new ApiGateway.CfnRoute(this, 'connectRoute', {
@@ -168,7 +172,11 @@ export class WebsocketAPI extends Construct {
 				apiId: api.ref,
 				description: 'Send messages integration',
 				integrationType: 'AWS_PROXY',
-				integrationUri: `arn:aws:apigateway:${parent.region}:lambda:path/2015-03-31/functions/${onMessage.functionArn}/invocations`,
+				integrationUri: `arn:aws:apigateway:${
+					Stack.of(this).region
+				}:lambda:path/2015-03-31/functions/${
+					onMessage.functionArn
+				}/invocations`,
 			},
 		)
 		const sendMessageRoute = new ApiGateway.CfnRoute(this, 'sendMessageRoute', {
@@ -186,7 +194,11 @@ export class WebsocketAPI extends Construct {
 				apiId: api.ref,
 				description: 'Disconnect integration',
 				integrationType: 'AWS_PROXY',
-				integrationUri: `arn:aws:apigateway:${parent.region}:lambda:path/2015-03-31/functions/${onDisconnect.functionArn}/invocations`,
+				integrationUri: `arn:aws:apigateway:${
+					Stack.of(this).region
+				}:lambda:path/2015-03-31/functions/${
+					onDisconnect.functionArn
+				}/invocations`,
 			},
 		)
 		const disconnectRoute = new ApiGateway.CfnRoute(this, 'disconnectRoute', {
@@ -209,30 +221,42 @@ export class WebsocketAPI extends Construct {
 			deploymentId: deployment.ref,
 			apiId: api.ref,
 		})
-		this.websocketURI = `wss://${api.ref}.execute-api.${parent.region}.amazonaws.com/${stage.ref}`
+		this.websocketURI = `wss://${api.ref}.execute-api.${
+			Stack.of(this).region
+		}.amazonaws.com/${stage.ref}`
 		// API invoke lambda
 		onMessage.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
 			) as IAM.IPrincipal,
-			sourceArn: `arn:aws:execute-api:${parent.region}:${parent.account}:${api.ref}/${stage.stageName}/message`,
+			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
+				Stack.of(this).account
+			}:${api.ref}/${stage.stageName}/message`,
 		})
 		onConnect.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
 			) as IAM.IPrincipal,
-			sourceArn: `arn:aws:execute-api:${parent.region}:${parent.account}:${api.ref}/${stage.stageName}/$connect`,
+			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
+				Stack.of(this).account
+			}:${api.ref}/${stage.stageName}/$connect`,
 		})
 		onDisconnect.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
 			) as IAM.IPrincipal,
-			sourceArn: `arn:aws:execute-api:${parent.region}:${parent.account}:${api.ref}/${stage.stageName}/$disconnect`,
+			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
+				Stack.of(this).account
+			}:${api.ref}/${stage.stageName}/$disconnect`,
 		})
 
 		// Publish event to sockets
-		this.websocketAPIArn = `arn:aws:execute-api:${parent.region}:${parent.account}:${api.ref}/${stage.stageName}/POST/@connections/*`
-		this.websocketManagementAPIURL = `https://${api.ref}.execute-api.${parent.region}.amazonaws.com/${stage.stageName}`
+		this.websocketAPIArn = `arn:aws:execute-api:${Stack.of(this).region}:${
+			Stack.of(this).account
+		}:${api.ref}/${stage.stageName}/POST/@connections/*`
+		this.websocketManagementAPIURL = `https://${api.ref}.execute-api.${
+			Stack.of(this).region
+		}.amazonaws.com/${stage.stageName}`
 		const publishToWebsocketClients = new Lambda.Function(
 			this,
 			'publishToWebsocketClients',

@@ -28,7 +28,7 @@ export class Integration extends Construct {
 	public readonly bridgeCertificate: IoT.CfnCertificate
 	public readonly bridgeRepository: IRepository
 	public constructor(
-		parent: Stack,
+		parent: Construct,
 		{
 			iotEndpoint,
 			mqttBridgeCertificate,
@@ -105,7 +105,7 @@ export class Integration extends Construct {
 				stringValue: bridgeCertificate,
 				simpleName: false,
 				parameterName: settingsPath({
-					stackName: parent.stackName,
+					stackName: Stack.of(this).stackName,
 					scope: 'context',
 					system: 'stack',
 					property: 'bridgeCertificatePEM',
@@ -119,7 +119,7 @@ export class Integration extends Construct {
 				stringValue: bridgePrivateKey,
 				simpleName: false,
 				parameterName: settingsPath({
-					stackName: parent.stackName,
+					stackName: Stack.of(this).stackName,
 					scope: 'context',
 					system: 'stack',
 					property: 'bridgePrivateKey',
@@ -155,7 +155,7 @@ export class Integration extends Construct {
 			StringParameter.fromStringParameterName(
 				this,
 				`${property}Parameter`,
-				parameterName(parent.stackName, property),
+				parameterName(Stack.of(this).stackName, property),
 			)
 
 		const nrfCloudSettingSecret = (property: keyof nRFCloudSettings) =>
