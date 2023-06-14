@@ -101,7 +101,7 @@ runner
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,
-	devicesTable: config.devicesTable,
+	devicesTable: config.devicesTableName,
 	tenantId,
 	responsesTableName: testConfig.responsesTableName,
 	requestsTableName: testConfig.requestsTableName,

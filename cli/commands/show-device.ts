@@ -1,0 +1,70 @@
+import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import chalk from 'chalk'
+import { table } from 'table'
+import { getDevice } from '../../devices/getDevice.js'
+import { apiClient } from '../../nrfcloud/apiClient.js'
+import { getAPISettings } from '../../nrfcloud/settings.js'
+import type { CommandDefinition } from './CommandDefinition.js'
+
+export const showDeviceCommand = ({
+	ssm,
+	db,
+	devicesTableName,
+	devicesIndexName,
+	stackName,
+}: {
+	ssm: SSMClient
+	db: DynamoDBClient
+	devicesTableName: string
+	devicesIndexName: string
+	stackName: string
+}): CommandDefinition => ({
+	command: 'show-device <fingerprint>',
+	action: async (fingerprint) => {
+		const maybeDevice = await getDevice({
+			db,
+			devicesTableName,
+			devicesIndexName,
+		})({
+			fingerprint,
+		})
+
+		if ('error' in maybeDevice) {
+			console.error(chalk.red('⚠️'), '', chalk.red(maybeDevice.error.message))
+			process.exit(1)
+		}
+
+		const { device } = maybeDevice
+
+		const { apiKey, apiEndpoint } = await getAPISettings({
+			ssm,
+			stackName,
+		})()
+
+		const client = apiClient({
+			endpoint: apiEndpoint,
+			apiKey,
+		})
+
+		const maybeNrfCloudDevice = await client.getDevice(device.id)
+
+		console.log(
+			table([
+				['Fingerprint', 'Device ID', 'Model', 'nRF Cloud', 'Connected'],
+				[
+					chalk.green(device.fingerprint),
+					chalk.blue(device.id),
+					chalk.magenta(device.model),
+					'device' in maybeNrfCloudDevice ? chalk.green('✅') : chalk.red('⚠️'),
+					'device' in maybeNrfCloudDevice &&
+					maybeNrfCloudDevice.device?.state?.reported?.connection?.status ===
+						'connected'
+						? chalk.green('✅')
+						: chalk.red('⚠️'),
+				],
+			]),
+		)
+	},
+	help: 'Show a device',
+})

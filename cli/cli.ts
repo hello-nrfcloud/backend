@@ -13,9 +13,9 @@ import type { CommandDefinition } from './commands/CommandDefinition'
 import { configureCommand } from './commands/configure.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials.js'
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
-import { listNRFCloudDevicesCommand } from './commands/list-nrfcloud-devices.js'
 import { logsCommand } from './commands/logs.js'
 import { registerDeviceCommand } from './commands/register-device.js'
+import { showDeviceCommand } from './commands/show-device.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -66,15 +66,16 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 				new CloudFormationClient({}),
 			)<StackOutputs>(STACK_NAME)
 			commands.push(
-				listNRFCloudDevicesCommand({
+				showDeviceCommand({
 					ssm,
 					stackName: STACK_NAME,
 					db,
-					devicesTableName: outputs.devicesTable,
+					devicesTableName: outputs.devicesTableName,
+					devicesIndexName: outputs.devicesTableFingerprintIndexName,
 				}),
 				registerDeviceCommand({
 					db,
-					devicesTableName: outputs.devicesTable,
+					devicesTableName: outputs.devicesTableName,
 				}),
 			)
 		} catch (error) {

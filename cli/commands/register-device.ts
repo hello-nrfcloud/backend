@@ -1,5 +1,6 @@
 import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { registerDevice } from '../../devices/register-device.js'
+import chalk from 'chalk'
+import { registerDevice } from '../../devices/registerDevice.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const registerDeviceCommand = ({
@@ -9,8 +10,8 @@ export const registerDeviceCommand = ({
 	db: DynamoDBClient
 	devicesTableName: string
 }): CommandDefinition => ({
-	command: 'register-device <deviceId> <fingerprint> <model>',
-	action: async (deviceId, fingerprint, model) => {
+	command: 'register-device <fingerprint> <deviceId> <model>',
+	action: async (fingerprint, deviceId, model) => {
 		const res = await registerDevice({ db, devicesTableName })({
 			id: deviceId,
 			model,
@@ -19,7 +20,7 @@ export const registerDeviceCommand = ({
 		if ('error' in res) {
 			throw new Error(`Failed to register device: ${res.error.message}!`)
 		}
-		console.log(`Registered device ${deviceId}`)
+		console.log(chalk.green('Registered device'), chalk.blue(deviceId))
 	},
 	help: 'Register a new device',
 })

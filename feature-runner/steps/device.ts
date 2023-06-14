@@ -12,7 +12,7 @@ import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
-import { registerDevice } from '../../devices/register-device.js'
+import { registerDevice } from '../../devices/registerDevice.js'
 import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
 

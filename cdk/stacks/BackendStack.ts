@@ -120,10 +120,15 @@ export class BackendStack extends Stack {
 			description: 'The WSS Protocol URI to connect to',
 			value: websocketAPI.websocketURI,
 		})
-		new CfnOutput(this, 'devicesTable', {
-			exportName: `${this.stackName}:devicesTable`,
+		new CfnOutput(this, 'devicesTableName', {
+			exportName: `${this.stackName}:devicesTableName`,
 			description: 'Device table name',
 			value: deviceStorage.devicesTable.tableName,
+		})
+		new CfnOutput(this, 'devicesTableFingerprintIndexName', {
+			exportName: `${this.stackName}:devicesTableFingerprintIndexName`,
+			description: 'Device table name fingerprint index name',
+			value: deviceStorage.devicesTableFingerprintIndexName,
 		})
 		new CfnOutput(this, 'bridgeRepositoryURI', {
 			exportName: `${this.stackName}:bridgeRepositoryURI`,
@@ -151,7 +156,8 @@ export class BackendStack extends Stack {
 
 export type StackOutputs = {
 	webSocketURI: string
-	devicesTable: string
+	devicesTableName: string
+	devicesTableFingerprintIndexName: string
 	historicalDataTableInfo: string
 	bridgePolicyName: string
 	bridgeCertificatePEM: string
