@@ -64,7 +64,7 @@ export const initializeAccount =
 
 		const iotEndpoint = await getIoTEndpoint({ iot })()
 
-		console.log(chalk.blue('AWS IoT endpoint:'), chalk.blue(iotEndpoint))
+		console.log(chalk.yellow('AWS IoT endpoint:'), chalk.blue(iotEndpoint))
 		console.log()
 
 		console.log(chalk.white('nRF Cloud account info:'))
