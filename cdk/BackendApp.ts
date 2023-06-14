@@ -1,7 +1,6 @@
 import { App } from 'aws-cdk-lib'
 import { type CAFiles } from '../bridge/caLocation.js'
 import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation'
-import type { Settings } from '../nrfcloud/settings'
 import type { BackendLambdas } from './BackendLambdas.js'
 import type { PackedLayer } from './helpers/lambdas/packLayer'
 import type { BridgeImageSettings } from './resources/Integration.js'
@@ -15,15 +14,15 @@ export class BackendApp extends App {
 		mqttBridgeCertificate,
 		caCertificate,
 		bridgeImageSettings,
-		nRFCloudSettings,
+		region,
 	}: {
 		lambdaSources: BackendLambdas
 		layer: PackedLayer
-		nRFCloudSettings: Settings
 		iotEndpoint: string
 		mqttBridgeCertificate: CertificateFiles
 		caCertificate: CAFiles
 		bridgeImageSettings: BridgeImageSettings
+		region: string
 	}) {
 		super()
 
@@ -34,7 +33,7 @@ export class BackendApp extends App {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
-			nRFCloudSettings,
+			region,
 		})
 	}
 }

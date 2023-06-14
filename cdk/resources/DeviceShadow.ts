@@ -4,14 +4,13 @@ import {
 	aws_lambda_event_sources as EventSources,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
+	aws_iam as IAM,
 	aws_lambda as Lambda,
 	RemovalPolicy,
 	aws_sqs as SQS,
-	aws_ssm as Ssm,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { parameterName, type Settings } from '../../nrfcloud/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
@@ -37,14 +36,6 @@ export class DeviceShadow extends Construct {
 
 		// The duration to allow lambda to process device shadow
 		const processDeviceShadowTimeout = Duration.minutes(1)
-
-		// Get nRF Cloud config from parameter store
-		const nrfCloudSetting = (property: keyof Settings) =>
-			Ssm.StringParameter.fromStringParameterName(
-				this,
-				`${property}Parameter`,
-				parameterName(Stack.of(this).stackName, property),
-			)
 
 		// Scheduler
 		// The lower bound of event schedule is 60 seconds.
@@ -167,12 +158,20 @@ export class DeviceShadow extends Construct {
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
 				DEVICES_TABLE: devicesTable.tableName,
 				LOCK_TABLE: lockTable.tableName,
-				NRF_CLOUD_ENDPOINT: nrfCloudSetting('apiEndpoint').stringValue,
-				API_KEY: nrfCloudSetting('apiKey').stringValue,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
+				STACK_NAME: Stack.of(this).stackName,
 				NODE_NO_WARNINGS: '1',
 			},
-			initialPolicy: [],
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud/*`,
+					],
+				}),
+			],
 			layers,
 		})
 		websocketAPI.eventBus.grantPutEventsTo(fetchDeviceShadow)

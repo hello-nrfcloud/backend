@@ -1,3 +1,4 @@
+import { slashless } from '../util/slashless.js'
 import { logger } from './logger.js'
 
 export type DeviceShadow = {
@@ -12,7 +13,7 @@ export type DeviceShadow = {
 const log = logger('deviceShadowFetcher')
 
 export const deviceShadowFetcher =
-	({ endpoint, apiKey }: { endpoint: string; apiKey: string }) =>
+	({ endpoint, apiKey }: { endpoint: URL; apiKey: string }) =>
 	async (devices: string[]): Promise<DeviceShadow[]> => {
 		const params = {
 			includeState: true,
@@ -24,7 +25,7 @@ export const deviceShadowFetcher =
 			.sort((a, b) => a[0].localeCompare(b[0]))
 			.map((kv) => kv.map(encodeURIComponent).join('='))
 			.join('&')
-		const url = `${endpoint.replace(/\/$/, '')}/v1/devices?${queryString}`
+		const url = `${slashless(endpoint)}/v1/devices?${queryString}`
 
 		log.info(`Fetching device shadow`, { url })
 		// Change to bulk fetching device shadow otherwise it might hit rate limit

@@ -1,7 +1,6 @@
 import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
-import type { Settings } from '../../nrfcloud/settings.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
@@ -12,6 +11,7 @@ import {
 	Integration,
 	type BridgeImageSettings,
 } from '../resources/Integration.js'
+import { parameterStoreLayerARN } from '../resources/LambdaExtensionLayers.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { STACK_NAME } from './stackConfig.js'
 
@@ -25,7 +25,7 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
-			nRFCloudSettings,
+			region,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
@@ -33,10 +33,14 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
 			bridgeImageSettings: BridgeImageSettings
-			nRFCloudSettings: Settings
+			region: string
 		},
 	) {
-		super(parent, STACK_NAME)
+		super(parent, STACK_NAME, {
+			env: {
+				region,
+			},
+		})
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
 			code: Lambda.Code.fromAsset(layer.layerZipFile),
@@ -50,18 +54,30 @@ export class BackendStack extends Stack {
 				Stack.of(this).region
 			}:094274105915:layer:AWSLambdaPowertoolsTypeScript:7`,
 		)
+		const parameterStoreExtensionLayer =
+			Lambda.LayerVersion.fromLayerVersionArn(
+				this,
+				'parameterStoreExtensionLayer',
+				parameterStoreLayerARN[Stack.of(this).region] as string,
+			)
+
+		const lambdaLayers: Lambda.ILayerVersion[] = [
+			baseLayer,
+			powerToolLayer,
+			parameterStoreExtensionLayer,
+		]
 
 		const deviceStorage = new DeviceStorage(this)
 
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			deviceStorage,
-			layers: [baseLayer, powerToolLayer],
+			layers: lambdaLayers,
 		})
 
 		new DeviceShadow(this, {
 			websocketAPI,
-			layers: [baseLayer, powerToolLayer],
+			layers: lambdaLayers,
 			lambdaSources,
 		})
 
@@ -76,14 +92,13 @@ export class BackendStack extends Stack {
 			deviceStorage,
 			websocketAPI,
 			lambdaSources,
-			layers: [baseLayer, powerToolLayer],
-			nRFCloudSettings,
+			layers: lambdaLayers,
 		})
 
 		const historicalData = new HistoricalData(this, {
 			lambdaSources,
 			websocketAPI,
-			layers: [baseLayer, powerToolLayer],
+			layers: lambdaLayers,
 		})
 
 		// Outputs

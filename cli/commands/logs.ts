@@ -85,7 +85,7 @@ export const logsCommand = ({
 							({ message }) =>
 								!/^(START|END|REPORT) RequestId:/.test(message ?? ''),
 						)
-						?.filter(({ message }) => message?.includes('\tERROR\t'))
+						?.filter(({ message }) => message?.includes('ERROR'))
 						?.forEach((e) => console.log(e.message?.trim()))
 				})
 			}),

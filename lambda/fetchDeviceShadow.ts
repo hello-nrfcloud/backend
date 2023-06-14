@@ -1,20 +1,20 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import pLimit from 'p-limit'
+import { defaultApiEndpoint } from '../nrfcloud/settings.js'
 import { createDeviceShadowPublisher } from './deviceShadowPublisher.js'
 import { createDevicesRepository } from './devicesRepository.js'
 import { deviceShadowFetcher } from './getDeviceShadowFromnRFCloud.js'
+import { getNRFCloudSSMParameters } from './getSSMParameter.js'
 import { createLock } from './lock.js'
 import { logger } from './logger.js'
 
-const { devicesTable, lockTable, nrfCloudEndpoint, apiKey, eventBusName } =
-	fromEnv({
-		devicesTable: 'DEVICES_TABLE',
-		lockTable: 'LOCK_TABLE',
-		nrfCloudEndpoint: 'NRF_CLOUD_ENDPOINT',
-		apiKey: 'API_KEY',
-		eventBusName: 'EVENTBUS_NAME',
-	})(process.env)
+const { devicesTable, lockTable, eventBusName, stackName } = fromEnv({
+	stackName: 'STACK_NAME',
+	devicesTable: 'DEVICES_TABLE',
+	lockTable: 'LOCK_TABLE',
+	eventBusName: 'EVENTBUS_NAME',
+})(process.env)
 
 const limit = pLimit(3)
 const db = new DynamoDBClient({})
@@ -25,10 +25,19 @@ const lockTTL = 30
 const lock = createLock(db, lockTable)
 
 const deviceRepository = createDevicesRepository(db, devicesTable)
-const deviceShadow = deviceShadowFetcher({
-	endpoint: nrfCloudEndpoint,
-	apiKey,
-})
+const deviceShadowPromise = (async () => {
+	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
+		'apiKey',
+		'apiEndpoint',
+	])
+	if (apiKey === undefined)
+		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
+	return deviceShadowFetcher({
+		endpoint:
+			apiEndpoint !== undefined ? new URL(apiEndpoint) : defaultApiEndpoint,
+		apiKey,
+	})
+})()
 const deviceShadowPublisher = createDeviceShadowPublisher(eventBusName)
 
 const chunkArray = <T>(arr: T[], size: number): T[][] => {
@@ -60,6 +69,7 @@ const convertToMap = <T extends { [key: string]: unknown }, K extends keyof T>(
 }
 
 export const handler = async (): Promise<void> => {
+	const deviceShadow = await deviceShadowPromise
 	const lockAcquired = await lock.acquiredLock(lockName, lockTTL)
 	if (lockAcquired === false) {
 		log.info(`Other process is still running, then ignore`)
@@ -75,7 +85,7 @@ export const handler = async (): Promise<void> => {
 		const chunkedDevices = chunkArray(devices, 50)
 		const shadows = (
 			await Promise.all(
-				chunkedDevices.map(async (devices, index) =>
+				chunkedDevices.map(async (devices) =>
 					limit(async () =>
 						deviceShadow(devices.map((device) => device.deviceId)),
 					),

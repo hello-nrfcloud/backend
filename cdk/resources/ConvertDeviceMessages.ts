@@ -6,7 +6,6 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { Settings } from '../../nrfcloud/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
@@ -22,7 +21,6 @@ export class ConvertDeviceMessages extends Construct {
 			lambdaSources,
 			layers,
 			websocketAPI,
-			nRFCloudSettings,
 			deviceStorage,
 		}: {
 			deviceStorage: DeviceStorage
@@ -31,7 +29,6 @@ export class ConvertDeviceMessages extends Construct {
 				onDeviceMessage: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
-			nRFCloudSettings: Settings
 		},
 	) {
 		super(parent, 'converter')
@@ -48,14 +45,22 @@ export class ConvertDeviceMessages extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
-				NRFCLOUD_ENDPOINT: nRFCloudSettings.apiEndpoint.toString(),
-				NRFCLOUD_SERVICE_KEY: nRFCloudSettings.serviceKey,
-				NRFCLOUD_TEAM_ID: nRFCloudSettings.teamId,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				NODE_NO_WARNINGS: '1',
+				STACK_NAME: Stack.of(this).stackName,
 			},
 			layers,
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud/*`,
+					],
+				}),
+			],
 		})
 		new LambdaLogGroup(this, 'onDeviceMessageLogs', onDeviceMessage)
 		websocketAPI.eventBus.grantPutEventsTo(onDeviceMessage)
