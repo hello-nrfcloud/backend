@@ -7,7 +7,6 @@ import {
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { ensureNumber } from '../util/ensureNumber.js'
 import type { PersistedDeviceSubscription } from './onWebsocketConnectOrDisconnect'
 
 export type Device = {
@@ -141,7 +140,7 @@ export const createDevicesRepository: (
 				}),
 			)
 
-			return version > ensureNumber(result.Attributes?.version?.N, 0)
+			return version > parseInt(result.Attributes?.version?.N ?? '0', 10)
 		} catch (error) {
 			if (error instanceof ConditionalCheckFailedException) {
 				return false

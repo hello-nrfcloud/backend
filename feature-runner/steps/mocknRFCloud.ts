@@ -134,7 +134,7 @@ ${data}
 				duration: (s) => parseInt(s, 10),
 			},
 		)(
-			/^the duration between 2 consecutive device shadow requests for `(?<deviceId>[^`]+)` should be `(?<duration>[^`]+)` second\(s\)$/,
+			/^the duration between 2 consecutive device shadow requests for `(?<deviceId>[^`]+)` should be `(?<duration>[^`]+)` seconds?$/,
 			step.title,
 		)
 

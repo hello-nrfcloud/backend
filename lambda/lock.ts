@@ -27,12 +27,13 @@ export const createLock: (
 					},
 					ExpressionAttributeNames: {
 						'#ttlName': 'ttl',
+						'#lockName': 'lockName',
 					},
 					ExpressionAttributeValues: {
 						':currentTime': { N: currentTime.toString() },
 					},
 					ConditionExpression:
-						'attribute_not_exists(lockName) OR #ttlName < :currentTime',
+						'attribute_not_exists(#lockName) OR #ttlName < :currentTime',
 				}),
 			)
 

@@ -8,7 +8,7 @@
 Given a `PCA20030+solar` device with the ID `nrf-352656108602276` is registered
 with the fingerprint `2a.a4ff3e`
 
-And device shadow fetching for model `PCA20030+solar` is `5` seconds
+And device shadow fetching for model `PCA20030+solar` is `5`
 
 And I store `$millis()` into `ts`
 
@@ -288,17 +288,17 @@ Given I connect websocket with fingerprint `2a.a4ff3e`
 Then wait for `15` second(s)
 
 Then the duration between 2 consecutive device shadow requests for
-`nrf-352656108602276` should be `5` second(s)
+`nrf-352656108602276` should be `5` seconds
 
 ## Verify if changing fetching interval to 10 seconds, device shadow requests should be fired 1 time in 10 seconds
 
 Given I connect websocket with fingerprint `2a.a4ff3e`
 
-And device shadow fetching for model `PCA20030+solar` is `10` seconds
+And device shadow fetching for model `PCA20030+solar` is `10`
 
 And I store `$millis()` into `ts`
 
 Then wait for `30` second(s)
 
 Then the duration between 2 consecutive device shadow requests for
-`nrf-352656108602276` should be `10` second(s)
+`nrf-352656108602276` should be `10` seconds

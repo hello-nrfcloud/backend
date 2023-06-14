@@ -195,7 +195,9 @@ export class DeviceShadow extends Construct {
 			effect: IAM.Effect.ALLOW,
 			actions: ['ssm:GetParametersByPath'],
 			resources: [
-				`arn:aws:ssm:${parent.region}:${parent.account}:parameter/${STACK_NAME}/config/stack`,
+				`arn:aws:ssm:${Stack.of(this).region}:${
+					Stack.of(this).account
+				}:parameter/${Stack.of(this).stackName}/config/stack`,
 			],
 		})
 		fetchDeviceShadow.addToRolePolicy(ssmReadPolicy)

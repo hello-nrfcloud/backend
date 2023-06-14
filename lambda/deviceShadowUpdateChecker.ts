@@ -1,6 +1,5 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
-import { ensureNumber } from '../util/ensureNumber.js'
 import { getSettingsOptional } from '../util/settings.js'
 import { logger } from './logger.js'
 
@@ -51,11 +50,11 @@ export const parseConfig = (config: ParameterConfig): ScheduleConfig => {
 				const matches = regex.exec(item)
 				if (matches !== null) {
 					return {
-						count: ensureNumber(
-							matches?.groups?.count,
-							Number.MAX_SAFE_INTEGER,
+						count: parseInt(
+							matches?.groups?.count ?? `${Number.MAX_SAFE_INTEGER}`,
+							10,
 						),
-						interval: ensureNumber(matches?.groups?.interval, 5),
+						interval: parseInt(matches?.groups?.interval ?? `5`, 10),
 					}
 				} else {
 					return null

@@ -6,12 +6,6 @@ let returnedMockData: unknown
 jest.mock('../util/settings.js', () => ({
 	getSettingsOptional: () => async () => returnedMockData,
 }))
-jest.mock('../util/inMemoryCache.js', () => ({
-	createInMemoryCache: () => ({
-		get: jest.fn().mockReturnValue(null),
-		set: jest.fn(),
-	}),
-}))
 
 describe('parseConfig', () => {
 	it('should parse a valid configuration object', () => {
