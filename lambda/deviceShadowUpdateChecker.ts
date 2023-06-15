@@ -49,12 +49,13 @@ export const parseConfig = (config: ParameterConfig): ScheduleConfig => {
 			.map((item) => {
 				const matches = regex.exec(item)
 				if (matches !== null) {
+					const { interval, count } = matches.groups as {
+						count?: string
+						interval: string
+					}
 					return {
-						count: parseInt(
-							matches?.groups?.count ?? `${Number.MAX_SAFE_INTEGER}`,
-							10,
-						),
-						interval: parseInt(matches?.groups?.interval ?? `5`, 10),
+						count: parseInt(count ?? `${Number.MAX_SAFE_INTEGER}`, 10),
+						interval: parseInt(interval, 10),
 					}
 				} else {
 					return null
