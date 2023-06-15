@@ -29,8 +29,8 @@ When a device with id `nrf-historical-device-id` publishes to topic
 
 Then I query timestream for the device `nrf-historical-device-id` and the
 dimension `@context` with the value
-`https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/gain`.
-The response should match this JSON
+`https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/gain`
+from `${tsISO}`. The response should match this JSON
 
 ```json
 [

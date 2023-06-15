@@ -39,7 +39,7 @@ const createDevice = async ({
 		fingerprint: fingerprint as string,
 	})
 
-	progress(`Device registered: ${match.groups?.deviceId}`)
+	progress(`Device registered: ${id}`)
 }
 const getDevice = async ({
 	step,
@@ -133,12 +133,12 @@ const waitForScheduler = async ({
 		step: { progress },
 	},
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^wait for `(?<time>\d+)` second\(s\)$/.exec(step.title)
+	const match = /^wait for `(?<time>\d+)` seconds?$/.exec(step.title)
 	if (match === null) return noMatch
 
 	const waitingTime = Number(match.groups?.time ?? 1)
 
-	progress(`Waiting for ${waitingTime} second(s)`)
+	progress(`Waiting for ${waitingTime} seconds`)
 	await setTimeout(waitingTime * 1000)
 }
 

@@ -281,7 +281,7 @@ this JSON
 
 Given I connect websocket with fingerprint `2a.b4ff3d`
 
-Then wait for `5` second(s)
+Then wait for `5` seconds
 
 Then the response should equal to this JSON
 
@@ -336,6 +336,6 @@ Then the response should equal to this JSON
 
 Given I connect websocket with fingerprint `2a.b4ff3d`
 
-And wait for `5` second(s)
+And wait for `5` seconds
 
 Then the response should equal to empty string

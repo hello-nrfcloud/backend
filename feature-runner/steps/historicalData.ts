@@ -4,12 +4,14 @@ import {
 } from '@aws-sdk/client-timestream-query'
 import {
 	codeBlockOrThrow,
+	matchGroups,
 	noMatch,
 	type StepRunResult,
 	type StepRunner,
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
+import { Type } from '@sinclair/typebox'
 import * as chai from 'chai'
 import chaiSubset from 'chai-subset'
 import pRetry from 'p-retry'
@@ -38,10 +40,17 @@ const queryTimestream =
 		},
 		context: { historicalDataTableInfo },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^I query timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)`. The response should match this JSON$/.exec(
-				step.title,
-			)
+		const match = matchGroups(
+			Type.Object({
+				deviceId: Type.String(),
+				dimension: Type.String(),
+				value: Type.String(),
+				tsISO: Type.String(),
+			}),
+		)(
+			/^I query timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` from `(?<tsISO>[^`]+)`. The response should match this JSON$/,
+			step.title,
+		)
 		if (match === null) return noMatch
 
 		const [historicaldataDatabaseName, historicaldataTableName] =
@@ -50,7 +59,8 @@ const queryTimestream =
 		const QueryString = `
 	SELECT *
 	FROM "${historicaldataDatabaseName}"."${historicaldataTableName}"
-	WHERE deviceId='${match.groups?.deviceId}' AND "${match.groups?.dimension}"='${match.groups?.value}'
+	WHERE deviceId='${match.deviceId}' AND "${match.dimension}"='${match.value}'
+	AND time >= from_iso8601_timestamp('${match.tsISO}')
 	ORDER BY time DESC
 	LIMIT 1
 	`
@@ -66,7 +76,7 @@ const queryTimestream =
 			return res
 		}
 		const res = await pRetry(query, {
-			retries: 3,
+			retries: 5,
 			minTimeout: 500,
 			maxTimeout: 1000,
 			onFailedAttempt: (error) => {
