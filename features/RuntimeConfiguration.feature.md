@@ -285,7 +285,7 @@ this JSON
 
 Given I connect websocket with fingerprint `2a.a4ff3e`
 
-Then wait for `15` second(s)
+Then wait for `15` seconds
 
 Then the duration between 2 consecutive device shadow requests for
 `nrf-352656108602276` should be `5` seconds
@@ -298,7 +298,7 @@ And device shadow fetching config for model `PCA20035+solar` is `10`
 
 And I store `$millis()` into `ts`
 
-Then wait for `30` second(s)
+Then wait for `30` seconds
 
 Then the duration between 2 consecutive device shadow requests for
 `nrf-352656108602276` should be `10` seconds

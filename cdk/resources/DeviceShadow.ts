@@ -12,7 +12,6 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
-import { STACK_NAME } from '../stacks/stackConfig.js'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
@@ -170,7 +169,6 @@ export class DeviceShadow extends Construct {
 			description: `Fetch devices' shadow from nRF Cloud`,
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				STACK_NAME,
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
 				DEVICES_TABLE: devicesTable.tableName,
 				DEVICES_INDEX_NAME: this.devicesTableIndexName,

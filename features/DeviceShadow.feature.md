@@ -281,13 +281,9 @@ this JSON
 
 Given I connect websocket with fingerprint `2a.b4ff3d`
 
-<<<<<<< HEAD
-Then wait for `5` seconds
-=======
 And device shadow fetching config for model `PCA20035+solar` is `5`
 
-Then wait for `5` second(s)
->>>>>>> c9998df (test: make step test more meaningful)
+Then wait for `5` seconds
 
 Then the response should equal to this JSON
 

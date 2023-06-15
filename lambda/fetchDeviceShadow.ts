@@ -10,28 +10,14 @@ import { getNRFCloudSSMParameters } from './getSSMParameter.js'
 import { createLock } from './lock.js'
 import { logger } from './logger.js'
 
-<<<<<<< HEAD
-const { devicesTable, lockTable, eventBusName, stackName } = fromEnv({
-	stackName: 'STACK_NAME',
-	devicesTable: 'DEVICES_TABLE',
-	lockTable: 'LOCK_TABLE',
-=======
-const {
-	devicesTable,
-	devicesIndexName,
-	lockTable,
-	nrfCloudEndpoint,
-	apiKey,
-	eventBusName,
-} = fromEnv({
-	devicesTable: 'DEVICES_TABLE',
-	devicesIndexName: 'DEVICES_INDEX_NAME',
-	lockTable: 'LOCK_TABLE',
-	nrfCloudEndpoint: 'NRF_CLOUD_ENDPOINT',
-	apiKey: 'API_KEY',
->>>>>>> 4b41af4 (feat: update fetching interval in run time)
-	eventBusName: 'EVENTBUS_NAME',
-})(process.env)
+const { devicesTable, devicesIndexName, lockTable, eventBusName, stackName } =
+	fromEnv({
+		stackName: 'STACK_NAME',
+		devicesTable: 'DEVICES_TABLE',
+		devicesIndexName: 'DEVICES_INDEX_NAME',
+		lockTable: 'LOCK_TABLE',
+		eventBusName: 'EVENTBUS_NAME',
+	})(process.env)
 
 const limit = pLimit(3)
 const db = new DynamoDBClient({})
@@ -41,8 +27,11 @@ const lockName = 'fetch-shadow'
 const lockTTL = 3 // seconds
 const lock = createLock(db, lockTable)
 
-<<<<<<< HEAD
-const deviceRepository = createDevicesRepository(db, devicesTable)
+const deviceRepository = createDevicesRepository(
+	db,
+	devicesTable,
+	devicesIndexName,
+)
 const deviceShadowPromise = (async () => {
 	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
 		'apiKey',
@@ -56,17 +45,6 @@ const deviceShadowPromise = (async () => {
 		apiKey,
 	})
 })()
-=======
-const deviceRepository = createDevicesRepository(
-	db,
-	devicesTable,
-	devicesIndexName,
-)
-const deviceShadow = deviceShadowFetcher({
-	endpoint: nrfCloudEndpoint,
-	apiKey,
-})
->>>>>>> 4b41af4 (feat: update fetching interval in run time)
 const deviceShadowPublisher = createDeviceShadowPublisher(eventBusName)
 
 const chunkArray = <T>(arr: T[], size: number): T[][] => {
@@ -98,12 +76,12 @@ const convertToMap = <T extends { [key: string]: unknown }, K extends keyof T>(
 }
 
 export const handler = async (): Promise<void> => {
-	const deviceShadow = await deviceShadowPromise
 	const lockAcquired = await lock.acquiredLock(lockName, lockTTL)
 	if (lockAcquired === false) {
 		log.info(`Other process is still running, then ignore`)
 		return
 	}
+	const deviceShadow = await deviceShadowPromise
 	const executionTime = new Date()
 
 	try {
