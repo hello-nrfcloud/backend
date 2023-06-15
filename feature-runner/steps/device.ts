@@ -39,7 +39,7 @@ const createDevice = async ({
 		fingerprint: fingerprint as string,
 	})
 
-	progress(`Device registered: ${match.groups?.deviceId}`)
+	progress(`Device registered: ${id}`)
 }
 const getDevice = async ({
 	step,
