@@ -24,7 +24,7 @@ const setupDeviceShadowFetchingConfiguration = async ({
 			interval: (s) => parseInt(s, 10),
 		},
 	)(
-		/^device shadow fetching for model `(?<model>[^`]+)` is `(?<interval>[^`]+)`$/,
+		/^device shadow fetching config for model `(?<model>[^`]+)` is `(?<interval>[^`]+)`$/,
 		step.title,
 	)
 

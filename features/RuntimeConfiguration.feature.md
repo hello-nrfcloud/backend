@@ -5,10 +5,10 @@
 
 ## Background
 
-Given a `PCA20030+solar` device with the ID `nrf-352656108602276` is registered
+Given a `PCA20035+solar` device with the ID `nrf-352656108602276` is registered
 with the fingerprint `2a.a4ff3e`
 
-And device shadow fetching for model `PCA20030+solar` is `5`
+And device shadow fetching config for model `PCA20035+solar` is `5`
 
 And I store `$millis()` into `ts`
 
@@ -20,7 +20,7 @@ this JSON
   "items": [
     {
       "id": "nrf-352656108602276",
-      "tags": ["configuration:solar-shield", "model:PCA20030"],
+      "tags": ["configuration:solar-shield", "model:PCA20035"],
       "tenantId": "a0673464-e4e1-4b87-bffd-6941a012067b",
       "$meta": {
         "updatedAt": "2023-04-20T07:29:46.467Z",
@@ -294,7 +294,7 @@ Then the duration between 2 consecutive device shadow requests for
 
 Given I connect websocket with fingerprint `2a.a4ff3e`
 
-And device shadow fetching for model `PCA20030+solar` is `10`
+And device shadow fetching config for model `PCA20035+solar` is `10`
 
 And I store `$millis()` into `ts`
 
