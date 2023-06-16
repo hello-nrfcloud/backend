@@ -1,6 +1,7 @@
 import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
+import { isEqual } from 'lodash-es'
 import { table } from 'table'
 import { getDevice } from '../../devices/getDevice.js'
 import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
@@ -90,18 +91,33 @@ export const configureDeviceCommand = ({
 			chalk.yellow('Firmware version'),
 			chalk.blue(state?.reported?.device?.deviceInfo?.appVersion),
 		)
+		console.log(chalk.yellow('Shadow version'), chalk.blue(state?.version))
+
+		const configKeys = [
+			...new Set([
+				...Object.keys(state?.reported?.config ?? {}),
+				...Object.keys(state?.desired?.config ?? {}),
+			]),
+		] as (keyof DeviceConfig)[]
 
 		console.log(
 			table(
 				[
 					['Current configuration', 'Reported', 'Desired'],
-					...Object.entries(state?.reported?.config ?? {}).map(([k, v]) => [
-						chalk.yellow(k),
-						chalk.blue(JSON.stringify(v)),
-						chalk.cyan(
-							state?.desired?.config?.[k as keyof DeviceConfig] ?? '??',
-						),
-					]),
+					...configKeys.map((k) => {
+						const reportedValue = state?.reported?.config?.[k]
+						const desiredValue = state?.desired?.config?.[k]
+						const diff =
+							desiredValue !== undefined &&
+							(k === 'nod'
+								? !isEqual(desiredValue, reportedValue)
+								: desiredValue !== reportedValue)
+						return [
+							chalk.yellow(k),
+							(diff ? chalk.red : chalk.green)(reportedValue ?? '-'),
+							chalk.cyan(desiredValue ?? '-'),
+						]
+					}),
 				],
 				{
 					drawHorizontalLine: (lineIndex, rowCount) =>
