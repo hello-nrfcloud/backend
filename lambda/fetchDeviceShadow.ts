@@ -1,3 +1,4 @@
+import { Metrics, MetricUnits } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import pLimit from 'p-limit'
@@ -8,6 +9,11 @@ import { deviceShadowFetcher } from './getDeviceShadowFromnRFCloud.js'
 import { getNRFCloudSSMParameters } from './getSSMParameter.js'
 import { createLock } from './lock.js'
 import { logger } from './logger.js'
+
+const metrics = new Metrics({
+	namespace: 'muninn-backend',
+	serviceName: 'shadowFetcher',
+})
 
 const { devicesTable, lockTable, eventBusName, stackName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -79,6 +85,7 @@ export const handler = async (): Promise<void> => {
 	try {
 		const devices = await deviceRepository.getAll()
 		log.info(`Found ${devices.length} active devices`)
+		metrics.addMetric('deviceSubscriptions', MetricUnits.Count, devices.length)
 		const devicesMap = convertToMap(devices, 'deviceId')
 
 		// Bulk fetching device shadow to avoid rate limit

@@ -1,3 +1,4 @@
+import { MetricUnits, Metrics } from '@aws-lambda-powertools/metrics'
 import {
 	DynamoDBClient,
 	PutItemCommand,
@@ -14,6 +15,7 @@ import type {
 } from 'aws-lambda'
 import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
+
 const { TableName, EventBusName, DevicesTableName, DevicesIndexName } = fromEnv(
 	{
 		TableName: 'CONNECTIONS_TABLE_NAME',
@@ -27,16 +29,23 @@ const log = logger('connect')
 const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
+const metrics = new Metrics({
+	namespace: 'muninn-backend',
+	serviceName: 'websocket',
+})
+
 export const handler = async (
 	event: APIGatewayProxyWebsocketEventV2 & {
 		queryStringParameters?: Record<string, any>
 	},
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.debug('onConnect event', { event })
+	metrics.addMetric('onConnect', MetricUnits.Count, 1)
 
 	const fingerprint = event.queryStringParameters?.fingerprint
 	if (fingerprint === undefined) {
 		log.error(`Fingerprint cannot be empty`)
+		metrics.addMetric('onConnectBadRequest', MetricUnits.Count, 1)
 		return {
 			statusCode: 403, // Forbidden error
 		}
@@ -60,6 +69,7 @@ export const handler = async (
 	const device = res.Items?.[0] !== undefined ? unmarshall(res.Items[0]) : null
 	if (device === null) {
 		log.error(`DeviceId is not found with`, { fingerprint })
+		metrics.addMetric('onConnectBadFingerprint', MetricUnits.Count, 1)
 		return {
 			statusCode: 403, // Forbidden error
 		}
@@ -108,6 +118,8 @@ export const handler = async (
 			},
 		}),
 	)
+
+	metrics.addMetric('onConnectSuccess', MetricUnits.Count, 1)
 
 	return {
 		statusCode: 200,

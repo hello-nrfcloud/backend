@@ -36,6 +36,7 @@ const packagesInLayer: string[] = [
 	'@bifravst/muninn-proto',
 	'p-limit',
 	'jsonwebtoken',
+	'@aws-lambda-powertools/metrics',
 ]
 const accountId = (await sts.send(new GetCallerIdentityCommand({})))
 	.Account as string
