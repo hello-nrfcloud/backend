@@ -108,6 +108,7 @@ export const handler = async (): Promise<void> => {
 					deviceShadow.state.version,
 				)
 				if (isUpdated === true) {
+					metrics.addMetric('shadowUpdated', MetricUnits.Count, 1)
 					await deviceShadowPublisher(d, deviceShadow)
 				}
 			}
