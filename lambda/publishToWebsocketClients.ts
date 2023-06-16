@@ -2,8 +2,8 @@ import { ApiGatewayManagementApi } from '@aws-sdk/client-apigatewaymanagementapi
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
-import { logger } from './logger.js'
-import { notifyClients } from './notifyClients.js'
+import { notifyClients } from '../websocket/notifyClients.js'
+import { logger } from './util/logger.js'
 
 export type WebsocketPayload = {
 	deviceId: string

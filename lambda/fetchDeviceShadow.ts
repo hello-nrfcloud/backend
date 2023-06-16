@@ -3,16 +3,16 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk } from 'lodash-es'
 import pLimit from 'p-limit'
+import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
 import { createDeviceShadowPublisher } from '../websocket/deviceShadowPublisher.js'
+import { createLock } from '../websocket/lock.js'
 import {
 	websocketDeviceConnectionsRepository,
 	type WebsocketDeviceConnection,
 } from '../websocket/websocketDeviceConnectionsRepository.js'
-import { deviceShadowFetcher } from './getDeviceShadowFromnRFCloud.js'
-import { getNRFCloudSSMParameters } from './getSSMParameter.js'
-import { createLock } from './lock.js'
-import { logger } from './logger.js'
+import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
+import { logger } from './util/logger.js'
 
 const metrics = new Metrics({
 	namespace: 'muninn-backend',
@@ -21,13 +21,13 @@ const metrics = new Metrics({
 
 const {
 	websocketDeviceConnectionsTableName,
-	lockTable,
+	lockTableName,
 	eventBusName,
 	stackName,
 } = fromEnv({
 	stackName: 'STACK_NAME',
 	websocketDeviceConnectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
-	lockTable: 'LOCK_TABLE',
+	lockTableName: 'LOCK_TABLE_NAME',
 	eventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
@@ -37,7 +37,7 @@ const log = logger('fetchDeviceShadow')
 
 const lockName = 'fetch-shadow'
 const lockTTL = 30
-const lock = createLock(db, lockTable)
+const lock = createLock(db, lockTableName)
 
 const connectionsRepo = websocketDeviceConnectionsRepository(
 	db,

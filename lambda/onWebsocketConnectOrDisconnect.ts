@@ -8,8 +8,8 @@ import type { DeviceIdentity } from '@bifravst/muninn-proto/Muninn/MuninnMessage
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import type { EventBridgeEvent } from 'aws-lambda'
-import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
+import { logger } from './util/logger.js'
 const { connectionsTableName } = fromEnv({
 	connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
 })(process.env)

@@ -165,7 +165,7 @@ export class DeviceShadow extends Construct {
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
 				WEBSOCKET_CONNECTIONS_TABLE_NAME:
 					websocketDeviceConnectionsTable.tableName,
-				LOCK_TABLE: lockTable.tableName,
+				LOCK_TABLE_NAME: lockTable.tableName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
 				NODE_NO_WARNINGS: '1',

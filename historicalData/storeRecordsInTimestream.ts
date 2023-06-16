@@ -4,7 +4,7 @@ import {
 	WriteRecordsCommand,
 	type _Record,
 } from '@aws-sdk/client-timestream-write'
-import { logger } from './logger.js'
+import { logger } from '../lambda/util/logger.js'
 
 const log = logger('storeRecordsInTimestream')
 

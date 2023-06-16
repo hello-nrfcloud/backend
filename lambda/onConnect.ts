@@ -13,8 +13,8 @@ import type {
 	APIGatewayProxyStructuredResultV2,
 	APIGatewayProxyWebsocketEventV2,
 } from 'aws-lambda'
-import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
+import { logger } from './util/logger.js'
 
 const { TableName, EventBusName, DevicesTableName, DevicesIndexName } = fromEnv(
 	{

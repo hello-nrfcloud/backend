@@ -3,9 +3,9 @@ import {
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
 import { proto } from '@bifravst/muninn-proto/Muninn'
-import type { DeviceShadow } from '../lambda/getDeviceShadowFromnRFCloud.js'
-import { logger } from '../lambda/logger.js'
 import type { WebsocketPayload } from '../lambda/publishToWebsocketClients.js'
+import { logger } from '../lambda/util/logger.js'
+import type { DeviceShadow } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
 import type { WebsocketDeviceConnection } from './websocketDeviceConnectionsRepository.js'
 
 const log = logger('deviceShadowPublisher')

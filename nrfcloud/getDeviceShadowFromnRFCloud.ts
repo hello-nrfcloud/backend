@@ -1,5 +1,5 @@
+import { logger } from '../lambda/util/logger.js'
 import { slashless } from '../util/slashless.js'
-import { logger } from './logger.js'
 
 export type DeviceShadow = {
 	id: string
