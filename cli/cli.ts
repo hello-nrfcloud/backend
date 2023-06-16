@@ -10,6 +10,7 @@ import type { StackOutputs } from '../cdk/stacks/BackendStack.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition'
+import { configureDeviceCommand } from './commands/configure-device.js'
 import { configureCommand } from './commands/configure.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials.js'
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
@@ -67,6 +68,13 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 			)<StackOutputs>(STACK_NAME)
 			commands.push(
 				showDeviceCommand({
+					ssm,
+					stackName: STACK_NAME,
+					db,
+					devicesTableName: outputs.devicesTableName,
+					devicesIndexName: outputs.devicesTableFingerprintIndexName,
+				}),
+				configureDeviceCommand({
 					ssm,
 					stackName: STACK_NAME,
 					db,
