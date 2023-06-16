@@ -65,19 +65,23 @@ export class DeviceShadow extends Construct {
 			timeToLiveAttribute: 'ttl',
 		})
 
-		// Tracking device database
-		const devicesTable = new DynamoDB.Table(this, 'devicesTable', {
-			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
-			partitionKey: {
-				name: 'deviceId',
-				type: DynamoDB.AttributeType.STRING,
+		// Used to store websocket connections
+		const websocketDeviceConnectionsTable = new DynamoDB.Table(
+			this,
+			'websocketDeviceConnectionsTable',
+			{
+				billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+				partitionKey: {
+					name: 'deviceId',
+					type: DynamoDB.AttributeType.STRING,
+				},
+				sortKey: {
+					name: 'connectionId',
+					type: DynamoDB.AttributeType.STRING,
+				},
+				removalPolicy: RemovalPolicy.DESTROY,
 			},
-			sortKey: {
-				name: 'connectionId',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			removalPolicy: RemovalPolicy.DESTROY,
-		})
+		)
 
 		// Lambda functions
 		const onWebsocketConnectOrDisconnect = new Lambda.Function(
@@ -95,7 +99,8 @@ export class DeviceShadow extends Construct {
 				description: 'Subscribe to device connection or disconnection',
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
-					DEVICES_TABLE_NAME: devicesTable.tableName,
+					WEBSOCKET_CONNECTIONS_TABLE_NAME:
+						websocketDeviceConnectionsTable.tableName,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					NODE_NO_WARNINGS: '1',
 				},
@@ -113,7 +118,9 @@ export class DeviceShadow extends Construct {
 			],
 			eventBus: websocketAPI.eventBus,
 		})
-		devicesTable.grantReadWriteData(onWebsocketConnectOrDisconnect)
+		websocketDeviceConnectionsTable.grantReadWriteData(
+			onWebsocketConnectOrDisconnect,
+		)
 		new LambdaLogGroup(
 			this,
 			'onWebsocketConnectOrDisconnectLog',
@@ -156,7 +163,8 @@ export class DeviceShadow extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
-				DEVICES_TABLE: devicesTable.tableName,
+				WEBSOCKET_CONNECTIONS_TABLE_NAME:
+					websocketDeviceConnectionsTable.tableName,
 				LOCK_TABLE: lockTable.tableName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
@@ -175,7 +183,7 @@ export class DeviceShadow extends Construct {
 			layers,
 		})
 		websocketAPI.eventBus.grantPutEventsTo(fetchDeviceShadow)
-		devicesTable.grantReadWriteData(fetchDeviceShadow)
+		websocketDeviceConnectionsTable.grantReadWriteData(fetchDeviceShadow)
 		lockTable.grantReadWriteData(fetchDeviceShadow)
 		fetchDeviceShadow.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {

@@ -7,7 +7,7 @@ import type {
 } from 'aws-lambda'
 import { logger } from './logger.js'
 const { TableName, EventBusName } = fromEnv({
-	TableName: 'CONNECTIONS_TABLE_NAME',
+	TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
 	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 

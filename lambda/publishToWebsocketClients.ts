@@ -18,8 +18,8 @@ const {
 	connectionsIndexName,
 	eventBusName,
 } = fromEnv({
-	connectionsTableName: 'CONNECTIONS_TABLE_NAME',
-	connectionsIndexName: 'CONNECTIONS_INDEX_NAME',
+	connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
+	connectionsIndexName: 'WEBSOCKET_CONNECTIONS_INDEX_NAME',
 	websocketManagementAPIURL: 'WEBSOCKET_MANAGEMENT_API_URL',
 	eventBusName: 'EVENTBUS_NAME',
 })(process.env)

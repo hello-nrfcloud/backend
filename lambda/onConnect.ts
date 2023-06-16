@@ -18,7 +18,7 @@ import type { WebsocketPayload } from './publishToWebsocketClients.js'
 
 const { TableName, EventBusName, DevicesTableName, DevicesIndexName } = fromEnv(
 	{
-		TableName: 'CONNECTIONS_TABLE_NAME',
+		TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
 		DevicesTableName: 'DEVICES_TABLE_NAME',
 		DevicesIndexName: 'DEVICES_INDEX_NAME',
 		EventBusName: 'EVENTBUS_NAME',

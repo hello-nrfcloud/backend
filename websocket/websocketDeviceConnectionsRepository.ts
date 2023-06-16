@@ -6,9 +6,9 @@ import {
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import type { PersistedDeviceSubscription } from './onWebsocketConnectOrDisconnect'
+import type { PersistedDeviceSubscription } from '../lambda/onWebsocketConnectOrDisconnect'
 
-export type Device = {
+export type WebsocketDeviceConnection = {
 	deviceId: string
 	connectionId: string
 	model: string
@@ -17,19 +17,22 @@ export type Device = {
 	updatedAt: Date
 }
 
-export const createDevicesRepository: (
+/**
+ * Stores websocket connections listening for device messages
+ */
+export const websocketDeviceConnectionsRepository: (
 	db: DynamoDBClient,
 	tableName: string,
 ) => {
-	getAll: () => Promise<Device[]>
-	updateDevice: (
+	getAll: () => Promise<WebsocketDeviceConnection[]>
+	updateDeviceVersion: (
 		deviceId: string,
 		connectionId: string,
 		version: number,
 	) => Promise<boolean>
 } = (db: DynamoDBClient, tableName: string) => {
 	const getAll = async () => {
-		const devices: Device[] = []
+		const devices: WebsocketDeviceConnection[] = []
 		let lastKey: Record<string, AttributeValue> | undefined = undefined
 
 		do {
@@ -60,7 +63,7 @@ export const createDevicesRepository: (
 		return devices
 	}
 
-	const updateDevice = async (
+	const updateDeviceVersion = async (
 		deviceId: string,
 		connectionId: string,
 		version: number,
@@ -102,6 +105,6 @@ export const createDevicesRepository: (
 
 	return {
 		getAll,
-		updateDevice,
+		updateDeviceVersion,
 	}
 }

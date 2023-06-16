@@ -10,7 +10,7 @@ import type {
 import { logger } from './logger.js'
 const { TableName, EventBusName, ClusterName, TaskDefinitionArn, Subnets } =
 	fromEnv({
-		TableName: 'CONNECTIONS_TABLE_NAME',
+		TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
 		EventBusName: 'EVENTBUS_NAME',
 		ClusterName: 'CLUSTER_NAME',
 		TaskDefinitionArn: 'TASK_DEFINITION_ARN',

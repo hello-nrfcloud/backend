@@ -73,7 +73,7 @@ export class WebsocketAPI extends Construct {
 			description: 'Registers new clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
@@ -104,7 +104,7 @@ export class WebsocketAPI extends Construct {
 			description: 'Receives messages from clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
@@ -127,7 +127,7 @@ export class WebsocketAPI extends Construct {
 			description: 'De-registers clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
@@ -275,8 +275,8 @@ export class WebsocketAPI extends Construct {
 				description: 'Publish event to web socket clients',
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
-					CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-					CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
+					WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+					WEBSOCKET_CONNECTIONS_INDEX_NAME: this.connectionsTableIndexName,
 					WEBSOCKET_MANAGEMENT_API_URL: this.websocketManagementAPIURL,
 					EVENTBUS_NAME: this.eventBus.eventBusName,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),

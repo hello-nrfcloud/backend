@@ -1,10 +1,14 @@
 import { Metrics, MetricUnits } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { chunk } from 'lodash-es'
 import pLimit from 'p-limit'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
-import { createDeviceShadowPublisher } from './deviceShadowPublisher.js'
-import { createDevicesRepository } from './devicesRepository.js'
+import { createDeviceShadowPublisher } from '../websocket/deviceShadowPublisher.js'
+import {
+	websocketDeviceConnectionsRepository,
+	type WebsocketDeviceConnection,
+} from '../websocket/websocketDeviceConnectionsRepository.js'
 import { deviceShadowFetcher } from './getDeviceShadowFromnRFCloud.js'
 import { getNRFCloudSSMParameters } from './getSSMParameter.js'
 import { createLock } from './lock.js'
@@ -15,9 +19,14 @@ const metrics = new Metrics({
 	serviceName: 'shadowFetcher',
 })
 
-const { devicesTable, lockTable, eventBusName, stackName } = fromEnv({
+const {
+	websocketDeviceConnectionsTableName,
+	lockTable,
+	eventBusName,
+	stackName,
+} = fromEnv({
 	stackName: 'STACK_NAME',
-	devicesTable: 'DEVICES_TABLE',
+	websocketDeviceConnectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
 	lockTable: 'LOCK_TABLE',
 	eventBusName: 'EVENTBUS_NAME',
 })(process.env)
@@ -30,7 +39,10 @@ const lockName = 'fetch-shadow'
 const lockTTL = 30
 const lock = createLock(db, lockTable)
 
-const deviceRepository = createDevicesRepository(db, devicesTable)
+const connectionsRepo = websocketDeviceConnectionsRepository(
+	db,
+	websocketDeviceConnectionsTableName,
+)
 const deviceShadowPromise = (async () => {
 	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
 		'apiKey',
@@ -46,34 +58,6 @@ const deviceShadowPromise = (async () => {
 })()
 const deviceShadowPublisher = createDeviceShadowPublisher(eventBusName)
 
-const chunkArray = <T>(arr: T[], size: number): T[][] => {
-	const chunkedArr = []
-
-	for (let i = 0; i < arr.length; i += size) {
-		chunkedArr.push(arr.slice(i, i + size))
-	}
-
-	return chunkedArr
-}
-
-const convertToMap = <T extends { [key: string]: unknown }, K extends keyof T>(
-	arr: T[],
-	key: K,
-): Record<string, T[]> => {
-	const map: { [key: string]: T[] } = {}
-	for (const obj of arr) {
-		const k = obj[key] as string
-
-		if (map[k] === undefined) {
-			map[k] = [obj]
-		} else {
-			map[k]?.push(obj)
-		}
-	}
-
-	return map
-}
-
 export const handler = async (): Promise<void> => {
 	const deviceShadow = await deviceShadowPromise
 	const lockAcquired = await lock.acquiredLock(lockName, lockTTL)
@@ -83,16 +67,23 @@ export const handler = async (): Promise<void> => {
 	}
 
 	try {
-		const devices = await deviceRepository.getAll()
-		log.info(`Found ${devices.length} active devices`)
-		metrics.addMetric('deviceSubscriptions', MetricUnits.Count, devices.length)
-		const devicesMap = convertToMap(devices, 'deviceId')
+		const connections = await connectionsRepo.getAll()
+		log.info(`Found ${connections.length} active connections`)
+		metrics.addMetric('connections', MetricUnits.Count, connections.length)
+		const deviceConnectionsMap = connections.reduce(
+			(map, connection) => ({
+				[connection.deviceId]: [
+					...(map[connection.deviceId] ?? []),
+					connection,
+				],
+			}),
+			{} as Record<string, WebsocketDeviceConnection[]>,
+		)
 
 		// Bulk fetching device shadow to avoid rate limit
-		const chunkedDevices = chunkArray(devices, 50)
-		const shadows = (
+		const deviceShadows = (
 			await Promise.all(
-				chunkedDevices.map(async (devices) =>
+				chunk(connections, 50).map(async (devices) =>
 					limit(async () =>
 						deviceShadow(devices.map((device) => device.deviceId)),
 					),
@@ -100,24 +91,24 @@ export const handler = async (): Promise<void> => {
 			)
 		).flat()
 
-		for (const shadow of shadows) {
+		for (const deviceShadow of deviceShadows) {
 			// In case multiple web sockets per device
-			const device = devicesMap[shadow.id]
-			for (const d of device ?? []) {
+			const connections = deviceConnectionsMap[deviceShadow.id]
+			for (const d of connections ?? []) {
 				log.info(`Checking shadow version`, {
 					deviceId: d.deviceId,
 					deviceVersion: d.version,
 					model: d.model,
-					shadowVersion: shadow.state.version,
-					isChanged: d.version !== shadow.state.version,
+					shadowVersion: deviceShadow.state.version,
+					isChanged: d.version !== deviceShadow.state.version,
 				})
-				const isUpdated = await deviceRepository.updateDevice(
+				const isUpdated = await connectionsRepo.updateDeviceVersion(
 					d.deviceId,
 					d.connectionId,
-					shadow.state.version,
+					deviceShadow.state.version,
 				)
 				if (isUpdated === true) {
-					await deviceShadowPublisher(d, shadow)
+					await deviceShadowPublisher(d, deviceShadow)
 				}
 			}
 		}
