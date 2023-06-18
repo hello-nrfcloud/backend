@@ -1,36 +1,52 @@
+import { Metrics, MetricUnits } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { chunk } from 'lodash-es'
 import pLimit from 'p-limit'
+import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
-import { createDeviceShadowPublisher } from './deviceShadowPublisher.js'
-import { createDeviceUpdateChecker } from './deviceShadowUpdateChecker.js'
-import { createDevicesRepository } from './devicesRepository.js'
-import { deviceShadowFetcher } from './getDeviceShadowFromnRFCloud.js'
-import { getNRFCloudSSMParameters } from './getSSMParameter.js'
-import { createLock } from './lock.js'
-import { logger } from './logger.js'
+import { createDeviceShadowPublisher } from '../websocket/deviceShadowPublisher.js'
+import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
+import { createLock } from '../websocket/lock.js'
+import {
+	websocketDeviceConnectionsRepository,
+	type WebsocketDeviceConnection,
+} from '../websocket/websocketDeviceConnectionsRepository.js'
+import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
+import { logger } from './util/logger.js'
 
-const { devicesTable, devicesIndexName, lockTable, eventBusName, stackName } =
-	fromEnv({
-		stackName: 'STACK_NAME',
-		devicesTable: 'DEVICES_TABLE',
-		devicesIndexName: 'DEVICES_INDEX_NAME',
-		lockTable: 'LOCK_TABLE',
-		eventBusName: 'EVENTBUS_NAME',
-	})(process.env)
+const metrics = new Metrics({
+	namespace: 'muninn-backend',
+	serviceName: 'shadowFetcher',
+})
+
+const {
+	websocketDeviceConnectionsTableName,
+	websocketDeviceConnectionsTableIndexName,
+	lockTableName,
+	eventBusName,
+	stackName,
+} = fromEnv({
+	stackName: 'STACK_NAME',
+	websocketDeviceConnectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
+	websocketDeviceConnectionsTableIndexName:
+		'WEBSOCKET_CONNECTIONS_TABLE_INDEX_NAME',
+	lockTableName: 'LOCK_TABLE_NAME',
+	eventBusName: 'EVENTBUS_NAME',
+})(process.env)
 
 const limit = pLimit(3)
 const db = new DynamoDBClient({})
 const log = logger('fetchDeviceShadow')
 
 const lockName = 'fetch-shadow'
-const lockTTLSeconds = 3
-const lock = createLock(db, lockTable)
+const lockTTLSeconds = 30
+const lock = createLock(db, lockTableName)
 
-const deviceRepository = createDevicesRepository(
+const connectionsRepo = websocketDeviceConnectionsRepository(
 	db,
-	devicesTable,
-	devicesIndexName,
+	websocketDeviceConnectionsTableName,
+	websocketDeviceConnectionsTableIndexName,
 )
 const deviceShadowPromise = (async () => {
 	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
@@ -47,34 +63,6 @@ const deviceShadowPromise = (async () => {
 })()
 const deviceShadowPublisher = createDeviceShadowPublisher(eventBusName)
 
-const chunkArray = <T>(arr: T[], size: number): T[][] => {
-	const chunkedArr = []
-
-	for (let i = 0; i < arr.length; i += size) {
-		chunkedArr.push(arr.slice(i, i + size))
-	}
-
-	return chunkedArr
-}
-
-const convertToMap = <T extends { [key: string]: unknown }, K extends keyof T>(
-	arr: T[],
-	key: K,
-): Record<string, T[]> => {
-	const map: { [key: string]: T[] } = {}
-	for (const obj of arr) {
-		const k = obj[key] as string
-
-		if (map[k] === undefined) {
-			map[k] = [obj]
-		} else {
-			map[k]?.push(obj)
-		}
-	}
-
-	return map
-}
-
 export const handler = async (): Promise<void> => {
 	const lockAcquired = await lock.acquiredLock(lockName, lockTTLSeconds)
 	if (lockAcquired === false) {
@@ -85,31 +73,40 @@ export const handler = async (): Promise<void> => {
 	const executionTime = new Date()
 
 	try {
-		const onlineDevices = await deviceRepository.getAll()
-		log.info(`Found ${onlineDevices.length} online devices`)
-		if (onlineDevices.length === 0) return
+		const connections = await connectionsRepo.getAll()
+		log.info(`Found ${connections.length} active connections`)
+		metrics.addMetric('connections', MetricUnits.Count, connections.length)
+		if (connections.length === 0) return
 
 		// Filter based on the configuration
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			executionTime,
 		)
-		const devices = onlineDevices.filter((device) => {
+		const devices = connections.filter((connection) => {
 			const shouldUpdate = deviceShadowUpdateChecker({
-				model: device.model,
-				updatedAt: device.updatedAt,
-				count: device.count ?? 0,
+				model: connection.model,
+				updatedAt: connection.updatedAt,
+				count: connection.count ?? 0,
 			})
 
 			return shouldUpdate
 		})
 		log.info(`Found ${devices.length} devices to get shadow`)
-		const devicesMap = convertToMap(devices, 'deviceId')
+
+		const deviceConnectionsMap = connections.reduce(
+			(map, connection) => ({
+				[connection.deviceId]: [
+					...(map[connection.deviceId] ?? []),
+					connection,
+				],
+			}),
+			{} as Record<string, WebsocketDeviceConnection[]>,
+		)
 
 		// Bulk fetching device shadow to avoid rate limit
-		const chunkedDevices = chunkArray(devices, 50)
-		const shadows = (
+		const deviceShadows = (
 			await Promise.all(
-				chunkedDevices.map(async (devices) =>
+				chunk(devices, 50).map(async (devices) =>
 					limit(async () =>
 						deviceShadow(devices.map((device) => device.deviceId)),
 					),
@@ -117,25 +114,26 @@ export const handler = async (): Promise<void> => {
 			)
 		).flat()
 
-		for (const shadow of shadows) {
+		for (const deviceShadow of deviceShadows) {
 			// In case multiple web sockets per device
-			const device = devicesMap[shadow.id]
-			for (const d of device ?? []) {
+			const connections = deviceConnectionsMap[deviceShadow.id]
+			for (const d of connections ?? []) {
 				log.info(`Checking shadow version`, {
 					deviceId: d.deviceId,
 					deviceVersion: d.version,
 					model: d.model,
-					shadowVersion: shadow.state.version,
-					isChanged: d.version !== shadow.state.version,
+					shadowVersion: deviceShadow.state.version,
+					isChanged: d.version !== deviceShadow.state.version,
 				})
-				const isUpdated = await deviceRepository.updateDevice(
+				const isUpdated = await connectionsRepo.updateDeviceVersion(
 					d.deviceId,
 					d.connectionId,
-					shadow.state.version,
+					deviceShadow.state.version,
 					executionTime,
 				)
 				if (isUpdated === true) {
-					await deviceShadowPublisher(d, shadow)
+					metrics.addMetric('shadowUpdated', MetricUnits.Count, 1)
+					await deviceShadowPublisher(d, deviceShadow)
 				}
 			}
 		}

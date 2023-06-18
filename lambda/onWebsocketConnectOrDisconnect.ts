@@ -8,10 +8,10 @@ import type { DeviceIdentity } from '@bifravst/muninn-proto/Muninn/MuninnMessage
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import type { EventBridgeEvent } from 'aws-lambda'
-import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-const { DevicesTableName } = fromEnv({
-	DevicesTableName: 'DEVICES_TABLE_NAME',
+import { logger } from './util/logger.js'
+const { connectionsTableName } = fromEnv({
+	connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
 })(process.env)
 
 const log = logger('DeviceTracking')
@@ -55,7 +55,7 @@ export const handler = async (
 			}
 			await db.send(
 				new PutItemCommand({
-					TableName: DevicesTableName,
+					TableName: connectionsTableName,
 					Item: marshall(subscription),
 				}),
 			)
@@ -64,7 +64,7 @@ export const handler = async (
 			if (event.detail.connectionId !== undefined) {
 				await db.send(
 					new DeleteItemCommand({
-						TableName: DevicesTableName,
+						TableName: connectionsTableName,
 						Key: {
 							deviceId: { S: event.detail.deviceId },
 							connectionId: { S: event.detail.connectionId },

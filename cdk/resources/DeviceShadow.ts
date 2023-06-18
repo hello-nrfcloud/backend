@@ -16,7 +16,8 @@ import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 export class DeviceShadow extends Construct {
-	private readonly devicesTableIndexName = 'model-updatedAt-index'
+	private readonly websocketDeviceConnectionsTableIndexName =
+		'model-updatedAt-index'
 	public constructor(
 		parent: Construct,
 		{
@@ -66,22 +67,27 @@ export class DeviceShadow extends Construct {
 			timeToLiveAttribute: 'ttl',
 		})
 
-		// Tracking device database
-		const devicesTable = new DynamoDB.Table(this, 'devicesTable', {
-			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
-			partitionKey: {
-				name: 'deviceId',
-				type: DynamoDB.AttributeType.STRING,
+		// Used to store websocket connections
+		const websocketDeviceConnectionsTable = new DynamoDB.Table(
+			this,
+			'websocketDeviceConnectionsTable',
+			{
+				billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+				partitionKey: {
+					name: 'deviceId',
+					type: DynamoDB.AttributeType.STRING,
+				},
+				sortKey: {
+					name: 'connectionId',
+					type: DynamoDB.AttributeType.STRING,
+				},
+				removalPolicy: RemovalPolicy.DESTROY,
 			},
-			sortKey: {
-				name: 'connectionId',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			removalPolicy: RemovalPolicy.DESTROY,
-		})
+		)
+
 		// The staticKey will be the same for all records, then we can filter using updatedAt field
-		devicesTable.addGlobalSecondaryIndex({
-			indexName: this.devicesTableIndexName,
+		websocketDeviceConnectionsTable.addGlobalSecondaryIndex({
+			indexName: this.websocketDeviceConnectionsTableIndexName,
 			partitionKey: {
 				name: 'staticKey',
 				type: DynamoDB.AttributeType.STRING,
@@ -109,7 +115,8 @@ export class DeviceShadow extends Construct {
 				description: 'Subscribe to device connection or disconnection',
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
-					DEVICES_TABLE_NAME: devicesTable.tableName,
+					WEBSOCKET_CONNECTIONS_TABLE_NAME:
+						websocketDeviceConnectionsTable.tableName,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					NODE_NO_WARNINGS: '1',
 				},
@@ -127,7 +134,9 @@ export class DeviceShadow extends Construct {
 			],
 			eventBus: websocketAPI.eventBus,
 		})
-		devicesTable.grantReadWriteData(onWebsocketConnectOrDisconnect)
+		websocketDeviceConnectionsTable.grantReadWriteData(
+			onWebsocketConnectOrDisconnect,
+		)
 		new LambdaLogGroup(
 			this,
 			'onWebsocketConnectOrDisconnectLog',
@@ -170,9 +179,11 @@ export class DeviceShadow extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
-				DEVICES_TABLE: devicesTable.tableName,
-				DEVICES_INDEX_NAME: this.devicesTableIndexName,
-				LOCK_TABLE: lockTable.tableName,
+				WEBSOCKET_CONNECTIONS_TABLE_NAME:
+					websocketDeviceConnectionsTable.tableName,
+				WEBSOCKET_CONNECTIONS_TABLE_INDEX_NAME:
+					this.websocketDeviceConnectionsTableIndexName,
+				LOCK_TABLE_NAME: lockTable.tableName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
 				NODE_NO_WARNINGS: '1',
@@ -200,7 +211,7 @@ export class DeviceShadow extends Construct {
 		})
 		fetchDeviceShadow.addToRolePolicy(ssmReadPolicy)
 		websocketAPI.eventBus.grantPutEventsTo(fetchDeviceShadow)
-		devicesTable.grantReadWriteData(fetchDeviceShadow)
+		websocketDeviceConnectionsTable.grantReadWriteData(fetchDeviceShadow)
 		lockTable.grantReadWriteData(fetchDeviceShadow)
 		fetchDeviceShadow.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {

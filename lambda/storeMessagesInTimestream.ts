@@ -1,10 +1,10 @@
 import { TimestreamWriteClient } from '@aws-sdk/client-timestream-write'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
-import { convertMessageToTimestreamRecords } from './historicalData/convertMessageToTimestreamRecords.js'
-import { logger } from './logger.js'
+import { convertMessageToTimestreamRecords } from '../historicalData/convertMessageToTimestreamRecords.js'
+import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
 import type { WebsocketPayload } from './publishToWebsocketClients'
-import { storeRecordsInTimestream } from './storeRecordsInTimestream.js'
+import { logger } from './util/logger.js'
 
 type ConvertedMessage = Pick<WebsocketPayload, 'deviceId'> & {
 	message: {

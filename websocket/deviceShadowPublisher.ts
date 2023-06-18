@@ -3,16 +3,19 @@ import {
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
 import { proto } from '@bifravst/muninn-proto/Muninn'
-import type { Device } from './devicesRepository.js'
-import type { DeviceShadow } from './getDeviceShadowFromnRFCloud.js'
-import { logger } from './logger.js'
-import type { WebsocketPayload } from './publishToWebsocketClients'
+import type { WebsocketPayload } from '../lambda/publishToWebsocketClients.js'
+import { logger } from '../lambda/util/logger.js'
+import type { DeviceShadow } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
+import type { WebsocketDeviceConnection } from './websocketDeviceConnectionsRepository.js'
 
 const log = logger('deviceShadowPublisher')
 const eventBus = new EventBridgeClient({})
 
 export const createDeviceShadowPublisher = (eventBusName: string) => {
-	return async (device: Device, shadow: DeviceShadow): Promise<void> => {
+	return async (
+		device: WebsocketDeviceConnection,
+		shadow: DeviceShadow,
+	): Promise<void> => {
 		const model = device.model ?? 'default'
 		const converted = await proto({
 			onError: (message, model, error) =>

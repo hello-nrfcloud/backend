@@ -12,8 +12,8 @@ import {
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { logger } from './logger.js'
-import type { WebsocketPayload } from './publishToWebsocketClients.js'
+import type { WebsocketPayload } from '../lambda/publishToWebsocketClients.js'
+import { logger } from '../lambda/util/logger.js'
 
 const log = logger('notifyClients')
 const eventBus = new EventBridgeClient({})

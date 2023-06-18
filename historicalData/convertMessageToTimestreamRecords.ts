@@ -1,7 +1,7 @@
 import { type _Record } from '@aws-sdk/client-timestream-write'
 import { toRecord } from '@nordicsemiconductor/timestream-helpers'
 import { randomUUID } from 'node:crypto'
-import { isNotNullOrUndefined } from '../../util/isNullOrUndefined.js'
+import { isNotNullOrUndefined } from '../util/isNullOrUndefined.js'
 
 type Proto = {
 	'@context': string

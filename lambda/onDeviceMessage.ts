@@ -3,12 +3,12 @@ import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { proto, type MuninnMessage } from '@bifravst/muninn-proto/Muninn'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
+import { getModelForDevice } from '../devices/getModelForDevice.js'
 import { locationServiceAPIClient } from '../nrfcloud/locationServiceAPIClient.js'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
-import { getModelForDevice } from './getModelForDevice.js'
-import { getNRFCloudSSMParameters } from './getSSMParameter.js'
-import { logger } from './logger.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
+import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
+import { logger } from './util/logger.js'
 
 const { EventBusName, DevicesTableName, stackName } = fromEnv({
 	stackName: 'STACK_NAME',

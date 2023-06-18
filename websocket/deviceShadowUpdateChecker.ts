@@ -1,7 +1,7 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
+import { logger } from '../lambda/util/logger.js'
 import { getSettingsOptional } from '../util/settings.js'
-import { logger } from './logger.js'
 
 // Format:
 //   'model name': 'interval'

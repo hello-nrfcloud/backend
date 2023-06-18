@@ -1,5 +1,5 @@
-import { type Settings } from '../nrfcloud/settings.js'
-import { settingsPath } from '../util/settings.js'
+import { type Settings } from '../../nrfcloud/settings.js'
+import { settingsPath } from '../../util/settings.js'
 
 /**
  * @see https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html

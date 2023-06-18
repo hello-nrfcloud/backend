@@ -2,8 +2,8 @@ import { ApiGatewayManagementApi } from '@aws-sdk/client-apigatewaymanagementapi
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
-import { logger } from './logger.js'
-import { notifyClients } from './notifyClients.js'
+import { notifyClients } from '../websocket/notifyClients.js'
+import { logger } from './util/logger.js'
 
 export type WebsocketPayload = {
 	deviceId: string
@@ -18,8 +18,8 @@ const {
 	connectionsIndexName,
 	eventBusName,
 } = fromEnv({
-	connectionsTableName: 'CONNECTIONS_TABLE_NAME',
-	connectionsIndexName: 'CONNECTIONS_INDEX_NAME',
+	connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
+	connectionsIndexName: 'WEBSOCKET_CONNECTIONS_INDEX_NAME',
 	websocketManagementAPIURL: 'WEBSOCKET_MANAGEMENT_API_URL',
 	eventBusName: 'EVENTBUS_NAME',
 })(process.env)
