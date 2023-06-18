@@ -70,3 +70,22 @@ associates with the same device id.
 
 Messages will be converted using
 [`@bifravst/muninn-proto`](https://github.com/bifravst/Muninn-proto).
+
+## Device Simulator
+
+You can create a simulated device using the CLI:
+
+```bash
+./cli.sh register-simulator-device
+```
+
+This will create a new device, register its public key with nRF Cloud and its
+fingerprint in the device database.
+
+Afterwards you can run the simulator using
+
+```bash
+./cli.sh simulate-device <deviceId>
+```
+
+which will send simulated data to nRF Cloud.

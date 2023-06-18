@@ -16,7 +16,9 @@ import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFak
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 import { logsCommand } from './commands/logs.js'
 import { registerDeviceCommand } from './commands/register-device.js'
+import { registerSimulatorDeviceCommand } from './commands/register-simulator-device.js'
 import { showDeviceCommand } from './commands/show-device.js'
+import { simulateDeviceCommand } from './commands/simulate-device.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -61,6 +63,10 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 				iot,
 				stackName: STACK_NAME,
 			}),
+			simulateDeviceCommand({
+				ssm,
+				stackName: STACK_NAME,
+			}),
 		)
 		try {
 			const outputs = await stackOutput(
@@ -84,6 +90,12 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 				registerDeviceCommand({
 					db,
 					devicesTableName: outputs.devicesTableName,
+				}),
+				registerSimulatorDeviceCommand({
+					db,
+					devicesTableName: outputs.devicesTableName,
+					ssm,
+					stackName: STACK_NAME,
 				}),
 			)
 		} catch (error) {
