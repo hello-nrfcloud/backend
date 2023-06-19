@@ -37,6 +37,7 @@ const packagesInLayer: string[] = [
 	'jsonwebtoken',
 	'@aws-lambda-powertools/metrics',
 	'lodash-es',
+	'@middy/core',
 ]
 const accountId = (await sts.send(new GetCallerIdentityCommand({})))
 	.Account as string
