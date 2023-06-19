@@ -30,11 +30,11 @@
   "devDependencies": {
     "@aws-lambda-powertools/logger": "1.9.0",
     "@aws-sdk/client-apigatewaymanagementapi": "3.354.0",
-    "@aws-sdk/client-cloudformation": "3.354.0",
+    "@aws-sdk/client-cloudformation": "3.355.0",
     "@aws-sdk/client-cloudwatch-logs": "3.354.0",
     "@aws-sdk/client-dynamodb": "3.354.0",
     "@aws-sdk/client-ecr": "3.354.0",
-    "@aws-sdk/client-ecs": "3.354.0",
+    "@aws-sdk/client-ecs": "3.355.0",
     "@aws-sdk/client-eventbridge": "3.354.0",
     "@aws-sdk/client-iam": "3.354.0",
     "@aws-sdk/client-iot": "3.354.0",
