@@ -98,7 +98,11 @@ export const simulateDeviceCommand = ({
 						return endPromise
 					},
 					publish: (topic, payload) => {
-						console.debug(chalk.magenta.dim('>'), chalk.magenta(topic))
+						console.debug(
+							chalk.gray(`[${new Date().toISOString().slice(11, 19)}]`),
+							chalk.magenta.dim('>'),
+							chalk.magenta(topic),
+						)
 						console.debug(
 							chalk.blue.dim('>'),
 							chalk.blue(JSON.stringify(payload)),
@@ -139,6 +143,56 @@ export const simulateDeviceCommand = ({
 			},
 		})
 
+		// Publish location
+		connection.publish(
+			`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
+			{
+				appId: 'GROUND_FIX',
+				messageType: 'DATA',
+				data: {
+					lte: [
+						{
+							eci: 84561173,
+							mcc: 240,
+							mnc: 7,
+							tac: 34209,
+							earfcn: 6400,
+							rsrp: -91,
+							rsrq: -10.5,
+							nmr: [
+								{
+									earfcn: 6400,
+									pci: 98,
+									rsrp: -93,
+									rsrq: -11.5,
+								},
+								{
+									earfcn: 6400,
+									pci: 177,
+									rsrp: -98,
+									rsrq: -14,
+								},
+								{
+									earfcn: 6400,
+									pci: 62,
+									rsrp: -99,
+									rsrq: -14,
+								},
+								{
+									earfcn: 6400,
+									pci: 72,
+									rsrp: -103,
+									rsrq: -20,
+								},
+							],
+						},
+					],
+				},
+			},
+		)
+
+		// Publish sensor readings
+
 		const batteryReadings = dataGenerator({
 			min: 4000,
 			max: 5000,
@@ -157,8 +211,28 @@ export const simulateDeviceCommand = ({
 			)
 		}
 
+		const gainReadings = dataGenerator({
+			min: 0,
+			max: 5,
+			step: 0.1,
+		})
+
+		const publishGain = () => {
+			connection.publish(
+				`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
+				{
+					appId: 'SOLAR',
+					messageType: 'DATA',
+					ts: Date.now(),
+					data: gainReadings.next().value.toString(),
+				},
+			)
+		}
+
 		publishTemp()
+		publishGain()
 		setInterval(publishTemp, 10 * 1000)
+		setInterval(publishGain, 10 * 1000)
 	},
 	help: 'Simulates a device',
 })

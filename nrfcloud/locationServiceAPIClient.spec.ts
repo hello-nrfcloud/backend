@@ -63,6 +63,7 @@ describe('locationServiceAPIClient', () => {
 				ok: false,
 				status: 500,
 				statusText: 'Internal Server Error',
+				text: async () => Promise.resolve('Internal Server Error'),
 			})
 
 			const client = locationServiceAPIClient({ endpoint, serviceKey, teamId })

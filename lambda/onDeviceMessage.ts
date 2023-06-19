@@ -1,6 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { proto, type HelloMessage } from '@hello.nrfcloud.com/proto/hello'
+import type { GROUND_FIX } from '@hello.nrfcloud.com/proto/nrfCloud/types/types.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import { getModelForDevice } from '../devices/getModelForDevice.js'
@@ -51,7 +52,7 @@ const preprocessMessage =
 			'appId' in message &&
 			message.appId === 'GROUND_FIX'
 		) {
-			return await apiClient.groundFix(message, ts)
+			return await apiClient.groundFix((message as GROUND_FIX).data, ts)
 		}
 
 		// Otherwise, pass though the message

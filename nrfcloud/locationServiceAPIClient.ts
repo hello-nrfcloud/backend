@@ -58,6 +58,10 @@ export const locationServiceAPIClient = ({
 			const headers = {
 				Authorization: `Bearer ${createToken(teamId, serviceKey)}`,
 			}
+			console.log({
+				url: `${normalizedEndpoint}/v1/location/ground-fix`,
+				body: JSON.stringify(payload),
+			})
 			const res = await fetch(`${normalizedEndpoint}/v1/location/ground-fix`, {
 				method: 'POST',
 				headers,
@@ -66,7 +70,7 @@ export const locationServiceAPIClient = ({
 
 			if (res.ok === false)
 				throw new Error(
-					`Ground fix API failed with ${res.status}: ${res.statusText}`,
+					`Ground fix API failed with ${res.status}: ${await res.text()}`,
 				)
 
 			const result = await res.json()
