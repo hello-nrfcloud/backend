@@ -187,6 +187,8 @@ export class DeviceShadow extends Construct {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
 				NODE_NO_WARNINGS: '1',
+				PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED: 'FALSE',
+				PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
