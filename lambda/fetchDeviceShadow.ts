@@ -1,5 +1,10 @@
-import { Metrics, MetricUnits } from '@aws-lambda-powertools/metrics'
+import {
+	logMetrics,
+	Metrics,
+	MetricUnits,
+} from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk } from 'lodash-es'
 import pLimit from 'p-limit'
@@ -58,7 +63,7 @@ const deviceShadowPromise = (async () => {
 })()
 const deviceShadowPublisher = createDeviceShadowPublisher(eventBusName)
 
-export const handler = async (): Promise<void> => {
+const h = async (): Promise<void> => {
 	const deviceShadow = await deviceShadowPromise
 	const lockAcquired = await lock.acquiredLock(lockName, lockTTL)
 	if (lockAcquired === false) {
@@ -117,3 +122,5 @@ export const handler = async (): Promise<void> => {
 		await lock.releaseLock(lockName)
 	}
 }
+
+export const handler = middy(h).use(logMetrics(metrics))
