@@ -48,8 +48,7 @@ describe('locationServiceAPIClient', () => {
 			)
 
 			expect(result).toEqual({
-				'@context':
-					'https://github.com/bifravst/Muninn-backend/device-location',
+				'@context': 'https://github.com/hello-nrfcloud/backend/device-location',
 				ts,
 				lat: 1.23,
 				lng: 4.56,

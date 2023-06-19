@@ -1,7 +1,7 @@
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
 import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { proto } from '@bifravst/muninn-proto/Muninn/proto.js'
+import { proto } from '@hello.nrfcloud.com/proto/hello/proto.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type {
 	APIGatewayProxyStructuredResultV2,

@@ -2,7 +2,7 @@ import {
 	EventBridgeClient,
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
-import { proto } from '@bifravst/muninn-proto/Muninn'
+import { proto } from '@hello.nrfcloud.com/proto/hello'
 import type { WebsocketPayload } from '../lambda/publishToWebsocketClients.js'
 import { logger } from '../lambda/util/logger.js'
 import type { DeviceShadow } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'

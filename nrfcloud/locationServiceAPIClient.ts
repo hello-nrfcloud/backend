@@ -76,8 +76,7 @@ export const locationServiceAPIClient = ({
 			}
 
 			return {
-				'@context':
-					'https://github.com/bifravst/Muninn-backend/device-location',
+				'@context': 'https://github.com/hello-nrfcloud/backend/device-location',
 				ts,
 				lat: valid.value.lat,
 				lng: valid.value.lon,

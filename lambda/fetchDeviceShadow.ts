@@ -15,7 +15,7 @@ import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
 import { logger } from './util/logger.js'
 
 const metrics = new Metrics({
-	namespace: 'muninn-backend',
+	namespace: 'hello-nrfcloud-backend',
 	serviceName: 'shadowFetcher',
 })
 

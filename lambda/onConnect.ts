@@ -6,7 +6,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { Context, DeviceIdentity } from '@bifravst/muninn-proto/Muninn'
+import { Context, DeviceIdentity } from '@hello.nrfcloud.com/proto/hello'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import type {
@@ -30,7 +30,7 @@ const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
 const metrics = new Metrics({
-	namespace: 'muninn-backend',
+	namespace: 'hello-nrfcloud-backend',
 	serviceName: 'websocket',
 })
 

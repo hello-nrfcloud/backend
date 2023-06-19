@@ -187,7 +187,7 @@ export const registerSimulatorDeviceCommand = ({
 			{
 				deviceId,
 				subType: 'PCA20035-solar',
-				tags: ['simulators', 'muninn-backend'],
+				tags: ['simulators', 'hello-nrfcloud-backend'],
 				certPem: await readFile(path.join(deviceSignedCertLocation), 'utf-8'),
 			},
 		])

@@ -86,7 +86,7 @@ Then the response should match this JSON
 
 ```json
 {
-  "@context": "https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/location",
+  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/location",
   "lat": 45.524098,
   "lng": -122.688408,
   "acc": 300

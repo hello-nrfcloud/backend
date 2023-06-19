@@ -1,7 +1,7 @@
 {
-  "name": "@nordicsemiconductor/muninn-backend",
+  "name": "@hello.nrfcloud.com/backend",
   "version": "0.0.0-development",
-  "description": "Cloud backend for Muninn developed using AWS CDK in TypeScript",
+  "description": "Cloud backend for hello.nrfcloud.com developed using AWS CDK in TypeScript",
   "type": "module",
   "scripts": {
     "test": "jest",
@@ -12,16 +12,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bifravst/Muninn-backend.git"
+    "url": "git+https://github.com/hello-nrfcloud/backend.git"
   },
   "bugs": {
-    "url": "https://github.com/bifravst/Muninn-backend/issues"
+    "url": "https://github.com/hello-nrfcloud/backend/issues"
   },
-  "homepage": "https://github.com/bifravst/Muninn-backend#readme",
+  "homepage": "https://github.com/hello-nrfcloud/backend#readme",
   "keywords": [
     "nordicsemiconductor",
     "cellular-iot",
-    "muninn",
+    "hello-nrfcloud",
     "aws",
     "cdk"
   ],
@@ -116,7 +116,7 @@
   "prettier": "@nordicsemiconductor/asset-tracker-cloud-code-style/.prettierrc",
   "dependencies": {
     "@aws-lambda-powertools/metrics": "1.9.0",
-    "@bifravst/muninn-proto": "5.2.0",
+    "@hello.nrfcloud.com/proto": "1.0.0",
     "@nordicsemiconductor/from-env": "2.0.0",
     "@nordicsemiconductor/timestream-helpers": "5.0.0",
     "@sinclair/typebox": "0.28.15",

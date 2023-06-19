@@ -12,7 +12,7 @@ import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 /**
- * Resources needed to convert messages sent by nRF Cloud to the format that Muninn expects
+ * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
  */
 export class ConvertDeviceMessages extends Construct {
 	public constructor(

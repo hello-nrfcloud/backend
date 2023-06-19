@@ -38,9 +38,11 @@ process.on('unhandledRejection', die)
 
 console.log('')
 
-const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
+const CLI = async ({ isCI }: { isCI: boolean }) => {
 	program.name('./cli.sh')
-	program.description(`Muninn backend ${psjon.version} Command Line Interface`)
+	program.description(
+		`hello.nrfcloud.com backend ${psjon.version} Command Line Interface`,
+	)
 	program.version(psjon.version)
 
 	const commands: CommandDefinition[] = [
@@ -140,7 +142,7 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 	}
 }
 
-muninnBackendCLI({
+CLI({
 	isCI: process.env.CI === '1',
 }).catch((err) => {
 	console.error(chalk.red(err))

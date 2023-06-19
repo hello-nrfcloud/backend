@@ -4,7 +4,7 @@ import {
 	PutItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { marshall } from '@aws-sdk/util-dynamodb'
-import type { DeviceIdentity } from '@bifravst/muninn-proto/Muninn/MuninnMessage.js'
+import type { DeviceIdentity } from '@hello.nrfcloud.com/proto/hello/HelloMessage.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import type { EventBridgeEvent } from 'aws-lambda'

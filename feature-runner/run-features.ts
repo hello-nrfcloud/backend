@@ -61,7 +61,7 @@ const print = (arg: unknown) =>
 
 const runner = await runFolder<World>({
 	folder: path.join(process.cwd(), 'features'),
-	name: 'Muninn backend',
+	name: 'hello.nrfcloud.com backend',
 	logObserver: {
 		onDebug: (info, ...args) =>
 			console.error(

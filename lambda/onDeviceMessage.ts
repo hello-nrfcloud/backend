@@ -1,6 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { proto, type MuninnMessage } from '@bifravst/muninn-proto/Muninn'
+import { proto, type HelloMessage } from '@hello.nrfcloud.com/proto/hello'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import { getModelForDevice } from '../devices/getModelForDevice.js'
@@ -16,7 +16,7 @@ const { EventBusName, DevicesTableName, stackName } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 })(process.env)
 
-type ConvertedMessage = Static<typeof MuninnMessage>
+type ConvertedMessage = Static<typeof HelloMessage>
 
 const log = logger('deviceMessage')
 const db = new DynamoDBClient({})
