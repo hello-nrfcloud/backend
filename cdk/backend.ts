@@ -34,7 +34,6 @@ const packagesInLayer: string[] = [
 	'ajv',
 	'@hello.nrfcloud.com/proto',
 	'p-limit',
-	'jsonwebtoken',
 	'@aws-lambda-powertools/metrics',
 	'lodash-es',
 	'@middy/core',

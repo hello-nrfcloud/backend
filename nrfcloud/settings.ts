@@ -10,8 +10,6 @@ export const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
 export type Settings = {
 	apiEndpoint: URL
 	apiKey: string
-	serviceKey: string
-	teamId: string
 	accountDeviceClientCert: string
 	accountDevicePrivateKey: string
 	accountDeviceClientId: string
@@ -42,15 +40,9 @@ export const getSettings = ({
 			mqttEndpoint,
 			accountDeviceClientId,
 			mqttTopicPrefix,
-			serviceKey,
-			teamId,
 		} = p
 		if (apiKey === undefined)
 			throw new Error(`No nRF Cloud API key configured!`)
-		if (serviceKey === undefined)
-			throw new Error(`No nRF Cloud ground fix service key configured!`)
-		if (teamId === undefined)
-			throw new Error(`No nRF Cloud team id configured!`)
 		if (accountDeviceClientCert === undefined)
 			throw new Error(`No nRF Cloud account device clientCert configured!`)
 		if (accountDevicePrivateKey === undefined)
@@ -71,8 +63,6 @@ export const getSettings = ({
 			accountDevicePrivateKey,
 			accountDeviceClientId,
 			mqttTopicPrefix,
-			serviceKey,
-			teamId,
 		}
 	}
 }
