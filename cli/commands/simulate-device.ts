@@ -1,7 +1,10 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
+import type { ipShadow } from '@hello.nrfcloud.com/proto/nrfCloud/types/types.js'
 import chalk from 'chalk'
+import { merge } from 'lodash-es'
 import mqtt, { MqttClient } from 'mqtt'
+import { EventEmitter } from 'node:events'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.js'
@@ -89,6 +92,7 @@ export const simulateDeviceCommand = ({
 			client: MqttClient
 			end: () => Promise<void>
 			publish: (topic: string, payload: Record<string, any>) => void
+			onDelta: (handler: (message: Record<string, any>) => void) => void
 		}>((resolve, reject) => {
 			const mqttClient = mqtt.connect({
 				host: accountInfo.account.mqttEndpoint,
@@ -109,6 +113,8 @@ export const simulateDeviceCommand = ({
 				})
 			})
 
+			const em = new EventEmitter()
+
 			mqttClient.on('connect', () => {
 				console.log(chalk.cyan(deviceId), chalk.green('connected!'))
 				resolve({
@@ -119,9 +125,9 @@ export const simulateDeviceCommand = ({
 					},
 					publish: (topic, payload) => {
 						console.debug(
+							chalk.blue.dim('>'),
 							chalk.gray(`[${new Date().toISOString().slice(11, 19)}]`),
-							chalk.magenta.dim('>'),
-							chalk.magenta(topic),
+							chalk.blue(topic),
 						)
 						console.debug(
 							chalk.blue.dim('>'),
@@ -129,11 +135,29 @@ export const simulateDeviceCommand = ({
 						)
 						mqttClient.publish(topic, JSON.stringify(payload))
 					},
+					onDelta: (cb) => em.on('delta', cb),
 				})
 			})
 
 			mqttClient.on('error', (err) => {
 				reject(err)
+			})
+
+			const deltaTopic = `$aws/things/${deviceId}/shadow/update/delta`
+			mqttClient.subscribe(deltaTopic)
+			mqttClient.on('message', (topic, payload) => {
+				const message = payload.toString()
+				console.debug(
+					chalk.magenta.dim('<'),
+					chalk.gray(`[${new Date().toISOString().slice(11, 19)}]`),
+					chalk.magenta(topic),
+				)
+				console.debug(chalk.magenta.dim('<'), chalk.magenta(message))
+
+				switch (topic) {
+					case deltaTopic:
+						em.emit('delta', JSON.parse(message).state)
+				}
 			})
 		})
 
@@ -145,22 +169,30 @@ export const simulateDeviceCommand = ({
 			process.exit()
 		})
 
-		connection.publish(`$aws/things/${deviceId}/shadow/update`, {
-			state: {
-				reported: {
-					config: {
-						activeMode: true,
-						activeWaitTime: 60,
-					},
-					device: {
-						deviceInfo: {
-							appVersion: version,
-							modemFirmware: `simulator-${version}`,
-							board: 'PCA20035+solar',
-						},
-					},
+		let reported: ipShadow['reported'] = {
+			config: {
+				activeMode: true,
+				activeWaitTime: 60,
+			},
+			device: {
+				deviceInfo: {
+					appVersion: version,
+					modemFirmware: `simulator-${version}`,
+					board: 'PCA20035+solar',
+					imei: generateIMEI(),
 				},
 			},
+		}
+
+		connection.onDelta((message) => {
+			reported = merge(reported, message)
+			connection.publish(`$aws/things/${deviceId}/shadow/update`, {
+				state: { reported },
+			})
+		})
+
+		connection.publish(`$aws/things/${deviceId}/shadow/update`, {
+			state: { reported },
 		})
 
 		// Publish location
@@ -275,3 +307,5 @@ function* dataGenerator({
 		}
 	}
 }
+
+const generateIMEI = () => `3566642${Math.floor(Math.random() * 100000000)}`
