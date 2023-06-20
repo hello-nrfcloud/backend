@@ -84,6 +84,7 @@ const h = async (): Promise<void> => {
 		metrics.addMetric('connections', MetricUnits.Count, connections.length)
 		const deviceConnectionsMap = connections.reduce(
 			(map, connection) => ({
+				...map,
 				[connection.deviceId]: [
 					...(map[connection.deviceId] ?? []),
 					connection,
