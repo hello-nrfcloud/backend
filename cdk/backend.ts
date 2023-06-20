@@ -1,7 +1,7 @@
 import { ECRClient } from '@aws-sdk/client-ecr'
 import { IAMClient } from '@aws-sdk/client-iam'
 import { IoTClient } from '@aws-sdk/client-iot'
-import { GetCallerIdentityCommand, STS } from '@aws-sdk/client-sts'
+import { STS } from '@aws-sdk/client-sts'
 import path from 'node:path'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { getOrBuildDockerImage } from '../aws/getOrBuildDockerImage.js'
@@ -12,6 +12,7 @@ import { debug } from '../cli/log.js'
 import pJSON from '../package.json'
 import { BackendApp } from './BackendApp.js'
 import { ensureGitHubOIDCProvider } from './ensureGitHubOIDCProvider.js'
+import { env } from './helpers/env.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { ECR_NAME } from './stacks/stackConfig.js'
@@ -27,6 +28,8 @@ const sts = new STS({})
 const ecr = new ECRClient({})
 const iam = new IAMClient({})
 
+const accountEnv = await env({ sts })
+
 const packagesInLayer: string[] = [
 	'@nordicsemiconductor/from-env',
 	'@nordicsemiconductor/timestream-helpers',
@@ -38,9 +41,7 @@ const packagesInLayer: string[] = [
 	'lodash-es',
 	'@middy/core',
 ]
-const accountId = (await sts.send(new GetCallerIdentityCommand({})))
-	.Account as string
-const certsDir = path.join(process.cwd(), 'certificates', accountId)
+const certsDir = path.join(process.cwd(), 'certificates', accountEnv.account)
 const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
 	iot,
 	certsDir,
@@ -86,10 +87,9 @@ new BackendApp({
 		imageTag,
 		repositoryUri,
 	},
-	region:
-		process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION ?? 'eu-west-1',
 	repository,
 	gitHubOICDProviderArn: await ensureGitHubOIDCProvider({
 		iam,
 	}),
+	env: accountEnv,
 })
