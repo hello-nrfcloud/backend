@@ -11,6 +11,10 @@ import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { version } from '../../package.json'
+import {
+	deviceCertificateLocations,
+	ensureCertificateDir,
+} from '../certificates.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const simulateDeviceCommand = ({
@@ -59,22 +63,18 @@ export const simulateDeviceCommand = ({
 			chalk.blue(accountInfo.account.mqttEndpoint),
 		)
 
+		const dir = ensureCertificateDir()
+		const {
+			privateKey: devicePrivateKeyLocation,
+			signedCert: deviceCertificateLocation,
+		} = deviceCertificateLocations(dir, deviceId)
+
 		// Device private key
-		const devicePrivateKeyLocation = path.join(
-			process.cwd(),
-			'certificates',
-			`${deviceId}.key`,
-		)
 		console.log(
 			chalk.yellow('Private key:'),
 			chalk.blue(devicePrivateKeyLocation),
 		)
 		// Device certificate
-		const deviceCertificateLocation = path.join(
-			process.cwd(),
-			'certificates',
-			`${deviceId}.signed.pem`,
-		)
 		console.log(
 			chalk.yellow('Signed certificate:'),
 			chalk.blue(deviceCertificateLocation),

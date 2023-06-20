@@ -8,6 +8,11 @@ import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { run } from '../../util/run.js'
 import { ulid } from '../../util/ulid.js'
+import {
+	deviceCertificateLocations,
+	ensureCertificateDir,
+	simulatorCALocations,
+} from '../certificates.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const registerSimulatorDeviceCommand = ({
@@ -33,17 +38,13 @@ export const registerSimulatorDeviceCommand = ({
 			apiKey,
 		})
 
+		const dir = ensureCertificateDir()
+
 		// CA certificate
-		const caPrivateKeyLocation = path.join(
-			process.cwd(),
-			'certificates',
-			'simulator.CA.key',
-		)
-		const caCertificateLocation = path.join(
-			process.cwd(),
-			'certificates',
-			'simulator.CA.pem',
-		)
+		const {
+			privateKey: caPrivateKeyLocation,
+			certificate: caCertificateLocation,
+		} = simulatorCALocations(dir)
 		try {
 			await stat(caCertificateLocation)
 		} catch {
@@ -80,11 +81,13 @@ export const registerSimulatorDeviceCommand = ({
 		console.log(chalk.yellow('Device ID:'), chalk.blue(deviceId))
 
 		// Device private key
-		const devicePrivateKeyLocation = path.join(
-			process.cwd(),
-			'certificates',
-			`${deviceId}.key`,
-		)
+		const {
+			privateKey: devicePrivateKeyLocation,
+			certificate: deviceCertificateLocation,
+			CSR: deviceCSRLocation,
+			signedCert: deviceSignedCertLocation,
+		} = deviceCertificateLocations(dir, deviceId)
+
 		await run({
 			command: 'openssl',
 			args: [
@@ -102,11 +105,6 @@ export const registerSimulatorDeviceCommand = ({
 		)
 
 		// Device certificate
-		const deviceCertificateLocation = path.join(
-			process.cwd(),
-			'certificates',
-			`${deviceId}.pem`,
-		)
 		await run({
 			command: 'openssl',
 			args: [
@@ -130,11 +128,6 @@ export const registerSimulatorDeviceCommand = ({
 		)
 
 		// Sign device cert
-		const deviceCSRLocation = path.join(
-			process.cwd(),
-			'certificates',
-			`${deviceId}.csr`,
-		)
 		await run({
 			command: 'openssl',
 			args: [
@@ -148,11 +141,6 @@ export const registerSimulatorDeviceCommand = ({
 				`/CN=${deviceId}`,
 			],
 		})
-		const deviceSignedCertLocation = path.join(
-			process.cwd(),
-			'certificates',
-			`${deviceId}.signed.pem`,
-		)
 		await run({
 			command: 'openssl',
 			args: [
