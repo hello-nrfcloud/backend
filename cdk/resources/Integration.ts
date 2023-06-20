@@ -267,7 +267,7 @@ export class Integration extends Construct {
 				cluster: cluster as ICluster,
 				taskDefinition: mqttBridgeTask,
 				desiredCount: 1,
-				assignPublicIp: this.node.tryGetContext('isTest') ?? false,
+				assignPublicIp: true,
 			},
 		)
 		// Add inbound port to security group
