@@ -31,7 +31,6 @@ export class WebsocketAPI extends Construct {
 			deviceStorage: DeviceStorage
 			lambdaSources: {
 				onConnect: PackedLambda
-				onMessage: PackedLambda
 				onDisconnect: PackedLambda
 				publishToWebsocketClients: PackedLambda
 			}
@@ -93,29 +92,6 @@ export class WebsocketAPI extends Construct {
 		this.eventBus.grantPutEventsTo(onConnect)
 		new LambdaLogGroup(this, 'onConnectLogs', onConnect)
 
-		// onMessage
-		const onMessage = new Lambda.Function(this, 'onMessage', {
-			handler: lambdaSources.onMessage.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: Duration.seconds(5),
-			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onMessage.zipFile),
-			description: 'Receives messages from clients',
-			environment: {
-				VERSION: this.node.tryGetContext('version'),
-				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-				EVENTBUS_NAME: this.eventBus.eventBusName,
-				LOG_LEVEL: this.node.tryGetContext('logLevel'),
-				NODE_NO_WARNINGS: '1',
-			},
-			initialPolicy: [],
-			layers,
-		})
-		this.connectionsTable.grantReadWriteData(onMessage)
-		this.eventBus.grantPutEventsTo(onMessage)
-		new LambdaLogGroup(this, 'onMessageLogs', onMessage)
-
 		// OnDisconnect
 		const onDisconnect = new Lambda.Function(this, 'onDisconnect', {
 			handler: lambdaSources.onDisconnect.handler,
@@ -167,28 +143,6 @@ export class WebsocketAPI extends Construct {
 			operationName: 'ConnectRoute',
 			target: `integrations/${connectIntegration.ref}`,
 		})
-		// API on message
-		const sendMessageIntegration = new ApiGateway.CfnIntegration(
-			this,
-			'sendMessageIntegration',
-			{
-				apiId: api.ref,
-				description: 'Send messages integration',
-				integrationType: 'AWS_PROXY',
-				integrationUri: `arn:aws:apigateway:${
-					Stack.of(this).region
-				}:lambda:path/2015-03-31/functions/${
-					onMessage.functionArn
-				}/invocations`,
-			},
-		)
-		const sendMessageRoute = new ApiGateway.CfnRoute(this, 'sendMessageRoute', {
-			apiId: api.ref,
-			routeKey: 'message',
-			authorizationType: 'NONE',
-			operationName: 'sendMessageRoute',
-			target: `integrations/${sendMessageIntegration.ref}`,
-		})
 		// API on disconnect
 		const disconnectIntegration = new ApiGateway.CfnIntegration(
 			this,
@@ -216,7 +170,6 @@ export class WebsocketAPI extends Construct {
 			apiId: api.ref,
 		})
 		deployment.node.addDependency(connectRoute)
-		deployment.node.addDependency(sendMessageRoute)
 		deployment.node.addDependency(disconnectRoute)
 		const stage = new ApiGateway.CfnStage(this, 'developmentStage', {
 			stageName: 'dev',
@@ -228,14 +181,6 @@ export class WebsocketAPI extends Construct {
 			Stack.of(this).region
 		}.amazonaws.com/${stage.ref}`
 		// API invoke lambda
-		onMessage.addPermission('invokeByAPI', {
-			principal: new IAM.ServicePrincipal(
-				'apigateway.amazonaws.com',
-			) as IAM.IPrincipal,
-			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
-				Stack.of(this).account
-			}:${api.ref}/${stage.stageName}/message`,
-		})
 		onConnect.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
