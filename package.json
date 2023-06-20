@@ -67,7 +67,7 @@
     "chalk": "5.2.0",
     "check-node-version": "4.2.1",
     "commander": "11.0.0",
-    "constructs": "10.2.52",
+    "constructs": "10.2.55",
     "eslint-plugin-unicorn": "47.0.0",
     "glob": "10.2.7",
     "husky": "8.0.3",
