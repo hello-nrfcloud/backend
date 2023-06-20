@@ -143,6 +143,8 @@ export const simulateDeviceCommand = ({
 				reject(err)
 			})
 
+			mqttClient.subscribe(`$aws/things/${deviceId}/shadow/update/rejected`)
+
 			const deltaTopic = `$aws/things/${deviceId}/shadow/update/delta`
 			mqttClient.subscribe(deltaTopic)
 			mqttClient.on('message', (topic, payload) => {
@@ -202,21 +204,43 @@ export const simulateDeviceCommand = ({
 					ueMode: 2,
 					cellID: 84187657,
 					networkMode: 'LTE-M',
-					eest: 8,
+					eest: 5 + Math.floor(Math.random() * 5),
 				},
 			},
 		}
 
+		const shadowUpdateTopic = `$aws/things/${deviceId}/shadow/update`
+
 		connection.onDelta((message) => {
 			reported = merge(reported, message)
-			connection.publish(`$aws/things/${deviceId}/shadow/update`, {
+			connection.publish(shadowUpdateTopic, {
 				state: { reported },
 			})
 		})
 
-		connection.publish(`$aws/things/${deviceId}/shadow/update`, {
+		connection.publish(shadowUpdateTopic, {
 			state: { reported },
 		})
+
+		const eestReadings = dataGenerator({
+			min: 5,
+			max: 9,
+			step: 1,
+		})
+		setInterval(() => {
+			reported.device.networkInfo.eest = eestReadings.next().value
+			connection.publish(shadowUpdateTopic, {
+				state: {
+					reported: {
+						device: {
+							networkInfo: {
+								eest: reported.device.networkInfo.eest,
+							},
+						},
+					},
+				},
+			})
+		}, 60 * 1000)
 
 		// Publish location
 		connection.publish(
