@@ -1,8 +1,10 @@
+import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import mqtt, { MqttClient } from 'mqtt'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { version } from '../../package.json'
@@ -11,12 +13,30 @@ import type { CommandDefinition } from './CommandDefinition.js'
 export const simulateDeviceCommand = ({
 	ssm,
 	stackName,
+	db,
+	devicesTableName,
 }: {
 	ssm: SSMClient
 	stackName: string
+
+	db: DynamoDBClient
+	devicesTableName: string
 }): CommandDefinition => ({
 	command: 'simulate-device <deviceId>',
 	action: async (deviceId) => {
+		const maybeFingerprint = await getDeviceFingerprint({
+			db,
+			devicesTableName,
+		})(deviceId)
+		if ('error' in maybeFingerprint) {
+			throw new Error(maybeFingerprint.error.message)
+		}
+		console.log(chalk.yellow('Device ID:  '), chalk.blue(deviceId))
+		console.log(
+			chalk.yellow('Fingerprint:'),
+			chalk.blue(maybeFingerprint.fingerprint),
+		)
+
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,

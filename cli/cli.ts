@@ -65,10 +65,6 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				iot,
 				stackName: STACK_NAME,
 			}),
-			simulateDeviceCommand({
-				ssm,
-				stackName: STACK_NAME,
-			}),
 		)
 		try {
 			const outputs = await stackOutput(
@@ -98,6 +94,12 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					devicesTableName: outputs.devicesTableName,
 					ssm,
 					stackName: STACK_NAME,
+				}),
+				simulateDeviceCommand({
+					ssm,
+					stackName: STACK_NAME,
+					db,
+					devicesTableName: outputs.devicesTableName,
 				}),
 			)
 		} catch (error) {
