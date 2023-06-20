@@ -173,6 +173,13 @@ export const simulateDeviceCommand = ({
 			config: {
 				activeMode: true,
 				activeWaitTime: 60,
+				locationTimeout: 300,
+				movementResolution: 120,
+				movementTimeout: 3600,
+				accThreshAct: 4,
+				accThreshInact: 4,
+				accTimeoutInact: 60,
+				nod: [],
 			},
 			device: {
 				deviceInfo: {
@@ -180,6 +187,22 @@ export const simulateDeviceCommand = ({
 					modemFirmware: `simulator-${version}`,
 					board: 'PCA20035+solar',
 					imei: generateIMEI(),
+				},
+				simInfo: {
+					uiccMode: 1,
+					iccid: '8944511616143691045',
+					imsi: '234500004623194',
+				},
+				networkInfo: {
+					currentBand: 12,
+					supportedBands: '(2,3,4,8,12,13,20,28)\r\n',
+					areaCode: 35412,
+					mccmnc: 310411,
+					ipAddress: '10.171.63.64',
+					ueMode: 2,
+					cellID: 84187657,
+					networkMode: 'LTE-M',
+					eest: 8,
 				},
 			},
 		}
