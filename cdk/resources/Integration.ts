@@ -5,7 +5,6 @@ import {
 	aws_iot as IoT,
 	Stack,
 } from 'aws-cdk-lib'
-import type { IVpc } from 'aws-cdk-lib/aws-ec2'
 import type { IRepository } from 'aws-cdk-lib/aws-ecr'
 import { LogDriver, type ICluster } from 'aws-cdk-lib/aws-ecs'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
@@ -132,12 +131,10 @@ export class Integration extends Construct {
 			principal: this.bridgeCertificate.attrArn,
 		})
 
-		const vpc = new EC2.Vpc(this, `vpc`, {
-			maxAzs: 1,
-		})
+		const vpc = EC2.Vpc.fromLookup(this, 'DefaultVPC', { isDefault: true })
 
 		const cluster = new ECS.Cluster(this, `cluster`, {
-			vpc: vpc as IVpc,
+			vpc,
 		})
 
 		const mqttBridgeTask = new ECS.FargateTaskDefinition(this, 'mqttBridge')
