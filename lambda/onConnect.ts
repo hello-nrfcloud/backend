@@ -128,7 +128,6 @@ const h = async (
 
 	return {
 		statusCode: 200,
-		body: `Connected. Hello ${event.requestContext.connectionId}@${device.deviceId}!`,
 	}
 }
 
