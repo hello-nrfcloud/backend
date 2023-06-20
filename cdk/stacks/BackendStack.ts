@@ -1,4 +1,10 @@
-import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
+import {
+	App,
+	CfnOutput,
+	aws_lambda as Lambda,
+	Stack,
+	type Environment,
+} from 'aws-cdk-lib'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
@@ -26,9 +32,9 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
-			region,
 			repository,
 			gitHubOICDProviderArn,
+			env,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
@@ -36,18 +42,16 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
 			bridgeImageSettings: BridgeImageSettings
-			region: string
 			gitHubOICDProviderArn: string
 			repository: {
 				owner: string
 				repo: string
 			}
+			env: Required<Environment>
 		},
 	) {
 		super(parent, STACK_NAME, {
-			env: {
-				region,
-			},
+			env,
 		})
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
