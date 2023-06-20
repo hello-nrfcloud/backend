@@ -287,5 +287,16 @@ export class Integration extends Construct {
 			EC2.Port.allTcp(),
 			'outbound-ipv4-tcp',
 		)
+		// Allow all TLS traffic
+		mqttBridgeService.connections.allowFrom(
+			EC2.Peer.anyIpv6(),
+			EC2.Port.tcp(443),
+			'inbound-ipv6-tcp-tls',
+		)
+		mqttBridgeService.connections.allowFrom(
+			EC2.Peer.anyIpv4(),
+			EC2.Port.tcp(443),
+			'inbound-ipv4-tcp-tls',
+		)
 	}
 }
