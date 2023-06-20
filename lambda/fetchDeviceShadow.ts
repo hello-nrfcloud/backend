@@ -193,6 +193,8 @@ const h = async (): Promise<void> => {
 				)
 			}
 		}
+	} catch (error) {
+		console.error(error)
 	} finally {
 		await lock.releaseLock(lockName)
 	}
