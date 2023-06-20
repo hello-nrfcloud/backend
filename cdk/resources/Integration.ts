@@ -267,6 +267,7 @@ export class Integration extends Construct {
 				cluster: cluster as ICluster,
 				taskDefinition: mqttBridgeTask,
 				desiredCount: 1,
+				// Required for shared VPC and access to SSM Parameters
 				assignPublicIp: true,
 			},
 		)
@@ -275,28 +276,6 @@ export class Integration extends Construct {
 			EC2.Peer.anyIpv4(),
 			EC2.Port.tcp(1883),
 			'inbound-mqtt',
-		)
-		// Allow all outgoing traffic
-		mqttBridgeService.connections.allowTo(
-			EC2.Peer.anyIpv6(),
-			EC2.Port.allTcp(),
-			'outbound-ipv6-tcp',
-		)
-		mqttBridgeService.connections.allowTo(
-			EC2.Peer.anyIpv4(),
-			EC2.Port.allTcp(),
-			'outbound-ipv4-tcp',
-		)
-		// Allow all TLS traffic
-		mqttBridgeService.connections.allowFrom(
-			EC2.Peer.anyIpv6(),
-			EC2.Port.tcp(443),
-			'inbound-ipv6-tcp-tls',
-		)
-		mqttBridgeService.connections.allowFrom(
-			EC2.Peer.anyIpv4(),
-			EC2.Port.tcp(443),
-			'inbound-ipv4-tcp-tls',
 		)
 	}
 }
