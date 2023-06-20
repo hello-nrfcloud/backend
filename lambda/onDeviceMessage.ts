@@ -1,6 +1,12 @@
+import {
+	MetricUnits,
+	Metrics,
+	logMetrics,
+} from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { proto, type HelloMessage } from '@hello.nrfcloud.com/proto/hello'
+import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import { getModelForDevice } from '../devices/getModelForDevice.js'
@@ -37,7 +43,12 @@ const parseMessage = async (
 	return converted
 }
 
-export const handler = async (event: {
+const metrics = new Metrics({
+	namespace: 'hello-nrfcloud-backend',
+	serviceName: 'onDeviceMessage',
+})
+
+const h = async (event: {
 	message: unknown
 	deviceId: string
 	timestamp: number
@@ -47,7 +58,19 @@ export const handler = async (event: {
 	const { model } = await modelFetcher(deviceId)
 	log.debug('model', { model })
 
+	metrics.addMetric('deviceMessage', MetricUnits.Count, 1)
+
 	const converted = await parseMessage(model, message)
+
+	if (converted.length === 0) {
+		metrics.addMetric('unknownDeviceMessage', MetricUnits.Count, 1)
+	} else {
+		metrics.addMetric(
+			'convertedDeviceMessage',
+			MetricUnits.Count,
+			converted.length,
+		)
+	}
 
 	for (const message of converted) {
 		log.debug('websocket message', { payload: message })
@@ -66,3 +89,5 @@ export const handler = async (event: {
 		})
 	}
 }
+
+export const handler = middy(h).use(logMetrics(metrics))
