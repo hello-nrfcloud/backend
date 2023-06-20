@@ -35,6 +35,8 @@ export const getSSMParameter = async (
 					},
 				}),
 			)
+			if (res.ok !== true) throw new Error(`HTTP status: ${res.status}`)
+
 			return res.json()
 		})
 		.then(async (payload) => {
