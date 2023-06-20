@@ -19,7 +19,6 @@ export const packLambdaFromPath = async (
 	const { handler } = await packLambda({
 		sourceFile: path.join(baseDir, sourceFile),
 		zipFile,
-		progress: console.debug,
 	})
 	return {
 		zipFile,
