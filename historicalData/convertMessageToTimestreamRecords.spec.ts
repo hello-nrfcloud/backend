@@ -16,7 +16,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should convert a gain message to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/gain'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -42,7 +42,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should convert a voltage message to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/voltage'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/voltage'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -68,7 +68,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should convert a rsrp message to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/rsrp'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/rsrp'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -94,7 +94,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should convert a humidity message to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/humid'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/humid'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -120,7 +120,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should convert a temperature message to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/temp'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/temp'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -146,7 +146,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should convert a air quality message to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/air_qual'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/air_qual'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -172,7 +172,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should convert a air pressure message to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/air_press'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/air_press'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -197,7 +197,7 @@ describe('convertMessageToTimestreamRecords', () => {
 	})
 
 	it('should convert a location message to Timestream records', () => {
-		const context = 'https://github.com/bifravst/Muninn-backend/device-location'
+		const context = 'https://github.com/hello-nrfcloud/backend/device-location'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -241,7 +241,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should convert a unknown message having numeric value to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/new'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/new'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -267,7 +267,7 @@ describe('convertMessageToTimestreamRecords', () => {
 
 	it('should ignore non-numeric value to Timestream records', () => {
 		const context =
-			'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/new'
+			'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/new'
 		Dimensions.push({
 			Name: '@context',
 			Value: context,
@@ -323,7 +323,7 @@ describe('convertMessageToTimestreamRecords', () => {
 		expect(
 			convertMessageToTimestreamRecords({
 				'@context':
-					'https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/new',
+					'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/new',
 				x: 'string',
 				y: 'string',
 				ts: 1606474470069,

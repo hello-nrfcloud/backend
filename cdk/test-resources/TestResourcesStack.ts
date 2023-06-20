@@ -1,4 +1,10 @@
-import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
+import {
+	App,
+	CfnOutput,
+	aws_lambda as Lambda,
+	Stack,
+	type Environment,
+} from 'aws-cdk-lib'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { TEST_RESOURCES_STACK_NAME } from '../stacks/stackConfig.js'
@@ -13,14 +19,16 @@ export class TestResourcesStack extends Stack {
 		{
 			lambdaSources,
 			layer,
+			env,
 		}: {
 			lambdaSources: {
 				httpApiMock: PackedLambda
 			}
 			layer: PackedLayer
+			env: Required<Environment>
 		},
 	) {
-		super(parent, TEST_RESOURCES_STACK_NAME)
+		super(parent, TEST_RESOURCES_STACK_NAME, { env })
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
 			code: Lambda.Code.fromAsset(layer.layerZipFile),

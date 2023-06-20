@@ -16,7 +16,9 @@ import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFak
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 import { logsCommand } from './commands/logs.js'
 import { registerDeviceCommand } from './commands/register-device.js'
+import { registerSimulatorDeviceCommand } from './commands/register-simulator-device.js'
 import { showDeviceCommand } from './commands/show-device.js'
+import { simulateDeviceCommand } from './commands/simulate-device.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -36,9 +38,11 @@ process.on('unhandledRejection', die)
 
 console.log('')
 
-const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
+const CLI = async ({ isCI }: { isCI: boolean }) => {
 	program.name('./cli.sh')
-	program.description(`Muninn backend ${psjon.version} Command Line Interface`)
+	program.description(
+		`hello.nrfcloud.com backend ${psjon.version} Command Line Interface`,
+	)
 	program.version(psjon.version)
 
 	const commands: CommandDefinition[] = [
@@ -85,6 +89,18 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 					db,
 					devicesTableName: outputs.devicesTableName,
 				}),
+				registerSimulatorDeviceCommand({
+					db,
+					devicesTableName: outputs.devicesTableName,
+					ssm,
+					stackName: STACK_NAME,
+				}),
+				simulateDeviceCommand({
+					ssm,
+					stackName: STACK_NAME,
+					db,
+					devicesTableName: outputs.devicesTableName,
+				}),
 			)
 		} catch (error) {
 			console.warn(chalk.yellow('⚠️'), chalk.yellow((error as Error).message))
@@ -128,7 +144,7 @@ const muninnBackendCLI = async ({ isCI }: { isCI: boolean }) => {
 	}
 }
 
-muninnBackendCLI({
+CLI({
 	isCI: process.env.CI === '1',
 }).catch((err) => {
 	console.error(chalk.red(err))

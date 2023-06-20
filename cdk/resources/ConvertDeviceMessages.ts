@@ -12,7 +12,7 @@ import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 /**
- * Resources needed to convert messages sent by nRF Cloud to the format that Muninn expects
+ * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
  */
 export class ConvertDeviceMessages extends Construct {
 	public constructor(
@@ -48,19 +48,8 @@ export class ConvertDeviceMessages extends Construct {
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				NODE_NO_WARNINGS: '1',
-				STACK_NAME: Stack.of(this).stackName,
 			},
 			layers,
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud/*`,
-					],
-				}),
-			],
 		})
 		new LambdaLogGroup(this, 'onDeviceMessageLogs', onDeviceMessage)
 		websocketAPI.eventBus.grantPutEventsTo(onDeviceMessage)

@@ -16,7 +16,7 @@ Then the connection response should equal to this JSON
 
 ```json
 {
-  "@context": "https://github.com/bifravst/Muninn-proto/deviceIdentity",
+  "@context": "https://github.com/hello-nrfcloud/proto/deviceIdentity",
   "id": "nrf-test-device-id",
   "model": "PCA20035+solar"
 }

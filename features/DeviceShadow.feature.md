@@ -289,7 +289,7 @@ Then the response should equal to this JSON
 
 ```json
 {
-  "@context": "https://github.com/bifravst/Muninn-proto/transformed/PCA20035%2Bsolar/reported",
+  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/reported",
   "connected": true,
   "version": 8835,
   "config": {

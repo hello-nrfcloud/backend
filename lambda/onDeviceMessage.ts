@@ -1,62 +1,30 @@
+import {
+	MetricUnits,
+	Metrics,
+	logMetrics,
+} from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { proto, type MuninnMessage } from '@bifravst/muninn-proto/Muninn'
+import { proto, type HelloMessage } from '@hello.nrfcloud.com/proto/hello'
+import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import { getModelForDevice } from '../devices/getModelForDevice.js'
-import { locationServiceAPIClient } from '../nrfcloud/locationServiceAPIClient.js'
-import { defaultApiEndpoint } from '../nrfcloud/settings.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
 import { logger } from './util/logger.js'
 
-const { EventBusName, DevicesTableName, stackName } = fromEnv({
-	stackName: 'STACK_NAME',
+const { EventBusName, DevicesTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 })(process.env)
 
-type ConvertedMessage = Static<typeof MuninnMessage>
+type ConvertedMessage = Static<typeof HelloMessage>
 
 const log = logger('deviceMessage')
 const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
 const modelFetcher = getModelForDevice({ db, DevicesTableName })
-
-const apiClientPromise = (async () => {
-	const [apiEndpoint, serviceKey, teamId] = await getNRFCloudSSMParameters(
-		stackName,
-		['apiEndpoint', 'serviceKey', 'teamId'],
-	)
-	if (serviceKey === undefined)
-		throw new Error(`nRF Cloud service key for ${stackName} is not configured.`)
-	if (teamId === undefined)
-		throw new Error(`nRF Cloud team ID for ${stackName} is not configured.`)
-	return locationServiceAPIClient({
-		endpoint:
-			apiEndpoint !== undefined ? new URL(apiEndpoint) : defaultApiEndpoint,
-		serviceKey,
-		teamId,
-	})
-})()
-
-const preprocessMessage =
-	(apiClient: ReturnType<typeof locationServiceAPIClient>) =>
-	async (message: unknown, ts: number): Promise<unknown> => {
-		// If it is nRF Cloud site survey message, we resolve location using ground fix API
-		if (
-			typeof message === 'object' &&
-			message !== null &&
-			'appId' in message &&
-			message.appId === 'GROUND_FIX'
-		) {
-			return await apiClient.groundFix(message, ts)
-		}
-
-		// Otherwise, pass though the message
-		return message
-	}
 
 const parseMessage = async (
 	model: string,
@@ -75,19 +43,34 @@ const parseMessage = async (
 	return converted
 }
 
-export const handler = async (event: {
+const metrics = new Metrics({
+	namespace: 'hello-nrfcloud-backend',
+	serviceName: 'onDeviceMessage',
+})
+
+const h = async (event: {
 	message: unknown
 	deviceId: string
 	timestamp: number
 }): Promise<void> => {
 	log.debug('event', { event })
-	const client = await apiClientPromise
-	const { deviceId, message, timestamp } = event
+	const { deviceId, message } = event
 	const { model } = await modelFetcher(deviceId)
 	log.debug('model', { model })
 
-	const processedMessage = await preprocessMessage(client)(message, timestamp)
-	const converted = await parseMessage(model, processedMessage)
+	metrics.addMetric('deviceMessage', MetricUnits.Count, 1)
+
+	const converted = await parseMessage(model, message)
+
+	if (converted.length === 0) {
+		metrics.addMetric('unknownDeviceMessage', MetricUnits.Count, 1)
+	} else {
+		metrics.addMetric(
+			'convertedDeviceMessage',
+			MetricUnits.Count,
+			converted.length,
+		)
+	}
 
 	for (const message of converted) {
 		log.debug('websocket message', { payload: message })
@@ -106,3 +89,5 @@ export const handler = async (event: {
 		})
 	}
 }
+
+export const handler = middy(h).use(logMetrics(metrics))

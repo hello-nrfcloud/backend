@@ -1,4 +1,8 @@
-import { MetricUnits, Metrics } from '@aws-lambda-powertools/metrics'
+import {
+	MetricUnits,
+	Metrics,
+	logMetrics,
+} from '@aws-lambda-powertools/metrics'
 import {
 	DynamoDBClient,
 	PutItemCommand,
@@ -6,7 +10,8 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { Context, DeviceIdentity } from '@bifravst/muninn-proto/Muninn'
+import { Context, DeviceIdentity } from '@hello.nrfcloud.com/proto/hello'
+import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import type {
@@ -30,11 +35,11 @@ const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
 const metrics = new Metrics({
-	namespace: 'muninn-backend',
+	namespace: 'hello-nrfcloud-backend',
 	serviceName: 'websocket',
 })
 
-export const handler = async (
+const h = async (
 	event: APIGatewayProxyWebsocketEventV2 & {
 		queryStringParameters?: Record<string, any>
 	},
@@ -123,6 +128,7 @@ export const handler = async (
 
 	return {
 		statusCode: 200,
-		body: `Connected. Hello ${event.requestContext.connectionId}@${device.deviceId}!`,
 	}
 }
+
+export const handler = middy(h).use(logMetrics(metrics))
