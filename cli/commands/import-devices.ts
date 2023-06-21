@@ -74,16 +74,14 @@ export const importDevicesCommand = ({
 			process.exit(1)
 		}
 
-		if ('success' in registration && registration.success === false) {
-			console.error(chalk.red(`Registration failed`))
-			process.exit(1)
-		}
-
 		console.log(chalk.green(`Registered devices with nRF Cloud`))
+		console.log(
+			chalk.yellow.dim(`Bulk ops ID:`),
+			chalk.yellow(registration.bulkOpsRequestId),
+		)
 
 		for (const [imei, fingerprint] of devices) {
-			//const deviceId = `oob-${imei}`
-			const deviceId = imei
+			const deviceId = `oob-${imei}`
 
 			const res = await registerDevice({
 				db,

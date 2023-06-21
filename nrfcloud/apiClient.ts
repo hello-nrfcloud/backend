@@ -80,7 +80,7 @@ export const apiClient = ({
 			// A unique ES256 X.509 certificate in PEM format, wrapped in double quotes (to allow for line breaks in CSV)	/^-{5}BEGIN CERTIFICATE-{5}(\r\n|\r|\n)([^-]+)(\r\n|\r|\n)-{5}END CERTIFICATE-{5}(\r\n|\r|\n)$/
 			certPem: string
 		}[],
-	) => Promise<{ error: Error } | { success: boolean }>
+	) => Promise<{ error: Error } | { bulkOpsRequestId: string }>
 	account: () => Promise<
 		| { error: Error }
 		| {
@@ -160,12 +160,17 @@ export const apiClient = ({
 
 			const res = await registrationResult.json()
 
-			if ('bulkOpsRequestId' in res) return { success: true }
+			if ('bulkOpsRequestId' in res)
+				return { bulkOpsRequestId: res.bulkOpsRequestId }
 
 			if ('code' in res && 'message' in res)
-				return { error: new Error(`${res.message} (${res.code})`) }
+				return {
+					error: new Error(
+						`${res.message} (${res.code}): ${JSON.stringify(res)}`,
+					),
+				}
 
-			return { success: false }
+			return { error: new Error(`Import failed: ${JSON.stringify(res)}`) }
 		},
 		account: async () =>
 			fetch(`${slashless(endpoint)}/v1/account`, {
