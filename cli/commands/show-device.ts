@@ -48,10 +48,22 @@ export const showDeviceCommand = ({
 		})
 
 		const maybeNrfCloudDevice = await client.getDevice(device.id)
+		const account = await client.account()
+		if ('error' in account) {
+			console.error(chalk.red('⚠️'), '', chalk.red(account.error.message))
+			process.exit(1)
+		}
 
 		console.log(
 			table([
-				['Fingerprint', 'Device ID', 'Model', 'nRF Cloud', 'Connected'],
+				[
+					'Fingerprint',
+					'Device ID',
+					'Model',
+					'nRF Cloud',
+					'Connected',
+					'nRF Cloud Account',
+				],
 				[
 					chalk.green(device.fingerprint),
 					chalk.blue(device.id),
@@ -60,8 +72,11 @@ export const showDeviceCommand = ({
 					'device' in maybeNrfCloudDevice &&
 					maybeNrfCloudDevice.device?.state?.reported?.connection?.status ===
 						'connected'
-						? chalk.green('✅')
-						: chalk.red('⚠️'),
+						? chalk.green('Yes')
+						: chalk.red('No'),
+					`${chalk.cyanBright(account.account.team.name)} ${chalk.cyan.dim(
+						account.account.team.tenantId,
+					)}`,
 				],
 			]),
 		)
