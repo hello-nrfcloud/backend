@@ -305,7 +305,7 @@ export const simulateDeviceCommand = ({
 					appId: 'VOLTAGE',
 					messageType: 'DATA',
 					ts: Date.now(),
-					data: batteryReadings.next().value.toString(),
+					data: batteryReadings.next().value.toFixed(0),
 				},
 			)
 		}
@@ -345,13 +345,15 @@ function* dataGenerator({
 	max: number
 	step: number
 }): Generator<number> {
-	let v = min
+	const delta = max - min
+	let segment = 0
+	const maxSegment = delta / step
 	while (true) {
-		yield v
-		v += step
-		if (v >= max || v <= min) {
-			step = -step
-		}
+		yield min +
+			Math.sin((segment / maxSegment) * Math.PI * 2) * (delta / 2) +
+			delta / 2
+
+		segment = ++segment % maxSegment
 	}
 }
 
