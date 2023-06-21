@@ -42,6 +42,10 @@ type Page<Item> = {
 type AccountInfo = {
 	mqttEndpoint: string // e.g. 'mqtt.nrfcloud.com'
 	mqttTopicPrefix: string // e.g. 'prod/a0673464-e4e1-4b87-bffd-6941a012067b/',
+	team: {
+		tenantId: string // e.g. 'bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce',
+		name: string // e.g. 'hello.nrfcloud.com'
+	}
 }
 export const apiClient = ({
 	endpoint,

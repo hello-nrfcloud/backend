@@ -13,6 +13,7 @@ import type { CommandDefinition } from './commands/CommandDefinition'
 import { configureDeviceCommand } from './commands/configure-device.js'
 import { configureCommand } from './commands/configure.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials.js'
+import { importDevicesCommand } from './commands/import-devices.js'
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 import { logsCommand } from './commands/logs.js'
 import { registerDeviceCommand } from './commands/register-device.js'
@@ -100,6 +101,12 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					stackName: STACK_NAME,
 					db,
 					devicesTableName: outputs.devicesTableName,
+				}),
+				importDevicesCommand({
+					db,
+					devicesTableName: outputs.devicesTableName,
+					ssm,
+					stackName: STACK_NAME,
 				}),
 			)
 		} catch (error) {
