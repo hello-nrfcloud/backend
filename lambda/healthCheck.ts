@@ -12,6 +12,7 @@ import assert from 'node:assert/strict'
 import { WebSocket, type RawData } from 'ws'
 import { registerDevice } from '../devices/registerDevice.js'
 import { getSettings, type Settings } from '../nrfcloud/settings.js'
+import { defer } from '../util/defer.js'
 import { logger } from './util/logger.js'
 
 const { DevicesTableName, stackName, amazonRootCA1, websocketUrl } = fromEnv({
@@ -33,14 +34,7 @@ const metrics = new Metrics({
 const deviceId = 'health-check'
 const model = 'PCA20035+solar'
 const fingerprint = '29a.ch3ckr'
-const ts = Date.now()
 const gain = 3.12345
-const expectedMessage = {
-	'@context':
-		'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain',
-	ts,
-	mA: gain,
-}
 
 const accountDeviceSettings = await getSettings({
 	ssm,
@@ -48,65 +42,39 @@ const accountDeviceSettings = await getSettings({
 })()
 
 const publishDeviceMessage =
-	(bridgeInfo: Settings) =>
-	async (deviceId: string, message: Record<string, unknown>) => {
-		await new Promise((resolve, reject) => {
-			const mqttClient = mqtt.connect({
-				host: bridgeInfo.mqttEndpoint,
-				port: 8883,
-				protocol: 'mqtts',
-				protocolVersion: 4,
-				clean: true,
-				clientId: deviceId,
-				key: bridgeInfo.accountDevicePrivateKey,
-				cert: bridgeInfo.accountDeviceClientCert,
-				ca: amazonRootCA1,
-			})
+	(nrfCloudInfo: Settings) =>
+	async (deviceId: string, message: Record<string, unknown>): Promise<void> => {
+		const { promise, resolve, reject } = defer<void>(10000)
 
-			mqttClient.on('connect', () => {
-				const topic = `${bridgeInfo.mqttTopicPrefix}m/d/${deviceId}/d2c`
-				log.debug('mqtt publish', { mqttMessage: message, topic })
-				mqttClient.publish(topic, JSON.stringify(message), (error) => {
-					if (error) return reject(error)
-					mqttClient.end()
-					return resolve(void 0)
-				})
-			})
+		const mqttClient = mqtt.connect({
+			host: nrfCloudInfo.mqttEndpoint,
+			port: 8883,
+			protocol: 'mqtts',
+			protocolVersion: 4,
+			clean: true,
+			clientId: deviceId,
+			key: nrfCloudInfo.accountDevicePrivateKey,
+			cert: nrfCloudInfo.accountDeviceClientCert,
+			ca: amazonRootCA1,
+		})
 
-			mqttClient.on('error', (error) => {
-				log.error(`mqtt error`, { error })
-				reject(error)
+		mqttClient.on('connect', () => {
+			const topic = `${nrfCloudInfo.mqttTopicPrefix}m/d/${deviceId}/d2c`
+			log.debug('mqtt publish', { mqttMessage: message, topic })
+			mqttClient.publish(topic, JSON.stringify(message), (error) => {
+				if (error) return reject(error)
+				mqttClient.end()
+				return resolve()
 			})
 		})
+
+		mqttClient.on('error', (error) => {
+			log.error(`mqtt error`, { error })
+			reject(error)
+		})
+
+		await promise
 	}
-
-type ReturnDefer<T> = {
-	promise: Promise<T>
-	resolve: (value: T) => void
-	reject: (reason: any) => void
-}
-
-const defer = (timeout: number): ReturnDefer<any> => {
-	const ret = {} as ReturnDefer<any>
-	const timer = setTimeout(() => {
-		ret.reject('timeout')
-	}, timeout)
-
-	const promise = new Promise<any>((_resolve, _reject) => {
-		ret.resolve = (v) => {
-			clearTimeout(timer)
-			_resolve(v)
-		}
-		ret.reject = (reason) => {
-			clearTimeout(timer)
-			_reject(reason)
-		}
-	})
-
-	ret.promise = promise
-
-	return ret
-}
 
 enum ValidateResponse {
 	skip,
@@ -125,37 +93,45 @@ const checkMessageFromWebsocket = async ({
 	onConnect: () => Promise<void>
 	validate: (message: string) => Promise<ValidateResponse>
 }) => {
-	const promise = defer(timeoutMS)
+	const { promise, resolve, reject } = defer<boolean>(timeoutMS)
 	const client = new WebSocket(endpoint)
 	client
-		.on('open', onConnect)
-		.on('error', (error) => promise.reject(error))
+		.on('open', async () => {
+			await onConnect()
+		})
+		.on('close', () => {
+			log.debug(`ws is closed`)
+		})
+		.on('error', reject)
 		.on('message', async (data: RawData) => {
 			const result = await validate(data.toString())
 			if (result !== ValidateResponse.skip) {
+				client.terminate()
 				if (result === ValidateResponse.valid) {
-					promise.resolve(true)
+					resolve(true)
 				} else {
-					promise.reject(false)
+					reject(false)
 				}
 			}
 		})
 
-	return promise.promise
+	return promise
 }
 
-const h = async (): Promise<void> => {
-	await registerDevice({
-		db,
-		devicesTableName: DevicesTableName,
-	})({ id: deviceId, model, fingerprint })
+await registerDevice({
+	db,
+	devicesTableName: DevicesTableName,
+})({ id: deviceId, model, fingerprint })
 
+const h = async (): Promise<void> => {
+	let ts: number
 	metrics.addMetric('checkMessageFromWebsocket', MetricUnits.Count, 1)
 	try {
 		await checkMessageFromWebsocket({
 			endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
 			timeoutMS: 10000,
 			onConnect: async () => {
+				ts = Date.now()
 				await publishDeviceMessage(accountDeviceSettings)(deviceId, {
 					appId: 'SOLAR',
 					messageType: 'DATA',
@@ -167,10 +143,21 @@ const h = async (): Promise<void> => {
 				try {
 					const messageObj = JSON.parse(message)
 					log.debug(`ws incoming message`, { messageObj })
+					const expectedMessage = {
+						'@context':
+							'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain',
+						ts,
+						mA: gain,
+					}
 
 					if (messageObj['@context'] !== expectedMessage['@context'])
 						return ValidateResponse.skip
 
+					metrics.addMetric(
+						`receivingMessageDuration`,
+						MetricUnits.Seconds,
+						(Date.now() - ts) / 1000,
+					)
 					assert.deepEqual(messageObj, expectedMessage)
 					return ValidateResponse.valid
 				} catch (error) {

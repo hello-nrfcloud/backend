@@ -40,9 +40,10 @@ const packagesInLayer: string[] = [
 	'@aws-lambda-powertools/metrics',
 	'lodash-es',
 	'@middy/core',
-	'mqtt',
-	'ws',
 ]
+
+const healthCheckPackagesInLayer: string[] = ['mqtt', 'ws']
+
 const certsDir = path.join(process.cwd(), 'certificates', accountEnv.account)
 const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
 	iot,
@@ -54,7 +55,6 @@ const caCertificate = await ensureCA({
 	iot,
 	debug: debug('CA certificate'),
 })()
-const amazonRootCA1 = path.join(process.cwd(), 'data', 'AmazonRootCA1.pem')
 
 // Prebuild / reuse docker image
 // NOTE: It is intention that release image tag can be undefined during the development,
@@ -83,10 +83,13 @@ new BackendApp({
 		id: 'baseLayer',
 		dependencies: packagesInLayer,
 	}),
+	healthCheckLayer: await packLayer({
+		id: 'healthCheckLayer',
+		dependencies: healthCheckPackagesInLayer,
+	}),
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
 	caCertificate,
-	amazonRootCA1,
 	bridgeImageSettings: {
 		imageTag,
 		repositoryUri,
