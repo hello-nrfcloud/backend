@@ -171,15 +171,14 @@ export class WebsocketAPI extends Construct {
 		})
 		deployment.node.addDependency(connectRoute)
 		deployment.node.addDependency(disconnectRoute)
-		const stage = new ApiGateway.CfnStage(this, 'developmentStage', {
-			stageName: 'dev',
-			description: 'development stage',
+		const prodStage = new ApiGateway.CfnStage(this, 'prodStage', {
+			stageName: '2023-06-22',
 			deploymentId: deployment.ref,
 			apiId: api.ref,
 		})
 		this.websocketURI = `wss://${api.ref}.execute-api.${
 			Stack.of(this).region
-		}.amazonaws.com/${stage.ref}`
+		}.amazonaws.com/${prodStage.ref}`
 		// API invoke lambda
 		onConnect.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
@@ -187,7 +186,7 @@ export class WebsocketAPI extends Construct {
 			) as IAM.IPrincipal,
 			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
 				Stack.of(this).account
-			}:${api.ref}/${stage.stageName}/$connect`,
+			}:${api.ref}/${prodStage.stageName}/$connect`,
 		})
 		onDisconnect.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
@@ -195,16 +194,16 @@ export class WebsocketAPI extends Construct {
 			) as IAM.IPrincipal,
 			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
 				Stack.of(this).account
-			}:${api.ref}/${stage.stageName}/$disconnect`,
+			}:${api.ref}/${prodStage.stageName}/$disconnect`,
 		})
 
 		// Publish event to sockets
 		this.websocketAPIArn = `arn:aws:execute-api:${Stack.of(this).region}:${
 			Stack.of(this).account
-		}:${api.ref}/${stage.stageName}/POST/@connections/*`
+		}:${api.ref}/${prodStage.stageName}/POST/@connections/*`
 		this.websocketManagementAPIURL = `https://${api.ref}.execute-api.${
 			Stack.of(this).region
-		}.amazonaws.com/${stage.stageName}`
+		}.amazonaws.com/${prodStage.stageName}`
 		const publishToWebsocketClients = new Lambda.Function(
 			this,
 			'publishToWebsocketClients',
