@@ -31,6 +31,7 @@ export class BackendStack extends Stack {
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
+			amazonRootCA1,
 			bridgeImageSettings,
 			repository,
 			gitHubOICDProviderArn,
@@ -41,6 +42,7 @@ export class BackendStack extends Stack {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
+			amazonRootCA1: string
 			bridgeImageSettings: BridgeImageSettings
 			gitHubOICDProviderArn: string
 			repository: {
@@ -94,10 +96,15 @@ export class BackendStack extends Stack {
 		})
 
 		new Integration(this, {
+			websocketAPI,
+			deviceStorage,
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
+			amazonRootCA1,
 			bridgeImageSettings,
+			layers: lambdaLayers,
+			lambdaSources,
 		})
 
 		new ConvertDeviceMessages(this, {
