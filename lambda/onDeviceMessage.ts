@@ -5,10 +5,9 @@ import {
 } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { proto, type HelloMessage } from '@hello.nrfcloud.com/proto/hello'
+import { proto } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import type { Static } from '@sinclair/typebox'
 import { getModelForDevice } from '../devices/getModelForDevice.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
@@ -18,30 +17,12 @@ const { EventBusName, DevicesTableName } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 })(process.env)
 
-type ConvertedMessage = Static<typeof HelloMessage>
-
 const log = logger('deviceMessage')
 const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
 const modelFetcher = getModelForDevice({ db, DevicesTableName })
-
-const parseMessage = async (
-	model: string,
-	message: unknown,
-): Promise<ConvertedMessage[]> => {
-	const converted = await proto({
-		onError: (message, model, error) => {
-			log.error('Could not transform message', {
-				payload: message,
-				model,
-				error,
-			})
-		},
-	})(model, message)
-
-	return converted
-}
+const deviceModelCache: Record<string, string> = {}
 
 const metrics = new Metrics({
 	namespace: 'hello-nrfcloud-backend',
@@ -54,13 +35,36 @@ const h = async (event: {
 	timestamp: number
 }): Promise<void> => {
 	log.debug('event', { event })
+	metrics.addMetric('deviceMessage', MetricUnits.Count, 1)
 	const { deviceId, message } = event
-	const { model } = await modelFetcher(deviceId)
+
+	// Fetch model for device
+	if (deviceModelCache[deviceId] === undefined) {
+		const maybeModel = await modelFetcher(deviceId)
+		if ('error' in maybeModel) {
+			log.error(
+				`No model found for device ${deviceId}: ${maybeModel.error.message}!`,
+			)
+		} else {
+			deviceModelCache[deviceId] = maybeModel.model
+		}
+	}
+	const model = deviceModelCache[deviceId]
+	if (model === undefined) {
+		metrics.addMetric('unknownDeviceModel', MetricUnits.Count, 1)
+		return
+	}
 	log.debug('model', { model })
 
-	metrics.addMetric('deviceMessage', MetricUnits.Count, 1)
-
-	const converted = await parseMessage(model, message)
+	const converted = await proto({
+		onError: (message, model, error) => {
+			log.error('Could not transform message', {
+				payload: message,
+				model,
+				error,
+			})
+		},
+	})(model, message)
 
 	if (converted.length === 0) {
 		metrics.addMetric('unknownDeviceMessage', MetricUnits.Count, 1)
