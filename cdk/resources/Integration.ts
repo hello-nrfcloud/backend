@@ -180,9 +180,9 @@ export class Integration extends Construct {
 				'5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy\n' +
 				'rqXRfboQnoZsG4q5WTP468SQvvG5\n' +
 				'-----END CERTIFICATE-----\n',
-			MOSQUITTO_INCLUDE_DIR: `/mosquitto/config/sections/`,
+			MOSQUITTO_INCLUDE_DIR: `/mosquitto/config/sections`,
 			MOSQUITTO__LOGGING__LOG_DEST: `stderr`,
-			MOSQUITTO__LOGGING__LOG_TYPE: `information`,
+			MOSQUITTO__LOGGING__LOG_TYPE: `all`,
 			MOSQUITTO__BRIDGE01__CONNECTION: `nrfcloud-bridge`,
 			MOSQUITTO__BRIDGE01__ADDRESS: `${
 				nrfCloudSetting('mqttEndpoint').stringValue
@@ -193,7 +193,9 @@ export class Integration extends Construct {
 			MOSQUITTO__BRIDGE01__BRIDGE_KEYFILE: `/mosquitto/security/nrfcloud_client.key`,
 			MOSQUITTO__BRIDGE01__BRIDGE_INSECURE: `false`,
 			MOSQUITTO__BRIDGE01__START_TYPE: `automatic`,
-			MOSQUITTO__BRIDGE01__NOTIFICATIONS: `false`,
+			MOSQUITTO__BRIDGE01__KEEPALIVE_INTERVAL: `10`,
+			MOSQUITTO__BRIDGE01__NOTIFICATIONS: `true`,
+			MOSQUITTO__BRIDGE01__NOTIFICATIONS_LOCAL_ONLY: `true`,
 			MOSQUITTO__BRIDGE01__CLEANSESSION: `true`,
 			MOSQUITTO__BRIDGE01__LOCAL_CLIENTID: `nrfcloud-bridge-local`,
 			MOSQUITTO__BRIDGE01__REMOTE_CLIENTID: nrfCloudSetting(
@@ -211,12 +213,14 @@ export class Integration extends Construct {
 			MOSQUITTO__BRIDGE02__BRIDGE_INSECURE: `false`,
 			MOSQUITTO__BRIDGE02__LOCAL_CLIENTID: `iot-bridge-local`,
 			MOSQUITTO__BRIDGE02__START_TYPE: `automatic`,
-			MOSQUITTO__BRIDGE02__NOTIFICATIONS: `false`,
+			MOSQUITTO__BRIDGE02__KEEPALIVE_INTERVAL: `10`,
+			MOSQUITTO__BRIDGE02__NOTIFICATIONS: `true`,
+			MOSQUITTO__BRIDGE02__NOTIFICATIONS_LOCAL_ONLY: `true`,
 			MOSQUITTO__BRIDGE02__CLEANSESSION: `true`,
 			MOSQUITTO__BRIDGE02__TOPIC: `# out 1`,
 		}
 		if (this.node.tryGetContext('isTest') === true) {
-			environment.MOSQUITTO__LISTENERS__LISTENER = '1883'
+			environment.MOSQUITTO__DEFAULT__LISTENER = `1883`
 			environment.MOSQUITTO__SECURITY__ALLOW_ANONYMOUS = `true`
 		}
 
