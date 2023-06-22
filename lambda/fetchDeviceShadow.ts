@@ -16,11 +16,11 @@ import { chunk } from 'lodash-es'
 import pLimit from 'p-limit'
 import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
-import { createLock } from '../websocket/lock.js'
 import {
-	websocketDeviceConnectionsRepository,
-	type WebsocketDeviceConnection,
-} from '../websocket/websocketDeviceConnectionsRepository.js'
+	connectionsRepository,
+	type WebsocketDeviceConnectionShadowInfo,
+} from '../websocket/connectionsRepository.js'
+import { createLock } from '../websocket/lock.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
 import { logger } from './util/logger.js'
@@ -52,7 +52,7 @@ const lock = createLock(db, lockTableName)
 
 const eventBus = new EventBridgeClient({})
 
-const connectionsRepo = websocketDeviceConnectionsRepository(
+const connectionsRepo = connectionsRepository(
 	db,
 	websocketDeviceConnectionsTableName,
 )
@@ -90,7 +90,7 @@ const h = async (): Promise<void> => {
 					connection,
 				],
 			}),
-			{} as Record<string, WebsocketDeviceConnection[]>,
+			{} as Record<string, WebsocketDeviceConnectionShadowInfo[]>,
 		)
 
 		// Bulk fetching device shadow to avoid rate limit
@@ -123,7 +123,6 @@ const h = async (): Promise<void> => {
 				)
 
 				const isUpdated = await connectionsRepo.updateDeviceVersion(
-					d.deviceId,
 					d.connectionId,
 					deviceShadow.state.version,
 				)

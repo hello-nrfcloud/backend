@@ -22,13 +22,11 @@ export const notifyClients =
 	({
 		db,
 		connectionsTableName,
-		connectionsIndexName,
 		apiGwManagementClient,
 		eventBusName,
 	}: {
 		db: DynamoDBClient
 		connectionsTableName: string
-		connectionsIndexName: string
 		apiGwManagementClient: ApiGatewayManagementApiClient
 		eventBusName: string
 	}) =>
@@ -37,12 +35,9 @@ export const notifyClients =
 		const connectionIds: string[] =
 			connectionId !== undefined && connectionId !== ''
 				? [connectionId]
-				: await getActiveConnections(
-						db,
-						connectionsTableName,
-						connectionsIndexName,
-						deviceId,
-				  )
+				: await getActiveConnections(db, connectionsTableName, deviceId)
+
+		log.info(`${connectionIds.length} active connections found.`)
 
 		for (const connectionId of connectionIds) {
 			try {
@@ -93,13 +88,15 @@ export const notifyClients =
 export const getActiveConnections = async (
 	db: DynamoDBClient,
 	connectionsTableName: string,
-	connectionsIndexName: string,
 	deviceId: string,
 ): Promise<string[]> => {
 	const res = await db.send(
 		new ExecuteStatementCommand({
-			Statement: `select connectionId from "${connectionsTableName}"."${connectionsIndexName}" where deviceId = ?`,
-			Parameters: [{ S: deviceId }],
+			Statement: `select connectionId from "${connectionsTableName}" where deviceId = ? AND ttl > ?`,
+			Parameters: [
+				{ S: deviceId },
+				{ N: Math.floor(Date.now() / 1000).toString() },
+			],
 		}),
 	)
 
