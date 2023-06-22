@@ -1,6 +1,8 @@
 import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
+import { isFingerprint } from '@hello.nrfcloud.com/proto/fingerprint'
 import chalk from 'chalk'
+import { execSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import os from 'node:os'
 import { table } from 'table'
@@ -22,19 +24,59 @@ export const importDevicesCommand = ({
 }): CommandDefinition => ({
 	command: 'import-devices <model> <provisioningList>',
 	action: async (model, provisioningList) => {
-		const devices: [imei: string, fingerprint: string, publicKey: string][] = (
-			await readFile(provisioningList, 'utf-8')
-		)
+		const devicesList = (await readFile(provisioningList, 'utf-8'))
 			.trim()
 			.split('\r\n')
 			.map((s) =>
 				s.split(';').map((s) => s.replace(/^"/, '').replace(/"$/, '')),
 			)
 			.slice(1)
-			.map(
-				([imei, _, fingerprint, publicKey]) =>
-					[imei, fingerprint, publicKey] as [string, string, string],
-			)
+		const devices: [imei: string, fingerprint: string, publicKey: string][] =
+			devicesList
+				.map(
+					([imei, _, fingerprint, publicKey]) =>
+						[imei, fingerprint, (publicKey ?? '').replace(/\\n/g, os.EOL)] as [
+							string,
+							string,
+							string,
+						],
+				)
+				.filter(([imei, fingerprint, publicKey]) => {
+					if (!isIMEI(imei)) {
+						console.error(
+							chalk.yellow('⚠️'),
+							chalk.yellow(`Not an IMEI:`),
+							chalk.red(imei),
+						)
+						return false
+					}
+					if (!isFingerprint(fingerprint)) {
+						console.error(
+							chalk.yellow('⚠️'),
+							chalk.yellow(`Not a fingerprint:`),
+							chalk.red(fingerprint),
+						)
+						return false
+					}
+					try {
+						execSync('openssl x509 -text -noout', { input: publicKey })
+					} catch (err) {
+						console.error(err)
+						console.error(
+							chalk.yellow('⚠️'),
+							chalk.yellow(`Not a public key:`),
+							chalk.red(publicKey),
+						)
+						return false
+					}
+					return true
+				})
+
+		if (devices.length === 0) {
+			console.error(chalk.red(`No devices found in`))
+			console.error(devicesList)
+			process.exit(1)
+		}
 
 		console.log(
 			table([
@@ -59,7 +101,7 @@ export const importDevicesCommand = ({
 		const registration = await client.registerDevices(
 			devices.map(([imei, _, publicKey]) => {
 				const deviceId = `oob-${imei}`
-				const certPem = publicKey.replace(/\\n/g, os.EOL)
+				const certPem = publicKey
 				return {
 					deviceId,
 					subType: model.replace(/[^0-9a-z-]/gi, '-'),
@@ -98,9 +140,7 @@ export const importDevicesCommand = ({
 				console.error(res.error.message)
 			} else {
 				console.log(
-					chalk.green(
-						`Registered device ${deviceId} with fingerprint ${fingerprint}`,
-					),
+					chalk.green(`Registered device ${deviceId} with fingerprint`),
 					chalk.cyan(fingerprint),
 				)
 			}
@@ -108,3 +148,6 @@ export const importDevicesCommand = ({
 	},
 	help: 'Import factory provisioned devices',
 })
+
+export const isIMEI = (imei?: string): imei is string =>
+	/^35[0-9]{13}$/.test(imei ?? '')
