@@ -13,6 +13,8 @@ import {
 	ensureCertificateDir,
 	simulatorCALocations,
 } from '../certificates.js'
+import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
+import { signDeviceCertificate } from '../devices/signDeviceCertificate.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const registerSimulatorDeviceCommand = ({
@@ -80,7 +82,7 @@ export const registerSimulatorDeviceCommand = ({
 		const deviceId = `simulator-${ulid()}`
 		console.log(chalk.yellow('Device ID:'), chalk.blue(deviceId))
 
-		// Device private key
+		// Device certificate locations
 		const {
 			privateKey: devicePrivateKeyLocation,
 			certificate: deviceCertificateLocation,
@@ -88,6 +90,7 @@ export const registerSimulatorDeviceCommand = ({
 			signedCert: deviceSignedCertLocation,
 		} = deviceCertificateLocations(dir, deviceId)
 
+		// Device private key
 		await run({
 			command: 'openssl',
 			args: [
@@ -127,7 +130,7 @@ export const registerSimulatorDeviceCommand = ({
 			chalk.yellow('Device certificate', chalk.blue(deviceCertificateLocation)),
 		)
 
-		// Sign device cert
+		// Create CSR
 		await run({
 			command: 'openssl',
 			args: [
@@ -141,35 +144,14 @@ export const registerSimulatorDeviceCommand = ({
 				`/CN=${deviceId}`,
 			],
 		})
-		await run({
-			command: 'openssl',
-			args: [
-				'x509',
-				'-req',
-				'-CA',
-				caCertificateLocation,
-				'-CAkey',
-				caPrivateKeyLocation,
-				'-in',
-				deviceCSRLocation,
-				'-out',
-				deviceSignedCertLocation,
-				'-days',
-				'10957',
-			],
+
+		// Sign device cert
+		await signDeviceCertificate({
+			dir,
+			deviceId,
+			caCertificateLocation,
+			caPrivateKeyLocation,
 		})
-		console.log(
-			chalk.yellow(
-				'Signed device certificate',
-				chalk.blue(deviceSignedCertLocation),
-			),
-		)
-		console.log(
-			await run({
-				command: 'openssl',
-				args: ['x509', '-text', '-noout', '-in', deviceSignedCertLocation],
-			}),
-		)
 
 		const registration = await client.registerDevices([
 			{
@@ -185,18 +167,16 @@ export const registerSimulatorDeviceCommand = ({
 			process.exit(1)
 		}
 
-		console.log(chalk.green(`Registered devices with nRF Cloud`))
+		console.log(
+			chalk.green(`Registered device with nRF Cloud`),
+			chalk.cyan(deviceId),
+		)
 		console.log(
 			chalk.yellow.dim(`Bulk ops ID:`),
 			chalk.yellow(registration.bulkOpsRequestId),
 		)
 
-		console.log(
-			chalk.green(`Registered device with nRF Cloud`),
-			chalk.cyan(deviceId),
-		)
-
-		const fingerprint = `29a.${generateCode()}`
+		const fingerprint = fingerprintGenerator(666)()
 		const res = await registerDevice({
 			db,
 			devicesTableName,
@@ -222,15 +202,3 @@ export const registerSimulatorDeviceCommand = ({
 	},
 	help: 'Registers a device simulator',
 })
-
-const generateCode = (len = 6) => {
-	const alphabet = 'abcdefghijkmnpqrstuvwxyz' // Removed o,l
-	const numbers = '23456789' // Removed 0,1
-	const characters = `${alphabet}${numbers}`
-
-	let code = ``
-	for (let n = 0; n < len; n++) {
-		code = `${code}${characters[Math.floor(Math.random() * characters.length)]}`
-	}
-	return code
-}

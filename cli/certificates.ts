@@ -24,6 +24,23 @@ export const simulatorCALocations = (
 	certificate: path.join(certificatesDir, 'simulator.CA.pem'),
 })
 
+export const productionRunCALocations = (
+	certificatesDir: string,
+	productionRun: number,
+): {
+	privateKey: string
+	certificate: string
+} => ({
+	privateKey: path.join(
+		certificatesDir,
+		`production-${productionRun.toString(16)}.CA.key`,
+	),
+	certificate: path.join(
+		certificatesDir,
+		`production-${productionRun.toString(16)}.CA.pem`,
+	),
+})
+
 export const deviceCertificateLocations = (
 	certificatesDir: string,
 	deviceId: string,
