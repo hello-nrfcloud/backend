@@ -24,7 +24,7 @@ import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
 import { settingsPath } from '../../util/settings.js'
-import type { CommandDefinition } from './CommandDefinition'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot,

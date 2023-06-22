@@ -11,7 +11,11 @@ import mqtt from 'mqtt'
 import assert from 'node:assert/strict'
 import { WebSocket, type RawData } from 'ws'
 import { registerDevice } from '../devices/registerDevice.js'
-import { getSettings, type Settings } from '../nrfcloud/settings.js'
+import { getSettings as getHealthCheckSettings } from '../nrfcloud/healthCheckSettings.js'
+import {
+	getSettings as getNrfCloudSettings,
+	type Settings,
+} from '../nrfcloud/settings.js'
 import { defer } from '../util/defer.js'
 import { logger } from './util/logger.js'
 
@@ -52,35 +56,45 @@ const amazonRootCA1 =
 	'rqXRfboQnoZsG4q5WTP468SQvvG5\n' +
 	'-----END CERTIFICATE-----\n'
 
-const deviceId = 'health-check'
-const model = 'PCA20035+solar'
-const fingerprint = '29a.ch3ckr'
-const gain = 3.12345
+const {
+	healthCheckClientCert: deviceCert,
+	healthCheckPrivateKey: devicePrivateKey,
+	healthCheckClientId: deviceId,
+	healthCheckModel: model,
+	healthCheckFingerPrint: fingerprint,
+} = await getHealthCheckSettings({ ssm, stackName })()
 
-const accountDeviceSettings = await getSettings({
-	ssm,
-	stackName,
-})()
+const nrfCloudSettings = await getNrfCloudSettings({ ssm, stackName })()
 
 const publishDeviceMessage =
-	(nrfCloudInfo: Settings) =>
-	async (deviceId: string, message: Record<string, unknown>): Promise<void> => {
+	({
+		nrfCloudSettings,
+		deviceId,
+		deviceCert,
+		devicePrivateKey,
+	}: {
+		nrfCloudSettings: Settings
+		deviceId: string
+		deviceCert: string
+		devicePrivateKey: string
+	}) =>
+	async (message: Record<string, unknown>): Promise<void> => {
 		const { promise, resolve, reject } = defer<void>(10000)
 
 		const mqttClient = mqtt.connect({
-			host: nrfCloudInfo.mqttEndpoint,
+			host: nrfCloudSettings.mqttEndpoint,
 			port: 8883,
 			protocol: 'mqtts',
 			protocolVersion: 4,
 			clean: true,
 			clientId: deviceId,
-			key: nrfCloudInfo.accountDevicePrivateKey,
-			cert: nrfCloudInfo.accountDeviceClientCert,
+			key: devicePrivateKey,
+			cert: deviceCert,
 			ca: amazonRootCA1,
 		})
 
 		mqttClient.on('connect', () => {
-			const topic = `${nrfCloudInfo.mqttTopicPrefix}m/d/${deviceId}/d2c`
+			const topic = `${nrfCloudSettings.mqttTopicPrefix}m/d/${deviceId}/d2c`
 			log.debug('mqtt publish', { mqttMessage: message, topic })
 			mqttClient.publish(topic, JSON.stringify(message), (error) => {
 				if (error) return reject(error)
@@ -146,6 +160,7 @@ await registerDevice({
 
 const h = async (): Promise<void> => {
 	let ts: number
+	let gain: number
 	metrics.addMetric('checkMessageFromWebsocket', MetricUnits.Count, 1)
 	try {
 		await checkMessageFromWebsocket({
@@ -153,7 +168,13 @@ const h = async (): Promise<void> => {
 			timeoutMS: 10000,
 			onConnect: async () => {
 				ts = Date.now()
-				await publishDeviceMessage(accountDeviceSettings)(deviceId, {
+				gain = 3 + Number(Math.random().toFixed(5))
+				await publishDeviceMessage({
+					nrfCloudSettings,
+					deviceId,
+					deviceCert,
+					devicePrivateKey,
+				})({
 					appId: 'SOLAR',
 					messageType: 'DATA',
 					ts,

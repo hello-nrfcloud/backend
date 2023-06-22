@@ -12,7 +12,8 @@ import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition'
 import { configureDeviceCommand } from './commands/configure-device.js'
 import { configureCommand } from './commands/configure.js'
-import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials.js'
+import { createFakeNrfCloudAccountDeviceCredentials } from './commands/create-fake-nrfcloud-account-device-credentials.js'
+import { createFakeNrfCloudHealthCheckDevice } from './commands/create-fake-nrfcloud-health-check-device.js'
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 import { logsCommand } from './commands/logs.js'
 import { registerDeviceCommand } from './commands/register-device.js'
@@ -54,6 +55,12 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		console.error('Running on CI...')
 		commands.push(
 			createFakeNrfCloudAccountDeviceCredentials({
+				iot,
+				ssm,
+			}),
+		)
+		commands.push(
+			createFakeNrfCloudHealthCheckDevice({
 				iot,
 				ssm,
 			}),
