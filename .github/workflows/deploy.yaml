@@ -15,6 +15,7 @@ env:
   STACK_NAME: ${{ vars.STACK_NAME }}
   AWS_REGION: ${{ vars.AWS_REGION }}
   FORCE_COLOR: 3
+  JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: 1
 
 jobs:
   deploy:
