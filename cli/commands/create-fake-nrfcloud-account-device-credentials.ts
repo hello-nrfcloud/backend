@@ -18,6 +18,7 @@ import {
 	SSMClient,
 } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
+import { chunk } from 'lodash-es'
 import { randomUUID } from 'node:crypto'
 import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
@@ -114,11 +115,14 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				...(parameters.Parameters?.map((p) => p.Name) ?? []),
 				fakeTenantParameter,
 			]
-			await ssm.send(
-				new DeleteParametersCommand({
-					Names: names as string[],
-				}),
-			)
+			const namesChunk = chunk(names, 10)
+			for (const names of namesChunk) {
+				await ssm.send(
+					new DeleteParametersCommand({
+						Names: names as string[],
+					}),
+				)
+			}
 			return
 		}
 		const tenantId = randomUUID()
