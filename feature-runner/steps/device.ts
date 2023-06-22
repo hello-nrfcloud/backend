@@ -12,65 +12,92 @@ import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
+import pRetry from 'p-retry'
+import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
 
-const dbClient = new DynamoDBClient({})
+const createDevice =
+	({ db }: { db: DynamoDBClient }) =>
+	async ({
+		step,
+		log: {
+			step: { progress },
+		},
+		context: { devicesTable, devicesTableFingerprintIndexName },
+	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+		const match =
+			/^a `(?<model>[^`]+)` device with the ID `(?<id>[^`]+)` is registered with the fingerprint `(?<fingerprint>[^`]+)`$/.exec(
+				step.title,
+			)
+		if (match === null) return noMatch
+		const { id, model, fingerprint } = match.groups as {
+			id: string
+			model: string
+			fingerprint: string
+		}
 
-const createDevice = async ({
-	step,
-	log: {
-		step: { progress },
-	},
-	context: { devicesTable },
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match =
-		/^a `(?<model>[^`]+)` device with the ID `(?<id>[^`]+)` is registered with the fingerprint `(?<fingerprint>[^`]+)`$/.exec(
-			step.title,
-		)
-	if (match === null) return noMatch
-	const { id, model, fingerprint } = match.groups as Record<string, string>
+		progress(`Registering device ${id} into table ${devicesTable}`)
+		await registerDevice({ db, devicesTableName: devicesTable })({
+			id,
+			model,
+			fingerprint,
+		})
 
-	progress(`Registering device ${id} into table ${devicesTable}`)
-	await registerDevice({ db: dbClient, devicesTableName: devicesTable })({
-		id: id as string,
-		model: model as string,
-		fingerprint: fingerprint as string,
-	})
-
-	progress(`Device registered: ${id}`)
-}
-const getDevice = async ({
-	step,
-	log: {
-		step: { progress },
-	},
-	context: { devicesTable },
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match =
-		/^The device id `(?<key>[^`]+)` should equal to this JSON$/.exec(step.title)
-	if (match === null) return noMatch
-
-	progress(`Get data with id ${match.groups?.key} from ${devicesTable}`)
-	const res = await dbClient.send(
-		new GetItemCommand({
-			TableName: devicesTable,
-			Key: {
-				deviceId: { S: match.groups?.key ?? '' },
+		await pRetry(
+			async () => {
+				const res = await getDeviceFromIndex({
+					db,
+					devicesTableName: devicesTable,
+					devicesIndexName: devicesTableFingerprintIndexName,
+				})({ fingerprint })
+				if ('error' in res)
+					throw new Error(`Failed to resolve fingerprint ${fingerprint}!`)
 			},
-		}),
-	)
+			{
+				retries: 5,
+				minTimeout: 500,
+				maxTimeout: 1000,
+			},
+		)
 
-	progress(
-		`Data returned from query: `,
-		JSON.stringify(res.Item ?? {}, null, 2),
-	)
-	assert.deepEqual(
-		unmarshall(res.Item ?? {}),
-		JSON.parse(codeBlockOrThrow(step).code),
-	)
-}
+		progress(`Device registered: ${id}`)
+	}
+const getDevice =
+	({ db }: { db: DynamoDBClient }) =>
+	async ({
+		step,
+		log: {
+			step: { progress },
+		},
+		context: { devicesTable },
+	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+		const match =
+			/^The device id `(?<key>[^`]+)` should equal to this JSON$/.exec(
+				step.title,
+			)
+		if (match === null) return noMatch
+
+		progress(`Get data with id ${match.groups?.key} from ${devicesTable}`)
+		const res = await db.send(
+			new GetItemCommand({
+				TableName: devicesTable,
+				Key: {
+					deviceId: { S: match.groups?.key ?? '' },
+				},
+			}),
+		)
+
+		progress(
+			`Data returned from query: `,
+			JSON.stringify(res.Item ?? {}, null, 2),
+		)
+		assert.deepEqual(
+			unmarshall(res.Item ?? {}),
+			JSON.parse(codeBlockOrThrow(step).code),
+		)
+	}
 
 const publishDeviceMessage =
 	(bridgeInfo: Settings) =>
@@ -142,9 +169,12 @@ const waitForScheduler = async ({
 	await setTimeout(waitingTime * 1000)
 }
 
-export const steps = (bridgeInfo: Settings): StepRunner<World>[] => [
-	createDevice,
-	getDevice,
+export const steps = (
+	bridgeInfo: Settings,
+	db: DynamoDBClient,
+): StepRunner<World>[] => [
+	createDevice({ db }),
+	getDevice({ db }),
 	waitForScheduler,
 	publishDeviceMessage(bridgeInfo),
 ]
