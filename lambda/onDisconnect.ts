@@ -1,11 +1,10 @@
 import { DeleteItemCommand, DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import type {
-	APIGatewayProxyStructuredResultV2,
-	APIGatewayProxyWebsocketEventV2,
-} from 'aws-lambda'
+import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
 import { logger } from './util/logger.js'
+import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
+
 const { TableName, EventBusName } = fromEnv({
 	TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
 	EventBusName: 'EVENTBUS_NAME',
@@ -16,9 +15,11 @@ const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
 export const handler = async (
-	event: APIGatewayProxyWebsocketEventV2,
+	event: AuthorizedEvent,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.info('onDisconnect event', { event })
+
+	const { deviceId } = event.requestContext.authorizer
 
 	const result = await db.send(
 		new DeleteItemCommand({
@@ -40,7 +41,7 @@ export const handler = async (
 					Source: 'thingy.ws',
 					DetailType: 'disconnect',
 					Detail: JSON.stringify({
-						deviceId: result.Attributes.deviceId.S,
+						deviceId,
 						connectionId: event.requestContext.connectionId,
 					}),
 				},
@@ -50,6 +51,5 @@ export const handler = async (
 
 	return {
 		statusCode: 200,
-		body: `Disconnected. Good bye ${event.requestContext.connectionId}!`,
 	}
 }

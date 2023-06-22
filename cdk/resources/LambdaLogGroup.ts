@@ -6,6 +6,9 @@ import {
 } from 'aws-cdk-lib'
 import type { Construct } from 'constructs'
 
+/**
+ * @deprecated Use logRetention: Logs.RetentionDays.ONE_WEEK
+ */
 export class LambdaLogGroup extends Resource {
 	public constructor(parent: Construct, id: string, lambda: Lambda.IFunction) {
 		super(parent, id)

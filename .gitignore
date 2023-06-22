@@ -9,3 +9,4 @@ cdk.out/
 dist/
 .envrc
 certificates/
+cdk.context.json

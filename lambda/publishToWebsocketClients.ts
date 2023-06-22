@@ -12,17 +12,12 @@ export type WebsocketPayload = {
 	message: Record<string, unknown>
 }
 
-const {
-	connectionsTableName,
-	websocketManagementAPIURL,
-	connectionsIndexName,
-	eventBusName,
-} = fromEnv({
-	connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
-	connectionsIndexName: 'WEBSOCKET_CONNECTIONS_INDEX_NAME',
-	websocketManagementAPIURL: 'WEBSOCKET_MANAGEMENT_API_URL',
-	eventBusName: 'EVENTBUS_NAME',
-})(process.env)
+const { connectionsTableName, websocketManagementAPIURL, eventBusName } =
+	fromEnv({
+		connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
+		websocketManagementAPIURL: 'WEBSOCKET_MANAGEMENT_API_URL',
+		eventBusName: 'EVENTBUS_NAME',
+	})(process.env)
 
 const log = logger('publishToWebsockets')
 const db = new DynamoDBClient({})
@@ -33,7 +28,6 @@ export const apiGwManagementClient = new ApiGatewayManagementApi({
 const notifier = notifyClients({
 	db,
 	connectionsTableName,
-	connectionsIndexName,
 	apiGwManagementClient,
 	eventBusName,
 })

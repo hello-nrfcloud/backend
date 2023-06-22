@@ -6,13 +6,13 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
+	aws_logs as Logs,
 	RemovalPolicy,
 	aws_sqs as SQS,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
-import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 export class DeviceShadow extends Construct {
@@ -25,7 +25,6 @@ export class DeviceShadow extends Construct {
 		}: {
 			websocketAPI: WebsocketAPI
 			lambdaSources: {
-				onWebsocketConnectOrDisconnect: PackedLambda
 				prepareDeviceShadow: PackedLambda
 				fetchDeviceShadow: PackedLambda
 			}
@@ -65,68 +64,7 @@ export class DeviceShadow extends Construct {
 			timeToLiveAttribute: 'ttl',
 		})
 
-		// Used to store websocket connections
-		const websocketDeviceConnectionsTable = new DynamoDB.Table(
-			this,
-			'websocketDeviceConnectionsTable',
-			{
-				billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
-				partitionKey: {
-					name: 'deviceId',
-					type: DynamoDB.AttributeType.STRING,
-				},
-				sortKey: {
-					name: 'connectionId',
-					type: DynamoDB.AttributeType.STRING,
-				},
-				removalPolicy: RemovalPolicy.DESTROY,
-			},
-		)
-
 		// Lambda functions
-		const onWebsocketConnectOrDisconnect = new Lambda.Function(
-			this,
-			'onWebsocketConnectOrDisconnect',
-			{
-				handler: lambdaSources.onWebsocketConnectOrDisconnect.handler,
-				architecture: Lambda.Architecture.ARM_64,
-				runtime: Lambda.Runtime.NODEJS_18_X,
-				timeout: Duration.seconds(5),
-				memorySize: 1792,
-				code: Lambda.Code.fromAsset(
-					lambdaSources.onWebsocketConnectOrDisconnect.zipFile,
-				),
-				description: 'Subscribe to device connection or disconnection',
-				environment: {
-					VERSION: this.node.tryGetContext('version'),
-					WEBSOCKET_CONNECTIONS_TABLE_NAME:
-						websocketDeviceConnectionsTable.tableName,
-					LOG_LEVEL: this.node.tryGetContext('logLevel'),
-					NODE_NO_WARNINGS: '1',
-				},
-				initialPolicy: [],
-				layers,
-			},
-		)
-		new Events.Rule(this, 'connectOrDisconnectRule', {
-			eventPattern: {
-				source: ['thingy.ws'],
-				detailType: ['disconnect', 'connect'],
-			},
-			targets: [
-				new EventTargets.LambdaFunction(onWebsocketConnectOrDisconnect),
-			],
-			eventBus: websocketAPI.eventBus,
-		})
-		websocketDeviceConnectionsTable.grantReadWriteData(
-			onWebsocketConnectOrDisconnect,
-		)
-		new LambdaLogGroup(
-			this,
-			'onWebsocketConnectOrDisconnectLog',
-			onWebsocketConnectOrDisconnect,
-		)
-
 		const prepareDeviceShadow = new Lambda.Function(
 			this,
 			'prepareDeviceShadow',
@@ -146,11 +84,11 @@ export class DeviceShadow extends Construct {
 				},
 				initialPolicy: [],
 				layers,
+				logRetention: Logs.RetentionDays.ONE_WEEK,
 			},
 		)
 		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
 		shadowQueue.grantSendMessages(prepareDeviceShadow)
-		new LambdaLogGroup(this, 'prepareDeviceShadowLogs', prepareDeviceShadow)
 
 		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
 			handler: lambdaSources.fetchDeviceShadow.handler,
@@ -164,7 +102,7 @@ export class DeviceShadow extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
 				WEBSOCKET_CONNECTIONS_TABLE_NAME:
-					websocketDeviceConnectionsTable.tableName,
+					websocketAPI.connectionsTable.tableName,
 				LOCK_TABLE_NAME: lockTable.tableName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
@@ -181,9 +119,10 @@ export class DeviceShadow extends Construct {
 				}),
 			],
 			layers,
+			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
 		websocketAPI.eventBus.grantPutEventsTo(fetchDeviceShadow)
-		websocketDeviceConnectionsTable.grantReadWriteData(fetchDeviceShadow)
+		websocketAPI.connectionsTable.grantReadWriteData(fetchDeviceShadow)
 		lockTable.grantReadWriteData(fetchDeviceShadow)
 		fetchDeviceShadow.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {
@@ -191,6 +130,5 @@ export class DeviceShadow extends Construct {
 				maxConcurrency: 2,
 			}),
 		)
-		new LambdaLogGroup(this, 'fetchDeviceShadowLogs', fetchDeviceShadow)
 	}
 }
