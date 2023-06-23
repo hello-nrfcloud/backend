@@ -41,7 +41,11 @@ const packagesInLayer: string[] = [
 	'lodash-es',
 	'@middy/core',
 ]
-const certsDir = path.join(process.cwd(), 'certificates', accountEnv.account)
+const certsDir = path.join(
+	process.cwd(),
+	'certificates',
+	`${accountEnv.account}@${accountEnv.region}`,
+)
 const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
 	iot,
 	certsDir,

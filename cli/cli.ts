@@ -3,9 +3,11 @@ import { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { IoTClient } from '@aws-sdk/client-iot'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { STSClient } from '@aws-sdk/client-sts'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
 import { program } from 'commander'
+import { env } from '../cdk/helpers/env.js'
 import type { StackOutputs } from '../cdk/stacks/BackendStack.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import psjon from '../package.json'
@@ -28,6 +30,9 @@ const iot = new IoTClient({})
 const db = new DynamoDBClient({})
 const cf = new CloudFormationClient({})
 const logs = new CloudWatchLogsClient({})
+const sts = new STSClient({})
+
+const accountEnv = await env({ sts })
 
 const die = (err: Error, origin: any) => {
 	console.error(`An unhandled exception occurred!`)
@@ -97,12 +102,14 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					devicesTableName: outputs.devicesTableName,
 					ssm,
 					stackName: STACK_NAME,
+					env: accountEnv,
 				}),
 				simulateDeviceCommand({
 					ssm,
 					stackName: STACK_NAME,
 					db,
 					devicesTableName: outputs.devicesTableName,
+					env: accountEnv,
 				}),
 				importDevicesCommand({
 					db,
@@ -115,6 +122,7 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					devicesTableName: outputs.devicesTableName,
 					ssm,
 					stackName: STACK_NAME,
+					env: accountEnv,
 				}),
 				showFingerprintCommand({
 					db,

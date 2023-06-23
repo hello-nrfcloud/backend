@@ -7,6 +7,7 @@ import {
 	flashCertificate,
 	getIMEI,
 } from '@nordicsemiconductor/firmware-ci-device-helpers'
+import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -30,11 +31,13 @@ export const provisionDkCommand = ({
 	db,
 	devicesTableName,
 	stackName,
+	env,
 }: {
 	ssm: SSMClient
 	db: DynamoDBClient
 	devicesTableName: string
 	stackName: string
+	env: Required<Environment>
 }): CommandDefinition => ({
 	command: 'provision-dk <productionRun> <model>',
 	options: [
@@ -64,7 +67,7 @@ export const provisionDkCommand = ({
 		model,
 		{ port, dk, atHost, debug, deletePrivateKey },
 	) => {
-		const dir = ensureCertificateDir()
+		const dir = ensureCertificateDir(env)
 		const {
 			privateKey: caPrivateKeyLocation,
 			certificate: caCertificateLocation,

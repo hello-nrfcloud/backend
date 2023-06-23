@@ -1,15 +1,20 @@
+import type { Environment } from 'aws-cdk-lib'
 import { mkdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 /**
  * Provide the directory to store certificates
  */
-export const ensureCertificateDir = (): string => {
-	const dirName = path.join(process.cwd(), 'certificates')
+export const ensureCertificateDir = (env: Required<Environment>): string => {
+	const dirName = path.join(
+		process.cwd(),
+		'certificates',
+		`${env.account}@${env.region}`,
+	)
 	try {
 		statSync(dirName)
 	} catch {
-		mkdirSync(dirName)
+		mkdirSync(dirName, { recursive: true })
 	}
 	return dirName
 }
