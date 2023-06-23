@@ -33,6 +33,7 @@ need to prepare nRF Cloud API key.
 ```bash
 ./cli.sh configure thirdParty nrfcloud apiKey <API key>
 ./cli.sh initialize-nrfcloud-account
+./cli.sh create-health-check-device
 ```
 
 ### Deploy

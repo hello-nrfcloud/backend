@@ -68,10 +68,10 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 		}
 		await updateSettings({ ssm, stackName: STACK_NAME })(settings)
 
-		console.debug(chalk.white(`nRF Cloud health check device settings:`))
+		console.debug(chalk.white(`Fake nRF Cloud health check device settings:`))
 		Object.entries(settings).forEach(([k, v]) => {
 			console.debug(chalk.yellow(`${k}:`), chalk.blue(v))
 		})
 	},
-	help: 'Creates nRF Cloud health check device used by the stack to end-to-end health check',
+	help: 'Creates fake nRF Cloud health check device used by the stack to end-to-end health check',
 })

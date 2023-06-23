@@ -44,7 +44,7 @@ export class HealthCheckMqttBridge extends Construct {
 			handler: lambdaSources.healthCheck.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: Duration.seconds(5),
+			timeout: Duration.seconds(15),
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.healthCheck.zipFile),
 			description: 'End to end test for mqtt bridge',

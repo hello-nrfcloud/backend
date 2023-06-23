@@ -14,6 +14,7 @@ import { configureDeviceCommand } from './commands/configure-device.js'
 import { configureCommand } from './commands/configure.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/create-fake-nrfcloud-account-device-credentials.js'
 import { createFakeNrfCloudHealthCheckDevice } from './commands/create-fake-nrfcloud-health-check-device.js'
+import { createHealthCheckDevice } from './commands/create-health-check-device.js'
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 import { logsCommand } from './commands/logs.js'
 import { registerDeviceCommand } from './commands/register-device.js'
@@ -70,6 +71,12 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 			initializeNRFCloudAccountCommand({
 				ssm,
 				iot,
+				stackName: STACK_NAME,
+			}),
+		)
+		commands.push(
+			createHealthCheckDevice({
+				ssm,
 				stackName: STACK_NAME,
 			}),
 		)
