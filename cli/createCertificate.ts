@@ -4,6 +4,7 @@ import {
 	deviceCertificateLocations,
 	simulatorCALocations,
 } from './certificates.js'
+import { signDeviceCertificate } from './devices/signDeviceCertificate.js'
 
 export const createCA = async (
 	dest: string,
@@ -96,7 +97,7 @@ export const createDeviceCertificate = async ({
 		],
 	})
 
-	// Sign device cert
+	// Create CSR
 	await run({
 		command: 'openssl',
 		args: [
@@ -110,22 +111,13 @@ export const createDeviceCertificate = async ({
 			`/CN=${deviceId}`,
 		],
 	})
-	await run({
-		command: 'openssl',
-		args: [
-			'x509',
-			'-req',
-			'-CA',
-			caCertificates.certificate,
-			'-CAkey',
-			caCertificates.privateKey,
-			'-in',
-			deviceCertificates.CSR,
-			'-out',
-			deviceCertificates.signedCert,
-			'-days',
-			'10957',
-		],
+
+	// Sign device cert
+	await signDeviceCertificate({
+		dir: dest,
+		deviceId,
+		caCertificateLocation: caCertificates.certificate,
+		caPrivateKeyLocation: caCertificates.privateKey,
 	})
 
 	return deviceCertificates

@@ -1,6 +1,7 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import type { ipShadow } from '@hello.nrfcloud.com/proto/nrfCloud/types/types.js'
+import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
 import { merge } from 'lodash-es'
 import mqtt, { MqttClient } from 'mqtt'
@@ -22,12 +23,13 @@ export const simulateDeviceCommand = ({
 	stackName,
 	db,
 	devicesTableName,
+	env,
 }: {
 	ssm: SSMClient
 	stackName: string
-
 	db: DynamoDBClient
 	devicesTableName: string
+	env: Required<Environment>
 }): CommandDefinition => ({
 	command: 'simulate-device <deviceId>',
 	action: async (deviceId) => {
@@ -63,7 +65,7 @@ export const simulateDeviceCommand = ({
 			chalk.blue(accountInfo.account.mqttEndpoint),
 		)
 
-		const dir = ensureCertificateDir()
+		const dir = ensureCertificateDir(env)
 		const {
 			privateKey: devicePrivateKeyLocation,
 			signedCert: deviceCertificateLocation,

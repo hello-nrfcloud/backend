@@ -1,4 +1,5 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
+import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -16,9 +17,11 @@ import type { CommandDefinition } from './CommandDefinition.js'
 export const createHealthCheckDevice = ({
 	ssm,
 	stackName,
+	env,
 }: {
 	ssm: SSMClient
 	stackName: string
+	env: Required<Environment>
 }): CommandDefinition => ({
 	command: 'create-health-check-device',
 	action: async () => {
@@ -32,7 +35,7 @@ export const createHealthCheckDevice = ({
 			apiKey,
 		})
 
-		const dir = ensureCertificateDir()
+		const dir = ensureCertificateDir(env)
 
 		// CA certificate
 		const caCertificates = await createCA(dir)

@@ -44,7 +44,11 @@ const packagesInLayer: string[] = [
 
 const healthCheckPackagesInLayer: string[] = ['mqtt', 'ws']
 
-const certsDir = path.join(process.cwd(), 'certificates', accountEnv.account)
+const certsDir = path.join(
+	process.cwd(),
+	'certificates',
+	`${accountEnv.account}@${accountEnv.region}`,
+)
 const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
 	iot,
 	certsDir,

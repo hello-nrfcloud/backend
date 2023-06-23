@@ -26,10 +26,6 @@ export const configureDeviceCommand = ({
 }): CommandDefinition => ({
 	command: 'configure-device <fingerprint>',
 	options: [
-		{
-			flags: '-r, --reset',
-			description: `Regenerate all credentials. This will regenerate your nRF Cloud account device certificates`,
-		},
 		{ flags: '--passiveMode', description: `Set device in passive mode` },
 		{ flags: '--disableGNSS', description: `Whether to disable GNSS` },
 		{

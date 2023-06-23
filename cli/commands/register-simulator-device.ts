@@ -1,15 +1,16 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { registerDevice } from '../../devices/registerDevice.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
-import { run } from '../../util/run.js'
 import { ulid } from '../../util/ulid.js'
 import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
+import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const registerSimulatorDeviceCommand = ({
@@ -17,11 +18,13 @@ export const registerSimulatorDeviceCommand = ({
 	stackName,
 	db,
 	devicesTableName,
+	env,
 }: {
 	ssm: SSMClient
 	stackName: string
 	db: DynamoDBClient
 	devicesTableName: string
+	env: Required<Environment>
 }): CommandDefinition => ({
 	command: 'register-simulator-device',
 	action: async () => {
@@ -35,7 +38,7 @@ export const registerSimulatorDeviceCommand = ({
 			apiKey,
 		})
 
-		const dir = ensureCertificateDir()
+		const dir = ensureCertificateDir(env)
 
 		// CA certificate
 		const caCertificates = await createCA(dir)
@@ -65,19 +68,6 @@ export const registerSimulatorDeviceCommand = ({
 			),
 		)
 
-		console.log(
-			chalk.yellow(
-				'Signed device certificate',
-				chalk.blue(deviceCertificates.signedCert),
-			),
-		)
-		console.log(
-			await run({
-				command: 'openssl',
-				args: ['x509', '-text', '-noout', '-in', deviceCertificates.signedCert],
-			}),
-		)
-
 		const registration = await client.registerDevices([
 			{
 				deviceId,
@@ -95,17 +85,16 @@ export const registerSimulatorDeviceCommand = ({
 			process.exit(1)
 		}
 
-		if ('success' in registration && registration.success === false) {
-			console.error(chalk.red(`Registration failed`))
-			process.exit(1)
-		}
-
 		console.log(
 			chalk.green(`Registered device with nRF Cloud`),
 			chalk.cyan(deviceId),
 		)
+		console.log(
+			chalk.yellow.dim(`Bulk ops ID:`),
+			chalk.yellow(registration.bulkOpsRequestId),
+		)
 
-		const fingerprint = `29a.${generateCode()}`
+		const fingerprint = fingerprintGenerator(666)()
 		const res = await registerDevice({
 			db,
 			devicesTableName,
@@ -131,15 +120,3 @@ export const registerSimulatorDeviceCommand = ({
 	},
 	help: 'Registers a device simulator',
 })
-
-const generateCode = (len = 6) => {
-	const alphabet = 'abcdefghijkmnpqrstuvwxyz' // Removed o,l
-	const numbers = '23456789' // Removed 0,1
-	const characters = `${alphabet}${numbers}`
-
-	let code = ``
-	for (let n = 0; n < len; n++) {
-		code = `${code}${characters[Math.floor(Math.random() * characters.length)]}`
-	}
-	return code
-}
