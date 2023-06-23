@@ -14,6 +14,7 @@ import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import pRetry from 'p-retry'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
+import { getModelForDevice } from '../../devices/getModelForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
@@ -54,6 +55,22 @@ const createDevice =
 				})({ fingerprint })
 				if ('error' in res)
 					throw new Error(`Failed to resolve fingerprint ${fingerprint}!`)
+			},
+			{
+				retries: 5,
+				minTimeout: 500,
+				maxTimeout: 1000,
+			},
+		)
+
+		await pRetry(
+			async () => {
+				const res = await getModelForDevice({
+					db,
+					DevicesTableName: devicesTable,
+				})(id)
+				if ('error' in res)
+					throw new Error(`Failed to get model for device ${id}!`)
 			},
 			{
 				retries: 5,

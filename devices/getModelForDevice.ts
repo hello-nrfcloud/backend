@@ -27,7 +27,8 @@ export const getModelForDevice =
 			}),
 		)
 
-		const model = Items?.[0] !== undefined && unmarshall(Items[0]).model
+		const model =
+			Items?.[0] !== undefined ? unmarshall(Items[0]).model : undefined
 
 		if (model === undefined)
 			return {
