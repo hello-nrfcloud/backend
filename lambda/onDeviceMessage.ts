@@ -42,9 +42,7 @@ const h = async (event: {
 	if (deviceModelCache[deviceId] === undefined) {
 		const maybeModel = await modelFetcher(deviceId)
 		if ('error' in maybeModel) {
-			log.error(
-				`No model found for device ${deviceId}: ${maybeModel.error.message}!`,
-			)
+			log.error(maybeModel.error.message)
 		} else {
 			deviceModelCache[deviceId] = maybeModel.model
 		}

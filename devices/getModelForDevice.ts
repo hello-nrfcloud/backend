@@ -32,7 +32,7 @@ export const getModelForDevice =
 
 		if (model === undefined)
 			return {
-				error: new Error(`Not model defined for device ${deviceId}!`),
+				error: new Error(`No model defined for device ${deviceId}!`),
 			}
 
 		return { model }
