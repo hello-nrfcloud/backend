@@ -98,6 +98,7 @@ jobs:
       - name: Clean up End-to-End test resources
         if: always()
         run: |
+          ./cli.sh logs -X
           npx cdk destroy -f
           npx cdk --app 'npx tsx --no-warnings cdk/test-resources.ts' destroy -f
           ./cli.sh fake-nrfcloud-account-device --remove

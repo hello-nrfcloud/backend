@@ -4,6 +4,7 @@ import {
 } from '@aws-sdk/client-cloudformation'
 import {
 	CloudWatchLogsClient,
+	DeleteLogGroupCommand,
 	DescribeLogStreamsCommand,
 	GetLogEventsCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
@@ -29,17 +30,44 @@ export const logsCommand = ({
 			flags: '-s, --numLogStreams <numLogStreams>',
 			description: 'Number of logStreams to consider, default: 100',
 		},
+		{
+			flags: '-f, --filter <filter>',
+			description: 'string to filter for',
+		},
+		{
+			flags: '-X, --deleteLogGroups',
+			description: 'delete log groups afterwards',
+		},
 	],
-	action: async ({ numLogGroups, numLogStreams }) => {
+	action: async ({ numLogGroups, numLogStreams, filter, deleteLogGroups }) => {
 		const logGroups =
 			(
 				await cf.send(
 					new DescribeStackResourcesCommand({ StackName: stackName }),
 				)
-			).StackResources?.filter(
-				({ ResourceType }) => ResourceType === 'AWS::Logs::LogGroup',
+			).StackResources?.filter(({ ResourceType }) =>
+				['AWS::Logs::LogGroup', 'Custom::LogRetention'].includes(
+					ResourceType ?? '',
+				),
 			)?.map(({ PhysicalResourceId }) => PhysicalResourceId as string) ??
 			([] as string[])
+
+		if (deleteLogGroups === true) {
+			await Promise.all(
+				logGroups.map(async (logGroupName) => {
+					console.log(
+						chalk.gray(`Deleting log group`),
+						chalk.yellow(logGroupName),
+					)
+					return logs.send(
+						new DeleteLogGroupCommand({
+							logGroupName,
+						}),
+					)
+				}),
+			)
+			return
+		}
 
 		const streams = await Promise.all(
 			logGroups.map(async (logGroupName) => {
@@ -85,8 +113,24 @@ export const logsCommand = ({
 							({ message }) =>
 								!/^(START|END|REPORT) RequestId:/.test(message ?? ''),
 						)
-						?.filter(({ message }) => message?.includes('ERROR'))
-						?.forEach((e) => console.log(e.message?.trim()))
+						?.filter(({ message }) =>
+							filter === undefined ? true : message?.includes(filter),
+						)
+						?.forEach((e) => {
+							try {
+								const parts = (e.message?.trim() ?? '').split('\t')
+								const message = parts.pop()
+								const prettified = JSON.stringify(
+									JSON.parse(message ?? ''),
+									null,
+									2,
+								)
+								console.log(chalk.gray(parts.join('\t')))
+								console.log(prettified)
+							} catch {
+								console.log(chalk.gray(e.message?.trim()))
+							}
+						})
 				})
 			}),
 		)
