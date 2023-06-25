@@ -240,10 +240,9 @@ export class WebsocketAPI extends Construct {
 			stageName: '2023-06-22',
 			deploymentId: deployment.ref,
 			apiId: api.ref,
+			autoDeploy: true,
 		})
-		this.websocketURI = `wss://${api.ref}.execute-api.${
-			Stack.of(this).region
-		}.amazonaws.com/${prodStage.ref}`
+		this.websocketURI = `${api.attrApiEndpoint}/${prodStage.ref}`
 		// API invoke lambda
 		onConnect.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
