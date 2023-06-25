@@ -240,7 +240,6 @@ export class WebsocketAPI extends Construct {
 			stageName: '2023-06-22',
 			deploymentId: deployment.ref,
 			apiId: api.ref,
-			autoDeploy: true,
 		})
 		this.websocketURI = `${api.attrApiEndpoint}/${prodStage.ref}`
 		// API invoke lambda
