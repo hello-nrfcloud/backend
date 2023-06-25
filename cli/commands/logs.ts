@@ -38,8 +38,18 @@ export const logsCommand = ({
 			flags: '-X, --deleteLogGroups',
 			description: 'delete log groups afterwards',
 		},
+		{
+			flags: '-a, --age',
+			description: 'age of logs in minutes (defaults to 5 minutes)',
+		},
 	],
-	action: async ({ numLogGroups, numLogStreams, filter, deleteLogGroups }) => {
+	action: async ({
+		numLogGroups,
+		numLogStreams,
+		filter,
+		deleteLogGroups,
+		age,
+	}) => {
 		const logGroups =
 			(
 				await cf.send(
@@ -102,6 +112,8 @@ export const logsCommand = ({
 									numLogStreams !== undefined
 										? parseInt(numLogStreams, 10)
 										: 100,
+								endTime: Date.now(),
+								startTime: Date.now() - parseInt(age ?? '5', 10) * 60 * 1000,
 							}),
 						),
 					),
