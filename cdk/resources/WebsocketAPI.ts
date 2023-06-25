@@ -1,5 +1,5 @@
 import {
-	aws_apigatewayv2 as ApiGateway,
+	aws_apigatewayv2 as ApiGatewayV2,
 	Duration,
 	aws_dynamodb as DynamoDB,
 	aws_events as Events,
@@ -12,6 +12,7 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
+import { ApiLogging } from './ApiLogging.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 
 export const integrationUri = (
@@ -159,12 +160,12 @@ export class WebsocketAPI extends Construct {
 		})
 
 		// API
-		const api = new ApiGateway.CfnApi(this, 'api', {
+		const api = new ApiGatewayV2.CfnApi(this, 'api', {
 			name: 'websocketGateway',
 			protocolType: 'WEBSOCKET',
 			routeSelectionExpression: '$request.body.message',
 		})
-		const authorizer = new ApiGateway.CfnAuthorizer(this, 'authorizer', {
+		const authorizer = new ApiGatewayV2.CfnAuthorizer(this, 'authorizer', {
 			apiId: api.ref,
 			authorizerType: 'REQUEST',
 			name: `authorizer`,
@@ -174,7 +175,7 @@ export class WebsocketAPI extends Construct {
 			principal: new IAM.ServicePrincipal('apigateway.amazonaws.com'),
 		})
 		// API on connect
-		const connectIntegration = new ApiGateway.CfnIntegration(
+		const connectIntegration = new ApiGatewayV2.CfnIntegration(
 			this,
 			'connectIntegration',
 			{
@@ -184,7 +185,7 @@ export class WebsocketAPI extends Construct {
 				integrationUri: integrationUri(this, onConnect),
 			},
 		)
-		const connectRoute = new ApiGateway.CfnRoute(this, 'connectRoute', {
+		const connectRoute = new ApiGatewayV2.CfnRoute(this, 'connectRoute', {
 			apiId: api.ref,
 			routeKey: '$connect',
 			authorizationType: 'CUSTOM',
@@ -193,7 +194,7 @@ export class WebsocketAPI extends Construct {
 			authorizerId: authorizer?.ref,
 		})
 		// API on message
-		const onMessageIntegration = new ApiGateway.CfnIntegration(
+		const onMessageIntegration = new ApiGatewayV2.CfnIntegration(
 			this,
 			'onMessageIntegration',
 			{
@@ -203,7 +204,7 @@ export class WebsocketAPI extends Construct {
 				integrationUri: integrationUri(this, onMessage),
 			},
 		)
-		const onMessageRoute = new ApiGateway.CfnRoute(this, 'onMessageRoute', {
+		const onMessageRoute = new ApiGatewayV2.CfnRoute(this, 'onMessageRoute', {
 			apiId: api.ref,
 			routeKey: 'message',
 			authorizationType: 'NONE',
@@ -211,7 +212,7 @@ export class WebsocketAPI extends Construct {
 			target: `integrations/${onMessageIntegration.ref}`,
 		})
 		// API on disconnect
-		const disconnectIntegration = new ApiGateway.CfnIntegration(
+		const disconnectIntegration = new ApiGatewayV2.CfnIntegration(
 			this,
 			'disconnectIntegration',
 			{
@@ -221,7 +222,7 @@ export class WebsocketAPI extends Construct {
 				integrationUri: integrationUri(this, onDisconnect),
 			},
 		)
-		const disconnectRoute = new ApiGateway.CfnRoute(this, 'disconnectRoute', {
+		const disconnectRoute = new ApiGatewayV2.CfnRoute(this, 'disconnectRoute', {
 			apiId: api.ref,
 			routeKey: '$disconnect',
 			authorizationType: 'NONE',
@@ -229,13 +230,13 @@ export class WebsocketAPI extends Construct {
 			target: `integrations/${disconnectIntegration.ref}`,
 		})
 		// API deploy
-		const deployment = new ApiGateway.CfnDeployment(this, 'apiDeployment', {
+		const deployment = new ApiGatewayV2.CfnDeployment(this, 'apiDeployment', {
 			apiId: api.ref,
 		})
 		deployment.node.addDependency(connectRoute)
 		deployment.node.addDependency(onMessageRoute)
 		deployment.node.addDependency(disconnectRoute)
-		const prodStage = new ApiGateway.CfnStage(this, 'prodStage', {
+		const prodStage = new ApiGatewayV2.CfnStage(this, 'prodStage', {
 			stageName: '2023-06-22',
 			deploymentId: deployment.ref,
 			apiId: api.ref,
@@ -269,12 +270,21 @@ export class WebsocketAPI extends Construct {
 			}:${api.ref}/${prodStage.stageName}/$disconnect`,
 		})
 
+		// Construct URLs
+		this.websocketURI = `wss://${api.ref}.execute-api.${
+			Stack.of(this).region
+		}.amazonaws.com/${prodStage.ref}`
 		this.websocketAPIArn = `arn:aws:execute-api:${Stack.of(this).region}:${
 			Stack.of(this).account
 		}:${api.ref}/${prodStage.stageName}/POST/@connections/*`
 		this.websocketManagementAPIURL = `https://${api.ref}.execute-api.${
 			Stack.of(this).region
 		}.amazonaws.com/${prodStage.stageName}`
+
+		// Logging
+		if (this.node.tryGetContext('isTest') === true) {
+			new ApiLogging(this, api, prodStage)
+		}
 
 		// Publish event to sockets
 		const publishToWebsocketClients = new Lambda.Function(
