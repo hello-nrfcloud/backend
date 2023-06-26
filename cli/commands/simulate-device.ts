@@ -295,16 +295,16 @@ export const simulateDeviceCommand = ({
 		// Publish sensor readings
 
 		const batteryReadings = dataGenerator({
-			min: 4000,
-			max: 5000,
-			step: 10,
+			min: 0,
+			max: 100,
+			step: 1,
 		})
 
-		const publishTemp = () => {
+		const publishBattery = () => {
 			connection.publish(
 				`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
 				{
-					appId: 'VOLTAGE',
+					appId: 'BATTERY',
 					messageType: 'DATA',
 					ts: Date.now(),
 					data: batteryReadings.next().value.toFixed(0),
@@ -330,9 +330,9 @@ export const simulateDeviceCommand = ({
 			)
 		}
 
-		publishTemp()
+		publishBattery()
 		publishGain()
-		setInterval(publishTemp, 10 * 1000)
+		setInterval(publishBattery, 10 * 1000)
 		setInterval(publishGain, 10 * 1000)
 	},
 	help: 'Simulates a device',
