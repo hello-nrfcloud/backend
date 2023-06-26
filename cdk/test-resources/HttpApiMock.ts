@@ -10,6 +10,7 @@ import {
 } from 'aws-cdk-lib'
 import type { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
+import { LambdaSource } from '../resources/LambdaSource.js'
 
 export class HttpApiMock extends Resource {
 	public readonly api: ApiGateway.RestApi
@@ -66,7 +67,7 @@ export class HttpApiMock extends Resource {
 		const lambda = new Lambda.Function(this, 'Lambda', {
 			description:
 				'Mocks a HTTP API and stores all requests in SQS for inspection, and optionally replies with enqued responses',
-			code: Lambda.Code.fromAsset(lambdaSources.httpApiMock.zipFile),
+			code: new LambdaSource(this, lambdaSources.httpApiMock).code,
 			layers,
 			handler: lambdaSources.httpApiMock.handler,
 			architecture: Lambda.Architecture.ARM_64,

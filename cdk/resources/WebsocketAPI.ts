@@ -14,6 +14,7 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { ApiLogging } from './ApiLogging.js'
 import type { DeviceStorage } from './DeviceStorage.js'
+import { LambdaSource } from './LambdaSource.js'
 
 export const integrationUri = (
 	parent: Construct,
@@ -76,7 +77,7 @@ export class WebsocketAPI extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onConnect.zipFile),
+			code: new LambdaSource(this, lambdaSources.onConnect).code,
 			description: 'Registers new clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
@@ -98,7 +99,7 @@ export class WebsocketAPI extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onMessage.zipFile),
+			code: new LambdaSource(this, lambdaSources.onMessage).code,
 			description: 'Handles messages sent by clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
@@ -118,7 +119,7 @@ export class WebsocketAPI extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onDisconnect.zipFile),
+			code: new LambdaSource(this, lambdaSources.onDisconnect).code,
 			description: 'De-registers clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
@@ -141,7 +142,7 @@ export class WebsocketAPI extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(1),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.authorizer.zipFile),
+			code: new LambdaSource(this, lambdaSources.authorizer).code,
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 			environment: {
@@ -294,9 +295,8 @@ export class WebsocketAPI extends Construct {
 				runtime: Lambda.Runtime.NODEJS_18_X,
 				timeout: Duration.minutes(1),
 				memorySize: 1792,
-				code: Lambda.Code.fromAsset(
-					lambdaSources.publishToWebsocketClients.zipFile,
-				),
+				code: new LambdaSource(this, lambdaSources.publishToWebsocketClients)
+					.code,
 				description: 'Publish event to web socket clients',
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
