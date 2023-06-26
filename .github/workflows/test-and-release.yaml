@@ -65,6 +65,7 @@ jobs:
       - name: Fake nRF Cloud account device
         run: |
           ./cli.sh fake-nrfcloud-account-device
+          ./cli.sh create-fake-nrfcloud-health-check-device
 
       - name: Deploy test resources stack
         run: |

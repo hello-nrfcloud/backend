@@ -41,6 +41,9 @@ const packagesInLayer: string[] = [
 	'lodash-es',
 	'@middy/core',
 ]
+
+const healthCheckPackagesInLayer: string[] = ['mqtt', 'ws']
+
 const certsDir = path.join(
 	process.cwd(),
 	'certificates',
@@ -83,6 +86,10 @@ new BackendApp({
 	layer: await packLayer({
 		id: 'baseLayer',
 		dependencies: packagesInLayer,
+	}),
+	healthCheckLayer: await packLayer({
+		id: 'healthCheckLayer',
+		dependencies: healthCheckPackagesInLayer,
 	}),
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,

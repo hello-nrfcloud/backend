@@ -10,4 +10,5 @@ type BackendLambdas = {
 	fetchDeviceShadow: PackedLambda
 	onDeviceMessage: PackedLambda
 	storeMessagesInTimestream: PackedLambda
+	healthCheck: PackedLambda
 }

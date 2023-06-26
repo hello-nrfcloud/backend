@@ -158,6 +158,14 @@ export const apiClient = ({
 				},
 			)
 
+			if (registrationResult.ok !== true) {
+				return {
+					error: new Error(
+						`${registrationResult.statusText} (${registrationResult.status})`,
+					),
+				}
+			}
+
 			const res = await registrationResult.json()
 
 			if ('bulkOpsRequestId' in res)
