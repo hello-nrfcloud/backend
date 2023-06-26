@@ -9,6 +9,7 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
+import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 /**
@@ -39,7 +40,7 @@ export class ConvertDeviceMessages extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onDeviceMessage.zipFile),
+			code: new LambdaSource(this, lambdaSources.onDeviceMessage).code,
 			description: 'Convert device messages and publish them on the EventBus',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),

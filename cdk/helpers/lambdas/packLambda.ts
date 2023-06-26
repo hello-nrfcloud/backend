@@ -2,10 +2,16 @@ import swc from '@swc/core'
 import { createWriteStream } from 'node:fs'
 import { parse } from 'path'
 import yazl from 'yazl'
+import { checkSumOfFiles } from './checksumOfFiles.js'
 import { commonParent } from './commonParent.js'
 import { findDependencies } from './findDependencies.js'
 
-export type PackedLambda = { zipFile: string; handler: string }
+export type PackedLambda = {
+	id: string
+	zipFile: string
+	handler: string
+	hash: string
+}
 
 const removeCommonAncestor =
 	(parentDir: string) =>
@@ -35,7 +41,7 @@ export const packLambda = async ({
 	zipFile: string
 	debug?: (label: string, info: string) => void
 	progress?: (label: string, info: string) => void
-}): Promise<{ handler: string }> => {
+}): Promise<{ handler: string; hash: string }> => {
 	const lambdaFiles = [sourceFile, ...findDependencies(sourceFile)]
 
 	const zipfile = new yazl.ZipFile()
@@ -55,6 +61,8 @@ export const packLambda = async ({
 		zipfile.addBuffer(Buffer.from(compiled, 'utf-8'), jsFileName)
 		progress?.(`added`, jsFileName)
 	}
+
+	const hash = await checkSumOfFiles(lambdaFiles)
 
 	// Mark it as ES module
 	zipfile.addBuffer(
@@ -76,5 +84,5 @@ export const packLambda = async ({
 	})
 	progress?.(`written`, zipFile)
 
-	return { handler: stripCommon(sourceFile) }
+	return { handler: stripCommon(sourceFile), hash }
 }

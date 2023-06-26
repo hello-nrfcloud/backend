@@ -13,6 +13,7 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
+import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 export class DeviceShadow extends Construct {
@@ -74,7 +75,7 @@ export class DeviceShadow extends Construct {
 				runtime: Lambda.Runtime.NODEJS_18_X,
 				timeout: Duration.seconds(5),
 				memorySize: 1792,
-				code: Lambda.Code.fromAsset(lambdaSources.prepareDeviceShadow.zipFile),
+				code: new LambdaSource(this, lambdaSources.prepareDeviceShadow).code,
 				description: 'Generate queue to fetch the shadow data',
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
@@ -96,7 +97,7 @@ export class DeviceShadow extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: processDeviceShadowTimeout,
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.fetchDeviceShadow.zipFile),
+			code: new LambdaSource(this, lambdaSources.fetchDeviceShadow).code,
 			description: `Fetch devices' shadow from nRF Cloud`,
 			environment: {
 				VERSION: this.node.tryGetContext('version'),

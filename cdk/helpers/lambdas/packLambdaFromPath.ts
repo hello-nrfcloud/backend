@@ -16,12 +16,14 @@ export const packLambdaFromPath = async (
 		// Directory exists
 	}
 	const zipFile = path.join(process.cwd(), 'dist', 'lambdas', `${id}.zip`)
-	const { handler } = await packLambda({
+	const { handler, hash } = await packLambda({
 		sourceFile: path.join(baseDir, sourceFile),
 		zipFile,
 	})
 	return {
+		id,
 		zipFile,
 		handler: handler.replace('.js', `.${handlerFunction}`),
+		hash,
 	}
 }
