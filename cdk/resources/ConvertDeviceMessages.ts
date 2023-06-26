@@ -3,12 +3,12 @@ import {
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
+	aws_logs as Logs,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 /**
@@ -50,8 +50,8 @@ export class ConvertDeviceMessages extends Construct {
 				NODE_NO_WARNINGS: '1',
 			},
 			layers,
+			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		new LambdaLogGroup(this, 'onDeviceMessageLogs', onDeviceMessage)
 		websocketAPI.eventBus.grantPutEventsTo(onDeviceMessage)
 		deviceStorage.devicesTable.grantReadData(onDeviceMessage)
 

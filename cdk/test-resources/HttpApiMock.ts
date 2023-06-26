@@ -4,12 +4,12 @@ import {
 	aws_dynamodb as DynamoDB,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
+	aws_logs as Logs,
 	RemovalPolicy,
 	Resource,
 } from 'aws-cdk-lib'
 import type { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
-import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 
 export class HttpApiMock extends Resource {
 	public readonly api: ApiGateway.RestApi
@@ -78,12 +78,10 @@ export class HttpApiMock extends Resource {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 			},
+			logRetention: Logs.RetentionDays.ONE_DAY,
 		})
 		this.responsesTable.grantReadWriteData(lambda)
 		this.requestsTable.grantReadWriteData(lambda)
-
-		// Create the log group here, so we can control the retention
-		new LambdaLogGroup(this, 'LambdaLogGroup', lambda)
 
 		// This is the API Gateway, AWS CDK automatically creates a prod stage and deployment
 		this.api = new ApiGateway.RestApi(this, 'api', {

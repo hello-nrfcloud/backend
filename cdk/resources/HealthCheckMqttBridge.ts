@@ -4,13 +4,13 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
+	aws_logs as Logs,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { type Settings as BridgeSettings } from '../../bridge/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { LambdaLogGroup } from './LambdaLogGroup.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 export type BridgeImageSettings = BridgeSettings
@@ -58,6 +58,7 @@ export class HealthCheckMqttBridge extends Construct {
 			},
 			initialPolicy: [],
 			layers,
+			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
 		const ssmReadPolicy = new IAM.PolicyStatement({
 			effect: IAM.Effect.ALLOW,
@@ -71,6 +72,5 @@ export class HealthCheckMqttBridge extends Construct {
 		healthCheck.addToRolePolicy(ssmReadPolicy)
 		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheck))
 		deviceStorage.devicesTable.grantWriteData(healthCheck)
-		new LambdaLogGroup(this, 'healthCheckLog', healthCheck)
 	}
 }
