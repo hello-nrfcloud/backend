@@ -1,6 +1,7 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
+import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { apiClient } from '../../nrfcloud/apiClient.js'
@@ -44,7 +45,7 @@ export const createHealthCheckDevice = ({
 			chalk.blue(caCertificates.certificate),
 		)
 
-		const deviceId = `health-check`
+		const deviceId = `health-check-${randomUUID()}`
 		console.log(chalk.yellow('Device ID:'), chalk.blue(deviceId))
 
 		// Device private key
@@ -114,7 +115,7 @@ export const createHealthCheckDevice = ({
 				path.join(deviceCertificates.privateKey),
 				'utf-8',
 			),
-			healthCheckClientId: 'health-check',
+			healthCheckClientId: deviceId,
 			healthCheckModel: 'PCA20035+solar',
 			healthCheckFingerPrint: '29a.ch3ckr',
 		}

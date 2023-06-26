@@ -91,22 +91,26 @@ const publishDeviceMessage =
 			key: devicePrivateKey,
 			cert: deviceCert,
 			ca: amazonRootCA1,
+			connectTimeout: 5000,
 		})
 
-		mqttClient.on('connect', () => {
-			const topic = `${nrfCloudSettings.mqttTopicPrefix}m/d/${deviceId}/d2c`
-			log.debug('mqtt publish', { mqttMessage: message, topic })
-			mqttClient.publish(topic, JSON.stringify(message), (error) => {
-				if (error) return reject(error)
-				mqttClient.end()
-				return resolve()
+		mqttClient
+			.on('connect', () => {
+				const topic = `${nrfCloudSettings.mqttTopicPrefix}m/d/${deviceId}/d2c`
+				log.debug('mqtt publish', { mqttMessage: message, topic })
+				mqttClient.publish(topic, JSON.stringify(message), (error) => {
+					if (error !== undefined) return reject(error)
+					mqttClient.end()
+					return resolve()
+				})
 			})
-		})
-
-		mqttClient.on('error', (error) => {
-			log.error(`mqtt error`, { error })
-			reject(error)
-		})
+			.on('error', (error) => {
+				log.error(`mqtt error`, { error })
+				reject(error)
+			})
+			.on('reconnect', () => {
+				log.debug(`mqtt reconnect`)
+			})
 
 		await promise
 	}
