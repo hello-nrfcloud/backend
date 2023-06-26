@@ -5,6 +5,7 @@ import {
 } from '@aws-sdk/client-iot'
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
+import { randomUUID } from 'node:crypto'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import {
 	updateSettings,
@@ -22,6 +23,8 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 }): CommandDefinition => ({
 	command: 'create-fake-nrfcloud-health-check-device',
 	action: async () => {
+		const deviceId = `health-check-${randomUUID()}`
+
 		const fakeTenantParameter = `/${STACK_NAME}/fakeTenant`
 		const tenantId = (
 			await ssm.send(
@@ -62,7 +65,7 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 		const settings: Settings = {
 			healthCheckClientCert: credentials.certificatePem,
 			healthCheckPrivateKey: pk,
-			healthCheckClientId: 'health-check',
+			healthCheckClientId: deviceId,
 			healthCheckModel: 'PCA20035+solar',
 			healthCheckFingerPrint: '29a.ch3ckr',
 		}
