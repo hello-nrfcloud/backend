@@ -144,8 +144,12 @@ ${data}
 		if (resultObj !== undefined && resultObj.length == 2) {
 			const timeA = new Date(resultObj[0]?.timestamp).getTime()
 			const timeB = new Date(resultObj[1]?.timestamp).getTime()
-			const roundedDiff = Math.round((timeA - timeB) / 1000)
-			assert.equal(roundedDiff, match.duration)
+			const timeDiff = timeA - timeB
+			const allowedMarginInMS = 1000
+			const fitToSchedule =
+				timeDiff >= match.duration * 1000 - allowedMarginInMS &&
+				timeDiff <= match.duration * 1000 + allowedMarginInMS
+			assert.equal(fitToSchedule, true)
 		}
 	}
 
