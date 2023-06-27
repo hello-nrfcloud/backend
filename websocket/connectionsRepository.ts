@@ -18,7 +18,7 @@ export type WebsocketDeviceConnection = {
 export type WebsocketDeviceConnectionShadowInfo = WebsocketDeviceConnection & {
 	version?: number
 	count?: number
-	updatedAt?: Date
+	updatedAt?: string
 }
 
 /**

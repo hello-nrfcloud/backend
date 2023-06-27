@@ -12,7 +12,7 @@ import { proto } from '@hello.nrfcloud.com/proto/hello'
 import { getShadowUpdateTime } from '@hello.nrfcloud.com/proto/nrfCloud'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { chunk } from 'lodash-es'
+import { chunk, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
 import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
@@ -90,17 +90,19 @@ const h = async (): Promise<void> => {
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			executionTime,
 		)
-		const devices = connections.filter((connection) => {
+		const devicesToCheckShadowUpdate = connections.filter((connection) => {
 			const shouldUpdate = deviceShadowUpdateChecker({
 				model: connection.model,
-				updatedAt:
-					connection.updatedAt ?? new Date(Date.now() - 60 * 60 * 1000),
+				updatedAt: new Date(
+					connection.updatedAt ?? executionTime.getTime() - 60 * 60 * 1000,
+				),
 				count: connection.count ?? 0,
 			})
 
 			return shouldUpdate
 		})
-		log.info(`Found ${devices.length} devices to get shadow`)
+		log.info(`Found ${devicesToCheckShadowUpdate.length} devices to get shadow`)
+		if (devicesToCheckShadowUpdate.length === 0) return
 
 		const deviceConnectionsMap = connections.reduce(
 			(map, connection) => ({
@@ -116,8 +118,13 @@ const h = async (): Promise<void> => {
 		// Bulk fetching device shadow to avoid rate limit
 		const deviceShadows = (
 			await Promise.all(
-				chunk(Object.keys(deviceConnectionsMap), 50).map(async (devices) =>
-					limit(async () => deviceShadow(devices.map((device) => device))),
+				chunk(
+					uniqBy(devicesToCheckShadowUpdate, (device) => device.deviceId),
+					50,
+				).map(async (devices) =>
+					limit(async () =>
+						deviceShadow(devices.map((device) => device.deviceId)),
+					),
 				),
 			)
 		).flat()
