@@ -39,7 +39,7 @@
     "@aws-sdk/client-iam": "3.360.0",
     "@aws-sdk/client-iot": "3.360.0",
     "@aws-sdk/client-sqs": "3.360.0",
-    "@aws-sdk/client-ssm": "3.360.0",
+    "@aws-sdk/client-ssm": "3.361.0",
     "@aws-sdk/client-sts": "3.360.0",
     "@aws-sdk/client-timestream-write": "3.360.0",
     "@aws-sdk/util-dynamodb": "3.360.0",
