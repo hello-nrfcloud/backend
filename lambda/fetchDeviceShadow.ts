@@ -72,15 +72,16 @@ const deviceShadowPromise = (async () => {
 })()
 
 const h = async (): Promise<void> => {
-	const lockAcquired = await lock.acquiredLock(lockName, lockTTLSeconds)
-	if (lockAcquired === false) {
-		log.info(`Other process is still running, then ignore`)
-		return
-	}
-	const deviceShadow = await deviceShadowPromise
-	const executionTime = new Date()
-
 	try {
+		const lockAcquired = await lock.acquiredLock(lockName, lockTTLSeconds)
+		if (lockAcquired === false) {
+			log.info(`Other process is still running, then ignore`)
+			return
+		}
+
+		const deviceShadow = await deviceShadowPromise
+		const executionTime = new Date()
+
 		const connections = await connectionsRepo.getAll()
 		log.info(`Found ${connections.length} active connections`)
 		metrics.addMetric('connections', MetricUnits.Count, connections.length)
@@ -219,7 +220,7 @@ const h = async (): Promise<void> => {
 			}
 		}
 	} catch (error) {
-		console.error(error)
+		log.error(`fetch device shadow error`, { error })
 	} finally {
 		await lock.releaseLock(lockName)
 	}
