@@ -2,7 +2,9 @@ import type { BackendLambdas } from './BackendLambdas.js'
 import { packLambdaFromPath } from './helpers/lambdas/packLambdaFromPath.js'
 
 export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
+	authorizer: await packLambdaFromPath('authorizer', 'lambda/authorizer.ts'),
 	onConnect: await packLambdaFromPath('onConnect', 'lambda/onConnect.ts'),
+	onMessage: await packLambdaFromPath('onMessage', 'lambda/onMessage.ts'),
 	onDisconnect: await packLambdaFromPath(
 		'onDisconnect',
 		'lambda/onDisconnect.ts',
@@ -23,12 +25,9 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'onDeviceMessage',
 		'lambda/onDeviceMessage.ts',
 	),
-	onWebsocketConnectOrDisconnect: await packLambdaFromPath(
-		'onWebsocketConnectOrDisconnect',
-		'lambda/onWebsocketConnectOrDisconnect.ts',
-	),
 	storeMessagesInTimestream: await packLambdaFromPath(
 		'storeMessagesInTimestream',
 		'lambda/storeMessagesInTimestream.ts',
 	),
+	healthCheck: await packLambdaFromPath('healthCheck', 'lambda/healthCheck.ts'),
 })

@@ -16,12 +16,12 @@ import { chunk } from 'lodash-es'
 import pLimit from 'p-limit'
 import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
+import {
+	connectionsRepository,
+	type WebsocketDeviceConnectionShadowInfo,
+} from '../websocket/connectionsRepository.js'
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
-import {
-	websocketDeviceConnectionsRepository,
-	type WebsocketDeviceConnection,
-} from '../websocket/websocketDeviceConnectionsRepository.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
 import { logger } from './util/logger.js'
@@ -33,15 +33,12 @@ const metrics = new Metrics({
 
 const {
 	websocketDeviceConnectionsTableName,
-	websocketDeviceConnectionsTableIndexName,
 	lockTableName,
 	eventBusName,
 	stackName,
 } = fromEnv({
 	stackName: 'STACK_NAME',
 	websocketDeviceConnectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
-	websocketDeviceConnectionsTableIndexName:
-		'WEBSOCKET_CONNECTIONS_TABLE_INDEX_NAME',
 	lockTableName: 'LOCK_TABLE_NAME',
 	eventBusName: 'EVENTBUS_NAME',
 })(process.env)
@@ -51,15 +48,14 @@ const db = new DynamoDBClient({})
 const log = logger('fetchDeviceShadow')
 
 const lockName = 'fetch-shadow'
-const lockTTLSeconds = 30
+const lockTTLSeconds = 5
 const lock = createLock(db, lockTableName)
 
 const eventBus = new EventBridgeClient({})
 
-const connectionsRepo = websocketDeviceConnectionsRepository(
+const connectionsRepo = connectionsRepository(
 	db,
 	websocketDeviceConnectionsTableName,
-	websocketDeviceConnectionsTableIndexName,
 )
 const deviceShadowPromise = (async () => {
 	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
@@ -97,7 +93,8 @@ const h = async (): Promise<void> => {
 		const devices = connections.filter((connection) => {
 			const shouldUpdate = deviceShadowUpdateChecker({
 				model: connection.model,
-				updatedAt: connection.updatedAt,
+				updatedAt:
+					connection.updatedAt ?? new Date(Date.now() - 60 * 60 * 1000),
 				count: connection.count ?? 0,
 			})
 
@@ -107,21 +104,20 @@ const h = async (): Promise<void> => {
 
 		const deviceConnectionsMap = connections.reduce(
 			(map, connection) => ({
+				...map,
 				[connection.deviceId]: [
 					...(map[connection.deviceId] ?? []),
 					connection,
 				],
 			}),
-			{} as Record<string, WebsocketDeviceConnection[]>,
+			{} as Record<string, WebsocketDeviceConnectionShadowInfo[]>,
 		)
 
 		// Bulk fetching device shadow to avoid rate limit
 		const deviceShadows = (
 			await Promise.all(
-				chunk(devices, 50).map(async (devices) =>
-					limit(async () =>
-						deviceShadow(devices.map((device) => device.deviceId)),
-					),
+				chunk(Object.keys(deviceConnectionsMap), 50).map(async (devices) =>
+					limit(async () => deviceShadow(devices.map((device) => device))),
 				),
 			)
 		).flat()
@@ -145,7 +141,6 @@ const h = async (): Promise<void> => {
 				)
 
 				const isUpdated = await connectionsRepo.updateDeviceVersion(
-					d.deviceId,
 					d.connectionId,
 					deviceShadow.state.version,
 					executionTime,
@@ -216,6 +211,8 @@ const h = async (): Promise<void> => {
 				)
 			}
 		}
+	} catch (error) {
+		console.error(error)
 	} finally {
 		await lock.releaseLock(lockName)
 	}

@@ -15,6 +15,7 @@ env:
   STACK_NAME: ${{ vars.STACK_NAME }}
   AWS_REGION: ${{ vars.AWS_REGION }}
   FORCE_COLOR: 3
+  JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: 1
 
 jobs:
   deploy:
@@ -27,7 +28,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
+          node-version: "20.x"
 
       - name: Keep npm cache around to speed up installs
         uses: actions/cache@v3

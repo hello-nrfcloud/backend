@@ -3,21 +3,28 @@ import { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { IoTClient } from '@aws-sdk/client-iot'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { STSClient } from '@aws-sdk/client-sts'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
 import { program } from 'commander'
+import { env } from '../cdk/helpers/env.js'
 import type { StackOutputs } from '../cdk/stacks/BackendStack.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition'
 import { configureDeviceCommand } from './commands/configure-device.js'
 import { configureCommand } from './commands/configure.js'
-import { createFakeNrfCloudAccountDeviceCredentials } from './commands/createFakeNrfCloudAccountDeviceCredentials.js'
+import { createFakeNrfCloudAccountDeviceCredentials } from './commands/create-fake-nrfcloud-account-device-credentials.js'
+import { createFakeNrfCloudHealthCheckDevice } from './commands/create-fake-nrfcloud-health-check-device.js'
+import { createHealthCheckDevice } from './commands/create-health-check-device.js'
+import { importDevicesCommand } from './commands/import-devices.js'
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 import { logsCommand } from './commands/logs.js'
+import { provisionDkCommand } from './commands/provision-dk.js'
 import { registerDeviceCommand } from './commands/register-device.js'
 import { registerSimulatorDeviceCommand } from './commands/register-simulator-device.js'
 import { showDeviceCommand } from './commands/show-device.js'
+import { showFingerprintCommand } from './commands/show-fingerprint.js'
 import { simulateDeviceCommand } from './commands/simulate-device.js'
 
 const ssm = new SSMClient({})
@@ -25,6 +32,9 @@ const iot = new IoTClient({})
 const db = new DynamoDBClient({})
 const cf = new CloudFormationClient({})
 const logs = new CloudWatchLogsClient({})
+const sts = new STSClient({})
+
+const accountEnv = await env({ sts })
 
 const die = (err: Error, origin: any) => {
 	console.error(`An unhandled exception occurred!`)
@@ -58,12 +68,25 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				ssm,
 			}),
 		)
+		commands.push(
+			createFakeNrfCloudHealthCheckDevice({
+				iot,
+				ssm,
+			}),
+		)
 	} else {
 		commands.push(
 			initializeNRFCloudAccountCommand({
 				ssm,
 				iot,
 				stackName: STACK_NAME,
+			}),
+		)
+		commands.push(
+			createHealthCheckDevice({
+				ssm,
+				stackName: STACK_NAME,
+				env: accountEnv,
 			}),
 		)
 		try {
@@ -94,10 +117,29 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					devicesTableName: outputs.devicesTableName,
 					ssm,
 					stackName: STACK_NAME,
+					env: accountEnv,
 				}),
 				simulateDeviceCommand({
 					ssm,
 					stackName: STACK_NAME,
+					db,
+					devicesTableName: outputs.devicesTableName,
+					env: accountEnv,
+				}),
+				importDevicesCommand({
+					db,
+					devicesTableName: outputs.devicesTableName,
+					ssm,
+					stackName: STACK_NAME,
+				}),
+				provisionDkCommand({
+					db,
+					devicesTableName: outputs.devicesTableName,
+					ssm,
+					stackName: STACK_NAME,
+					env: accountEnv,
+				}),
+				showFingerprintCommand({
 					db,
 					devicesTableName: outputs.devicesTableName,
 				}),

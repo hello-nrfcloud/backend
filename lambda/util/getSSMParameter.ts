@@ -7,10 +7,11 @@ import { settingsPath } from '../../util/settings.js'
 export const getSSMParameter = async (
 	args: Parameters<typeof settingsPath>[0],
 ): Promise<string | undefined> => {
+	const name = settingsPath(args)
 	const url = `http://localhost:${
 		process.env.PARAMETERS_SECRETS_EXTENSION_HTTP_PORT ?? '2773'
 	}/systemsmanager/parameters/get/?${new URLSearchParams({
-		name: settingsPath(args),
+		name,
 	}).toString()}`
 
 	console.log(
@@ -18,37 +19,29 @@ export const getSSMParameter = async (
 			url,
 		}),
 	)
-	return fetch(url, {
-		headers: {
-			'X-Aws-Parameters-Secrets-Token': process.env.AWS_SESSION_TOKEN ?? '',
-		},
-	})
-		.then<{
-			Parameter: {
-				Value: string
-			}
-		}>(async (res) => {
-			console.log(
-				JSON.stringify({
-					res: {
-						status: res.status,
-					},
-				}),
-			)
-			return res.json()
+	try {
+		const res = await fetch(url, {
+			headers: {
+				'X-Aws-Parameters-Secrets-Token': process.env.AWS_SESSION_TOKEN ?? '',
+			},
 		})
-		.then(async (payload) => {
-			console.log(
-				JSON.stringify({
-					payload,
-				}),
+
+		if (!res.ok) {
+			console.error(
+				`Fetching SSM Parameter ${name} failed: ${await res.text()}`,
 			)
-			return payload.Parameter.Value
-		})
-		.catch((err) => {
-			console.error(err)
 			return undefined
-		})
+		}
+
+		const {
+			Parameter: { Value },
+		} = await res.json()
+
+		return Value
+	} catch (err) {
+		console.error(err)
+		return undefined
+	}
 }
 
 export const getNRFCloudSSMParameters = async (

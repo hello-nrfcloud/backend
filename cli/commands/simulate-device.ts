@@ -1,6 +1,7 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import type { ipShadow } from '@hello.nrfcloud.com/proto/nrfCloud/types/types.js'
+import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
 import { merge } from 'lodash-es'
 import mqtt, { MqttClient } from 'mqtt'
@@ -11,6 +12,10 @@ import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { version } from '../../package.json'
+import {
+	deviceCertificateLocations,
+	ensureCertificateDir,
+} from '../certificates.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const simulateDeviceCommand = ({
@@ -18,12 +23,13 @@ export const simulateDeviceCommand = ({
 	stackName,
 	db,
 	devicesTableName,
+	env,
 }: {
 	ssm: SSMClient
 	stackName: string
-
 	db: DynamoDBClient
 	devicesTableName: string
+	env: Required<Environment>
 }): CommandDefinition => ({
 	command: 'simulate-device <deviceId>',
 	action: async (deviceId) => {
@@ -59,22 +65,18 @@ export const simulateDeviceCommand = ({
 			chalk.blue(accountInfo.account.mqttEndpoint),
 		)
 
+		const dir = ensureCertificateDir(env)
+		const {
+			privateKey: devicePrivateKeyLocation,
+			signedCert: deviceCertificateLocation,
+		} = deviceCertificateLocations(dir, deviceId)
+
 		// Device private key
-		const devicePrivateKeyLocation = path.join(
-			process.cwd(),
-			'certificates',
-			`${deviceId}.key`,
-		)
 		console.log(
 			chalk.yellow('Private key:'),
 			chalk.blue(devicePrivateKeyLocation),
 		)
 		// Device certificate
-		const deviceCertificateLocation = path.join(
-			process.cwd(),
-			'certificates',
-			`${deviceId}.signed.pem`,
-		)
 		console.log(
 			chalk.yellow('Signed certificate:'),
 			chalk.blue(deviceCertificateLocation),
@@ -143,6 +145,8 @@ export const simulateDeviceCommand = ({
 				reject(err)
 			})
 
+			mqttClient.subscribe(`$aws/things/${deviceId}/shadow/update/rejected`)
+
 			const deltaTopic = `$aws/things/${deviceId}/shadow/update/delta`
 			mqttClient.subscribe(deltaTopic)
 			mqttClient.on('message', (topic, payload) => {
@@ -202,21 +206,43 @@ export const simulateDeviceCommand = ({
 					ueMode: 2,
 					cellID: 84187657,
 					networkMode: 'LTE-M',
-					eest: 8,
+					eest: 5 + Math.floor(Math.random() * 5),
 				},
 			},
 		}
 
+		const shadowUpdateTopic = `$aws/things/${deviceId}/shadow/update`
+
 		connection.onDelta((message) => {
 			reported = merge(reported, message)
-			connection.publish(`$aws/things/${deviceId}/shadow/update`, {
+			connection.publish(shadowUpdateTopic, {
 				state: { reported },
 			})
 		})
 
-		connection.publish(`$aws/things/${deviceId}/shadow/update`, {
+		connection.publish(shadowUpdateTopic, {
 			state: { reported },
 		})
+
+		const eestReadings = dataGenerator({
+			min: 5,
+			max: 9,
+			step: 1,
+		})
+		setInterval(() => {
+			reported.device.networkInfo.eest = eestReadings.next().value
+			connection.publish(shadowUpdateTopic, {
+				state: {
+					reported: {
+						device: {
+							networkInfo: {
+								eest: reported.device.networkInfo.eest,
+							},
+						},
+					},
+				},
+			})
+		}, 60 * 1000)
 
 		// Publish location
 		connection.publish(
@@ -269,19 +295,19 @@ export const simulateDeviceCommand = ({
 		// Publish sensor readings
 
 		const batteryReadings = dataGenerator({
-			min: 4000,
-			max: 5000,
-			step: 10,
+			min: 0,
+			max: 100,
+			step: 1,
 		})
 
-		const publishTemp = () => {
+		const publishBattery = () => {
 			connection.publish(
 				`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
 				{
-					appId: 'VOLTAGE',
+					appId: 'BATTERY',
 					messageType: 'DATA',
 					ts: Date.now(),
-					data: batteryReadings.next().value.toString(),
+					data: batteryReadings.next().value.toFixed(0),
 				},
 			)
 		}
@@ -304,9 +330,9 @@ export const simulateDeviceCommand = ({
 			)
 		}
 
-		publishTemp()
+		publishBattery()
 		publishGain()
-		setInterval(publishTemp, 10 * 1000)
+		setInterval(publishBattery, 10 * 1000)
 		setInterval(publishGain, 10 * 1000)
 	},
 	help: 'Simulates a device',
@@ -321,13 +347,15 @@ function* dataGenerator({
 	max: number
 	step: number
 }): Generator<number> {
-	let v = min
+	const delta = max - min
+	let segment = 0
+	const maxSegment = delta / step
 	while (true) {
-		yield v
-		v += step
-		if (v >= max || v <= min) {
-			step = -step
-		}
+		yield min +
+			Math.sin((segment / maxSegment) * Math.PI * 2) * (delta / 2) +
+			delta / 2
+
+		segment = ++segment % maxSegment
 	}
 }
 

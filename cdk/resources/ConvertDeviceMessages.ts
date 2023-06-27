@@ -3,12 +3,13 @@ import {
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
+	aws_logs as Logs,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { LambdaLogGroup } from './LambdaLogGroup.js'
+import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 /**
@@ -39,7 +40,7 @@ export class ConvertDeviceMessages extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.onDeviceMessage.zipFile),
+			code: new LambdaSource(this, lambdaSources.onDeviceMessage).code,
 			description: 'Convert device messages and publish them on the EventBus',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
@@ -50,8 +51,8 @@ export class ConvertDeviceMessages extends Construct {
 				NODE_NO_WARNINGS: '1',
 			},
 			layers,
+			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		new LambdaLogGroup(this, 'onDeviceMessageLogs', onDeviceMessage)
 		websocketAPI.eventBus.grantPutEventsTo(onDeviceMessage)
 		deviceStorage.devicesTable.grantReadData(onDeviceMessage)
 

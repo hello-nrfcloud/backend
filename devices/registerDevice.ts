@@ -27,7 +27,8 @@ export const registerDevice =
 						fingerprint,
 						model,
 					}),
-					ConditionExpression: 'attribute_not_exists(deviceId)',
+					ConditionExpression:
+						'attribute_not_exists(deviceId) and attribute_not_exists(fingerprint)',
 				}),
 			)
 			return { success: true }

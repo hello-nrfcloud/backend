@@ -17,6 +17,8 @@ with the fingerprint `2a.c4ff33`
 
 Given I connect websocket with fingerprint `2a.c4ff33`
 
+And I store `$millis()` into `ts`
+
 When a device with id `nrf-test-device-id` publishes to topic
 `m/d/nrf-test-device-id/d2c` with a message as this JSON
 
@@ -24,7 +26,7 @@ When a device with id `nrf-test-device-id` publishes to topic
 {
   "appId": "SOLAR",
   "messageType": "DATA",
-  "ts": 1681985624779,
+  "ts": ${ts},
   "data": "3.123456"
 }
 ```
@@ -34,7 +36,7 @@ Then the response should equal to this JSON
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain",
-  "ts": 1681985624779,
+  "ts": ${ts},
   "mA": 3.123456
 }
 ```

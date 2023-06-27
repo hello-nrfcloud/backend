@@ -44,6 +44,7 @@ const tenantId = randomUUID()
 export type World = {
 	websocketUri: string
 	devicesTable: string
+	devicesTableFingerprintIndexName: string
 	historicalDataTableInfo: string
 	wsClient?: WebSocketClient
 	tenantId: string
@@ -104,7 +105,7 @@ cleaners.push(websocketCleanup)
 
 runner
 	.addStepRunners(...webSocketSteps)
-	.addStepRunners(...deviceSteps(accountDeviceSettings))
+	.addStepRunners(...deviceSteps(accountDeviceSettings, db))
 	.addStepRunners(...mocknRFCloudSteps({ db }))
 	.addStepRunners(...historicalSteps({ timestream }))
 	.addStepRunners(...storageSteps())
@@ -113,6 +114,7 @@ runner
 const res = await runner.run({
 	websocketUri: config.webSocketURI,
 	devicesTable: config.devicesTableName,
+	devicesTableFingerprintIndexName: config.devicesTableFingerprintIndexName,
 	tenantId,
 	responsesTableName: testConfig.responsesTableName,
 	requestsTableName: testConfig.requestsTableName,

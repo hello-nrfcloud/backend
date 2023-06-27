@@ -13,12 +13,14 @@ import { ContinuousDeployment } from '../resources/ContinuousDeployment.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
 import { DeviceShadow } from '../resources/DeviceShadow.js'
 import { DeviceStorage } from '../resources/DeviceStorage.js'
+import { HealthCheckMqttBridge } from '../resources/HealthCheckMqttBridge.js'
 import { HistoricalData } from '../resources/HistoricalData.js'
 import {
 	Integration,
 	type BridgeImageSettings,
 } from '../resources/Integration.js'
 import { parameterStoreLayerARN } from '../resources/LambdaExtensionLayers.js'
+import { LambdaSource } from '../resources/LambdaSource.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { STACK_NAME } from './stackConfig.js'
 
@@ -28,6 +30,7 @@ export class BackendStack extends Stack {
 		{
 			lambdaSources,
 			layer,
+			healthCheckLayer,
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
@@ -38,6 +41,7 @@ export class BackendStack extends Stack {
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
+			healthCheckLayer: PackedLayer
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
@@ -55,7 +59,11 @@ export class BackendStack extends Stack {
 		})
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
-			code: Lambda.Code.fromAsset(layer.layerZipFile),
+			code: new LambdaSource(this, {
+				id: 'baseLayer',
+				zipFile: layer.layerZipFile,
+				hash: layer.hash,
+			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
 			compatibleRuntimes: [Lambda.Runtime.NODEJS_18_X],
 		})
@@ -72,6 +80,15 @@ export class BackendStack extends Stack {
 				'parameterStoreExtensionLayer',
 				parameterStoreLayerARN[Stack.of(this).region] as string,
 			)
+		const healthCheckLayerVersion = new Lambda.LayerVersion(
+			this,
+			'healthCheckLayer',
+			{
+				code: Lambda.Code.fromAsset(healthCheckLayer.layerZipFile),
+				compatibleArchitectures: [Lambda.Architecture.ARM_64],
+				compatibleRuntimes: [Lambda.Runtime.NODEJS_18_X],
+			},
+		)
 
 		const lambdaLayers: Lambda.ILayerVersion[] = [
 			baseLayer,
@@ -98,6 +115,13 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
+		})
+
+		new HealthCheckMqttBridge(this, {
+			websocketAPI,
+			deviceStorage,
+			layers: [...lambdaLayers, healthCheckLayerVersion],
+			lambdaSources,
 		})
 
 		new ConvertDeviceMessages(this, {

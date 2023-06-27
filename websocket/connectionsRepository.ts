@@ -1,44 +1,71 @@
 import {
 	AttributeValue,
 	ConditionalCheckFailedException,
-	QueryCommand,
+	PutItemCommand,
 	ScanCommand,
 	UpdateItemCommand,
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
-import type { PersistedDeviceSubscription } from '../lambda/onWebsocketConnectOrDisconnect'
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 
 export type WebsocketDeviceConnection = {
 	deviceId: string
 	connectionId: string
 	model: string
+	ttl: number
+}
+
+export type WebsocketDeviceConnectionShadowInfo = WebsocketDeviceConnection & {
 	version?: number
 	count?: number
-	updatedAt: Date
+	updatedAt?: Date
 }
 
 /**
  * Stores websocket connections listening for device messages
  */
-export const websocketDeviceConnectionsRepository: (
+export const connectionsRepository: (
 	db: DynamoDBClient,
 	tableName: string,
-	indexName: string,
 ) => {
-	getAll: () => Promise<WebsocketDeviceConnection[]>
-	getWillUpdatedDevice: (
-		threshold: Date,
-	) => Promise<WebsocketDeviceConnection[]>
+	add: (connection: WebsocketDeviceConnection) => Promise<void>
+	extendTTL: (connectionId: string) => Promise<void>
+	getAll: () => Promise<WebsocketDeviceConnectionShadowInfo[]>
 	updateDeviceVersion: (
-		deviceId: string,
 		connectionId: string,
 		version: number,
 		executionTime: Date,
 	) => Promise<boolean>
-} = (db: DynamoDBClient, tableName: string, indexName: string) => {
-	const getAll = async () => {
-		const devices: WebsocketDeviceConnection[] = []
+} = (db: DynamoDBClient, tableName: string) => ({
+	add: async (connection) => {
+		await db.send(
+			new PutItemCommand({
+				TableName: tableName,
+				Item: marshall(connection),
+			}),
+		)
+	},
+	extendTTL: async (connectionId) => {
+		await db.send(
+			new UpdateItemCommand({
+				TableName: tableName,
+				Key: {
+					connectionId: {
+						S: connectionId,
+					},
+				},
+				UpdateExpression: 'SET #ttl = :ttl',
+				ExpressionAttributeNames: {
+					'#ttl': 'ttl',
+				},
+				ExpressionAttributeValues: {
+					':ttl': { N: `${Math.round(Date.now() / 1000) + 5 * 60}` },
+				},
+			}),
+		)
+	},
+	getAll: async () => {
+		const connections: WebsocketDeviceConnectionShadowInfo[] = []
 		let lastKey: Record<string, AttributeValue> | undefined = undefined
 
 		do {
@@ -52,69 +79,30 @@ export const websocketDeviceConnectionsRepository: (
 				new ScanCommand({
 					TableName: tableName,
 					ExclusiveStartKey: lastKey,
-				}),
-			)
-
-			for (const item of Items ?? []) {
-				const device = unmarshall(item) as PersistedDeviceSubscription
-				devices.push({
-					...device,
-					updatedAt: new Date(device.updatedAt),
-				})
-			}
-
-			lastKey = LastEvaluatedKey
-		} while (lastKey !== undefined)
-
-		return devices
-	}
-
-	const getWillUpdatedDevice = async (threshold: Date) => {
-		const staticKey = 'Muninn'
-		const devices: WebsocketDeviceConnection[] = []
-		let lastKey: Record<string, AttributeValue> | undefined = undefined
-
-		do {
-			const {
-				Items,
-				LastEvaluatedKey,
-			}: {
-				Items?: Record<string, AttributeValue>[]
-				LastEvaluatedKey?: Record<string, AttributeValue>
-			} = await db.send(
-				new QueryCommand({
-					TableName: tableName,
-					IndexName: indexName,
-					KeyConditionExpression:
-						'#staticKey = :staticKey AND #updatedAt <= :updatedAt',
+					FilterExpression: '#ttl > :now',
 					ExpressionAttributeNames: {
-						'#staticKey': 'staticKey',
-						'#updatedAt': 'updatedAt',
+						'#ttl': 'ttl',
 					},
 					ExpressionAttributeValues: {
-						':staticKey': { S: staticKey },
-						':updatedAt': { S: threshold.toISOString() },
+						':now': {
+							N: Math.floor(Date.now() / 1000).toString(),
+						},
 					},
-					ExclusiveStartKey: lastKey,
 				}),
 			)
 
-			for (const item of Items ?? []) {
-				const device = unmarshall(item) as PersistedDeviceSubscription
-				devices.push({
-					...device,
-					updatedAt: new Date(device.updatedAt),
-				})
-			}
+			connections.push(
+				...((Items ?? []).map((item) =>
+					unmarshall(item),
+				) as WebsocketDeviceConnectionShadowInfo[]),
+			)
 
 			lastKey = LastEvaluatedKey
 		} while (lastKey !== undefined)
 
-		return devices
-	}
-
-	const updateDeviceVersion = async (
-		deviceId: string,
+		return connections
+	},
+	updateDeviceVersion: async (
 		connectionId: string,
 		version: number,
 		executionTime: Date,
@@ -124,7 +112,6 @@ export const websocketDeviceConnectionsRepository: (
 				new UpdateItemCommand({
 					TableName: tableName,
 					Key: {
-						deviceId: { S: deviceId },
 						connectionId: { S: connectionId },
 					},
 					UpdateExpression:
@@ -153,11 +140,5 @@ export const websocketDeviceConnectionsRepository: (
 
 			throw error
 		}
-	}
-
-	return {
-		getAll,
-		getWillUpdatedDevice,
-		updateDeviceVersion,
-	}
-}
+	},
+})

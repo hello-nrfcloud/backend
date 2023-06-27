@@ -4,12 +4,13 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
+	aws_logs as Logs,
 	RemovalPolicy,
 	aws_timestream as Timestream,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
-import { LambdaLogGroup } from './LambdaLogGroup.js'
+import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 /**
@@ -57,9 +58,8 @@ export class HistoricalData extends Construct {
 				runtime: Lambda.Runtime.NODEJS_18_X,
 				timeout: Duration.seconds(5),
 				memorySize: 1792,
-				code: Lambda.Code.fromAsset(
-					lambdaSources.storeMessagesInTimestream.zipFile,
-				),
+				code: new LambdaSource(this, lambdaSources.storeMessagesInTimestream)
+					.code,
 				description: 'Save converted messages into Timestream database',
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
@@ -78,12 +78,8 @@ export class HistoricalData extends Construct {
 						resources: ['*'],
 					}),
 				],
+				logRetention: Logs.RetentionDays.ONE_WEEK,
 			},
-		)
-		new LambdaLogGroup(
-			this,
-			'storeMessagesInTimestreamLogs',
-			storeMessagesInTimestream,
 		)
 		new Events.Rule(this, 'messagesRule', {
 			eventPattern: {
