@@ -9,12 +9,12 @@ export const createLock: (
 	db: DynamoDBClient,
 	tableName: string,
 ) => {
-	acquiredLock: (name: string, ttl: number) => Promise<boolean>
+	acquiredLock: (name: string, ttlSeconds: number) => Promise<boolean>
 	releaseLock: (name: string) => Promise<void>
 } = (db: DynamoDBClient, tableName: string) => {
-	const acquiredLock = async (name: string, ttl: number) => {
-		const currentTime = Date.now()
-		const timeToLive = currentTime + ttl
+	const acquiredLock = async (name: string, ttlSeconds: number) => {
+		const currentTime = Math.floor(Date.now() / 1000)
+		const timeToLive = currentTime + ttlSeconds
 
 		try {
 			await db.send(
@@ -25,7 +25,15 @@ export const createLock: (
 						ownerId: { S: process.pid.toString() },
 						ttl: { N: timeToLive.toString() },
 					},
-					ConditionExpression: 'attribute_not_exists(lockName)',
+					ExpressionAttributeNames: {
+						'#ttlName': 'ttl',
+						'#lockName': 'lockName',
+					},
+					ExpressionAttributeValues: {
+						':currentTime': { N: currentTime.toString() },
+					},
+					ConditionExpression:
+						'attribute_not_exists(#lockName) OR #ttlName < :currentTime',
 				}),
 			)
 
