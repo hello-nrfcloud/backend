@@ -97,9 +97,18 @@ const h = async (): Promise<void> => {
 		const deviceShadows = (
 			await Promise.all(
 				chunk(connections, 50).map(async (devices) =>
-					limit(async () =>
-						deviceShadow(devices.map((device) => device.deviceId)),
-					),
+					limit(async () => {
+						const start = Date.now()
+						const res = await deviceShadow(
+							devices.map((device) => device.deviceId),
+						)
+						metrics.addMetric(
+							'apiResponseTime',
+							MetricUnits.Milliseconds,
+							Date.now() - start,
+						)
+						return res
+					}),
 				),
 			)
 		).flat()
