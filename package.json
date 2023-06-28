@@ -80,7 +80,7 @@
     "prettier": "2.8.8",
     "semver": "7.5.3",
     "tsx": "3.12.7",
-    "typescript": "5.1.5",
+    "typescript": "5.1.6",
     "ws": "8.13.0",
     "yazl": "2.5.1"
   },
