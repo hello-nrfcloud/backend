@@ -25,6 +25,7 @@ import { registerDeviceCommand } from './commands/register-device.js'
 import { registerSimulatorDeviceCommand } from './commands/register-simulator-device.js'
 import { showDeviceCommand } from './commands/show-device.js'
 import { showFingerprintCommand } from './commands/show-fingerprint.js'
+import { showNRFCloudAccount } from './commands/show-nrfcloud-account.js'
 import { simulateDeviceCommand } from './commands/simulate-device.js'
 
 const ssm = new SSMClient({})
@@ -142,6 +143,10 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				showFingerprintCommand({
 					db,
 					devicesTableName: outputs.devicesTableName,
+				}),
+				showNRFCloudAccount({
+					ssm,
+					stackName: STACK_NAME,
 				}),
 			)
 		} catch (error) {
