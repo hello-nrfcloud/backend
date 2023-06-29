@@ -82,6 +82,8 @@ export class DeviceShadow extends Construct {
 					QUEUE_URL: shadowQueue.queueUrl,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					NODE_NO_WARNINGS: '1',
+					DISABLE_METRICS:
+						this.node.tryGetContext('isTest') === true ? '1' : '0',
 				},
 				initialPolicy: [],
 				layers,
@@ -108,6 +110,7 @@ export class DeviceShadow extends Construct {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
 				NODE_NO_WARNINGS: '1',
+				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({

@@ -55,6 +55,7 @@ export class HealthCheckMqttBridge extends Construct {
 				STACK_NAME: Stack.of(this).stackName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				WEBSOCKET_URL: websocketAPI.websocketURI,
+				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			initialPolicy: [],
 			layers,
