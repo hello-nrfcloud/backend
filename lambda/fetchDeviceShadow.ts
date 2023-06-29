@@ -12,7 +12,7 @@ import { proto } from '@hello.nrfcloud.com/proto/hello'
 import { getShadowUpdateTime } from '@hello.nrfcloud.com/proto/nrfCloud'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { chunk } from 'lodash-es'
+import { chunk, once } from 'lodash-es'
 import pLimit from 'p-limit'
 import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
 import { defaultApiEndpoint } from '../nrfcloud/settings.js'
@@ -56,7 +56,7 @@ const connectionsRepo = connectionsRepository(
 	db,
 	websocketDeviceConnectionsTableName,
 )
-const deviceShadowPromise = (async () => {
+const deviceShadowPromise = once(async () => {
 	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
 		'apiKey',
 		'apiEndpoint',
@@ -68,17 +68,17 @@ const deviceShadowPromise = (async () => {
 			apiEndpoint !== undefined ? new URL(apiEndpoint) : defaultApiEndpoint,
 		apiKey,
 	})
-})()
+})
 
 const h = async (): Promise<void> => {
-	const deviceShadow = await deviceShadowPromise
-	const lockAcquired = await lock.acquiredLock(lockName, lockTTLSeconds)
-	if (lockAcquired === false) {
-		log.info(`Other process is still running, then ignore`)
-		return
-	}
-
 	try {
+		const lockAcquired = await lock.acquiredLock(lockName, lockTTLSeconds)
+		if (lockAcquired === false) {
+			log.info(`Other process is still running, then ignore`)
+			return
+		}
+
+		const deviceShadow = await deviceShadowPromise()
 		const connections = await connectionsRepo.getAll()
 		log.info(`Found ${connections.length} active connections`)
 		metrics.addMetric('connections', MetricUnits.Count, connections.length)
