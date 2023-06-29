@@ -47,7 +47,7 @@ const db = new DynamoDBClient({})
 const log = logger('fetchDeviceShadow')
 
 const lockName = 'fetch-shadow'
-const lockTTL = 30
+const lockTTLSeconds = 5
 const lock = createLock(db, lockTableName)
 
 const eventBus = new EventBridgeClient({})
@@ -72,7 +72,7 @@ const deviceShadowPromise = once(async () => {
 
 const h = async (): Promise<void> => {
 	try {
-		const lockAcquired = await lock.acquiredLock(lockName, lockTTL)
+		const lockAcquired = await lock.acquiredLock(lockName, lockTTLSeconds)
 		if (lockAcquired === false) {
 			log.info(`Other process is still running, then ignore`)
 			return
@@ -97,9 +97,18 @@ const h = async (): Promise<void> => {
 		const deviceShadows = (
 			await Promise.all(
 				chunk(connections, 50).map(async (devices) =>
-					limit(async () =>
-						deviceShadow(devices.map((device) => device.deviceId)),
-					),
+					limit(async () => {
+						const start = Date.now()
+						const res = await deviceShadow(
+							devices.map((device) => device.deviceId),
+						)
+						metrics.addMetric(
+							'apiResponseTime',
+							MetricUnits.Milliseconds,
+							Date.now() - start,
+						)
+						return res
+					}),
 				),
 			)
 		).flat()
