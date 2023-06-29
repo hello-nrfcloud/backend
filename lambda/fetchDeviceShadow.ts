@@ -14,15 +14,13 @@ import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, once } from 'lodash-es'
 import pLimit from 'p-limit'
-import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
-import { defaultApiEndpoint } from '../nrfcloud/settings.js'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
 } from '../websocket/connectionsRepository.js'
 import { createLock } from '../websocket/lock.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
+import { configureDeviceShadowFetcher } from './shadow/configureDeviceShadowFetcher.js'
 import { logger } from './util/logger.js'
 
 const metrics = new Metrics({
@@ -56,19 +54,9 @@ const connectionsRepo = connectionsRepository(
 	db,
 	websocketDeviceConnectionsTableName,
 )
-const deviceShadowPromise = once(async () => {
-	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
-		'apiKey',
-		'apiEndpoint',
-	])
-	if (apiKey === undefined)
-		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
-	return deviceShadowFetcher({
-		endpoint:
-			apiEndpoint !== undefined ? new URL(apiEndpoint) : defaultApiEndpoint,
-		apiKey,
-	})
-})
+
+// Make sure to call it in the handler, so the AWS Parameters and Secrets Lambda Extension is ready.
+const getShadowFetcher = once(configureDeviceShadowFetcher({ stackName }))
 
 const h = async (): Promise<void> => {
 	try {
@@ -78,7 +66,7 @@ const h = async (): Promise<void> => {
 			return
 		}
 
-		const deviceShadow = await deviceShadowPromise()
+		const deviceShadow = await getShadowFetcher()
 		const connections = await connectionsRepo.getAll()
 		log.info(`Found ${connections.length} active connections`)
 		metrics.addMetric('connections', MetricUnits.Count, connections.length)
