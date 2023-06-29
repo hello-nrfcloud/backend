@@ -5,11 +5,11 @@
 ## Background
 
 Given a `PCA20035+solar` device with the ID `nrf-historical-device-id` is
-registered with the fingerprint `2a.d795c7`
+registered with the fingerprint `92b.d795c7`
 
 ## Verify a device sends a message to nRF Cloud, then I can query historical messages
 
-Given I connect websocket with fingerprint `2a.d795c7`
+Given I connect websocket with fingerprint `92b.d795c7`
 
 And I store `$millis()` into `ts`
 

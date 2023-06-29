@@ -6,11 +6,11 @@
 ## Background
 
 Given a `PCA20035+solar` device with the ID `nrf-test-device-id` is registered
-with the fingerprint `2a.c4ff33`
+with the fingerprint `92b.c4ff33`
 
 ## Connect with a valid fingerprint
 
-When I connect websocket with fingerprint `2a.c4ff33`
+When I connect websocket with fingerprint `92b.c4ff33`
 
 Then the connection response should equal to this JSON
 
