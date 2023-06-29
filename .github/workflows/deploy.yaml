@@ -46,6 +46,9 @@ jobs:
           role-session-name: github-action-hello-nrfcloud-backend
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Show nRF Cloud Account
+        run: ./cli.sh show-nrfcloud-account
+
       - run: npx cdk diff
 
       - name: Deploy solution stack

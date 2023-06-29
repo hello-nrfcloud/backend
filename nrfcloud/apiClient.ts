@@ -47,6 +47,13 @@ type AccountInfo = {
 		name: string // e.g. 'hello.nrfcloud.com'
 	}
 }
+type FwType =
+	| 'APP'
+	| 'MODEM'
+	| 'BOOT'
+	| 'SOFTDEVICE'
+	| 'BOOTLOADER'
+	| 'MDM_FULL'
 export const apiClient = ({
 	endpoint,
 	apiKey,
@@ -70,13 +77,7 @@ export const apiClient = ({
 			// A list of pipe-delimited tags to create groups of devices (e.g., warehouse|sensor|east)	Each tag: /^[a-zA-Z0-9_.@:#-]+$/
 			tags?: string[]
 			// A list of pipe-delimited firmware types that each device supports for FOTA (e.g., APP|MODEM)
-			fwTypes?:
-				| 'APP'
-				| 'MODEM'
-				| 'BOOT'
-				| 'SOFTDEVICE'
-				| 'BOOTLOADER'
-				| 'MDM_FULL'
+			fwTypes?: FwType[]
 			// A unique ES256 X.509 certificate in PEM format, wrapped in double quotes (to allow for line breaks in CSV)	/^-{5}BEGIN CERTIFICATE-{5}(\r\n|\r|\n)([^-]+)(\r\n|\r|\n)-{5}END CERTIFICATE-{5}(\r\n|\r|\n)$/
 			certPem: string
 		}[],

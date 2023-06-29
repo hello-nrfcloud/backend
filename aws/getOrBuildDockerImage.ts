@@ -104,6 +104,7 @@ export const getOrBuildDockerImage =
 			await run({
 				command: 'docker',
 				args: [
+					'buildx',
 					'build',
 					'--platform',
 					'linux/amd64',
