@@ -34,7 +34,7 @@
     "@aws-sdk/client-cloudwatch-logs": "3.363.0",
     "@aws-sdk/client-dynamodb": "3.363.0",
     "@aws-sdk/client-ecr": "3.363.0",
-    "@aws-sdk/client-ecs": "3.363.0",
+    "@aws-sdk/client-ecs": "3.364.0",
     "@aws-sdk/client-eventbridge": "3.363.0",
     "@aws-sdk/client-iam": "3.363.0",
     "@aws-sdk/client-iot": "3.363.0",
