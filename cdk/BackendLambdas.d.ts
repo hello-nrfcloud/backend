@@ -11,4 +11,5 @@ type BackendLambdas = {
 	onDeviceMessage: PackedLambda
 	storeMessagesInTimestream: PackedLambda
 	healthCheck: PackedLambda
+	historicalDataRequest: PackedLambda
 }

@@ -28,6 +28,7 @@ export class HistoricalData extends Construct {
 			websocketAPI: WebsocketAPI
 			lambdaSources: {
 				storeMessagesInTimestream: PackedLambda
+				historicalDataRequest: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
 		},
@@ -87,6 +88,50 @@ export class HistoricalData extends Construct {
 				detailType: ['message'],
 			},
 			targets: [new EventTargets.LambdaFunction(storeMessagesInTimestream)],
+			eventBus: websocketAPI.eventBus,
+		})
+
+		const historicalDataRequest = new Lambda.Function(
+			this,
+			'historicalDataRequest',
+			{
+				handler: lambdaSources.historicalDataRequest.handler,
+				architecture: Lambda.Architecture.ARM_64,
+				runtime: Lambda.Runtime.NODEJS_18_X,
+				timeout: Duration.seconds(5),
+				memorySize: 1792,
+				code: new LambdaSource(this, lambdaSources.historicalDataRequest).code,
+				description: 'Handle historical data request',
+				environment: {
+					VERSION: this.node.tryGetContext('version'),
+					LOG_LEVEL: this.node.tryGetContext('logLevel'),
+					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
+					NODE_NO_WARNINGS: '1',
+				},
+				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: [
+							'timestream:Query',
+							'timestream:PrepareQuery',
+							'timestream:CancelQuery',
+						],
+						resources: [this.table.attrArn],
+					}),
+					new IAM.PolicyStatement({
+						actions: ['timestream:DescribeEndpoints'],
+						resources: ['*'],
+					}),
+				],
+				logRetention: Logs.RetentionDays.ONE_WEEK,
+			},
+		)
+		new Events.Rule(this, 'historicalDataRequestRule', {
+			eventPattern: {
+				source: ['thingy.ws'],
+				detailType: ['request'],
+			},
+			targets: [new EventTargets.LambdaFunction(historicalDataRequest)],
 			eventBus: websocketAPI.eventBus,
 		})
 	}

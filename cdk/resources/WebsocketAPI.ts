@@ -104,12 +104,14 @@ export class WebsocketAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
+		this.eventBus.grantPutEventsTo(onMessage)
 		this.connectionsTable.grantWriteData(onMessage)
 
 		// OnDisconnect

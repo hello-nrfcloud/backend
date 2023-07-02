@@ -5,6 +5,7 @@ export type WebSocketClient = {
 	connect: () => Promise<any>
 	fetchConnectionMessage: () => Promise<any>
 	fetchMessage: () => Promise<any>
+	send: (payload: Record<string, unknown>) => Promise<void>
 	close: () => void
 }
 const clients: Record<string, WebSocketClient> = {}
@@ -106,6 +107,18 @@ export const createWebsocketClient = ({
 					} else {
 						throw error
 					}
+				})
+			},
+			send: async (payload) => {
+				await onConnectDeferred.promise
+				await new Promise((resolve, reject) => {
+					client.send(
+						JSON.stringify({ ...payload, message: 'message' }),
+						(error) => {
+							if (error) return reject(error)
+							return resolve(void 0)
+						},
+					)
 				})
 			},
 			close: () => {
