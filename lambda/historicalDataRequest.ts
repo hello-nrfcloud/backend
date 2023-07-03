@@ -1,3 +1,4 @@
+import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
@@ -15,12 +16,14 @@ type Request = Omit<WebsocketPayload, 'message'> & {
 	}
 }
 
-const { historicalDataTableInfo } = fromEnv({
+const { historicalDataTableInfo, EventBusName } = fromEnv({
 	historicalDataTableInfo: 'HISTORICAL_DATA_TABLE_INFO',
+	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
 const log = logger('historicalDataRequest')
 const timestream = new TimestreamQueryClient({})
+const eventBus = new EventBridge({})
 
 const repo = historicalDataRepository({
 	timestream,
@@ -39,12 +42,13 @@ export const handler = async (
 
 		const {
 			deviceId,
+			connectionId,
 			message: { request, model },
 		} = event.detail
 
 		const context =
 			'https://github.com/hello-nrfcloud/proto/historical-data-request'
-		const res = await repo.getHistoricalData({
+		const responses = await repo.getHistoricalData({
 			deviceId,
 			model,
 			request: {
@@ -52,7 +56,24 @@ export const handler = async (
 				'@context': context,
 			},
 		})
-		log.debug(`Response`, { res })
+
+		for (const response of responses) {
+			log.debug('Historical response', { payload: response })
+			await eventBus.putEvents({
+				Entries: [
+					{
+						EventBusName,
+						Source: 'thingy.ws',
+						DetailType: 'message',
+						Detail: JSON.stringify(<WebsocketPayload>{
+							deviceId,
+							connectionId,
+							message: response,
+						}),
+					},
+				],
+			})
+		}
 	} catch (error) {
 		log.error(`Historical request error`, { error })
 	}

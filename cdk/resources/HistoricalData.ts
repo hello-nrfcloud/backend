@@ -106,6 +106,7 @@ export class HistoricalData extends Construct {
 					VERSION: this.node.tryGetContext('version'),
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
+					EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
 					NODE_NO_WARNINGS: '1',
 				},
 				layers,
@@ -138,5 +139,6 @@ export class HistoricalData extends Construct {
 			targets: [new EventTargets.LambdaFunction(historicalDataRequest)],
 			eventBus: websocketAPI.eventBus,
 		})
+		websocketAPI.eventBus.grantPutEventsTo(historicalDataRequest)
 	}
 }

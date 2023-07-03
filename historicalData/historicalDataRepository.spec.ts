@@ -10,24 +10,24 @@ describe('transformTimestreamData', () => {
 				avgMA: 1,
 				maxMA: 9,
 				minMA: 0,
-				time: '2021-06-30T00:00:00Z',
+				time: new Date('2021-06-30T00:00:00Z'),
 			},
 			{
 				avgMA: 3,
 				maxMA: 8,
 				minMA: 1,
-				time: '2021-06-30T00:15:00Z',
+				time: new Date('2021-06-30T00:15:00Z'),
 			},
 		]
 
 		const expectedTransformedDataAvg = [
 			{
 				mA: 1,
-				ts: '2021-06-30T00:00:00Z',
+				ts: new Date('2021-06-30T00:00:00Z').getTime(),
 			},
 			{
 				mA: 3,
-				ts: '2021-06-30T00:15:00Z',
+				ts: new Date('2021-06-30T00:15:00Z').getTime(),
 			},
 		]
 		expect(
@@ -39,27 +39,27 @@ describe('transformTimestreamData', () => {
 		const data = [
 			{
 				lat: 1,
-				time: '2021-06-30T00:00:00Z',
+				time: new Date('2021-06-30T00:00:00Z'),
 			},
 			{
 				lng: 2,
-				time: '2021-06-30T00:00:00Z',
+				time: new Date('2021-06-30T00:00:00Z'),
 			},
 			{
 				acc: 3,
-				time: '2021-06-30T00:00:00Z',
+				time: new Date('2021-06-30T00:00:00Z'),
 			},
 			{
 				lat: 4,
-				time: '2021-06-30T00:15:00Z',
+				time: new Date('2021-06-30T00:15:00Z'),
 			},
 			{
 				lng: 5,
-				time: '2021-06-30T00:15:00Z',
+				time: new Date('2021-06-30T00:15:00Z'),
 			},
 			{
 				acc: 6,
-				time: '2021-06-30T00:15:00Z',
+				time: new Date('2021-06-30T00:15:00Z'),
 			},
 		]
 
@@ -68,13 +68,13 @@ describe('transformTimestreamData', () => {
 				lat: 1,
 				lng: 2,
 				acc: 3,
-				ts: '2021-06-30T00:00:00Z',
+				ts: new Date('2021-06-30T00:00:00Z').getTime(),
 			},
 			{
 				lat: 4,
 				lng: 5,
 				acc: 6,
-				ts: '2021-06-30T00:15:00Z',
+				ts: new Date('2021-06-30T00:15:00Z').getTime(),
 			},
 		]
 		expect(

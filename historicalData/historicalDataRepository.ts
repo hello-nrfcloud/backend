@@ -39,7 +39,13 @@ export const transformTimestreamData = (
 					...mapKeys.reduce<Record<string, unknown>>(
 						(resultMapKeys, mapKey) => {
 							if (mapKey.fromKey in record) {
-								resultMapKeys[mapKey.toKey] = record[mapKey.fromKey]
+								if (mapKey.fromKey === 'time') {
+									resultMapKeys[mapKey.toKey] = (
+										record[mapKey.fromKey] as Date
+									).getTime()
+								} else {
+									resultMapKeys[mapKey.toKey] = record[mapKey.fromKey]
+								}
 							}
 							return resultMapKeys
 						},
