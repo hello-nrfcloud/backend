@@ -8,8 +8,7 @@
 Given a `PCA20035+solar` device with the ID `nrf-352656108602296` is registered
 with the fingerprint `92b.b4ff3d`
 
-And there is a shadow data of device id `nrf-352656108602296` in nRF Cloud as
-this JSON
+And there is this device shadow data for `nrf-352656108602296` in nRF Cloud
 
 ```json
 {
@@ -279,11 +278,11 @@ this JSON
 
 ## Verify a device sends shadow data to nRF Cloud, then I can receive the message via website
 
-Given I connect websocket with fingerprint `92b.b4ff3d`
+Given I connect to the websocket using fingerprint `92b.b4ff3d`
 
-Then wait for `5` seconds
+And I wait for `5` seconds
 
-Then the response should equal to this JSON
+Then I should receive a message on the websocket that matches
 
 ```json
 {
@@ -346,8 +345,12 @@ Then the response should equal to this JSON
 
 ## Verify I will not receive the device shadow if the version is not updated
 
-Given I connect websocket with fingerprint `92b.b4ff3d`
+Given I connect to the websocket using fingerprint `92b.b4ff3d`
 
-And wait for `5` seconds
+And I wait for `5` seconds
 
-Then the response should equal to empty string
+Then I should receive a message on the websocket that is equal to
+
+```json
+""
+```
