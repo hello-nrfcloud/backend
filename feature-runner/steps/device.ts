@@ -91,68 +91,6 @@ const createDeviceForModel =
 		progress(`Device registered: ${fingerprint} (${id})`)
 	}
 
-const createDevice =
-	({ db }: { db: DynamoDBClient }) =>
-	async ({
-		step,
-		log: {
-			step: { progress },
-		},
-		context: { devicesTable, devicesTableFingerprintIndexName },
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^a `(?<model>[^`]+)` device with the ID `(?<id>[^`]+)` is registered with the fingerprint `(?<fingerprint>[^`]+)`$/.exec(
-				step.title,
-			)
-		if (match === null) return noMatch
-		const { id, model, fingerprint } = match.groups as {
-			id: string
-			model: string
-			fingerprint: string
-		}
-
-		progress(`Registering device ${id} into table ${devicesTable}`)
-		await registerDevice({ db, devicesTableName: devicesTable })({
-			id,
-			model,
-			fingerprint,
-		})
-
-		await pRetry(
-			async () => {
-				const res = await getDeviceFromIndex({
-					db,
-					devicesTableName: devicesTable,
-					devicesIndexName: devicesTableFingerprintIndexName,
-				})({ fingerprint })
-				if ('error' in res)
-					throw new Error(`Failed to resolve fingerprint ${fingerprint}!`)
-			},
-			{
-				retries: 5,
-				minTimeout: 500,
-				maxTimeout: 1000,
-			},
-		)
-
-		await pRetry(
-			async () => {
-				const res = await getModelForDevice({
-					db,
-					DevicesTableName: devicesTable,
-				})(id)
-				if ('error' in res)
-					throw new Error(`Failed to get model for device ${id}!`)
-			},
-			{
-				retries: 5,
-				minTimeout: 500,
-				maxTimeout: 1000,
-			},
-		)
-
-		progress(`Device registered: ${id}`)
-	}
 const getDevice =
 	({ db }: { db: DynamoDBClient }) =>
 	async ({
@@ -246,7 +184,6 @@ export const steps = (
 	bridgeInfo: Settings,
 	db: DynamoDBClient,
 ): StepRunner<World & Record<string, string>>[] => [
-	createDevice({ db }),
 	createDeviceForModel({ db }),
 	getDevice({ db }),
 	publishDeviceMessage(bridgeInfo),

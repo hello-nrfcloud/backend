@@ -4,19 +4,18 @@
 
 ## Background
 
-Given a `PCA20035+solar` device with the ID `nrf-historical-device-id` is
-registered with the fingerprint `92b.d795c7`
+Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 ## Verify a device sends a message to nRF Cloud, then I can query historical messages
 
-Given I connect to the websocket using fingerprint `92b.d795c7`
+Given I connect to the websocket using fingerprint `${fingerprint}`
 
 And I store `$millis()` into `ts`
 
 And I store `$fromMillis(${ts})` into `tsISO`
 
-And the device `nrf-historical-device-id` publishes this message to the topic
-`m/d/nrf-historical-device-id/d2c`
+And the device `${fingerprint:deviceId}` publishes this message to the topic
+`m/d/${fingerprint:deviceId}/d2c`
 
 ```json
 {
@@ -27,17 +26,17 @@ And the device `nrf-historical-device-id` publishes this message to the topic
 }
 ```
 
-When I query Timestream for the device `nrf-historical-device-id` and the
+When I query Timestream for the device `${fingerprint:deviceId}` and the
 dimension `@context` with the value
-`https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain` from
-`${tsISO}`
+`https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain`
+starting at `${tsISO}`
 
 Then the Timestream result should match
 
 ```json
 [
   {
-    "deviceId": "nrf-historical-device-id",
+    "deviceId": "${fingerprint:deviceId}",
     "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain",
     "measure_name": "mA",
     "measure_value::double": 3.123457,
