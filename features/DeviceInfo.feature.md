@@ -10,9 +10,9 @@ with the fingerprint `92b.c4ff33`
 
 ## Connect with a valid fingerprint
 
-When I connect websocket with fingerprint `92b.c4ff33`
+When I connect to the websocket using fingerprint `92b.c4ff33`
 
-Then the connection response should equal to this JSON
+Then I should receive a message on the websocket that matches
 
 ```json
 {

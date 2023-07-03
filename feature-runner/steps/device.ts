@@ -11,7 +11,6 @@ import assert from 'assert/strict'
 import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { setTimeout } from 'node:timers/promises'
 import pRetry from 'p-retry'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
 import { getModelForDevice } from '../../devices/getModelForDevice.js'
@@ -90,10 +89,9 @@ const getDevice =
 		},
 		context: { devicesTable },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^The device id `(?<key>[^`]+)` should equal to this JSON$/.exec(
-				step.title,
-			)
+		const match = /^The device id `(?<key>[^`]+)` should equal$/.exec(
+			step.title,
+		)
 		if (match === null) return noMatch
 
 		progress(`Get data with id ${match.groups?.key} from ${devicesTable}`)
@@ -125,7 +123,7 @@ const publishDeviceMessage =
 		},
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 		const match =
-			/^a device with id `(?<id>[^`]+)` publishes to topic `(?<topic>[^`]+)` with a message as this JSON$/.exec(
+			/^a device with id `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/.exec(
 				step.title,
 			)
 		if (match === null) return noMatch
@@ -171,27 +169,11 @@ const publishDeviceMessage =
 		})
 	}
 
-const waitForScheduler = async ({
-	step,
-	log: {
-		step: { progress },
-	},
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^wait for `(?<time>\d+)` seconds?$/.exec(step.title)
-	if (match === null) return noMatch
-
-	const waitingTime = Number(match.groups?.time ?? 1)
-
-	progress(`Waiting for ${waitingTime} seconds`)
-	await setTimeout(waitingTime * 1000)
-}
-
 export const steps = (
 	bridgeInfo: Settings,
 	db: DynamoDBClient,
 ): StepRunner<World>[] => [
 	createDevice({ db }),
 	getDevice({ db }),
-	waitForScheduler,
 	publishDeviceMessage(bridgeInfo),
 ]

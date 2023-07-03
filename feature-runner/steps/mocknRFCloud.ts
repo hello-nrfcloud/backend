@@ -17,7 +17,7 @@ export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
 		context: { responsesTableName },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 		const match =
-			/^there is a shadow data of device id `(?<deviceId>[^`]+)` in nRF Cloud as this JSON$/.exec(
+			/^there is this device shadow data for `(?<deviceId>[^`]+)` in nRF Cloud$/.exec(
 				step.title,
 			)
 		if (match === null) return noMatch
