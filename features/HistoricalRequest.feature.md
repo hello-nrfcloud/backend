@@ -76,12 +76,15 @@ When I send websocket request as this JSON
 
 ```json
 {
-  "@id": "${requestId}",
-  "type": "lastHour",
-  "ts": ${ts},
-  "message": "gain",
-  "attributes": {
-    "avgMA": { "attribute": "mA", "aggregate": "avg" }
+  "message": "message",
+  "payload": {
+    "@id": "${requestId}",
+    "type": "lastHour",
+    "ts": ${ts},
+    "message": "gain",
+    "attributes": {
+      "avgMA": { "attribute": "mA", "aggregate": "avg" }
+    }
   }
 }
 ```

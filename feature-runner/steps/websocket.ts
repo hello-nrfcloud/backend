@@ -135,9 +135,9 @@ const wsSend = async ({
 	const match = /^I send websocket request as this JSON$/.exec(step.title)
 	if (match === null) return noMatch
 
-	const payload = JSON.parse(codeBlockOrThrow(step).code)
-	await wsClient?.send(payload)
-	progress(`Sent ws message`, JSON.stringify(payload, null, 2))
+	const message = JSON.parse(codeBlockOrThrow(step).code)
+	await wsClient?.send(message)
+	progress(`Sent ws message`, JSON.stringify(message, null, 2))
 }
 
 export const websocketStepRunners = (): {
