@@ -20,7 +20,8 @@ And I store
 `ts`
 
 And I store the converted device messages of device ID `${deviceId}` into
-timestream with `0.5` minute interval to `${ts}` as this JSON
+timestream using `${ts}` and decrement the timestamp by `0.5` minutes as this
+JSON
 
 ```json
 [

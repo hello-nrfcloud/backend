@@ -116,7 +116,7 @@ const storeTimestream =
 				ts: (s) => Number(s),
 			},
 		)(
-			/^I store the converted device messages of device ID `(?<deviceId>[^`]+)` into timestream with `(?<intervalMin>[^`]+)` minutes? interval to `(?<ts>[^`]+)` as this JSON$/,
+			/^I store the converted device messages of device ID `(?<deviceId>[^`]+)` into timestream using `(?<ts>[^`]+)` and decrement the timestamp by `(?<intervalMin>[^`]+)` minutes? as this JSON$/,
 			step.title,
 		)
 		if (match === null) return noMatch
