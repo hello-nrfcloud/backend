@@ -196,7 +196,7 @@ const publishDeviceMessage =
 		},
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 		const match =
-			/^a device with id `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/.exec(
+			/^the device `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/.exec(
 				step.title,
 			)
 		if (match === null) return noMatch

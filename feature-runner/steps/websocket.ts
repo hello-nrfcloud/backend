@@ -71,23 +71,36 @@ const receive = async ({
 			step.title,
 		)
 	if (match === null) return noMatch
+	const { equalOrMatch } = match.groups as {
+		equalOrMatch: 'is equal to' | 'matches'
+	}
 
-	const found = wsClient?.messages.find((message) => {
-		try {
-			if (match?.groups?.equalOrMatch === 'match') {
-				expect(message).to.containSubset(
-					JSON.parse(codeBlockOrThrow(step).code),
-				)
-			} else {
-				assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
+	const expected = JSON.parse(codeBlockOrThrow(step).code)
+	const found = Object.entries(wsClient?.messages ?? {}).find(
+		([id, message]) => {
+			debug(
+				`Checking if message`,
+				JSON.stringify(message),
+				equalOrMatch,
+				JSON.stringify(expected),
+			)
+			try {
+				if (equalOrMatch === 'matches') {
+					expect(message).to.containSubset(expected)
+				} else {
+					assert.deepEqual(message, expected)
+				}
+				debug('match', JSON.stringify(message))
+				delete wsClient?.messages[id]
+				return true
+			} catch {
+				debug('no match', JSON.stringify(message))
+				return false
 			}
-			return true
-		} catch {
-			debug('no match', JSON.stringify(message))
-			return false
-		}
-	})
-	expect(found).not.to.equal(undefined)
+		},
+	)
+	if (found === undefined)
+		throw new Error(`No message found for ${JSON.stringify(expected)}`)
 }
 
 export const websocketStepRunners = (): {

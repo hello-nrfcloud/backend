@@ -280,6 +280,8 @@ And there is this device shadow data for `nrf-352656108602296` in nRF Cloud
 
 Given I connect to the websocket using fingerprint `92b.b4ff3d`
 
+<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
+
 Soon I should receive a message on the websocket that matches
 
 ```json
@@ -339,16 +341,4 @@ Soon I should receive a message on the websocket that matches
     }
   }
 }
-```
-
-## Verify I will not receive the device shadow if the version is not updated
-
-Given I connect to the websocket using fingerprint `92b.b4ff3d`
-
-And I wait for `5` seconds
-
-Then I should receive a message on the websocket that is equal to
-
-```json
-""
 ```

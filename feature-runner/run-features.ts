@@ -19,7 +19,6 @@ import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from './steps/storage.js'
-import { waitFor } from './steps/wait.js'
 import { websocketStepRunners } from './steps/websocket.js'
 
 const ssm = new SSMClient({})
@@ -100,7 +99,6 @@ runner
 	.addStepRunners(...mocknRFCloudSteps({ db }))
 	.addStepRunners(...historicalSteps({ timestream }))
 	.addStepRunners(...storageSteps())
-	.addStepRunners(waitFor)
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,
