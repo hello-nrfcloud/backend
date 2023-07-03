@@ -59,10 +59,10 @@ const wsConnect = async ({
 	context.wsClient = wsClients[wsURL] as WebSocketClient
 }
 
-const wsMessage = async ({
+const receive = async ({
 	step,
 	log: {
-		step: { progress },
+		step: { debug },
 	},
 	context: { wsClient },
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
@@ -72,21 +72,29 @@ const wsMessage = async ({
 		)
 	if (match === null) return noMatch
 
-	const message: Record<string, unknown> = await wsClient?.fetchMessage()
-	progress(`Received ws message`, JSON.stringify(message, null, 2))
-
-	if (match?.groups?.equalOrMatch === 'match') {
-		expect(message).to.containSubset(JSON.parse(codeBlockOrThrow(step).code))
-	} else {
-		assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
-	}
+	const found = wsClient?.messages.find((message) => {
+		try {
+			if (match?.groups?.equalOrMatch === 'match') {
+				expect(message).to.containSubset(
+					JSON.parse(codeBlockOrThrow(step).code),
+				)
+			} else {
+				assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
+			}
+			return true
+		} catch {
+			debug('no match', JSON.stringify(message))
+			return false
+		}
+	})
+	expect(found).not.to.equal(undefined)
 }
 
 export const websocketStepRunners = (): {
 	steps: StepRunner<World>[]
 	cleanup: () => Promise<void>
 } => ({
-	steps: [wsConnect, wsMessage],
+	steps: [wsConnect, receive],
 	cleanup: async (): Promise<void> => {
 		await Promise.all(Object.values(wsClients).map((client) => client.close()))
 	},

@@ -5,19 +5,18 @@
 
 ## Background
 
-Given a `PCA20035+solar` device with the ID `nrf-test-device-id` is registered
-with the fingerprint `92b.c4ff33`
+Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 ## Connect with a valid fingerprint
 
-When I connect to the websocket using fingerprint `92b.c4ff33`
+When I connect to the websocket using fingerprint `${fingerprint}`
 
-Then I should receive a message on the websocket that matches
+Soon I should receive a message on the websocket that matches
 
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/deviceIdentity",
-  "id": "nrf-test-device-id",
+  "id": "${fingerprint:deviceId}",
   "model": "PCA20035+solar"
 }
 ```
