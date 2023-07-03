@@ -9,14 +9,87 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
 import mqtt from 'mqtt'
+import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import pRetry from 'p-retry'
+import { generateCode } from '../../cli/devices/generateCode.js'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
 import { getModelForDevice } from '../../devices/getModelForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
+
+const createDeviceForModel =
+	({ db }: { db: DynamoDBClient }) =>
+	async ({
+		step,
+		log: {
+			step: { progress },
+		},
+		context,
+	}: StepRunnerArgs<
+		World & Record<string, string>
+	>): Promise<StepRunResult> => {
+		const match =
+			/^I have the fingerprint for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/.exec(
+				step.title,
+			)
+		if (match === null) return noMatch
+		const { model, storageName } = match.groups as {
+			model: string
+			storageName: string
+		}
+
+		const fingerprint = `92b.${generateCode()}`
+		const id = randomUUID()
+
+		const { devicesTable, devicesTableFingerprintIndexName } = context
+		progress(`Registering device ${id} into table ${devicesTable}`)
+		await registerDevice({ db, devicesTableName: devicesTable })({
+			id,
+			model,
+			fingerprint,
+		})
+
+		await pRetry(
+			async () => {
+				const res = await getDeviceFromIndex({
+					db,
+					devicesTableName: devicesTable,
+					devicesIndexName: devicesTableFingerprintIndexName,
+				})({ fingerprint })
+				if ('error' in res)
+					throw new Error(`Failed to resolve fingerprint ${fingerprint}!`)
+			},
+			{
+				retries: 5,
+				minTimeout: 500,
+				maxTimeout: 1000,
+			},
+		)
+
+		await pRetry(
+			async () => {
+				const res = await getModelForDevice({
+					db,
+					DevicesTableName: devicesTable,
+				})(id)
+				if ('error' in res)
+					throw new Error(`Failed to get model for device ${id}!`)
+			},
+			{
+				retries: 5,
+				minTimeout: 500,
+				maxTimeout: 1000,
+			},
+		)
+
+		context[storageName] = fingerprint
+		context[`${storageName}:deviceId`] = id
+
+		progress(`Device registered: ${fingerprint} (${id})`)
+	}
 
 const createDevice =
 	({ db }: { db: DynamoDBClient }) =>
@@ -172,8 +245,9 @@ const publishDeviceMessage =
 export const steps = (
 	bridgeInfo: Settings,
 	db: DynamoDBClient,
-): StepRunner<World>[] => [
+): StepRunner<World & Record<string, string>>[] => [
 	createDevice({ db }),
+	createDeviceForModel({ db }),
 	getDevice({ db }),
 	publishDeviceMessage(bridgeInfo),
 ]

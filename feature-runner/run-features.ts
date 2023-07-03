@@ -49,7 +49,7 @@ export type World = {
 	tenantId: string
 	responsesTableName: string
 	requestsTableName: string
-}
+} & Record<string, string>
 
 const accountDeviceSettings = await getSettings({
 	ssm,
