@@ -1,14 +1,11 @@
-import {
-	MetricUnits,
-	Metrics,
-	logMetrics,
-} from '@aws-lambda-powertools/metrics'
+import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { proto } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { getModelForDevice } from '../devices/getModelForDevice.js'
+import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 
@@ -24,10 +21,7 @@ const eventBus = new EventBridge({})
 const modelFetcher = getModelForDevice({ db, DevicesTableName })
 const deviceModelCache: Record<string, string> = {}
 
-const metrics = new Metrics({
-	namespace: 'hello-nrfcloud-backend',
-	serviceName: 'onDeviceMessage',
-})
+const { track, metrics } = metricsForComponent('onDeviceMessage')
 
 const h = async (event: {
 	message: unknown
@@ -35,7 +29,7 @@ const h = async (event: {
 	timestamp: number
 }): Promise<void> => {
 	log.debug('event', { event })
-	metrics.addMetric('deviceMessage', MetricUnits.Count, 1)
+	track('deviceMessage', MetricUnits.Count, 1)
 	const { deviceId, message } = event
 
 	// Fetch model for device
@@ -49,7 +43,7 @@ const h = async (event: {
 	}
 	const model = deviceModelCache[deviceId]
 	if (model === undefined) {
-		metrics.addMetric('unknownDeviceModel', MetricUnits.Count, 1)
+		track('unknownDeviceModel', MetricUnits.Count, 1)
 		return
 	}
 	log.debug('model', { model })
@@ -65,13 +59,9 @@ const h = async (event: {
 	})(model, message)
 
 	if (converted.length === 0) {
-		metrics.addMetric('unknownDeviceMessage', MetricUnits.Count, 1)
+		track('unknownDeviceMessage', MetricUnits.Count, 1)
 	} else {
-		metrics.addMetric(
-			'convertedDeviceMessage',
-			MetricUnits.Count,
-			converted.length,
-		)
+		track('convertedDeviceMessage', MetricUnits.Count, converted.length)
 	}
 
 	for (const message of converted) {

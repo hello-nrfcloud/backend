@@ -11,11 +11,11 @@ needs:
 ## Background
 
 Given a `PCA20035+solar` device with the ID `nrf-test-device-id` is registered
-with the fingerprint `2a.c4ff33`
+with the fingerprint `92b.c4ff33`
 
 ## Verify a device sends a message to nRF Cloud, then I can receive the message via website
 
-Given I connect websocket with fingerprint `2a.c4ff33`
+Given I connect websocket with fingerprint `92b.c4ff33`
 
 And I store `$millis()` into `ts`
 

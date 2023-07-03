@@ -103,4 +103,5 @@ new BackendApp({
 		iam,
 	}),
 	env: accountEnv,
+	isTest: process.env.IS_TEST === '1',
 })

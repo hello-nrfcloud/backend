@@ -6,7 +6,7 @@
 ## Background
 
 Given a `PCA20035+solar` device with the ID `nrf-352656108602296` is registered
-with the fingerprint `2a.b4ff3d`
+with the fingerprint `92b.b4ff3d`
 
 And there is a shadow data of device id `nrf-352656108602296` in nRF Cloud as
 this JSON
@@ -279,7 +279,7 @@ this JSON
 
 ## Verify a device sends shadow data to nRF Cloud, then I can receive the message via website
 
-Given I connect websocket with fingerprint `2a.b4ff3d`
+Given I connect websocket with fingerprint `92b.b4ff3d`
 
 And device shadow fetching config for model `PCA20035+solar` is `5`
 
@@ -348,7 +348,7 @@ Then the response should equal to this JSON
 
 ## Verify I will not receive the device shadow if the version is not updated
 
-Given I connect websocket with fingerprint `2a.b4ff3d`
+Given I connect websocket with fingerprint `92b.b4ff3d`
 
 And wait for `5` seconds
 

@@ -1,8 +1,4 @@
-import {
-	logMetrics,
-	Metrics,
-	MetricUnits,
-} from '@aws-lambda-powertools/metrics'
+import { logMetrics, MetricUnits } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	EventBridgeClient,
@@ -20,14 +16,12 @@ import {
 } from '../websocket/connectionsRepository.js'
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
+import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { configureDeviceShadowFetcher } from './shadow/configureDeviceShadowFetcher.js'
 import { logger } from './util/logger.js'
 
-const metrics = new Metrics({
-	namespace: 'hello-nrfcloud-backend',
-	serviceName: 'shadowFetcher',
-})
+const { track, metrics } = metricsForComponent('shadowFetcher')
 
 const {
 	websocketDeviceConnectionsTableName,
@@ -72,7 +66,7 @@ const h = async (): Promise<void> => {
 
 		const connections = await connectionsRepo.getAll()
 		log.info(`Found ${connections.length} active connections`)
-		metrics.addMetric('connections', MetricUnits.Count, connections.length)
+		track('connections', MetricUnits.Count, connections.length)
 		if (connections.length === 0) return
 
 		// Filter based on the configuration
@@ -116,7 +110,7 @@ const h = async (): Promise<void> => {
 						const res = await deviceShadow(
 							devices.map((device) => device.deviceId),
 						)
-						metrics.addMetric(
+						track(
 							'apiResponseTime',
 							MetricUnits.Milliseconds,
 							Date.now() - start,
@@ -139,7 +133,7 @@ const h = async (): Promise<void> => {
 					isChanged: d.version !== deviceShadow.state.version,
 				})
 
-				metrics.addMetric(
+				track(
 					'shadowVersionDelta',
 					MetricUnits.Count,
 					deviceShadow.state.version - (d.version ?? 0),
@@ -152,12 +146,12 @@ const h = async (): Promise<void> => {
 				)
 
 				if (!isUpdated) {
-					metrics.addMetric('shadowStale', MetricUnits.Count, 1)
+					track('shadowStale', MetricUnits.Count, 1)
 					continue
 				}
 
-				metrics.addMetric('shadowUpdated', MetricUnits.Count, 1)
-				metrics.addMetric(
+				track('shadowUpdated', MetricUnits.Count, 1)
+				track(
 					'shadowAge',
 					MetricUnits.Seconds,
 					Math.round(Date.now() / 1000) -
@@ -172,7 +166,7 @@ const h = async (): Promise<void> => {
 								message,
 							)} from model ${model}: ${error}`,
 						)
-						metrics.addMetric('shadowConversionFailed', MetricUnits.Count, 1)
+						track('shadowConversionFailed', MetricUnits.Count, 1)
 					},
 				})(model, deviceShadow.state)
 

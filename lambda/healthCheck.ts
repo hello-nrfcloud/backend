@@ -1,8 +1,4 @@
-import {
-	MetricUnits,
-	Metrics,
-	logMetrics,
-} from '@aws-lambda-powertools/metrics'
+import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import middy from '@middy/core'
@@ -17,6 +13,7 @@ import {
 	type Settings,
 } from '../nrfcloud/settings.js'
 import { defer } from '../util/defer.js'
+import { metricsForComponent } from './metrics/metrics.js'
 import { logger } from './util/logger.js'
 
 const { DevicesTableName, stackName, websocketUrl } = fromEnv({
@@ -29,10 +26,7 @@ const log = logger('healthCheck')
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
 
-const metrics = new Metrics({
-	namespace: 'hello-nrfcloud-backend',
-	serviceName: 'healthCheck',
-})
+const { track, metrics } = metricsForComponent('healthCheck')
 
 const amazonRootCA1 =
 	'-----BEGIN CERTIFICATE-----\n' +
@@ -165,7 +159,7 @@ await registerDevice({
 const h = async (): Promise<void> => {
 	let ts: number
 	let gain: number
-	metrics.addMetric('checkMessageFromWebsocket', MetricUnits.Count, 1)
+	track('checkMessageFromWebsocket', MetricUnits.Count, 1)
 	try {
 		await checkMessageFromWebsocket({
 			endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
@@ -199,7 +193,7 @@ const h = async (): Promise<void> => {
 					if (messageObj['@context'] !== expectedMessage['@context'])
 						return ValidateResponse.skip
 
-					metrics.addMetric(
+					track(
 						`receivingMessageDuration`,
 						MetricUnits.Seconds,
 						(Date.now() - ts) / 1000,
@@ -213,10 +207,10 @@ const h = async (): Promise<void> => {
 				}
 			},
 		})
-		metrics.addMetric('success', MetricUnits.Count, 1)
+		track('success', MetricUnits.Count, 1)
 	} catch (error) {
 		log.error(`health check error`, { error })
-		metrics.addMetric('fail', MetricUnits.Count, 1)
+		track('fail', MetricUnits.Count, 1)
 	}
 }
 

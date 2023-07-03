@@ -1,13 +1,10 @@
-import {
-	MetricUnits,
-	Metrics,
-	logMetrics,
-} from '@aws-lambda-powertools/metrics'
+import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { PolicyDocument } from 'aws-lambda'
+import { metricsForComponent } from './metrics/metrics.js'
 import { logger } from './util/logger.js'
 import type { WebsocketConnectionContext } from './ws/AuthorizedEvent.js'
 
@@ -19,10 +16,7 @@ const { DevicesTableName, DevicesIndexName } = fromEnv({
 const log = logger('connect')
 const db = new DynamoDBClient({})
 
-const metrics = new Metrics({
-	namespace: 'hello-nrfcloud-backend',
-	serviceName: 'websocket',
-})
+const { track, metrics } = metricsForComponent('websocket')
 
 /**
  * Verifies the fingerprint passed as a query parameter and creates a context for the websocket connect that includes the deviceId and the model.
@@ -57,7 +51,7 @@ const h = async (event: {
 	const fingerprint = event.queryStringParameters?.fingerprint
 	if (fingerprint === undefined) {
 		log.error(`Fingerprint cannot be empty`)
-		metrics.addMetric('authorizer:badRequest', MetricUnits.Count, 1)
+		track('authorizer:badRequest', MetricUnits.Count, 1)
 		return deny
 	}
 	const res = await db.send(
@@ -79,12 +73,12 @@ const h = async (event: {
 	const device = res.Items?.[0] !== undefined ? unmarshall(res.Items[0]) : null
 	if (device === null) {
 		log.error(`DeviceId is not found with`, { fingerprint })
-		metrics.addMetric('authorizer:badFingerprint', MetricUnits.Count, 1)
+		track('authorizer:badFingerprint', MetricUnits.Count, 1)
 		return deny
 	}
 
 	log.debug(`Connection request for fingerprint ${fingerprint} authorized.`)
-	metrics.addMetric('authorizer:success', MetricUnits.Count, 1)
+	track('authorizer:success', MetricUnits.Count, 1)
 
 	const { model, deviceId } = device
 
