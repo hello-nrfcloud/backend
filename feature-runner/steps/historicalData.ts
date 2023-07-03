@@ -39,7 +39,7 @@ const queryTimestream =
 				tsISO: Type.String(),
 			}),
 		)(
-			/^I query Timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` from `(?<tsISO>[^`]+)`$/,
+			/^I query Timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` starting at `(?<tsISO>[^`]+)`$/,
 			step.title,
 		)
 		if (match === null) return noMatch
