@@ -85,6 +85,7 @@ export class WebsocketAPI extends Construct {
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
+				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
@@ -107,6 +108,7 @@ export class WebsocketAPI extends Construct {
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
+				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
@@ -129,6 +131,7 @@ export class WebsocketAPI extends Construct {
 				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
+				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
@@ -153,6 +156,7 @@ export class WebsocketAPI extends Construct {
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
+				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
@@ -307,6 +311,8 @@ export class WebsocketAPI extends Construct {
 					EVENTBUS_NAME: this.eventBus.eventBusName,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					NODE_NO_WARNINGS: '1',
+					DISABLE_METRICS:
+						this.node.tryGetContext('isTest') === true ? '1' : '0',
 				},
 				initialPolicy: [
 					new IAM.PolicyStatement({

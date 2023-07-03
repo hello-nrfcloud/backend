@@ -49,6 +49,7 @@ export class ConvertDeviceMessages extends Construct {
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				NODE_NO_WARNINGS: '1',
+				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,

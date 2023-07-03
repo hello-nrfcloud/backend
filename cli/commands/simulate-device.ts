@@ -165,13 +165,14 @@ export const simulateDeviceCommand = ({
 			})
 		})
 
-		process.on('SIGINT', async () => {
+		const quit = async () => {
 			console.log(chalk.gray('Closing connection ...'))
 
 			await connection.end()
 
 			process.exit()
-		})
+		}
+		process.on('SIGINT', quit)
 
 		let reported: ipShadow['reported'] = {
 			config: {
@@ -334,6 +335,37 @@ export const simulateDeviceCommand = ({
 		publishGain()
 		setInterval(publishBattery, 10 * 1000)
 		setInterval(publishGain, 10 * 1000)
+
+		// Simulate button presses
+		const pressButton = () => {
+			connection.publish(
+				`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
+				{
+					data: '1',
+					appId: 'BUTTON',
+					messageType: 'DATA',
+					ts: Date.now(),
+				},
+			)
+		}
+		console.log(``)
+		console.log(chalk.yellow.dim(`Press <1> to simulate a button press.`))
+		console.log(chalk.yellow.dim(`Press <Ctrl+C> to quit.`))
+		console.log(``)
+		const stdin = process.stdin
+		stdin.setRawMode(true) // so get each keypress
+		stdin.on('data', async (data) => {
+			if (data[0] === 3) {
+				await quit()
+				return
+			}
+			const char = data.toString()
+			switch (char) {
+				case '1':
+					pressButton()
+					break
+			}
+		}) // like on but removes listener also
 	},
 	help: 'Simulates a device',
 })

@@ -67,6 +67,8 @@ export class HistoricalData extends Construct {
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 					NODE_NO_WARNINGS: '1',
+					DISABLE_METRICS:
+						this.node.tryGetContext('isTest') === true ? '1' : '0',
 				},
 				layers,
 				initialPolicy: [

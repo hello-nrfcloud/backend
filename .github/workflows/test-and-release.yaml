@@ -75,6 +75,8 @@ jobs:
           ./cli.sh configure thirdParty nrfcloud apiKey apiKey
 
       - name: Deploy solution stack
+        env:
+          IS_TEST: 1
         run: npx cdk deploy --require-approval never
 
       - name: Run End-to-End Tests

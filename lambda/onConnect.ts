@@ -1,8 +1,6 @@
-import { Metrics, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { Context, DeviceIdentity } from '@hello.nrfcloud.com/proto/hello'
-import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
@@ -20,14 +18,9 @@ const log = logger('connect')
 const eventBus = new EventBridge({})
 const db = new DynamoDBClient({})
 
-const metrics = new Metrics({
-	namespace: 'hello-nrfcloud-backend',
-	serviceName: 'websocket',
-})
-
 const repo = connectionsRepository(db, TableName)
 
-const h = async (
+export const handler = async (
 	event: AuthorizedEvent,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.debug('event', { event })
@@ -67,5 +60,3 @@ const h = async (
 		statusCode: 200,
 	}
 }
-
-export const handler = middy(h).use(logMetrics(metrics))
