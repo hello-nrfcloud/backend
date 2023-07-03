@@ -1,5 +1,4 @@
 import type { Logger } from '@aws-lambda-powertools/logger'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	QueryCommand,
 	type TimestreamQueryClient,
@@ -14,7 +13,6 @@ import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
 import { groupBy } from 'lodash-es'
-import { getModelForDevice } from '../devices/getModelForDevice.js'
 import { getQueryStatement } from './queryGenerator.js'
 
 export type HistoricalRequest = Omit<
@@ -60,26 +58,24 @@ export const transformTimestreamData = (
 }
 
 export const historicalDataRepository = ({
-	db,
 	timestream,
 	historicalDataTableInfo,
-	deviceTable,
 	log,
 }: {
-	db: DynamoDBClient
 	timestream: TimestreamQueryClient
 	historicalDataTableInfo: string
-	deviceTable: string
 	log?: Logger
 }): {
-	getHistoricalData: (
-		deviceId: string,
-		request: HistoricalRequest,
-	) => Promise<HistoricalResponse[]>
+	getHistoricalData: ({
+		deviceId,
+		model,
+		request,
+	}: {
+		deviceId: string
+		model: string
+		request: HistoricalRequest
+	}) => Promise<HistoricalResponse[]>
 } => {
-	const modelFetcher = getModelForDevice({ db, DevicesTableName: deviceTable })
-	const deviceModelCache: Record<string, string> = {}
-
 	const [historicalDataDatabaseName, historicalDataTableName] =
 		historicalDataTableInfo.split('|')
 	if (
@@ -92,20 +88,7 @@ export const historicalDataRepository = ({
 	}
 
 	return {
-		getHistoricalData: async (deviceId, request) => {
-			// Fetch model for device
-			if (deviceModelCache[deviceId] === undefined) {
-				const maybeModel = await modelFetcher(deviceId)
-				if ('error' in maybeModel) {
-					log?.error(maybeModel.error.message)
-				} else {
-					deviceModelCache[deviceId] = maybeModel.model
-				}
-			}
-			const model = deviceModelCache[deviceId]
-			if (model === undefined) {
-				throw new Error(`Unknown device model`)
-			}
+		getHistoricalData: async ({ deviceId, model, request }) => {
 			const context = Context.model(model).transformed(request.message)
 
 			// Validate request

@@ -112,14 +112,18 @@ export class HistoricalData extends Construct {
 				initialPolicy: [
 					new IAM.PolicyStatement({
 						actions: [
-							'timestream:Query',
-							'timestream:PrepareQuery',
-							'timestream:CancelQuery',
+							'timestream:Select',
+							'timestream:DescribeTable',
+							'timestream:ListMeasures',
 						],
 						resources: [this.table.attrArn],
 					}),
 					new IAM.PolicyStatement({
-						actions: ['timestream:DescribeEndpoints'],
+						actions: [
+							'timestream:DescribeEndpoints',
+							'timestream:SelectValues',
+							'timestream:CancelQuery',
+						],
 						resources: ['*'],
 					}),
 				],

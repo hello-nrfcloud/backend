@@ -75,7 +75,7 @@ Then I send websocket request as this JSON
 ```json
 {
   "@id": "${requestId}",
-  "type": "1hour",
+  "type": "lastHour",
   "ts": ${ts},
   "message": "gain",
   "attributes": {

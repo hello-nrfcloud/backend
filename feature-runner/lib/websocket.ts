@@ -113,7 +113,7 @@ export const createWebsocketClient = ({
 				await onConnectDeferred.promise
 				await new Promise((resolve, reject) => {
 					client.send(
-						JSON.stringify({ ...payload, message: 'message' }),
+						JSON.stringify({ payload, message: 'message' }),
 						(error) => {
 							if (error) return reject(error)
 							return resolve(void 0)

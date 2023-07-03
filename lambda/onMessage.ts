@@ -25,7 +25,7 @@ export const handler = async (
 	await repo.extendTTL(event.requestContext.connectionId)
 
 	if (event.body !== undefined) {
-		const { message, ...request } = JSON.parse(event.body)
+		const { payload } = JSON.parse(event.body)
 		const { deviceId, model } = event.requestContext.authorizer
 		await eventBus.putEvents({
 			Entries: [
@@ -37,7 +37,7 @@ export const handler = async (
 						deviceId,
 						connectionId: event.requestContext.connectionId,
 						message: {
-							request,
+							request: payload,
 							model,
 						},
 					}),
