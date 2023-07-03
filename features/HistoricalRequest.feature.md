@@ -70,7 +70,7 @@ timestream with `0.5` minute interval to `${ts}` as this JSON
 And I store `$join(['request-', $formatBase($random() * 10000000, 16)])` into
 `requestId`
 
-Then I send websocket request as this JSON
+When I send websocket request as this JSON
 
 ```json
 {
@@ -81,5 +81,36 @@ Then I send websocket request as this JSON
   "attributes": {
     "avgMA": { "attribute": "mA", "aggregate": "avg" }
   }
+}
+```
+
+Then wait for `5` seconds
+
+Then the historical response should match to this JSON
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/historical-data",
+  "@id": "${requestId}",
+  "attributes": {
+    "avgMA": [
+      {
+        "mA": 3.579295
+      },
+      {
+        "mA": 3.657045
+      },
+      {
+        "mA": 3.43834
+      },
+      {
+        "mA": 3.28449
+      },
+      {
+        "mA": 3.24925
+      }
+    ]
+  },
+  "ts": ${ts}
 }
 ```

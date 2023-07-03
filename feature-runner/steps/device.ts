@@ -1,4 +1,9 @@
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
+import {
+	DeleteItemCommand,
+	DynamoDBClient,
+	GetItemCommand,
+	ScanCommand,
+} from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import {
 	codeBlockOrThrow,
@@ -186,12 +191,29 @@ const waitForScheduler = async ({
 	await setTimeout(waitingTime * 1000)
 }
 
-export const steps = (
+export const deviceStepRunners = (
 	bridgeInfo: Settings,
 	db: DynamoDBClient,
-): StepRunner<World>[] => [
-	createDevice({ db }),
-	getDevice({ db }),
-	waitForScheduler,
-	publishDeviceMessage(bridgeInfo),
-]
+	devicesTable: string,
+): {
+	steps: StepRunner<World>[]
+	cleanup: () => Promise<void>
+} => ({
+	steps: [
+		createDevice({ db }),
+		getDevice({ db }),
+		waitForScheduler,
+		publishDeviceMessage(bridgeInfo),
+	],
+	cleanup: async () => {
+		const allItems = await db.send(new ScanCommand({ TableName: devicesTable }))
+		for (const item of allItems?.Items ?? []) {
+			await db.send(
+				new DeleteItemCommand({
+					TableName: devicesTable,
+					Key: { deviceId: { S: item['deviceId']?.S ?? '' } },
+				}),
+			)
+		}
+	},
+})

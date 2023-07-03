@@ -283,7 +283,7 @@ Given I connect websocket with fingerprint `92b.b4ff3d`
 
 Then wait for `5` seconds
 
-Then the response should equal to this JSON
+Then the shadow response should equal to this JSON
 
 ```json
 {
@@ -328,19 +328,7 @@ Then the response should equal to this JSON
       "eest": 7
     }
   },
-  "ts": 1682072423000,
-  "lastUpdate": {
-    "device": {
-      "networkInfo": {
-        "networkMode": 1682072423000,
-        "mccmnc": 1682072423000,
-        "eest": 1682072423000
-      },
-      "deviceInfo": {
-        "appVersion": 1681975785000
-      }
-    }
-  }
+  "ts": 1682072423000
 }
 ```
 
@@ -350,4 +338,4 @@ Given I connect websocket with fingerprint `92b.b4ff3d`
 
 And wait for `5` seconds
 
-Then the response should equal to empty string
+Then the shadow response should equal to empty string

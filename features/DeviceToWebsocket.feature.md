@@ -31,7 +31,7 @@ When a device with id `nrf-test-device-id` publishes to topic
 }
 ```
 
-Then the response should equal to this JSON
+Then the gain response should equal to this JSON
 
 ```json
 {

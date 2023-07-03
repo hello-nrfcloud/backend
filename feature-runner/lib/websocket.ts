@@ -4,7 +4,7 @@ import WebSocket from 'ws'
 export type WebSocketClient = {
 	connect: () => Promise<any>
 	fetchConnectionMessage: () => Promise<any>
-	fetchMessage: () => Promise<any>
+	fetchMessage: (context: string) => Promise<any>
 	send: (payload: Record<string, unknown>) => Promise<void>
 	close: () => void
 }
@@ -58,10 +58,10 @@ export const createWebsocketClient = ({
 		const client = new WebSocket(url)
 		const onConnectDeferred = defer()
 		const onConnectMessageDeferred = defer()
-		const messages: Record<string, unknown>[] = []
+		const messages: Map<string, Record<string, unknown>[]> = new Map()
 		client
 			.on('open', () => {
-				messages.length = 0
+				messages.clear()
 				onConnectDeferred.resolve(void 0)
 			})
 			.on('error', (error) => {
@@ -73,10 +73,16 @@ export const createWebsocketClient = ({
 			.on('message', async (msg) => {
 				const message = JSON.parse(msg.toString())
 				debug?.(msg.toString())
-				if (message['@context'] === Context.deviceIdentity.toString()) {
-					onConnectMessageDeferred.resolve(message)
-				} else {
-					messages.push(message)
+				if ('@context' in message) {
+					const context = message['@context']
+					if (context === Context.deviceIdentity.toString())
+						onConnectMessageDeferred.resolve(message)
+
+					if (messages.has(context)) {
+						messages.get(context)?.push(message)
+					} else {
+						messages.set(context, [message])
+					}
 				}
 			})
 
@@ -87,11 +93,11 @@ export const createWebsocketClient = ({
 			fetchConnectionMessage: async () => {
 				return onConnectMessageDeferred.promise
 			},
-			fetchMessage: async () => {
+			fetchMessage: async (context) => {
 				const deferred = defer()
 				let fetchTimer: NodeJS.Timeout
 				const _fetch = () => {
-					const message = messages.shift()
+					const message = messages.get(context)?.shift()
 					if (message === undefined) {
 						fetchTimer = setTimeout(_fetch, 500)
 					} else {

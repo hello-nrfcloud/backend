@@ -20,6 +20,19 @@ chai.use(chaiSubset)
 
 const wsClients: Record<string, WebSocketClient> = {}
 
+const getContextFromMessageType = (messageType: string): string => {
+	switch (messageType) {
+		case 'gain':
+			return 'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain'
+		case 'historical':
+			return 'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/historical-data'
+		case 'shadow':
+			return 'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/reported'
+		default:
+			throw Error(`Cannot find context from the given message type`)
+	}
+}
+
 const wsConnect = async ({
 	step,
 	log: {
@@ -76,18 +89,20 @@ const wsMessage = async ({
 	context: { wsClient },
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match =
-		/^the response should (?<equalOrMatch>equal|match)(?: to)? this JSON$/.exec(
+		/^the (?<messageType>[^\s]+) response should (?<equalOrMatch>equal|match)(?: to)? this JSON$/.exec(
 			step.title,
 		)
 	if (match === null) return noMatch
 
-	const message: Record<string, unknown> = await wsClient?.fetchMessage()
+	const context = getContextFromMessageType(match.groups?.messageType ?? '')
+	const expectedResult = JSON.parse(codeBlockOrThrow(step).code)
+	const message: Record<string, unknown> = await wsClient?.fetchMessage(context)
 	progress(`Received ws message`, JSON.stringify(message, null, 2))
 
 	if (match?.groups?.equalOrMatch === 'match') {
-		expect(message).to.containSubset(JSON.parse(codeBlockOrThrow(step).code))
+		expect(message).to.containSubset(expectedResult)
 	} else {
-		assert.deepEqual(message, JSON.parse(codeBlockOrThrow(step).code))
+		assert.deepEqual(message, expectedResult)
 	}
 }
 
@@ -98,10 +113,14 @@ const wsMessageTimeout = async ({
 	},
 	context: { wsClient },
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^the response should equal to empty string$/.exec(step.title)
+	const match =
+		/^the (?<messageType>[^\s]+) response should equal to empty string$/.exec(
+			step.title,
+		)
 	if (match === null) return noMatch
 
-	const message: string = await wsClient?.fetchMessage()
+	const context = getContextFromMessageType(match.groups?.messageType ?? '')
+	const message: string = await wsClient?.fetchMessage(context)
 	progress(`Received ws message`)
 	assert.deepEqual(message, '')
 }

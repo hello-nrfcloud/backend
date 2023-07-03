@@ -16,7 +16,7 @@ import {
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
 import { getSettings } from '../nrfcloud/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
-import { steps as deviceSteps } from './steps/device.js'
+import { deviceStepRunners } from './steps/device.js'
 import { historicalStepRunners } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from './steps/storage.js'
@@ -95,6 +95,13 @@ const { steps: webSocketSteps, cleanup: websocketCleanup } =
 	websocketStepRunners()
 cleaners.push(websocketCleanup)
 
+const { steps: deviceSteps, cleanup: deviceCleanup } = deviceStepRunners(
+	accountDeviceSettings,
+	db,
+	config.devicesTableName,
+)
+cleaners.push(deviceCleanup)
+
 const { steps: historicalSteps } = historicalStepRunners({
 	timestream,
 	timestreamWriter,
@@ -102,7 +109,7 @@ const { steps: historicalSteps } = historicalStepRunners({
 })
 runner
 	.addStepRunners(...webSocketSteps)
-	.addStepRunners(...deviceSteps(accountDeviceSettings, db))
+	.addStepRunners(...deviceSteps)
 	.addStepRunners(...mocknRFCloudSteps({ db }))
 	.addStepRunners(...historicalSteps)
 	.addStepRunners(...storageSteps())
