@@ -17,7 +17,8 @@ Given I connect websocket with fingerprint `92b.d795c7`
 
 And I store
 `$toMillis($fromMillis($millis(), '[Y9999]-[M99]-[D99]T[H99]:[m]:00Z'))` into
-`ts`
+`ts` and generate a series with decrement of `1` minute each time for `5`
+iterations
 
 And I store the converted device messages of device ID `${deviceId}` into
 timestream using `${ts}` and decrement the timestamp by `0.5` minutes as this
@@ -87,7 +88,7 @@ When I send websocket request as this JSON
 
 Then wait for `5` seconds
 
-Then the historical response should match to this JSON
+Then the historical response should equal to this JSON
 
 ```json
 {
@@ -96,19 +97,24 @@ Then the historical response should match to this JSON
   "attributes": {
     "avgMA": [
       {
-        "mA": 3.579295
+        "mA": 3.579295,
+        "ts": ${ts1}
       },
       {
-        "mA": 3.657045
+        "mA": 3.657045,
+        "ts": ${ts2}
       },
       {
-        "mA": 3.43834
+        "mA": 3.43834,
+        "ts": ${ts3}
       },
       {
-        "mA": 3.28449
+        "mA": 3.28449,
+        "ts": ${ts4}
       },
       {
-        "mA": 3.24925
+        "mA": 3.24925,
+        "ts": ${ts5}
       }
     ]
   },
