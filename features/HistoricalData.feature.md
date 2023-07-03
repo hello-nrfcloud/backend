@@ -15,8 +15,8 @@ And I store `$millis()` into `ts`
 
 And I store `$fromMillis(${ts})` into `tsISO`
 
-And a device with id `nrf-historical-device-id` publishes this message to the
-topic `m/d/nrf-historical-device-id/d2c`
+And the device `nrf-historical-device-id` publishes this message to the topic
+`m/d/nrf-historical-device-id/d2c`
 
 ```json
 {
