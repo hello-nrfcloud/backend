@@ -29,7 +29,7 @@ Given I store `$fromMillis(${ts})` into `tsISO`
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
+<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
 Soon I should receive a message on the websocket that matches
 
