@@ -11,7 +11,7 @@ import { Construct } from 'constructs'
  * Record the timestamp when the device was last seen
  */
 export class LastSeen extends Construct {
-	public readonly table: DynamoDB.ITable
+	public readonly table: DynamoDB.Table
 	public constructor(parent: Construct) {
 		super(parent, 'lastSeen')
 
@@ -25,8 +25,21 @@ export class LastSeen extends Construct {
 				name: 'source',
 				type: DynamoDB.AttributeType.STRING,
 			},
-			pointInTimeRecovery: true,
+			pointInTimeRecovery: false,
 			removalPolicy: RemovalPolicy.DESTROY,
+		})
+
+		this.table.addGlobalSecondaryIndex({
+			indexName: 'dailyActive',
+			partitionKey: {
+				name: 'source',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			sortKey: {
+				name: 'day',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
 
 		const role = new IAM.Role(this, 'role', {
@@ -59,7 +72,8 @@ export class LastSeen extends Construct {
 					select
 						topic(4) as deviceId,
 						'deviceMessage' as source,
-						parse_time("yyyy-MM-dd'T'HH:mm:ss.S'Z'", ts) as lastSeen
+						parse_time("yyyy-MM-dd'T'HH:mm:ss.S'Z'", ts) as lastSeen,
+						parse_time("yyyy-MM-dd", ts) as day
 					from 'data/+/+/+/+'
 					where messageType = 'DATA'
 				`,
