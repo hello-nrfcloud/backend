@@ -5,28 +5,24 @@
 
 ## Background
 
-Given a `PCA20035+solar` device with the ID `nrf-352656108602276` is registered
-with the fingerprint `2a.a4ff3e`
+Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 And device shadow fetching config for model `PCA20035+solar` is `5`
 
-And I store `$millis()` into `ts`
-
-And there is a shadow data of device id `nrf-352656108602276` in nRF Cloud as
-this JSON
+And there is this device shadow data for `${fingerprint:deviceId}` in nRF Cloud
 
 ```json
 {
   "items": [
     {
-      "id": "nrf-352656108602276",
+      "id": "${fingerprint:deviceId}",
       "tags": ["configuration:solar-shield", "model:PCA20035"],
       "tenantId": "a0673464-e4e1-4b87-bffd-6941a012067b",
       "$meta": {
         "updatedAt": "2023-04-20T07:29:46.467Z",
         "createdAt": "2023-04-19T11:49:07.370Z"
       },
-      "name": "nrf-352656108602276",
+      "name": "${fingerprint:deviceId}",
       "type": "Generic",
       "subType": "PCA10090",
       "firmware": {
@@ -43,8 +39,8 @@ this JSON
           "pairing": {
             "state": "paired",
             "topics": {
-              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/nrf-352656108602276/d2c",
-              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/nrf-352656108602276/+/r"
+              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/d2c",
+              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/+/r"
             }
           }
         },
@@ -67,8 +63,8 @@ this JSON
           "pairing": {
             "state": "paired",
             "topics": {
-              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/nrf-352656108602276/d2c",
-              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/nrf-352656108602276/+/r"
+              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/d2c",
+              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/+/r"
             }
           },
           "nrfcloud_mqtt_topic_prefix": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/",
@@ -283,22 +279,20 @@ this JSON
 
 ## Verify device shadow requests should be fired 2 times
 
-Given I connect websocket with fingerprint `2a.a4ff3e`
+When I connect to the websocket using fingerprint `${fingerprint}`
 
-Then wait for `15` seconds
+<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
-Then the duration between 2 consecutive device shadow requests for
-`nrf-352656108602276` should be `5` seconds
+Soon the duration between 2 consecutive device shadow requests for
+`${fingerprint:deviceId}` should be `5` seconds
 
 ## Verify if changing fetching interval to 10 seconds, device shadow requests should be fired 1 time in 10 seconds
 
-Given I connect websocket with fingerprint `2a.a4ff3e`
+Given device shadow fetching config for model `PCA20035+solar` is `10`
 
-And device shadow fetching config for model `PCA20035+solar` is `10`
+When I connect to the websocket using fingerprint `${fingerprint}`
 
-And I store `$millis()` into `ts`
+<!-- @retry:tries=5,initialDelay=10000,delayFactor=1 -->
 
-Then wait for `30` seconds
-
-Then the duration between 2 consecutive device shadow requests for
-`nrf-352656108602276` should be `10` seconds
+Soon the duration between 2 consecutive device shadow requests for
+`${fingerprint:deviceId}` should be `10` seconds

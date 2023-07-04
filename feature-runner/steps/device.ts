@@ -9,36 +9,42 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import assert from 'assert/strict'
 import mqtt from 'mqtt'
+import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { setTimeout } from 'node:timers/promises'
 import pRetry from 'p-retry'
+import { generateCode } from '../../cli/devices/generateCode.js'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
 import { getModelForDevice } from '../../devices/getModelForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
 
-const createDevice =
+const createDeviceForModel =
 	({ db }: { db: DynamoDBClient }) =>
 	async ({
 		step,
 		log: {
 			step: { progress },
 		},
-		context: { devicesTable, devicesTableFingerprintIndexName },
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+		context,
+	}: StepRunnerArgs<
+		World & Record<string, string>
+	>): Promise<StepRunResult> => {
 		const match =
-			/^a `(?<model>[^`]+)` device with the ID `(?<id>[^`]+)` is registered with the fingerprint `(?<fingerprint>[^`]+)`$/.exec(
+			/^I have the fingerprint for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/.exec(
 				step.title,
 			)
 		if (match === null) return noMatch
-		const { id, model, fingerprint } = match.groups as {
-			id: string
+		const { model, storageName } = match.groups as {
 			model: string
-			fingerprint: string
+			storageName: string
 		}
 
+		const fingerprint = `92b.${generateCode()}`
+		const id = randomUUID()
+
+		const { devicesTable, devicesTableFingerprintIndexName } = context
 		progress(`Registering device ${id} into table ${devicesTable}`)
 		await registerDevice({ db, devicesTableName: devicesTable })({
 			id,
@@ -79,8 +85,12 @@ const createDevice =
 			},
 		)
 
-		progress(`Device registered: ${id}`)
+		context[storageName] = fingerprint
+		context[`${storageName}:deviceId`] = id
+
+		progress(`Device registered: ${fingerprint} (${id})`)
 	}
+
 const getDevice =
 	({ db }: { db: DynamoDBClient }) =>
 	async ({
@@ -90,10 +100,9 @@ const getDevice =
 		},
 		context: { devicesTable },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^The device id `(?<key>[^`]+)` should equal to this JSON$/.exec(
-				step.title,
-			)
+		const match = /^The device id `(?<key>[^`]+)` should equal$/.exec(
+			step.title,
+		)
 		if (match === null) return noMatch
 
 		progress(`Get data with id ${match.groups?.key} from ${devicesTable}`)
@@ -125,7 +134,7 @@ const publishDeviceMessage =
 		},
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 		const match =
-			/^a device with id `(?<id>[^`]+)` publishes to topic `(?<topic>[^`]+)` with a message as this JSON$/.exec(
+			/^the device `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/.exec(
 				step.title,
 			)
 		if (match === null) return noMatch
@@ -171,27 +180,11 @@ const publishDeviceMessage =
 		})
 	}
 
-const waitForScheduler = async ({
-	step,
-	log: {
-		step: { progress },
-	},
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^wait for `(?<time>\d+)` seconds?$/.exec(step.title)
-	if (match === null) return noMatch
-
-	const waitingTime = Number(match.groups?.time ?? 1)
-
-	progress(`Waiting for ${waitingTime} seconds`)
-	await setTimeout(waitingTime * 1000)
-}
-
 export const steps = (
 	bridgeInfo: Settings,
 	db: DynamoDBClient,
-): StepRunner<World>[] => [
-	createDevice({ db }),
+): StepRunner<World & Record<string, string>>[] => [
+	createDeviceForModel({ db }),
 	getDevice({ db }),
-	waitForScheduler,
 	publishDeviceMessage(bridgeInfo),
 ]

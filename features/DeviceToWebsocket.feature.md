@@ -8,19 +8,12 @@ needs:
 > Device messages published on nRF Cloud should be delivered to the websocket
 > API
 
-## Background
-
-Given a `PCA20035+solar` device with the ID `nrf-test-device-id` is registered
-with the fingerprint `92b.c4ff33`
-
 ## Verify a device sends a message to nRF Cloud, then I can receive the message via website
 
-Given I connect websocket with fingerprint `92b.c4ff33`
+Given I store `$millis()` into `ts`
 
-And I store `$millis()` into `ts`
-
-When a device with id `nrf-test-device-id` publishes to topic
-`m/d/nrf-test-device-id/d2c` with a message as this JSON
+When the device `${fingerprint:deviceId}` publishes this message to the topic
+`m/d/${fingerprint:deviceId}/d2c`
 
 ```json
 {
@@ -31,7 +24,9 @@ When a device with id `nrf-test-device-id` publishes to topic
 }
 ```
 
-Then the response should equal to this JSON
+<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
+
+Soon I should receive a message on the websocket that matches
 
 ```json
 {

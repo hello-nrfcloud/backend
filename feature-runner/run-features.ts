@@ -13,10 +13,10 @@ import {
 	TEST_RESOURCES_STACK_NAME,
 } from '../cdk/stacks/stackConfig.js'
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
-import { getSettings } from '../nrfcloud/settings.js'
-import { putSettings } from '../util/settings.js'
+import { getSettings as nrfCloudSettings } from '../nrfcloud/settings.js'
+import { deleteSettings, getSettings, putSettings } from '../util/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
-import { steps as configSteps } from './steps/config.js'
+import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
@@ -50,14 +50,25 @@ export type World = {
 	tenantId: string
 	responsesTableName: string
 	requestsTableName: string
-	configWriter: ReturnType<typeof putSettings>
-}
+} & Record<string, string>
 
-const accountDeviceSettings = await getSettings({
+const accountDeviceSettings = await nrfCloudSettings({
 	ssm,
 	stackName: STACK_NAME,
 })()
 const configWriter = putSettings({
+	ssm,
+	stackName: STACK_NAME,
+	scope: 'config',
+	system: 'stack',
+})
+const configRemover = deleteSettings({
+	ssm,
+	stackName: STACK_NAME,
+	scope: 'config',
+	system: 'stack',
+})
+const configSettings = getSettings({
 	ssm,
 	stackName: STACK_NAME,
 	scope: 'config',
@@ -103,13 +114,20 @@ const { steps: webSocketSteps, cleanup: websocketCleanup } =
 	websocketStepRunners()
 cleaners.push(websocketCleanup)
 
+const { steps: configSteps, cleanup: configCleanup } = configStepRunners({
+	configWriter,
+	configRemover,
+	configSettings,
+})
+cleaners.push(configCleanup)
+
 runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(...deviceSteps(accountDeviceSettings, db))
 	.addStepRunners(...mocknRFCloudSteps({ db }))
 	.addStepRunners(...historicalSteps({ timestream }))
 	.addStepRunners(...storageSteps())
-	.addStepRunners(...configSteps())
+	.addStepRunners(...configSteps)
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,
@@ -119,7 +137,6 @@ const res = await runner.run({
 	responsesTableName: testConfig.responsesTableName,
 	requestsTableName: testConfig.requestsTableName,
 	historicalDataTableInfo: config.historicalDataTableInfo,
-	configWriter,
 })
 
 await Promise.all(cleaners.map(async (fn) => fn()))

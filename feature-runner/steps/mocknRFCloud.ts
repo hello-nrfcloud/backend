@@ -16,6 +16,8 @@ import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
 import type { World } from '../run-features.js'
 
+let queryStartTime: Date | undefined
+
 export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
 	const mockShadowData = async ({
 		step,
@@ -25,7 +27,7 @@ export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
 		context: { responsesTableName },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 		const match =
-			/^there is a shadow data of device id `(?<deviceId>[^`]+)` in nRF Cloud as this JSON$/.exec(
+			/^there is this device shadow data for `(?<deviceId>[^`]+)` in nRF Cloud$/.exec(
 				step.title,
 			)
 		if (match === null) return noMatch
@@ -78,7 +80,7 @@ ${data}
 			step: { progress },
 		},
 		context,
-	}: StepRunnerArgs<{ [k: string]: unknown }>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				duration: Type.Integer(),
@@ -94,15 +96,7 @@ ${data}
 
 		if (match === null) return noMatch
 
-		let requestsTableName = ''
-		if (
-			'requestsTableName' in context &&
-			typeof context['requestsTableName'] === 'string'
-		) {
-			requestsTableName = context['requestsTableName']
-		}
-		const timestamp = new Date(context['ts'] as number).toISOString()
-
+		if (queryStartTime === undefined) queryStartTime = new Date()
 		const params: { [K: string]: any } = {
 			includeState: true,
 			includeStateMeta: true,
@@ -118,7 +112,7 @@ ${data}
 		progress(`Mock http url: ${methodPathQuery}`)
 		const result = await db.send(
 			new QueryCommand({
-				TableName: requestsTableName,
+				TableName: context.requestsTableName,
 				KeyConditionExpression:
 					'#methodPathQuery = :methodPathQuery AND #timestamp >= :timestamp',
 				ExpressionAttributeNames: {
@@ -127,7 +121,7 @@ ${data}
 				},
 				ExpressionAttributeValues: {
 					':methodPathQuery': { S: methodPathQuery },
-					':timestamp': { S: timestamp },
+					':timestamp': { S: queryStartTime.toISOString() },
 				},
 				ProjectionExpression: '#timestamp',
 				ScanIndexForward: false,
@@ -135,22 +129,29 @@ ${data}
 			}),
 		)
 		const resultObj = result?.Items?.map((item) => unmarshall(item))
-		progress(`Query mock requests with timestamp: ${timestamp}`)
+		progress(`Query mock requests from ${queryStartTime.toISOString()}`)
 		progress(
 			`Query mock requests result: ${JSON.stringify(resultObj, null, 2)}`,
 		)
 
-		assert.equal(resultObj?.length, 2)
-		if (resultObj !== undefined && resultObj.length == 2) {
-			const timeA = new Date(resultObj[0]?.timestamp).getTime()
-			const timeB = new Date(resultObj[1]?.timestamp).getTime()
-			const timeDiff = timeA - timeB
-			const allowedMarginInMS = 1000
-			const fitToSchedule =
-				timeDiff >= match.duration * 1000 - allowedMarginInMS &&
-				timeDiff <= match.duration * 1000 + allowedMarginInMS
-			assert.equal(fitToSchedule, true)
-		}
+		if (resultObj?.length !== 2)
+			throw new Error(`Waiting for 2 consecutive mock requests`)
+
+		const timeA = new Date(resultObj[0]?.timestamp).getTime()
+		const timeB = new Date(resultObj[1]?.timestamp).getTime()
+		const timeDiff = timeA - timeB
+		const allowedMarginInMS = 1000
+		const fitToSchedule =
+			timeDiff >= match.duration * 1000 - allowedMarginInMS &&
+			timeDiff <= match.duration * 1000 + allowedMarginInMS
+
+		if (fitToSchedule !== true)
+			throw new Error(
+				`2 consecutive mock requests does not match with the configured duration (${match.duration})`,
+			)
+
+		queryStartTime = undefined
+		assert.equal(fitToSchedule, true)
 	}
 
 	return [mockShadowData, durationBetweenRequests]
