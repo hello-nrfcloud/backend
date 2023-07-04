@@ -46,15 +46,10 @@ export const handler = async (
 			message: { request, model },
 		} = event.detail
 
-		const context =
-			'https://github.com/hello-nrfcloud/proto/historical-data-request'
 		const responses = await repo.getHistoricalData({
 			deviceId,
 			model,
-			request: {
-				...request,
-				'@context': context,
-			},
+			request,
 		})
 
 		for (const response of responses) {

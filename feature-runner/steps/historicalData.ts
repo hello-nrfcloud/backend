@@ -2,7 +2,6 @@ import {
 	QueryCommand,
 	type TimestreamQueryClient,
 } from '@aws-sdk/client-timestream-query'
-import type { TimestreamWriteClient } from '@aws-sdk/client-timestream-write'
 import {
 	codeBlockOrThrow,
 	matchGroups,
@@ -14,25 +13,14 @@ import {
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { Type } from '@sinclair/typebox'
 import * as chai from 'chai'
+import { expect } from 'chai'
 import chaiSubset from 'chai-subset'
 import pRetry from 'p-retry'
-import { convertMessageToTimestreamRecords } from '../../historicalData/convertMessageToTimestreamRecords.js'
-import { storeRecordsInTimestream } from '../../historicalData/storeRecordsInTimestream.js'
 import type { World } from '../run-features.js'
 
 chai.use(chaiSubset)
 
-const dateParser = (key: string, value: any) => {
-	if (typeof value === 'string') {
-		const a =
-			/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/.exec(
-				value,
-			)
-		if (a) return new Date(value)
-	}
-
-	return value
-}
+let lastResult: Record<string, unknown>[] = []
 
 const queryTimestream =
 	(timestream: TimestreamQueryClient) =>
@@ -51,7 +39,7 @@ const queryTimestream =
 				tsISO: Type.String(),
 			}),
 		)(
-			/^I query timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` from `(?<tsISO>[^`]+)`. The response should match this JSON$/,
+			/^I query Timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` starting at `(?<tsISO>[^`]+)`$/,
 			step.title,
 		)
 		if (match === null) return noMatch
@@ -88,87 +76,36 @@ const queryTimestream =
 		})
 
 		// parseResult will parse date to date object not date string
-		const data = parseResult(res)
+		lastResult = parseResult<Record<string, unknown>>(res)
 
-		progress(`Result: ${JSON.stringify(data, null, 2)}`)
-		chai
-			.expect(data)
-			.containSubset(JSON.parse(codeBlockOrThrow(step).code, dateParser))
+		progress(`Result: ${JSON.stringify(lastResult, null, 2)}`)
 	}
 
-const storeTimestream =
-	(store: ReturnType<typeof storeRecordsInTimestream>) =>
-	async ({
-		step,
-		log: {
-			step: { progress },
-		},
-		context: { historicalDataTableInfo },
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match = matchGroups(
-			Type.Object({
-				deviceId: Type.String(),
-				intervalMin: Type.Number(),
-				ts: Type.Number(),
-			}),
-			{
-				intervalMin: (s) => Number(s),
-				ts: (s) => Number(s),
-			},
-		)(
-			/^I store the converted device messages of device ID `(?<deviceId>[^`]+)` into timestream using `(?<ts>[^`]+)` and decrement the timestamp by `(?<intervalMin>[^`]+)` minutes? as this JSON$/,
-			step.title,
-		)
-		if (match === null) return noMatch
-
-		const data = JSON.parse(codeBlockOrThrow(step).code)
-		const messages = Array.isArray(data) ? data : [data]
-
-		let recordTs = match.ts
-		const records = messages
-			.map((message) => {
-				recordTs -= match.intervalMin * 60 * 1000
-				return convertMessageToTimestreamRecords({
-					...message,
-					ts: recordTs,
-				})
-			})
-			.flat()
-		progress(
-			`store converted device data for device: ${match.deviceId} and time: ${match.ts}`,
-		)
-		await store(records, {
-			Dimensions: [
-				{
-					Name: 'deviceId',
-					Value: match.deviceId,
-				},
-			],
-		})
+const dateParser = (key: string, value: any) => {
+	if (typeof value === 'string') {
+		const a =
+			/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/.exec(
+				value,
+			)
+		if (a) return new Date(value)
 	}
 
-export const historicalStepRunners = ({
+	return value
+}
+
+const assertResult = async ({
+	step,
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	const match = /^the Timestream result should match$/.exec(step.title)
+	if (match === null) return noMatch
+
+	expect(lastResult).to.containSubset(
+		JSON.parse(codeBlockOrThrow(step).code, dateParser),
+	)
+}
+
+export const steps = ({
 	timestream,
-	timestreamWriter,
-	historicalDataTableInfo,
 }: {
 	timestream: TimestreamQueryClient
-	timestreamWriter: TimestreamWriteClient
-	historicalDataTableInfo: string
-}): {
-	steps: StepRunner<World>[]
-} => {
-	const [DatabaseName, TableName] = historicalDataTableInfo.split('|')
-	if (DatabaseName === undefined || TableName === undefined)
-		throw new Error('Historical database is invalid')
-
-	const store = storeRecordsInTimestream({
-		timestream: timestreamWriter,
-		DatabaseName,
-		TableName,
-	})
-
-	return {
-		steps: [queryTimestream(timestream), storeTimestream(store)],
-	}
-}
+}): StepRunner<World>[] => [queryTimestream(timestream), assertResult]

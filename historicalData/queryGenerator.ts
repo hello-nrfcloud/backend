@@ -14,8 +14,9 @@ export const getQueryStatement = ({
 	historicalDataDatabaseName: string
 	historicalDataTableName: string
 }): string => {
-	const start = getStartPeriod(request)
-	const end = `from_milliseconds(${request.ts})`
+	const startMS = Date.now()
+	const start = getStartPeriod(request, startMS)
+	const end = `from_milliseconds(${startMS})`
 
 	if (request.message === 'location') {
 		const measureNames = getMeasureNames(request)
@@ -71,13 +72,16 @@ export const getBinnedTime = (request: HistoricalRequest): string => {
 	return `bin(time, ${selectedType.bin.replace(/s$/, '')})`
 }
 
-export const getStartPeriod = (request: HistoricalRequest): string => {
+export const getStartPeriod = (
+	request: HistoricalRequest,
+	startMS: number,
+): string => {
 	const type = request.type
 	const selectedType = AvailableCharts[type]
 	if (selectedType === undefined)
 		throw new Error(`${type} is not a valid chart type`)
 
-	return `from_milliseconds(${request.ts}) - ${selectedType.duration.replace(
+	return `from_milliseconds(${startMS}) - ${selectedType.duration.replace(
 		/s$/,
 		'',
 	)}`

@@ -42,7 +42,6 @@ describe('queryGenerator', () => {
 				avgMA: { attribute: 'mA', aggregate: 'avg' },
 			},
 			type: 'lastDay',
-			ts: 1688104200000, // 2023-06-30T05:50:00.000Z
 		}
 	})
 
@@ -70,17 +69,17 @@ describe('queryGenerator', () => {
 	describe('getStartPeriod', () => {
 		it('returns the correct start period for a valid chart type', () => {
 			request.type = 'lastHour'
-			expect(getStartPeriod(request)).toEqual(
+			expect(getStartPeriod(request, 1688104200000)).toEqual(
 				'from_milliseconds(1688104200000) - 1hour',
 			)
 
 			request.type = 'lastDay'
-			expect(getStartPeriod(request)).toEqual(
+			expect(getStartPeriod(request, 1688104200000)).toEqual(
 				'from_milliseconds(1688104200000) - 24hour',
 			)
 
 			request.type = 'lastMonth'
-			expect(getStartPeriod(request)).toEqual(
+			expect(getStartPeriod(request, 1688104200000)).toEqual(
 				'from_milliseconds(1688104200000) - 30day',
 			)
 		})
@@ -89,7 +88,7 @@ describe('queryGenerator', () => {
 			request.type = 'InvalidType' as 'lastHour'
 
 			expect(() => {
-				getStartPeriod(request)
+				getStartPeriod(request, 1688104200000)
 			}).toThrow('InvalidType is not a valid chart type')
 		})
 	})
@@ -185,6 +184,15 @@ describe('queryGenerator', () => {
 	})
 
 	describe('getQueryStatement', () => {
+		beforeEach(() => {
+			jest.useFakeTimers()
+			jest.setSystemTime(1688104200000)
+		})
+
+		afterEach(() => {
+			jest.useRealTimers()
+		})
+
 		it('returns the correct query statement for gain request', () => {
 			request.message = 'gain'
 			request.type = 'lastDay'

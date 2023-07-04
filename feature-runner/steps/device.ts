@@ -1,49 +1,55 @@
-import {
-	DeleteItemCommand,
-	DynamoDBClient,
-	GetItemCommand,
-	ScanCommand,
-} from '@aws-sdk/client-dynamodb'
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import {
 	codeBlockOrThrow,
+	matchGroups,
 	noMatch,
 	type StepRunResult,
 	type StepRunner,
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
+import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
+import jsonata from 'jsonata'
 import mqtt from 'mqtt'
+import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { setTimeout } from 'node:timers/promises'
 import pRetry from 'p-retry'
+import { generateCode } from '../../cli/devices/generateCode.js'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
 import { getModelForDevice } from '../../devices/getModelForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { Settings } from '../../nrfcloud/settings.js'
 import type { World } from '../run-features.js'
 
-const createDevice =
+const createDeviceForModel =
 	({ db }: { db: DynamoDBClient }) =>
 	async ({
 		step,
 		log: {
 			step: { progress },
 		},
-		context: { devicesTable, devicesTableFingerprintIndexName },
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^a `(?<model>[^`]+)` device with the ID `(?<id>[^`]+)` is registered with the fingerprint `(?<fingerprint>[^`]+)`$/.exec(
-				step.title,
-			)
+		context,
+	}: StepRunnerArgs<
+		World & Record<string, string>
+	>): Promise<StepRunResult> => {
+		const match = matchGroups(
+			Type.Object({
+				model: Type.String(),
+				storageName: Type.String(),
+			}),
+		)(
+			/^I have the fingerprint for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/,
+			step.title,
+		)
 		if (match === null) return noMatch
-		const { id, model, fingerprint } = match.groups as {
-			id: string
-			model: string
-			fingerprint: string
-		}
 
+		const { model, storageName } = match
+		const fingerprint = `92b.${generateCode()}`
+		const id = randomUUID()
+
+		const { devicesTable, devicesTableFingerprintIndexName } = context
 		progress(`Registering device ${id} into table ${devicesTable}`)
 		await registerDevice({ db, devicesTableName: devicesTable })({
 			id,
@@ -84,8 +90,12 @@ const createDevice =
 			},
 		)
 
-		progress(`Device registered: ${id}`)
+		context[storageName] = fingerprint
+		context[`${storageName}:deviceId`] = id
+
+		progress(`Device registered: ${fingerprint} (${id})`)
 	}
+
 const getDevice =
 	({ db }: { db: DynamoDBClient }) =>
 	async ({
@@ -95,18 +105,20 @@ const getDevice =
 		},
 		context: { devicesTable },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^The device id `(?<key>[^`]+)` should equal to this JSON$/.exec(
-				step.title,
-			)
+		const match = matchGroups(
+			Type.Object({
+				key: Type.String(),
+			}),
+		)(/^The device id `(?<key>[^`]+)` should equal$/, step.title)
+
 		if (match === null) return noMatch
 
-		progress(`Get data with id ${match.groups?.key} from ${devicesTable}`)
+		progress(`Get data with id ${match.key} from ${devicesTable}`)
 		const res = await db.send(
 			new GetItemCommand({
 				TableName: devicesTable,
 				Key: {
-					deviceId: { S: match.groups?.key ?? '' },
+					deviceId: { S: match.key ?? '' },
 				},
 			}),
 		)
@@ -122,34 +134,37 @@ const getDevice =
 	}
 
 const publishDeviceMessage =
-	(bridgeInfo: Settings) =>
+	(nRFCloudSettings: Settings) =>
 	async ({
 		step,
 		log: {
 			step: { progress, error },
 		},
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^a device with id `(?<id>[^`]+)` publishes to topic `(?<topic>[^`]+)` with a message as this JSON$/.exec(
-				step.title,
-			)
+		const match = matchGroups(
+			Type.Object({
+				id: Type.String(),
+				topic: Type.String(),
+			}),
+		)(
+			/^the device `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/,
+			step.title,
+		)
 		if (match === null) return noMatch
 
 		const message = JSON.parse(codeBlockOrThrow(step).code)
 
-		progress(
-			`Device id ${match.groups?.id} publishes to topic ${match.groups?.topic}`,
-		)
+		progress(`Device id ${match.id} publishes to topic ${match.topic}`)
 		await new Promise((resolve, reject) => {
 			const mqttClient = mqtt.connect({
-				host: bridgeInfo.mqttEndpoint,
+				host: nRFCloudSettings.mqttEndpoint,
 				port: 8883,
 				protocol: 'mqtts',
 				protocolVersion: 4,
 				clean: true,
-				clientId: match.groups?.id ?? '',
-				key: bridgeInfo.accountDevicePrivateKey,
-				cert: bridgeInfo.accountDeviceClientCert,
+				clientId: match.id,
+				key: nRFCloudSettings.accountDevicePrivateKey,
+				cert: nRFCloudSettings.accountDeviceClientCert,
 				ca: readFileSync(
 					path.join(process.cwd(), 'data', 'AmazonRootCA1.pem'),
 					'utf-8',
@@ -158,9 +173,7 @@ const publishDeviceMessage =
 
 			mqttClient.on('connect', () => {
 				progress('connected')
-				const topic = `${bridgeInfo.mqttTopicPrefix}${
-					match.groups?.topic ?? ''
-				}`
+				const topic = `${nRFCloudSettings.mqttTopicPrefix}${match.topic}`
 				progress('publishing', message, topic)
 				mqttClient.publish(topic, JSON.stringify(message), (error) => {
 					if (error) return reject(error)
@@ -176,44 +189,83 @@ const publishDeviceMessage =
 		})
 	}
 
-const waitForScheduler = async ({
-	step,
-	log: {
-		step: { progress },
-	},
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^wait for `(?<time>\d+)` seconds?$/.exec(step.title)
-	if (match === null) return noMatch
+const publishDeviceMessages =
+	(nRFCloudSettings: Settings) =>
+	async ({
+		step,
+		log: {
+			step: { progress, error },
+		},
+		context,
+	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+		const match = matchGroups(
+			Type.Object({
+				deviceId: Type.String(),
+				appId: Type.String(),
+				messageType: Type.String(),
+				data: Type.String(),
+				topic: Type.String(),
+				ts: Type.String(),
+			}),
+		)(
+			/^the device `(?<deviceId>[^`]+)` publishes the message with properties `(?<appId>[^`]+)`, `(?<messageType>[^`]+)`, `(?<data>[^`]+)`, and `(?<ts>[^`]+)` to the topic `(?<topic>[^`]+)`$/,
+			step.title,
+		)
 
-	const waitingTime = Number(match.groups?.time ?? 1)
+		if (match === null) return noMatch
 
-	progress(`Waiting for ${waitingTime} seconds`)
-	await setTimeout(waitingTime * 1000)
-}
+		const e = jsonata(match.ts)
+		const ts = await e.evaluate(context)
 
-export const deviceStepRunners = (
-	bridgeInfo: Settings,
+		progress(`Device id ${match.deviceId} publishes to topic ${match.topic}`)
+		await new Promise((resolve, reject) => {
+			const mqttClient = mqtt.connect({
+				host: nRFCloudSettings.mqttEndpoint,
+				port: 8883,
+				protocol: 'mqtts',
+				protocolVersion: 4,
+				clean: true,
+				clientId: match.deviceId,
+				key: nRFCloudSettings.accountDevicePrivateKey,
+				cert: nRFCloudSettings.accountDeviceClientCert,
+				ca: readFileSync(
+					path.join(process.cwd(), 'data', 'AmazonRootCA1.pem'),
+					'utf-8',
+				),
+			})
+
+			mqttClient.on('connect', () => {
+				progress('connected')
+				const topic = `${nRFCloudSettings.mqttTopicPrefix}${match.topic}`
+				const message = {
+					appId: match.appId,
+					messageType: match.messageType,
+					data: match.data,
+					ts,
+				}
+
+				const messageStr = JSON.stringify(message)
+				progress('publishing', messageStr, topic)
+				mqttClient.publish(topic, messageStr, (error) => {
+					if (error) return reject(error)
+					mqttClient.end()
+					return resolve(void 0)
+				})
+			})
+
+			mqttClient.on('error', (err) => {
+				error(err)
+				reject(err)
+			})
+		})
+	}
+
+export const steps = (
+	nRFCloudSettings: Settings,
 	db: DynamoDBClient,
-	devicesTable: string,
-): {
-	steps: StepRunner<World>[]
-	cleanup: () => Promise<void>
-} => ({
-	steps: [
-		createDevice({ db }),
-		getDevice({ db }),
-		waitForScheduler,
-		publishDeviceMessage(bridgeInfo),
-	],
-	cleanup: async () => {
-		const allItems = await db.send(new ScanCommand({ TableName: devicesTable }))
-		for (const item of allItems?.Items ?? []) {
-			await db.send(
-				new DeleteItemCommand({
-					TableName: devicesTable,
-					Key: { deviceId: { S: item['deviceId']?.S ?? '' } },
-				}),
-			)
-		}
-	},
-})
+): StepRunner<World & Record<string, string>>[] => [
+	createDeviceForModel({ db }),
+	getDevice({ db }),
+	publishDeviceMessage(nRFCloudSettings),
+	publishDeviceMessages(nRFCloudSettings),
+]

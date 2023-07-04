@@ -5,24 +5,22 @@
 
 ## Background
 
-Given a `PCA20035+solar` device with the ID `nrf-352656108602296` is registered
-with the fingerprint `92b.b4ff3d`
+Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
-And there is a shadow data of device id `nrf-352656108602296` in nRF Cloud as
-this JSON
+And there is this device shadow data for `${fingerprint:deviceId}` in nRF Cloud
 
 ```json
 {
   "items": [
     {
-      "id": "nrf-352656108602296",
+      "id": "${fingerprint:deviceId}",
       "tags": ["configuration:solar-shield", "model:PCA20035"],
       "tenantId": "a0673464-e4e1-4b87-bffd-6941a012067b",
       "$meta": {
         "updatedAt": "2023-04-20T07:29:46.467Z",
         "createdAt": "2023-04-19T11:49:07.370Z"
       },
-      "name": "nrf-352656108602296",
+      "name": "${fingerprint:deviceId}",
       "type": "Generic",
       "subType": "PCA10090",
       "firmware": {
@@ -39,8 +37,8 @@ this JSON
           "pairing": {
             "state": "paired",
             "topics": {
-              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/nrf-352656108602296/d2c",
-              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/nrf-352656108602296/+/r"
+              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/d2c",
+              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/+/r"
             }
           }
         },
@@ -63,8 +61,8 @@ this JSON
           "pairing": {
             "state": "paired",
             "topics": {
-              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/nrf-352656108602296/d2c",
-              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/nrf-352656108602296/+/r"
+              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/d2c",
+              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/+/r"
             }
           },
           "nrfcloud_mqtt_topic_prefix": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/",
@@ -277,13 +275,13 @@ this JSON
 }
 ```
 
-## Verify a device sends shadow data to nRF Cloud, then I can receive the message via website
+## Verify a device sends shadow data to nRF Cloud, then I can receive the message via websocket
 
-Given I connect websocket with fingerprint `92b.b4ff3d`
+Given I connect to the websocket using fingerprint `${fingerprint}`
 
-Then wait for `5` seconds
+<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
-Then the shadow response should equal to this JSON
+Soon I should receive a message on the websocket that matches
 
 ```json
 {
@@ -331,11 +329,3 @@ Then the shadow response should equal to this JSON
   "ts": 1682072423000
 }
 ```
-
-## Verify I will not receive the device shadow if the version is not updated
-
-Given I connect websocket with fingerprint `92b.b4ff3d`
-
-And wait for `5` seconds
-
-Then the shadow response should equal to empty string

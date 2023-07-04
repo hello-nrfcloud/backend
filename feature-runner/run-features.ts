@@ -2,7 +2,6 @@ import { CloudFormationClient } from '@aws-sdk/client-cloudformation'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
-import { TimestreamWriteClient } from '@aws-sdk/client-timestream-write'
 import { runFolder } from '@nordicsemiconductor/bdd-markdown'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
@@ -16,8 +15,8 @@ import {
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
 import { getSettings } from '../nrfcloud/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
-import { deviceStepRunners } from './steps/device.js'
-import { historicalStepRunners } from './steps/historicalData.js'
+import { steps as deviceSteps } from './steps/device.js'
+import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from './steps/storage.js'
 import { websocketStepRunners } from './steps/websocket.js'
@@ -49,7 +48,7 @@ export type World = {
 	tenantId: string
 	responsesTableName: string
 	requestsTableName: string
-}
+} & Record<string, string>
 
 const accountDeviceSettings = await getSettings({
 	ssm,
@@ -57,7 +56,9 @@ const accountDeviceSettings = await getSettings({
 })()
 const db = new DynamoDBClient({})
 const timestream = new TimestreamQueryClient({})
-const timestreamWriter = new TimestreamWriteClient({})
+const [DatabaseName, TableName] = config.historicalDataTableInfo.split('|')
+if (DatabaseName === undefined || TableName === undefined)
+	throw Error('historicalDataTableInfo is not configured')
 
 const print = (arg: unknown) =>
 	typeof arg === 'object' ? JSON.stringify(arg) : arg
@@ -95,23 +96,11 @@ const { steps: webSocketSteps, cleanup: websocketCleanup } =
 	websocketStepRunners()
 cleaners.push(websocketCleanup)
 
-const { steps: deviceSteps, cleanup: deviceCleanup } = deviceStepRunners(
-	accountDeviceSettings,
-	db,
-	config.devicesTableName,
-)
-cleaners.push(deviceCleanup)
-
-const { steps: historicalSteps } = historicalStepRunners({
-	timestream,
-	timestreamWriter,
-	historicalDataTableInfo: config.historicalDataTableInfo,
-})
 runner
 	.addStepRunners(...webSocketSteps)
-	.addStepRunners(...deviceSteps)
+	.addStepRunners(...deviceSteps(accountDeviceSettings, db))
 	.addStepRunners(...mocknRFCloudSteps({ db }))
-	.addStepRunners(...historicalSteps)
+	.addStepRunners(...historicalDataSteps({ timestream }))
 	.addStepRunners(...storageSteps())
 
 const res = await runner.run({
