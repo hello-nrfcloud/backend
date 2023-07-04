@@ -21,6 +21,7 @@ import {
 } from '../resources/Integration.js'
 import { parameterStoreLayerARN } from '../resources/LambdaExtensionLayers.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
+import { LastSeen } from '../resources/LastSeen.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { STACK_NAME } from './stackConfig.js'
 
@@ -98,10 +99,13 @@ export class BackendStack extends Stack {
 
 		const deviceStorage = new DeviceStorage(this)
 
+		const lastSeen = new LastSeen(this)
+
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			deviceStorage,
 			layers: lambdaLayers,
+			lastSeen,
 		})
 
 		new DeviceShadow(this, {
