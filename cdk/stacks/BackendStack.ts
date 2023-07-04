@@ -19,6 +19,7 @@ import {
 	Integration,
 	type BridgeImageSettings,
 } from '../resources/Integration.js'
+import { KPIs } from '../resources/KPIs.js'
 import { parameterStoreLayerARN } from '../resources/LambdaExtensionLayers.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
 import { LastSeen } from '../resources/LastSeen.js'
@@ -144,6 +145,12 @@ export class BackendStack extends Stack {
 		const cd = new ContinuousDeployment(this, {
 			repository,
 			gitHubOICDProviderArn,
+		})
+
+		new KPIs(this, {
+			lambdaSources,
+			layers: lambdaLayers,
+			lastSeen,
 		})
 
 		// Outputs

@@ -30,4 +30,5 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'lambda/storeMessagesInTimestream.ts',
 	),
 	healthCheck: await packLambdaFromPath('healthCheck', 'lambda/healthCheck.ts'),
+	kpis: await packLambdaFromPath('kpis', 'lambda/kpis.ts'),
 })
