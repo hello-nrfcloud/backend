@@ -1,5 +1,4 @@
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	codeBlockOrThrow,
 	noMatch,
@@ -7,7 +6,6 @@ import {
 	type StepRunner,
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
-import assert from 'assert/strict'
 import mqtt from 'mqtt'
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -91,40 +89,6 @@ const createDeviceForModel =
 		progress(`Device registered: ${fingerprint} (${id})`)
 	}
 
-const getDevice =
-	({ db }: { db: DynamoDBClient }) =>
-	async ({
-		step,
-		log: {
-			step: { progress },
-		},
-		context: { devicesTable },
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match = /^The device id `(?<key>[^`]+)` should equal$/.exec(
-			step.title,
-		)
-		if (match === null) return noMatch
-
-		progress(`Get data with id ${match.groups?.key} from ${devicesTable}`)
-		const res = await db.send(
-			new GetItemCommand({
-				TableName: devicesTable,
-				Key: {
-					deviceId: { S: match.groups?.key ?? '' },
-				},
-			}),
-		)
-
-		progress(
-			`Data returned from query: `,
-			JSON.stringify(res.Item ?? {}, null, 2),
-		)
-		assert.deepEqual(
-			unmarshall(res.Item ?? {}),
-			JSON.parse(codeBlockOrThrow(step).code),
-		)
-	}
-
 const publishDeviceMessage =
 	(bridgeInfo: Settings) =>
 	async ({
@@ -185,6 +149,5 @@ export const steps = (
 	db: DynamoDBClient,
 ): StepRunner<World & Record<string, string>>[] => [
 	createDeviceForModel({ db }),
-	getDevice({ db }),
 	publishDeviceMessage(bridgeInfo),
 ]
