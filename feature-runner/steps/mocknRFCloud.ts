@@ -1,11 +1,13 @@
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
 import {
 	codeBlockOrThrow,
+	matchGroups,
 	noMatch,
 	type StepRunResult,
 	type StepRunner,
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
+import { Type } from '@sinclair/typebox'
 import type { World } from '../run-features.js'
 
 export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
@@ -16,10 +18,14 @@ export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
 		},
 		context: { responsesTableName },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^there is this device shadow data for `(?<deviceId>[^`]+)` in nRF Cloud$/.exec(
-				step.title,
-			)
+		const match = matchGroups(
+			Type.Object({
+				deviceId: Type.String(),
+			}),
+		)(
+			/^there is this device shadow data for `(?<deviceId>[^`]+)` in nRF Cloud$/,
+			step.title,
+		)
 		if (match === null) return noMatch
 
 		const data = codeBlockOrThrow(step).code
@@ -50,7 +56,7 @@ ${data}
 							includeState: { BOOL: true },
 							includeStateMeta: { BOOL: true },
 							pageLimit: { N: `100` },
-							deviceIds: { S: `/\\b${match.groups?.deviceId}\\b/` },
+							deviceIds: { S: `/\\b${match.deviceId}\\b/` },
 						},
 					},
 					ttl: {

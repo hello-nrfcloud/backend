@@ -1,11 +1,13 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	codeBlockOrThrow,
+	matchGroups,
 	noMatch,
 	type StepRunResult,
 	type StepRunner,
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
+import { Type } from '@sinclair/typebox'
 import mqtt from 'mqtt'
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -29,15 +31,17 @@ const createDeviceForModel =
 	}: StepRunnerArgs<
 		World & Record<string, string>
 	>): Promise<StepRunResult> => {
-		const match =
-			/^I have the fingerprint for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/.exec(
-				step.title,
-			)
+		const match = matchGroups(
+			Type.Object({
+				model: Type.String(),
+				storageName: Type.String(),
+			}),
+		)(
+			/^I have the fingerprint for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/,
+			step.title,
+		)
 		if (match === null) return noMatch
-		const { model, storageName } = match.groups as {
-			model: string
-			storageName: string
-		}
+		const { model, storageName } = match
 
 		const fingerprint = `92b.${generateCode()}`
 		const id = randomUUID()
@@ -97,17 +101,20 @@ const publishDeviceMessage =
 			step: { progress, error },
 		},
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match =
-			/^the device `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/.exec(
-				step.title,
-			)
+		const match = matchGroups(
+			Type.Object({
+				id: Type.String(),
+				topic: Type.String(),
+			}),
+		)(
+			/^the device `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/,
+			step.title,
+		)
 		if (match === null) return noMatch
 
 		const message = JSON.parse(codeBlockOrThrow(step).code)
 
-		progress(
-			`Device id ${match.groups?.id} publishes to topic ${match.groups?.topic}`,
-		)
+		progress(`Device id ${match.id} publishes to topic ${match.topic}`)
 		await new Promise((resolve, reject) => {
 			const mqttClient = mqtt.connect({
 				host: bridgeInfo.mqttEndpoint,
@@ -115,7 +122,7 @@ const publishDeviceMessage =
 				protocol: 'mqtts',
 				protocolVersion: 4,
 				clean: true,
-				clientId: match.groups?.id ?? '',
+				clientId: match.id,
 				key: bridgeInfo.accountDevicePrivateKey,
 				cert: bridgeInfo.accountDeviceClientCert,
 				ca: readFileSync(
@@ -126,9 +133,7 @@ const publishDeviceMessage =
 
 			mqttClient.on('connect', () => {
 				progress('connected')
-				const topic = `${bridgeInfo.mqttTopicPrefix}${
-					match.groups?.topic ?? ''
-				}`
+				const topic = `${bridgeInfo.mqttTopicPrefix}${match.topic}`
 				progress('publishing', message, topic)
 				mqttClient.publish(topic, JSON.stringify(message), (error) => {
 					if (error) return reject(error)
