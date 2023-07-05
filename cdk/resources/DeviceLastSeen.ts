@@ -32,6 +32,7 @@ export class DeviceLastSeen extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 		})
 
+		// Used for the unique active devices per day KPI
 		this.table.addGlobalSecondaryIndex({
 			indexName: 'dailyActive',
 			partitionKey: {
@@ -71,15 +72,16 @@ export class DeviceLastSeen extends Construct {
 				description: `Record the timestamp when a device last sent in messages`,
 				ruleDisabled: false,
 				awsIotSqlVersion: '2016-03-23',
-				sql: `
-					select
-						topic(4) as deviceId,
-						'deviceMessage' as source,
-						parse_time("yyyy-MM-dd'T'HH:mm:ss.S'Z'", ts) as lastSeen,
-						parse_time("yyyy-MM-dd", ts) as day
-					from 'data/+/+/+/+'
-					where messageType = 'DATA'
-				`,
+				sql: [
+					`select`,
+					`topic(4) as deviceId,`,
+					`'deviceMessage' as source,`,
+					`parse_time("yyyy-MM-dd'T'HH:mm:ss.S'Z'", ts) as lastSeen,`,
+					// Used for the unique active devices per day KPI
+					`parse_time("yyyy-MM-dd", ts) as day`,
+					`from 'data/+/+/+/+'`,
+					`where messageType = 'DATA'`,
+				].join(' '),
 				actions: [
 					{
 						dynamoDBv2: {
