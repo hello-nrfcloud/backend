@@ -9,29 +9,10 @@ import {
 	getStartPeriod,
 } from './queryGenerator.js'
 
-jest.mock('@hello.nrfcloud.com/proto/hello', () => ({
-	AvailableCharts: {
-		lastDay: {
-			bin: '5minutes',
-			duration: '24hours',
-			expires: '5minutes',
-		},
-		lastHour: {
-			bin: '1minute',
-			duration: '1hour',
-			expires: '1minute',
-		},
-		lastMonth: {
-			bin: '1hour',
-			duration: '30days',
-			expires: '15minutes',
-			aggregateRequired: true,
-		},
-	},
-}))
+// Need to mock hello module to avoid the error about import json file
+jest.mock('@hello.nrfcloud.com/proto/hello', () => jest.fn())
 
 describe('queryGenerator', () => {
-	// let request: Omit<Static<typeof HistoricalDataRequest>, 'data'>
 	let request: HistoricalRequest
 	beforeEach(() => {
 		request = {

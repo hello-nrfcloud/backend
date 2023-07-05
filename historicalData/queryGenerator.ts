@@ -1,5 +1,7 @@
-import { AvailableCharts } from '@hello.nrfcloud.com/proto/hello'
-import type { HistoricalRequest } from './historicalDataRepository.js'
+import {
+	HistoricalChartTypes,
+	type HistoricalRequest,
+} from './historicalDataRepository.js'
 
 export const getQueryStatement = ({
 	request,
@@ -65,7 +67,7 @@ export const getMeasureNames = (request: HistoricalRequest): string[] => {
 
 export const getBinnedTime = (request: HistoricalRequest): string => {
 	const type = request.type
-	const selectedType = AvailableCharts[type]
+	const selectedType = HistoricalChartTypes[type]
 	if (selectedType === undefined)
 		throw new Error(`${type} is not a valid chart type`)
 
@@ -77,7 +79,7 @@ export const getStartPeriod = (
 	startMS: number,
 ): string => {
 	const type = request.type
-	const selectedType = AvailableCharts[type]
+	const selectedType = HistoricalChartTypes[type]
 	if (selectedType === undefined)
 		throw new Error(`${type} is not a valid chart type`)
 

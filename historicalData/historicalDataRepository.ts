@@ -15,6 +15,25 @@ import { Value } from '@sinclair/typebox/value'
 import { groupBy } from 'lodash-es'
 import { getQueryStatement } from './queryGenerator.js'
 
+export const HistoricalChartTypes = {
+	lastDay: {
+		bin: '5minutes',
+		duration: '24hours',
+		expires: '5minutes',
+	},
+	lastHour: {
+		bin: '1minute',
+		duration: '1hour',
+		expires: '1minute',
+	},
+	lastMonth: {
+		bin: '1hour',
+		duration: '30days',
+		expires: '15minutes',
+		aggregateRequired: true,
+	},
+}
+
 export type HistoricalRequest = Omit<
 	Static<typeof HistoricalDataRequest>,
 	'data'

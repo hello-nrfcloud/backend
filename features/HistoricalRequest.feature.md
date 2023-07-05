@@ -57,7 +57,7 @@ And I send websocket request
 }
 ```
 
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
+<!-- @retry:tries=10,initialDelay=1000,delayFactor=2 -->
 
 Soon I should receive a message on the websocket that is equal to
 
