@@ -1,11 +1,14 @@
+import { logMetrics } from '@aws-lambda-powertools/metrics'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
+import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
 import {
 	historicalDataRepository,
 	type HistoricalRequest,
 } from '../historicalData/historicalDataRepository.js'
+import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 
@@ -36,17 +39,20 @@ if (
 	)
 }
 
+const { track, metrics } = metricsForComponent('historicalDataRequest')
+
 const repo = historicalDataRepository({
 	timestream,
 	historicalDataDatabaseName,
 	historicalDataTableName,
 	log,
+	track,
 })
 
 /**
  * Handle historical data request
  */
-export const handler = async (
+const h = async (
 	event: EventBridgeEvent<'request', Request>,
 ): Promise<void> => {
 	try {
@@ -85,3 +91,5 @@ export const handler = async (
 		log.error(`Historical request error`, { error })
 	}
 }
+
+export const handler = middy(h).use(logMetrics(metrics))

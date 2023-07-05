@@ -1,4 +1,5 @@
 import type { Logger } from '@aws-lambda-powertools/logger'
+import { MetricUnits, type Metrics } from '@aws-lambda-powertools/metrics'
 import {
 	QueryCommand,
 	type TimestreamQueryClient,
@@ -87,11 +88,13 @@ export const historicalDataRepository = ({
 	historicalDataDatabaseName,
 	historicalDataTableName,
 	log,
+	track,
 }: {
 	timestream: TimestreamQueryClient
 	historicalDataDatabaseName: string
 	historicalDataTableName: string
 	log?: Logger
+	track?: (...args: Parameters<Metrics['addMetric']>) => void
 }): {
 	getHistoricalData: ({
 		deviceId,
@@ -156,6 +159,7 @@ export const historicalDataRepository = ({
 					model,
 					error,
 				})
+				track?.('errorHistoricalProto', MetricUnits.Count, 1)
 			},
 		})(model, transformedRequest)
 
