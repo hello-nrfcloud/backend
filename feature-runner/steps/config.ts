@@ -6,6 +6,7 @@ import {
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
+import { hashSHA1 } from '../../util/hashSHA1.js'
 import {
 	deleteSettings,
 	getSettings,
@@ -40,7 +41,7 @@ const createConfigStepRunners = ({
 		if (match === null) return noMatch
 
 		// ssm path must be letter, number, .(dot), -(dash), or _(underscore)
-		const model = match.model.replace(/[^\w.-]/g, '_')
+		const model = hashSHA1(match.model)
 		const interval = match.interval
 
 		progress(`Set fetching interval for ${model} as ${interval} seconds`)

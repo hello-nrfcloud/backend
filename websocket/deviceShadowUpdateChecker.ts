@@ -1,6 +1,7 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { logger } from '../lambda/util/logger.js'
+import { hashSHA1 } from '../util/hashSHA1.js'
 import { getSettingsOptional } from '../util/settings.js'
 
 // Format:
@@ -100,8 +101,8 @@ export const createDeviceUpdateChecker = async (
 		const defaultStep = config['default'] ?? [
 			{ count: Number.MAX_SAFE_INTEGER, interval: 5 },
 		]
-		const modelStep =
-			config[device.model?.replace(/[^\w.-]/g, '_')] ?? defaultStep
+		const deviceModelHash = hashSHA1(device.model)
+		const modelStep = config[deviceModelHash] ?? defaultStep
 		for (const step of modelStep) {
 			if (device.count <= step.count) {
 				return (

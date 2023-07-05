@@ -1,11 +1,25 @@
+import { hashSHA1 } from '../util/hashSHA1.js'
 import {
 	createDeviceUpdateChecker,
 	parseConfig,
 } from './deviceShadowUpdateChecker.js'
-let returnedMockData: unknown
+jest.mock('@aws-lambda-powertools/logger')
 jest.mock('../util/settings.js', () => ({
 	getSettingsOptional: () => async () => returnedMockData,
 }))
+
+let returnedMockData: { [key: string]: string }
+
+const hashConfig = (config: {
+	[key: string]: string
+}): { [key: string]: string } =>
+	Object.entries(config).reduce((result, [k, v]) => {
+		if (k !== 'default') {
+			k = hashSHA1(k)
+		}
+		result[k] = v
+		return result
+	}, {} as { [key: string]: string })
 
 describe('parseConfig', () => {
 	it('should parse a valid configuration object', () => {
@@ -106,10 +120,10 @@ describe('deviceShadowUpdateChecker', () => {
 	})
 
 	it('uses the default configuration interval if no model-specific configuration is available', async () => {
-		returnedMockData = {
-			'test-model': '20',
+		returnedMockData = hashConfig({
+			'test-model': '4',
 			default: '6:10',
-		}
+		})
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
 		)
@@ -124,10 +138,10 @@ describe('deviceShadowUpdateChecker', () => {
 	})
 
 	it('uses the default configuration maximum interval if no model-specific configuration is available and count exceeds the limit', async () => {
-		returnedMockData = {
+		returnedMockData = hashConfig({
 			'test-model': '20',
 			default: '2:10, 6:15',
-		}
+		})
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
 		)
@@ -142,10 +156,10 @@ describe('deviceShadowUpdateChecker', () => {
 	})
 
 	it('uses the correct interval for the device model', async () => {
-		returnedMockData = {
+		returnedMockData = hashConfig({
 			'test-model': '4',
 			default: '6:10',
-		}
+		})
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
 		)
@@ -160,9 +174,9 @@ describe('deviceShadowUpdateChecker', () => {
 	})
 
 	it('uses the correct interval for the device count', async () => {
-		returnedMockData = {
+		returnedMockData = hashConfig({
 			'test-model': '1:2, 6:10',
-		}
+		})
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
 		)
@@ -177,9 +191,9 @@ describe('deviceShadowUpdateChecker', () => {
 	})
 
 	it('uses the default configuration interval for the device if no configuration is matched', async () => {
-		returnedMockData = {
+		returnedMockData = hashConfig({
 			default: '6',
-		}
+		})
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
 		)
