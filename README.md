@@ -81,3 +81,12 @@ Afterwards you can run the simulator using
 ```
 
 which will send simulated data to nRF Cloud.
+
+## Shadow fetcher configuration
+
+To customize the frequency of the shadow fetcher for each model, you can modify
+the configuration using
+
+```bash
+./cli.sh set-shadow-fetcher-config <modelName> <seconds>
+```
