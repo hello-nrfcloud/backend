@@ -12,4 +12,5 @@ type BackendLambdas = {
 	storeMessagesInTimestream: PackedLambda
 	healthCheck: PackedLambda
 	historicalDataRequest: PackedLambda
+	kpis: PackedLambda
 }

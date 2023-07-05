@@ -1,10 +1,12 @@
 import {
 	codeBlockOrThrow,
+	matchGroups,
 	noMatch,
 	type StepRunner,
 	type StepRunnerArgs,
 	type StepRunResult,
 } from '@nordicsemiconductor/bdd-markdown'
+import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
 import * as chai from 'chai'
 import { expect } from 'chai'
@@ -27,21 +29,21 @@ const wsConnect = async ({
 	},
 	context,
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match =
-		/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/.exec(
-			step.title,
-		)
+	const match = matchGroups(
+		Type.Object({
+			reconnect: Type.Optional(Type.Literal('re')),
+			fingerprint: Type.String(),
+		}),
+	)(
+		/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/,
+		step.title,
+	)
 	if (match === null) return noMatch
 
-	const { fingerprint, reconnect } = match.groups as {
-		fingerprint: string
-		reconnect?: string
-	}
-
 	const { websocketUri } = context
-	const wsURL = `${websocketUri}?fingerprint=${fingerprint}`
+	const wsURL = `${websocketUri}?fingerprint=${match.fingerprint}`
 
-	if (reconnect !== undefined && wsClients[wsURL] === undefined) {
+	if (match.reconnect !== undefined && wsClients[wsURL] === undefined) {
 		wsClients[wsURL]?.close()
 		delete wsClients[wsURL]
 	}
@@ -49,7 +51,7 @@ const wsConnect = async ({
 	if (wsClients[wsURL] === undefined) {
 		progress(`Connect websocket to ${websocketUri}`)
 		wsClients[wsURL] = createWebsocketClient({
-			id: fingerprint,
+			id: match.fingerprint,
 			url: wsURL,
 			debug: (...args) => featureProgress('[ws]', ...args),
 		})
@@ -66,14 +68,19 @@ const receive = async ({
 	},
 	context,
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match =
-		/^I should receive a message on the websocket that (?<equalOrMatch>is equal to|matches)$/.exec(
-			step.title,
-		)
+	const match = matchGroups(
+		Type.Object({
+			equalOrMatch: Type.Union([
+				Type.Literal('is equal to'),
+				Type.Literal('matches'),
+			]),
+		}),
+	)(
+		/^I should receive a message on the websocket that (?<equalOrMatch>is equal to|matches)$/,
+		step.title,
+	)
 	if (match === null) return noMatch
-	const { equalOrMatch } = match.groups as {
-		equalOrMatch: 'is equal to' | 'matches'
-	}
+	const { equalOrMatch } = match
 
 	const evaluatedCodeBlock = await codeBlockReplacer(
 		codeBlockOrThrow(step).code,

@@ -4,12 +4,14 @@ import {
 	EventBridgeClient,
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
+import { SSMClient } from '@aws-sdk/client-ssm'
 import { proto } from '@hello.nrfcloud.com/proto/hello'
 import { getShadowUpdateTime } from '@hello.nrfcloud.com/proto/nrfCloud'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, once } from 'lodash-es'
 import pLimit from 'p-limit'
+import { getSettings } from '../util/settings.js'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
@@ -49,6 +51,14 @@ const connectionsRepo = connectionsRepository(
 	websocketDeviceConnectionsTableName,
 )
 
+const ssm = new SSMClient({})
+const { healthCheckClientId } = await getSettings({
+	ssm,
+	stackName,
+	scope: 'thirdParty',
+	system: 'nrfcloud',
+})()
+
 // Make sure to call it in the handler, so the AWS Parameters and Secrets Lambda Extension is ready.
 const getShadowFetcher = once(configureDeviceShadowFetcher({ stackName }))
 
@@ -64,16 +74,28 @@ const h = async (): Promise<void> => {
 		const connections = await connectionsRepo.getAll()
 		log.info(`Found ${connections.length} active connections`)
 		track('connections', MetricUnits.Count, connections.length)
-		const deviceConnectionsMap = connections.reduce(
-			(map, connection) => ({
-				...map,
-				[connection.deviceId]: [
-					...(map[connection.deviceId] ?? []),
-					connection,
-				],
-			}),
-			{} as Record<string, WebsocketDeviceConnectionShadowInfo[]>,
-		)
+		const deviceConnectionsMap = connections
+			// The health check device does not publish a valid shadow, so do not fetch it
+			.filter(({ deviceId }) => {
+				if (deviceId === healthCheckClientId) {
+					console.debug(
+						`Ignoring shadow request for health check device`,
+						healthCheckClientId,
+					)
+					return false
+				}
+				return true
+			})
+			.reduce(
+				(map, connection) => ({
+					...map,
+					[connection.deviceId]: [
+						...(map[connection.deviceId] ?? []),
+						connection,
+					],
+				}),
+				{} as Record<string, WebsocketDeviceConnectionShadowInfo[]>,
+			)
 
 		// Bulk fetching device shadow to avoid rate limit
 		const deviceShadows = (
