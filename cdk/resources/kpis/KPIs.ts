@@ -6,9 +6,9 @@ import {
 	aws_logs as Logs,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../BackendLambdas'
-import { LambdaSource } from './LambdaSource.js'
-import type { LastSeen } from './LastSeen.js'
+import type { BackendLambdas } from '../../BackendLambdas.js'
+import type { DeviceLastSeen } from '../DeviceLastSeen.js'
+import { LambdaSource } from '../LambdaSource.js'
 
 export class KPIs extends Construct {
 	constructor(
@@ -18,7 +18,7 @@ export class KPIs extends Construct {
 			lambdaSources,
 			layers,
 		}: {
-			lastSeen: LastSeen
+			lastSeen: DeviceLastSeen
 			lambdaSources: BackendLambdas
 			layers: Lambda.ILayerVersion[]
 		},

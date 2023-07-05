@@ -11,6 +11,7 @@ import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { ContinuousDeployment } from '../resources/ContinuousDeployment.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
+import { DeviceLastSeen } from '../resources/DeviceLastSeen.js'
 import { DeviceShadow } from '../resources/DeviceShadow.js'
 import { DeviceStorage } from '../resources/DeviceStorage.js'
 import { HealthCheckMqttBridge } from '../resources/HealthCheckMqttBridge.js'
@@ -19,11 +20,10 @@ import {
 	Integration,
 	type BridgeImageSettings,
 } from '../resources/Integration.js'
-import { KPIs } from '../resources/KPIs.js'
 import { parameterStoreLayerARN } from '../resources/LambdaExtensionLayers.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
-import { LastSeen } from '../resources/LastSeen.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
+import { KPIs } from '../resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
 
 export class BackendStack extends Stack {
@@ -100,7 +100,7 @@ export class BackendStack extends Stack {
 
 		const deviceStorage = new DeviceStorage(this)
 
-		const lastSeen = new LastSeen(this)
+		const lastSeen = new DeviceLastSeen(this)
 
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,

@@ -13,7 +13,7 @@ import { Construct } from 'constructs'
  * Note: unfortunately there is no 'updateItem' action that could be used in the
  * rule action. So we have to track the last seen information in a separate table.
  */
-export class LastSeen extends Construct {
+export class DeviceLastSeen extends Construct {
 	public readonly table: DynamoDB.Table
 	public constructor(parent: Construct) {
 		super(parent, 'lastSeen')
