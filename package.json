@@ -133,7 +133,15 @@
     ],
     "transform": {
       "^.+\\.(t|j)sx?$": [
-        "@swc/jest"
+        "@swc/jest",
+        {
+          "$schema": "https://json.schemastore.org/swcrc",
+          "jsc": {
+            "parser": {
+              "syntax": "typescript"
+            }
+          }
+        }
       ]
     },
     "testRegex": ".+\\.spec\\.ts$",
