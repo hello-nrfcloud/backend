@@ -17,7 +17,7 @@ import { getQueryStatement } from './queryGenerator.js'
 
 export type HistoricalRequest = Omit<
 	Static<typeof HistoricalDataRequest>,
-	'data' | 'ts'
+	'data'
 >
 type HistoricalResponse = Static<typeof HistoricalDataResponse>
 

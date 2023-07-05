@@ -100,6 +100,7 @@ describe('queryGenerator', () => {
 				lat: { attribute: 'lat' },
 				lng: { attribute: 'lng' },
 				acc: { attribute: 'acc' },
+				ts: { attribute: 'ts' },
 			}
 
 			const result = getAggregates(request)
@@ -162,10 +163,11 @@ describe('queryGenerator', () => {
 				lat: { attribute: 'lat' },
 				lng: { attribute: 'lng' },
 				acc: { attribute: 'acc' },
+				ts: { attribute: 'ts' },
 			}
 
 			const result = getMeasureNames(request)
-			expect(result).toEqual(['lat', 'lng', 'acc'])
+			expect(result).toEqual(['lat', 'lng', 'acc', 'ts'])
 		})
 
 		it('returns an empty array of measure names if all attributes contain aggregate', () => {
@@ -275,6 +277,7 @@ describe('queryGenerator', () => {
 				lat: { attribute: 'lat' },
 				lng: { attribute: 'lng' },
 				acc: { attribute: 'acc' },
+				ts: { attribute: 'ts' },
 			}
 
 			const deviceId = 'device123'
@@ -297,7 +300,7 @@ describe('queryGenerator', () => {
 				FROM "database1"."table1"
 				WHERE deviceId = 'device123'
 				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/location'
-				AND measure_name in ('lat','lng','acc')
+				AND measure_name in ('lat','lng','acc','ts')
 				AND time BETWEEN from_milliseconds(1688104200000) - 30day AND from_milliseconds(1688104200000)
 				ORDER BY time DESC
 			`
