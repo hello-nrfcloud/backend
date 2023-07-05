@@ -161,13 +161,8 @@ export class WebsocketAPI extends Construct {
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['dynamodb:Query'],
-					resources: [`${deviceStorage.devicesTable.tableArn}/index/*`],
-				}),
-			],
 		})
+		deviceStorage.devicesTable.grantReadWriteData(authorizerLambda)
 
 		// API
 		const api = new ApiGatewayV2.CfnApi(this, 'api', {

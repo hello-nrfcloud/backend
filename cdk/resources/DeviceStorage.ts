@@ -28,5 +28,19 @@ export class DeviceStorage extends Construct {
 			},
 			projectionType: DynamoDB.ProjectionType.ALL,
 		})
+
+		// Used for the unique active fingerprints per day KPI
+		this.devicesTable.addGlobalSecondaryIndex({
+			indexName: 'dailyActive',
+			partitionKey: {
+				name: 'dailyActive__source',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			sortKey: {
+				name: 'dailyActive__day',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
+		})
 	}
 }

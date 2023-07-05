@@ -8,6 +8,7 @@ import {
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../../BackendLambdas.js'
 import type { DeviceLastSeen } from '../DeviceLastSeen.js'
+import type { DeviceStorage } from '../DeviceStorage.js'
 import { LambdaSource } from '../LambdaSource.js'
 
 export class KPIs extends Construct {
@@ -17,8 +18,10 @@ export class KPIs extends Construct {
 			lastSeen,
 			lambdaSources,
 			layers,
+			deviceStorage,
 		}: {
 			lastSeen: DeviceLastSeen
+			deviceStorage: DeviceStorage
 			lambdaSources: BackendLambdas
 			layers: Lambda.ILayerVersion[]
 		},
@@ -39,11 +42,13 @@ export class KPIs extends Construct {
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 				LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
+				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
 		lastSeen.table.grantReadData(lambda)
+		deviceStorage.devicesTable.grantReadData(lambda)
 
 		const rule = new Events.Rule(this, 'rule', {
 			description: `Rule to schedule KPI lambda invocations`,

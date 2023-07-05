@@ -151,6 +151,7 @@ export class BackendStack extends Stack {
 			lambdaSources,
 			layers: lambdaLayers,
 			lastSeen,
+			deviceStorage,
 		})
 
 		// Outputs

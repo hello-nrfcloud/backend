@@ -1,5 +1,9 @@
 import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
-import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb'
+import {
+	DynamoDBClient,
+	QueryCommand,
+	UpdateItemCommand,
+} from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
@@ -77,10 +81,40 @@ const h = async (event: {
 		return deny
 	}
 
+	const { model, deviceId } = device
+
+	// Track usage of fingerprint
+	const now = new Date()
+	void db.send(
+		new UpdateItemCommand({
+			TableName: DevicesTableName,
+			Key: {
+				deviceId: {
+					S: deviceId,
+				},
+			},
+			UpdateExpression: 'SET #lastSeen = :now, #day = :day, #source = :source',
+			ExpressionAttributeNames: {
+				'#lastSeen': 'lastSeen',
+				'#day': 'dailyActive__day',
+				'#source': 'dailyActive__source',
+			},
+			ExpressionAttributeValues: {
+				':now': {
+					S: now.toISOString(),
+				},
+				':day': {
+					S: now.toISOString().slice(0, 10),
+				},
+				':source': {
+					S: 'websocketAuthorizer',
+				},
+			},
+		}),
+	)
+
 	log.debug(`Connection request for fingerprint ${fingerprint} authorized.`)
 	track('authorizer:success', MetricUnits.Count, 1)
-
-	const { model, deviceId } = device
 
 	return {
 		principalId: 'me',
