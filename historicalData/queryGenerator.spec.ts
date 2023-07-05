@@ -1,3 +1,4 @@
+import { ulid } from '../util/ulid.js'
 import type { HistoricalRequest } from './historicalDataRepository.js'
 
 import {
@@ -36,7 +37,7 @@ describe('queryGenerator', () => {
 		request = {
 			'@context':
 				'https://github.com/hello-nrfcloud/proto/historical-data-request',
-			'@id': 'test-id',
+			'@id': ulid(),
 			message: 'gain',
 			attributes: {
 				avgMA: { attribute: 'mA', aggregate: 'avg' },

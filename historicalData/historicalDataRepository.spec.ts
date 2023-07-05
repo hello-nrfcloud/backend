@@ -7,26 +7,26 @@ describe('transformTimestreamData', () => {
 	it('should extract single attribute from multiple values in single row', () => {
 		const data = [
 			{
-				avgMA: 1,
-				maxMA: 9,
-				minMA: 0,
+				avgMA: 3.40141,
+				maxMA: 3.50141,
+				minMA: 3.30141,
 				time: new Date('2021-06-30T00:00:00Z'),
 			},
 			{
-				avgMA: 3,
-				maxMA: 8,
-				minMA: 1,
+				avgMA: 3.58041,
+				maxMA: 3.68041,
+				minMA: 3.48041,
 				time: new Date('2021-06-30T00:15:00Z'),
 			},
 		]
 
 		const expectedTransformedDataAvg = [
 			{
-				mA: 1,
+				mA: 3.40141,
 				ts: new Date('2021-06-30T00:00:00Z').getTime(),
 			},
 			{
-				mA: 3,
+				mA: 3.58041,
 				ts: new Date('2021-06-30T00:15:00Z').getTime(),
 			},
 		]
@@ -38,42 +38,42 @@ describe('transformTimestreamData', () => {
 	it('should extract multiple attributes from multiple rows with that have same time', () => {
 		const data = [
 			{
-				lat: 1,
+				lat: 40.7128,
 				time: new Date('2021-06-30T00:00:00Z'),
 			},
 			{
-				lng: 2,
+				lng: 74.006,
 				time: new Date('2021-06-30T00:00:00Z'),
 			},
 			{
-				acc: 3,
+				acc: 50,
 				time: new Date('2021-06-30T00:00:00Z'),
 			},
 			{
-				lat: 4,
+				lat: -33.8651,
 				time: new Date('2021-06-30T00:15:00Z'),
 			},
 			{
-				lng: 5,
+				lng: 151.2099,
 				time: new Date('2021-06-30T00:15:00Z'),
 			},
 			{
-				acc: 6,
+				acc: 75,
 				time: new Date('2021-06-30T00:15:00Z'),
 			},
 		]
 
 		const expectedTransformedDataAvg = [
 			{
-				lat: 1,
-				lng: 2,
-				acc: 3,
+				lat: 40.7128,
+				lng: 74.006,
+				acc: 50,
 				ts: new Date('2021-06-30T00:00:00Z').getTime(),
 			},
 			{
-				lat: 4,
-				lng: 5,
-				acc: 6,
+				lat: -33.8651,
+				lng: 151.2099,
+				acc: 75,
 				ts: new Date('2021-06-30T00:15:00Z').getTime(),
 			},
 		]

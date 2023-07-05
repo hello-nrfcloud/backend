@@ -25,9 +25,21 @@ const log = logger('historicalDataRequest')
 const timestream = new TimestreamQueryClient({})
 const eventBus = new EventBridge({})
 
+const [historicalDataDatabaseName, historicalDataTableName] =
+	historicalDataTableInfo.split('|')
+if (
+	historicalDataDatabaseName === undefined ||
+	historicalDataTableName === undefined
+) {
+	throw new Error(
+		`Historical data table info must be in format "databaseName|tableName"`,
+	)
+}
+
 const repo = historicalDataRepository({
 	timestream,
-	historicalDataTableInfo,
+	historicalDataDatabaseName,
+	historicalDataTableName,
 	log,
 })
 

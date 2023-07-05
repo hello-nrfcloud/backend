@@ -65,11 +65,13 @@ export const transformTimestreamData = (
 
 export const historicalDataRepository = ({
 	timestream,
-	historicalDataTableInfo,
+	historicalDataDatabaseName,
+	historicalDataTableName,
 	log,
 }: {
 	timestream: TimestreamQueryClient
-	historicalDataTableInfo: string
+	historicalDataDatabaseName: string
+	historicalDataTableName: string
 	log?: Logger
 }): {
 	getHistoricalData: ({
@@ -81,76 +83,63 @@ export const historicalDataRepository = ({
 		model: string
 		request: HistoricalRequest
 	}) => Promise<HistoricalResponse[]>
-} => {
-	const [historicalDataDatabaseName, historicalDataTableName] =
-		historicalDataTableInfo.split('|')
-	if (
-		historicalDataDatabaseName === undefined ||
-		historicalDataTableName === undefined
-	) {
-		throw new Error(
-			`Historical data table info must be in format "databaseName|tableName"`,
+} => ({
+	getHistoricalData: async ({ deviceId, model, request }) => {
+		const context = Context.model(model).transformed(request.message)
+
+		// Validate request
+		const R = Value.Check(Type.Omit(HistoricalDataRequest, ['data']), request)
+		if (R !== true) {
+			const errors = [
+				...Value.Errors(Type.Omit(HistoricalDataRequest, ['data']), request),
+			]
+			log?.error(`Request is invalid`, { errors })
+			throw new Error(`Request is invalid`)
+		}
+
+		// Query data
+		const QueryString = getQueryStatement({
+			request,
+			deviceId,
+			context,
+			historicalDataDatabaseName,
+			historicalDataTableName,
+		})
+		const res = await timestream.send(
+			new QueryCommand({
+				QueryString,
+			}),
 		)
-	}
 
-	return {
-		getHistoricalData: async ({ deviceId, model, request }) => {
-			const context = Context.model(model).transformed(request.message)
-
-			// Validate request
-			const R = Value.Check(Type.Omit(HistoricalDataRequest, ['data']), request)
-			if (R !== true) {
-				const errors = [
-					...Value.Errors(Type.Omit(HistoricalDataRequest, ['data']), request),
-				]
-				log?.error(`Request is invalid`, { errors })
-				throw new Error(`Request is invalid`)
-			}
-
-			// Query data
-			const QueryString = getQueryStatement({
-				request,
-				deviceId,
-				context,
-				historicalDataDatabaseName,
-				historicalDataTableName,
-			})
-			const res = await timestream.send(
-				new QueryCommand({
-					QueryString,
-				}),
-			)
-
-			// Transform request
-			const parsedResult = parseResult(res)
-			const data: Record<string, unknown[]> = {}
-			for (const attribute in request.attributes) {
-				data[attribute] = transformTimestreamData(parsedResult, [
-					{
-						fromKey: attribute,
-						toKey:
-							request.attributes[attribute as keyof typeof request.attributes]
-								.attribute,
-					},
-				])
-			}
-			const transformedRequest = {
-				...request,
-				data,
-			}
-
-			// Pass to proto
-			const historicalResponses = await chartProto({
-				onError: (message, model, error) => {
-					log?.error('Could not transform historical request', {
-						payload: message,
-						model,
-						error,
-					})
+		// Transform request
+		const parsedResult = parseResult(res)
+		const data: Record<string, unknown[]> = {}
+		for (const attribute in request.attributes) {
+			data[attribute] = transformTimestreamData(parsedResult, [
+				{
+					fromKey: attribute,
+					toKey:
+						request.attributes[attribute as keyof typeof request.attributes]
+							.attribute,
 				},
-			})(model, transformedRequest)
+			])
+		}
+		const transformedRequest = {
+			...request,
+			data,
+		}
 
-			return historicalResponses
-		},
-	}
-}
+		// Pass to proto
+		const historicalResponses = await chartProto({
+			onError: (message, model, error) => {
+				log?.error('Could not transform historical request', {
+					payload: message,
+					model,
+					error,
+				})
+			},
+		})(model, transformedRequest)
+
+		return historicalResponses
+	},
+})

@@ -12,21 +12,29 @@ And I store
 
 ## Scenario Outline: Device publishes the messages to nRF Cloud
 
-Given I store `ts - ${deductMsFromTS}` into `${storeName}`
+Given I store `ts - ${deductMsFromTS}` into `pastTs`
 
-Then the device `${fingerprint:deviceId}` publishes the message with properties
-`${appId}`, `${messageType}`, `${data}`, and `${storeName}` to the topic
+And the device `${fingerprint:deviceId}` publishes this message to the topic
 `m/d/${fingerprint:deviceId}/d2c`
+
+```json
+{
+  "appId": "${appId}",
+  "messageType": "DATA",
+  "data": "${data}",
+  "ts": ${pastTs}
+}
+```
 
 ### Examples
 
-| appId | messageType | data    | deductMsFromTS | storeName |
-| ----- | ----------- | ------- | -------------- | --------- |
-| SOLAR | DATA        | 3.40141 | 0              | ts1       |
-| SOLAR | DATA        | 3.75718 | 30000          | ts2       |
-| SOLAR | DATA        | 3.73368 | 60000          | ts3       |
-| SOLAR | DATA        | 3.58041 | 90000          | ts4       |
-| SOLAR | DATA        | 3.24925 | 120000         | ts5       |
+| appId | data    | deductMsFromTS |
+| ----- | ------- | -------------- |
+| SOLAR | 3.40141 | 0              |
+| SOLAR | 3.75718 | 30000          |
+| SOLAR | 3.73368 | 60000          |
+| SOLAR | 3.58041 | 90000          |
+| SOLAR | 3.24925 | 120000         |
 
 ## Verify I can query historical device data
 
@@ -51,7 +59,7 @@ And I send websocket request
 
 <!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
-Soon I should receive a message on the websocket that matches
+Soon I should receive a message on the websocket that is equal to
 
 ```json
 {
@@ -61,15 +69,15 @@ Soon I should receive a message on the websocket that matches
     "avgMA": [
       {
         "mA": 3.40141,
-        "ts": ${ts1}
+        "ts": `ts`
       },
       {
         "mA": 3.74543,
-        "ts": ${ts3}
+        "ts": `ts - 60000`
       },
       {
         "mA": 3.4148300000000003,
-        "ts": ${ts5}
+        "ts": `ts - 120000`
       }
     ]
   }

@@ -9,6 +9,7 @@ import assert from 'assert/strict'
 import * as chai from 'chai'
 import { expect } from 'chai'
 import chaiSubset from 'chai-subset'
+import { codeBlockReplacer } from '../lib/codeBlockReplacer.js'
 import {
 	createWebsocketClient,
 	type WebSocketClient,
@@ -63,7 +64,7 @@ const receive = async ({
 	log: {
 		step: { debug },
 	},
-	context: { wsClient },
+	context,
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match =
 		/^I should receive a message on the websocket that (?<equalOrMatch>is equal to|matches)$/.exec(
@@ -74,7 +75,13 @@ const receive = async ({
 		equalOrMatch: 'is equal to' | 'matches'
 	}
 
-	const expected = JSON.parse(codeBlockOrThrow(step).code)
+	const evaluatedCodeBlock = await codeBlockReplacer(
+		codeBlockOrThrow(step).code,
+		context,
+	)
+
+	const { wsClient } = context
+	const expected = JSON.parse(evaluatedCodeBlock)
 	const found = Object.entries(wsClient?.messages ?? {}).find(
 		([id, message]) => {
 			debug(

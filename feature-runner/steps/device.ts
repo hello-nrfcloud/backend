@@ -10,7 +10,6 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
-import jsonata from 'jsonata'
 import mqtt from 'mqtt'
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -189,77 +188,6 @@ const publishDeviceMessage =
 		})
 	}
 
-const publishDeviceMessages =
-	(nRFCloudSettings: Settings) =>
-	async ({
-		step,
-		log: {
-			step: { progress, error },
-		},
-		context,
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-		const match = matchGroups(
-			Type.Object({
-				deviceId: Type.String(),
-				appId: Type.String(),
-				messageType: Type.String(),
-				data: Type.String(),
-				topic: Type.String(),
-				ts: Type.String(),
-			}),
-		)(
-			/^the device `(?<deviceId>[^`]+)` publishes the message with properties `(?<appId>[^`]+)`, `(?<messageType>[^`]+)`, `(?<data>[^`]+)`, and `(?<ts>[^`]+)` to the topic `(?<topic>[^`]+)`$/,
-			step.title,
-		)
-
-		if (match === null) return noMatch
-
-		const e = jsonata(match.ts)
-		const ts = await e.evaluate(context)
-
-		progress(`Device id ${match.deviceId} publishes to topic ${match.topic}`)
-		await new Promise((resolve, reject) => {
-			const mqttClient = mqtt.connect({
-				host: nRFCloudSettings.mqttEndpoint,
-				port: 8883,
-				protocol: 'mqtts',
-				protocolVersion: 4,
-				clean: true,
-				clientId: match.deviceId,
-				key: nRFCloudSettings.accountDevicePrivateKey,
-				cert: nRFCloudSettings.accountDeviceClientCert,
-				ca: readFileSync(
-					path.join(process.cwd(), 'data', 'AmazonRootCA1.pem'),
-					'utf-8',
-				),
-			})
-
-			mqttClient.on('connect', () => {
-				progress('connected')
-				const topic = `${nRFCloudSettings.mqttTopicPrefix}${match.topic}`
-				const message = {
-					appId: match.appId,
-					messageType: match.messageType,
-					data: match.data,
-					ts,
-				}
-
-				const messageStr = JSON.stringify(message)
-				progress('publishing', messageStr, topic)
-				mqttClient.publish(topic, messageStr, (error) => {
-					if (error) return reject(error)
-					mqttClient.end()
-					return resolve(void 0)
-				})
-			})
-
-			mqttClient.on('error', (err) => {
-				error(err)
-				reject(err)
-			})
-		})
-	}
-
 export const steps = (
 	nRFCloudSettings: Settings,
 	db: DynamoDBClient,
@@ -267,5 +195,4 @@ export const steps = (
 	createDeviceForModel({ db }),
 	getDevice({ db }),
 	publishDeviceMessage(nRFCloudSettings),
-	publishDeviceMessages(nRFCloudSettings),
 ]
