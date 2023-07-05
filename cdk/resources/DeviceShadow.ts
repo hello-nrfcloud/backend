@@ -123,6 +123,14 @@ export class DeviceShadow extends Construct {
 						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud/*`,
 					],
 				}),
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud`,
+					],
+				}),
 			],
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,

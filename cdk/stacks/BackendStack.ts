@@ -11,6 +11,7 @@ import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { ContinuousDeployment } from '../resources/ContinuousDeployment.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
+import { DeviceLastSeen } from '../resources/DeviceLastSeen.js'
 import { DeviceShadow } from '../resources/DeviceShadow.js'
 import { DeviceStorage } from '../resources/DeviceStorage.js'
 import { HealthCheckMqttBridge } from '../resources/HealthCheckMqttBridge.js'
@@ -22,6 +23,7 @@ import {
 import { parameterStoreLayerARN } from '../resources/LambdaExtensionLayers.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
+import { KPIs } from '../resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
 
 export class BackendStack extends Stack {
@@ -98,10 +100,13 @@ export class BackendStack extends Stack {
 
 		const deviceStorage = new DeviceStorage(this)
 
+		const lastSeen = new DeviceLastSeen(this)
+
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			deviceStorage,
 			layers: lambdaLayers,
+			lastSeen,
 		})
 
 		new DeviceShadow(this, {
@@ -140,6 +145,13 @@ export class BackendStack extends Stack {
 		const cd = new ContinuousDeployment(this, {
 			repository,
 			gitHubOICDProviderArn,
+		})
+
+		new KPIs(this, {
+			lambdaSources,
+			layers: lambdaLayers,
+			lastSeen,
+			deviceStorage,
 		})
 
 		// Outputs

@@ -24,7 +24,7 @@ When the device `${fingerprint:deviceId}` publishes this message to the topic
 }
 ```
 
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
+<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
 Soon I should receive a message on the websocket that matches
 

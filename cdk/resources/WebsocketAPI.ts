@@ -13,6 +13,7 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { ApiLogging } from './ApiLogging.js'
+import type { DeviceLastSeen } from './DeviceLastSeen.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaSource } from './LambdaSource.js'
 
@@ -38,6 +39,7 @@ export class WebsocketAPI extends Construct {
 			deviceStorage,
 			lambdaSources,
 			layers,
+			lastSeen,
 		}: {
 			deviceStorage: DeviceStorage
 			lambdaSources: {
@@ -48,6 +50,7 @@ export class WebsocketAPI extends Construct {
 				publishToWebsocketClients: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
+			lastSeen: DeviceLastSeen
 		},
 	) {
 		super(parent, 'WebsocketAPI')
@@ -86,12 +89,14 @@ export class WebsocketAPI extends Construct {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
 		this.eventBus.grantPutEventsTo(onConnect)
 		this.connectionsTable.grantWriteData(onConnect)
+		lastSeen.table.grantReadData(onConnect)
 
 		// onMessage
 		const onMessage = new Lambda.Function(this, 'onMessage', {
@@ -156,13 +161,8 @@ export class WebsocketAPI extends Construct {
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['dynamodb:Query'],
-					resources: [`${deviceStorage.devicesTable.tableArn}/index/*`],
-				}),
-			],
 		})
+		deviceStorage.devicesTable.grantReadWriteData(authorizerLambda)
 
 		// API
 		const api = new ApiGatewayV2.CfnApi(this, 'api', {
