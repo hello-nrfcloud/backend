@@ -9,6 +9,9 @@ import { Construct } from 'constructs'
 
 /**
  * Record the timestamp when the device was last seen
+ *
+ * Note: unfortunately there is no 'updateItem' action that could be used in the
+ * rule action. So we have to track the last seen information in a separate table.
  */
 export class LastSeen extends Construct {
 	public readonly table: DynamoDB.Table
