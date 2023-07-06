@@ -42,7 +42,7 @@ export const setShadowFetcherCommand = ({
 			throw new Error(`Must provide value!`)
 		}
 
-		if (!/^(?:\d+(:\d+)?(\s*,\s*)?)+$/.test(value)) {
+		if (!/^(?:[1-9]\d*(:[1-9]\d*)?(\s*,\s*)?)+$/.test(value)) {
 			throw new Error(
 				`Invalid value. It should be in format: <interval> or <interval>:<count> or <interval>:<count>, <interval>:<count>, ...`,
 			)
