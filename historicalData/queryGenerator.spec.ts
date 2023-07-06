@@ -9,9 +9,6 @@ import {
 	getStartPeriod,
 } from './queryGenerator.js'
 
-// Need to mock hello module to avoid the error about import json file
-// jest.mock('@hello.nrfcloud.com/proto/hello', () => jest.fn())
-
 describe('queryGenerator', () => {
 	let request: HistoricalRequest
 	beforeEach(() => {
