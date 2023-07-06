@@ -64,31 +64,45 @@ const h = async (
 			message: { request, model },
 		} = event.detail
 
-		const responses = await repo.getHistoricalData({
+		const response = await repo.getHistoricalData({
 			deviceId,
 			model,
 			request,
 		})
 
-		for (const response of responses) {
-			log.debug('Historical response', { payload: response })
-			await eventBus.putEvents({
-				Entries: [
-					{
-						EventBusName,
-						Source: 'thingy.ws',
-						DetailType: 'message',
-						Detail: JSON.stringify(<WebsocketPayload>{
-							deviceId,
-							connectionId,
-							message: response,
-						}),
-					},
-				],
-			})
-		}
+		log.debug('Historical response', { payload: response })
+		await eventBus.putEvents({
+			Entries: [
+				{
+					EventBusName,
+					Source: 'thingy.ws',
+					DetailType: 'message',
+					Detail: JSON.stringify(<WebsocketPayload>{
+						deviceId,
+						connectionId,
+						message: response,
+					}),
+				},
+			],
+		})
 	} catch (error) {
 		log.error(`Historical request error`, { error })
+		await eventBus.putEvents({
+			Entries: [
+				{
+					EventBusName,
+					Source: 'thingy.ws',
+					DetailType: 'error',
+					Detail: JSON.stringify(<WebsocketPayload>{
+						deviceId: event.detail.deviceId,
+						connectionId: event.detail.connectionId,
+						message: {
+							error,
+						},
+					}),
+				},
+			],
+		})
 	}
 }
 

@@ -1,5 +1,5 @@
 import type { Logger } from '@aws-lambda-powertools/logger'
-import { MetricUnits, type Metrics } from '@aws-lambda-powertools/metrics'
+import { type Metrics } from '@aws-lambda-powertools/metrics'
 import {
 	QueryCommand,
 	type TimestreamQueryClient,
@@ -8,11 +8,9 @@ import {
 	Context,
 	HistoricalDataRequest,
 	HistoricalDataResponse,
-	chartProto,
 } from '@hello.nrfcloud.com/proto/hello'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
-import { Type, type Static } from '@sinclair/typebox'
-import { Value } from '@sinclair/typebox/value'
+import { type Static } from '@sinclair/typebox'
 import { groupBy } from 'lodash-es'
 import { getQueryStatement } from './queryGenerator.js'
 
@@ -35,11 +33,8 @@ export const HistoricalChartTypes = {
 	},
 }
 
-export type HistoricalRequest = Omit<
-	Static<typeof HistoricalDataRequest>,
-	'data'
->
-type HistoricalResponse = Static<typeof HistoricalDataResponse>
+export type HistoricalRequest = Static<typeof HistoricalDataRequest>
+export type HistoricalResponse = Static<typeof HistoricalDataResponse>
 
 export const transformTimestreamData = (
 	data: Record<string, unknown>[],
@@ -104,20 +99,10 @@ export const historicalDataRepository = ({
 		deviceId: string
 		model: string
 		request: HistoricalRequest
-	}) => Promise<HistoricalResponse[]>
+	}) => Promise<HistoricalResponse>
 } => ({
 	getHistoricalData: async ({ deviceId, model, request }) => {
 		const context = Context.model(model).transformed(request.message)
-
-		// Validate request
-		const R = Value.Check(Type.Omit(HistoricalDataRequest, ['data']), request)
-		if (R !== true) {
-			const errors = [
-				...Value.Errors(Type.Omit(HistoricalDataRequest, ['data']), request),
-			]
-			log?.error(`Request is invalid`, { errors })
-			throw new Error(`Request is invalid`)
-		}
 
 		// Query data
 		const QueryString = getQueryStatement({
@@ -135,9 +120,9 @@ export const historicalDataRepository = ({
 
 		// Transform request
 		const parsedResult = parseResult(res)
-		const data: Record<string, unknown[]> = {}
+		const attributes: Record<string, unknown[]> = {}
 		for (const attribute in request.attributes) {
-			data[attribute] = transformTimestreamData(parsedResult, [
+			attributes[attribute] = transformTimestreamData(parsedResult, [
 				{
 					fromKey: attribute,
 					toKey:
@@ -146,23 +131,13 @@ export const historicalDataRepository = ({
 				},
 			])
 		}
-		const transformedRequest = {
-			...request,
-			data,
-		}
 
-		// Pass to proto
-		const historicalResponses = await chartProto({
-			onError: (message, model, error) => {
-				log?.error('Could not transform historical request', {
-					payload: message,
-					model,
-					error,
-				})
-				track?.('errorHistoricalProto', MetricUnits.Count, 1)
-			},
-		})(model, transformedRequest)
-
-		return historicalResponses
+		return {
+			'@context': Context.model(model)
+				.transformed('historical-data')
+				.toString(),
+			'@id': request['@id'],
+			attributes,
+		} as HistoricalResponse
 	},
 })

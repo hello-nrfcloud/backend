@@ -3,6 +3,7 @@ import {
 	type HistoricalRequest,
 } from './historicalDataRepository.js'
 
+type ChartType = keyof typeof HistoricalChartTypes
 export const getQueryStatement = ({
 	request,
 	deviceId,
@@ -66,7 +67,7 @@ export const getMeasureNames = (request: HistoricalRequest): string[] => {
 }
 
 export const getBinnedTime = (request: HistoricalRequest): string => {
-	const type = request.type
+	const type = request.type as unknown as ChartType
 	const selectedType = HistoricalChartTypes[type]
 	if (selectedType === undefined)
 		throw new Error(`${type} is not a valid chart type`)
@@ -78,7 +79,7 @@ export const getStartPeriod = (
 	request: HistoricalRequest,
 	startMS: number,
 ): string => {
-	const type = request.type
+	const type = request.type as unknown as ChartType
 	const selectedType = HistoricalChartTypes[type]
 	if (selectedType === undefined)
 		throw new Error(`${type} is not a valid chart type`)

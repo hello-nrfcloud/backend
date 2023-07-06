@@ -5,7 +5,7 @@ import { validateWithJSONSchema } from '@hello.nrfcloud.com/proto'
 import { HistoricalDataRequest } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { Type, type Static } from '@sinclair/typebox'
+import { type Static } from '@sinclair/typebox'
 import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
 import { metricsForComponent } from './metrics/metrics.js'
@@ -13,9 +13,9 @@ import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 
-const HistoricalRequest = Type.Omit(HistoricalDataRequest, ['data'])
-const valid =
-	validateWithJSONSchema<Static<typeof HistoricalRequest>>(HistoricalRequest)
+const valid = validateWithJSONSchema<Static<typeof HistoricalDataRequest>>(
+	HistoricalDataRequest,
+)
 
 const { TableName, EventBusName } = fromEnv({
 	TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
@@ -36,18 +36,37 @@ const h = async (
 	log.info('event', { event })
 	await repo.extendTTL(event.requestContext.connectionId)
 
+	const { deviceId, model } = event.requestContext.authorizer
 	if (event.body !== undefined) {
 		const { payload } = JSON.parse(event.body)
 		const maybeRequest = valid(payload)
 		if ('errors' in maybeRequest) {
 			log.error(`invalid request`, { errors: maybeRequest.errors })
 			track('invalidRequest', MetricUnits.Count, 1)
+
+			// TODO: Send errors
+			await eventBus.putEvents({
+				Entries: [
+					{
+						EventBusName,
+						Source: 'thingy.ws',
+						DetailType: 'error',
+						Detail: JSON.stringify(<WebsocketPayload>{
+							deviceId,
+							connectionId: event.requestContext.connectionId,
+							message: {
+								error: maybeRequest.errors,
+							},
+						}),
+					},
+				],
+			})
+
 			return { statusCode: 400 }
 		}
 
 		if ('value' in maybeRequest) {
 			track('historicalRequest', MetricUnits.Count, 1)
-			const { deviceId, model } = event.requestContext.authorizer
 			await eventBus.putEvents({
 				Entries: [
 					{
