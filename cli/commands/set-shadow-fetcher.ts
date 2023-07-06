@@ -18,6 +18,7 @@ export const setShadowFetcherCommand = ({
 		},
 	],
 	action: async (model: string, value: string, { deleteFetcherConfig }) => {
+		value = value.trim()
 		const modelHash = model === 'default' ? model : hashSHA1(model)
 		if (deleteFetcherConfig !== undefined) {
 			// Delete
@@ -39,6 +40,12 @@ export const setShadowFetcherCommand = ({
 
 		if (value === undefined || value.length === 0) {
 			throw new Error(`Must provide value!`)
+		}
+
+		if (!/^(?:\d+(:\d+)?(\s*,\s*)?)+$/.test(value)) {
+			throw new Error(
+				`Invalid value. It should be in format: <interval> or <interval>:<count> or <interval>:<count>, <interval>:<count>, ...`,
+			)
 		}
 
 		const { name } = await putSettings({

@@ -88,5 +88,14 @@ To customize the frequency of the shadow fetcher for each model, you can modify
 the configuration using
 
 ```bash
-./cli.sh set-shadow-fetcher-config <modelName> <seconds>
+./cli.sh set-shadow-fetcher-config <modelName> <value>
 ```
+
+The value parameter can be specified in the following formats:
+
+- interval
+- interval:count
+- interval:count, interval:count
+
+Here, `interval` refers to the duration in seconds for fetching the shadow, and
+`count` represents the number of iterations.
