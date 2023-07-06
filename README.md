@@ -81,3 +81,31 @@ Afterwards you can run the simulator using
 ```
 
 which will send simulated data to nRF Cloud.
+
+## Shadow fetcher configuration
+
+To customize the frequency of the shadow fetcher for each model, you can modify
+the configuration using
+
+```bash
+./cli.sh set-shadow-fetcher-config <modelName> <value>
+```
+
+The value parameter can be specified in the following formats:
+
+- interval
+- interval:count
+- interval:count, interval:count
+
+Here, `interval` refers to the interval in seconds between fetching the shadow
+of a device, and `count` represents the number of iterations.
+
+### Examples
+
+- `10` will fetch the shadow of a device every 10 seconds indefinitely.
+- `5:30` will fetch the shadow of a device every 5 seconds indefinitely.
+- `5:30, 30` will fetch the shadow of a device every 5 seconds for 30 times,
+  then switch to fetching it every 30 seconds thereafter.
+- `5:30, 30:20, 60` will fetch the shadow of a device every 5 seconds for 30
+  times, then switch to fetching it every 30 seconds for another 20 times.
+  Finally, fetching the shadow every 60 seconds indefinitely
