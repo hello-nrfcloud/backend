@@ -31,7 +31,7 @@
     "@aws-lambda-powertools/logger": "1.11.0",
     "@aws-sdk/client-apigatewaymanagementapi": "3.363.0",
     "@aws-sdk/client-cloudformation": "3.363.0",
-    "@aws-sdk/client-cloudwatch-logs": "3.363.0",
+    "@aws-sdk/client-cloudwatch-logs": "3.368.0",
     "@aws-sdk/client-dynamodb": "3.363.0",
     "@aws-sdk/client-ecr": "3.363.0",
     "@aws-sdk/client-ecs": "3.364.0",
