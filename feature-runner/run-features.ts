@@ -2,6 +2,7 @@ import { CloudFormationClient } from '@aws-sdk/client-cloudformation'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
+import { TimestreamWriteClient } from '@aws-sdk/client-timestream-write'
 import { runFolder } from '@nordicsemiconductor/bdd-markdown'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
@@ -13,6 +14,7 @@ import {
 	TEST_RESOURCES_STACK_NAME,
 } from '../cdk/stacks/stackConfig.js'
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
+import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
 import { getSettings } from '../nrfcloud/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
 import { steps as deviceSteps } from './steps/device.js'
@@ -56,10 +58,15 @@ const accountDeviceSettings = await getSettings({
 })()
 const db = new DynamoDBClient({})
 const timestream = new TimestreamQueryClient({})
+const writeTimestream = new TimestreamWriteClient({})
 const [DatabaseName, TableName] = config.historicalDataTableInfo.split('|')
 if (DatabaseName === undefined || TableName === undefined)
 	throw Error('historicalDataTableInfo is not configured')
-
+const storeTimestream = storeRecordsInTimestream({
+	timestream: writeTimestream,
+	DatabaseName,
+	TableName,
+})
 const print = (arg: unknown) =>
 	typeof arg === 'object' ? JSON.stringify(arg) : arg
 
@@ -100,7 +107,7 @@ runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(...deviceSteps(accountDeviceSettings, db))
 	.addStepRunners(...mocknRFCloudSteps({ db }))
-	.addStepRunners(...historicalDataSteps({ timestream }))
+	.addStepRunners(...historicalDataSteps({ timestream, storeTimestream }))
 	.addStepRunners(...storageSteps())
 
 const res = await runner.run({

@@ -36,6 +36,20 @@ export const HistoricalChartTypes = {
 export type HistoricalRequest = Static<typeof HistoricalDataRequest>
 export type HistoricalResponse = Static<typeof HistoricalDataResponse>
 
+export const normalizedData = (
+	data: Record<string, unknown>[],
+): Record<string, unknown>[] =>
+	data.map((o) => {
+		const key = 'measure_name' in o ? (o['measure_name'] as string) : undefined
+		const val =
+			'measure_value::double' in o ? o['measure_value::double'] : undefined
+		if (key !== undefined && val !== undefined) {
+			o[key] = val
+		}
+
+		return o
+	})
+
 export const transformTimestreamData = (
 	data: Record<string, unknown>[],
 	mapKeys: { fromKey: string; toKey: string }[],
@@ -119,25 +133,39 @@ export const historicalDataRepository = ({
 		)
 
 		// Transform request
-		const parsedResult = parseResult(res)
-		const attributes: Record<string, unknown[]> = {}
-		for (const attribute in request.attributes) {
-			attributes[attribute] = transformTimestreamData(parsedResult, [
-				{
-					fromKey: attribute,
-					toKey:
-						request.attributes[attribute as keyof typeof request.attributes]
-							.attribute,
-				},
-			])
-		}
+		if (request.message === 'location') {
+			const parsedResult = normalizedData(parseResult(res))
+			const mapKeys = Object.entries(request.attributes).map(([k, v]) => ({
+				fromKey: v.attribute,
+				toKey: k,
+			}))
 
-		return {
-			'@context': Context.model(model)
-				.transformed('historical-data')
-				.toString(),
-			'@id': request['@id'],
-			attributes,
-		} as HistoricalResponse
+			const attributes = transformTimestreamData(parsedResult, mapKeys)
+			return {
+				'@context': Context.model(model)
+					.transformed('historical-data')
+					.toString(),
+				'@id': request['@id'],
+				attributes,
+			} as HistoricalResponse
+		} else {
+			const parsedResult = parseResult(res)
+			const attributes: Record<string, unknown[]> = {}
+			for (const attribute in request.attributes) {
+				attributes[attribute] = transformTimestreamData(parsedResult, [
+					{
+						fromKey: attribute,
+						toKey: request.attributes[attribute]?.attribute ?? 'unknown',
+					},
+				])
+			}
+			return {
+				'@context': Context.model(model)
+					.transformed('historical-data')
+					.toString(),
+				'@id': request['@id'],
+				attributes,
+			} as HistoricalResponse
+		}
 	},
 })

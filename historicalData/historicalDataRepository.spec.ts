@@ -1,4 +1,7 @@
-import { transformTimestreamData } from './historicalDataRepository.js'
+import {
+	normalizedData,
+	transformTimestreamData,
+} from './historicalDataRepository.js'
 jest.mock('@hello.nrfcloud.com/proto/hello', () => ({
 	Context: jest.fn().mockReturnValue('model'),
 }))
@@ -84,5 +87,77 @@ describe('transformTimestreamData', () => {
 				{ fromKey: 'acc', toKey: 'acc' },
 			]),
 		).toEqual(expectedTransformedDataAvg)
+	})
+})
+
+describe('normalizedData', () => {
+	it('should normalize the data correctly', () => {
+		const data = [
+			{
+				measure_name: 'temperature',
+				'measure_value::double': 25,
+			},
+			{
+				measure_name: 'humidity',
+				'measure_value::double': 60,
+			},
+			{
+				measure_name: 'pressure',
+				'measure_value::double': 1013,
+			},
+		]
+
+		const normalized = normalizedData(data)
+
+		expect(normalized).toEqual([
+			{
+				measure_name: 'temperature',
+				temperature: 25,
+				'measure_value::double': 25,
+			},
+			{
+				measure_name: 'humidity',
+				humidity: 60,
+				'measure_value::double': 60,
+			},
+			{
+				measure_name: 'pressure',
+				pressure: 1013,
+				'measure_value::double': 1013,
+			},
+		])
+	})
+
+	it('should handle missing measure_name or measure_value::double', () => {
+		const data = [
+			{
+				measure_name: 'temperature',
+				'measure_value::double': 25,
+			},
+			{
+				measure_name: 'humidity',
+			},
+			{
+				'measure_value::double': 1013,
+			},
+			{},
+		]
+
+		const normalized = normalizedData(data)
+
+		expect(normalized).toEqual([
+			{
+				measure_name: 'temperature',
+				temperature: 25,
+				'measure_value::double': 25,
+			},
+			{
+				measure_name: 'humidity',
+			},
+			{
+				'measure_value::double': 1013,
+			},
+			{},
+		])
 	})
 })
