@@ -2,7 +2,10 @@ import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { validateWithJSONSchema } from '@hello.nrfcloud.com/proto'
-import { HistoricalDataRequest } from '@hello.nrfcloud.com/proto/hello'
+import {
+	BadRequestError,
+	HistoricalDataRequest,
+} from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { type Static } from '@sinclair/typebox'
@@ -44,7 +47,11 @@ const h = async (
 			log.error(`invalid request`, { errors: maybeRequest.errors })
 			track('invalidRequest', MetricUnits.Count, 1)
 
-			// TODO: Send errors
+			const err = BadRequestError({
+				id: payload?.['@id'],
+				title: 'Invalid request',
+				detail: JSON.stringify(maybeRequest.errors),
+			})
 			await eventBus.putEvents({
 				Entries: [
 					{
@@ -54,9 +61,7 @@ const h = async (
 						Detail: JSON.stringify(<WebsocketPayload>{
 							deviceId,
 							connectionId: event.requestContext.connectionId,
-							message: {
-								error: maybeRequest.errors,
-							},
+							message: err,
 						}),
 					},
 				],

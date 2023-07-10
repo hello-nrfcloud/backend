@@ -1,6 +1,7 @@
 import { logMetrics } from '@aws-lambda-powertools/metrics'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
+import { InternalError } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
@@ -87,6 +88,9 @@ const h = async (
 		})
 	} catch (error) {
 		log.error(`Historical request error`, { error })
+		const err = InternalError({
+			id: event.detail.message.request['@id'],
+		})
 		await eventBus.putEvents({
 			Entries: [
 				{
@@ -96,9 +100,7 @@ const h = async (
 					Detail: JSON.stringify(<WebsocketPayload>{
 						deviceId: event.detail.deviceId,
 						connectionId: event.detail.connectionId,
-						message: {
-							error,
-						},
+						message: err,
 					}),
 				},
 			],

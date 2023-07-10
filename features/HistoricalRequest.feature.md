@@ -10,7 +10,7 @@ And I store
 `$toMillis($fromMillis($millis(), '[Y9999]-[M99]-[D99]T[H99]:[m]:00Z'))` into
 `ts`
 
-## Scenario Outline: Device publishes the messages to nRF Cloud
+## Scenario Outline: Device publishes the gain messages to nRF Cloud
 
 Given I store `ts - ${deductMsFromTS}` into `pastTs`
 
@@ -36,7 +36,7 @@ And the device `${fingerprint:deviceId}` publishes this message to the topic
 | SOLAR | 3.58041 | 90000          |
 | SOLAR | 3.24925 | 120000         |
 
-## Verify I can query historical device data
+## Verify I can query gain historical device data
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
@@ -81,5 +81,129 @@ Soon I should receive a message on the websocket that is equal to
       }
     ]
   }
+}
+```
+
+## Scenario Outline: Device publishes the battery messages to nRF Cloud
+
+Given I store `ts - ${deductMsFromTS}` into `pastTs`
+
+And the device `${fingerprint:deviceId}` publishes this message to the topic
+`m/d/${fingerprint:deviceId}/d2c`
+
+```json
+{
+  "appId": "${appId}",
+  "messageType": "DATA",
+  "data": "${data}",
+  "ts": ${pastTs}
+}
+```
+
+### Examples
+
+| appId   | data | deductMsFromTS |
+| ------- | ---- | -------------- |
+| BATTERY | 18   | 0              |
+| BATTERY | 19   | 30000          |
+| BATTERY | 20   | 60000          |
+| BATTERY | 21   | 90000          |
+| BATTERY | 22   | 120000         |
+
+## Verify I can query battery historical device data
+
+When I connect to the websocket using fingerprint `${fingerprint}`
+
+And I send websocket request
+
+```json
+{
+  "message": "message",
+  "payload": {
+    "@context": "https://github.com/hello-nrfcloud/proto/historical-data-request",
+    "@id": "b42b7880-0217-484f-8e72-380950ffae46",
+    "type": "lastHour",
+    "message": "battery",
+    "attributes": {
+      "minBat": { "attribute": "%", "aggregate": "min" },
+      "maxBat": { "attribute": "%", "aggregate": "max" }
+    }
+  }
+}
+```
+
+<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
+
+Soon I should receive a message on the websocket that is equal to
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/historical-data",
+  "@id": "b42b7880-0217-484f-8e72-380950ffae46",
+  "attributes": {
+    "minBat": [
+      {
+        "%": 18,
+        "ts": `ts`
+      },
+      {
+        "%": 19,
+        "ts": `ts - 60000`
+      },
+      {
+        "%": 21,
+        "ts": `ts - 120000`
+      }
+    ],
+    "maxBat": [
+      {
+        "%": 18,
+        "ts": `ts`
+      },
+      {
+        "%": 20,
+        "ts": `ts - 60000`
+      },
+      {
+        "%": 22,
+        "ts": `ts - 120000`
+      }
+    ]
+  }
+}
+```
+
+## Verify I will get error message if the request is invalid
+
+When I connect to the websocket using fingerprint `${fingerprint}`
+
+And I send websocket request
+
+```json
+{
+  "message": "message",
+  "payload": {
+    "@context": "https://github.com/hello-nrfcloud/proto/historical-data-request",
+    "@id": "0c0123ff-f03d-4fc4-934e-0bf1edb7c304",
+    "type": "lastHour",
+    "message": "unknown",
+    "attributes": {
+      "avgMA": { "attribute": "mA", "aggregate": "avg" }
+    }
+  }
+}
+```
+
+<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/ProblemDetail",
+  "@id": "0c0123ff-f03d-4fc4-934e-0bf1edb7c304",
+  "type": "https://github.com/hello-nrfcloud/proto/error/BadRequest",
+  "status": 400,
+  "title": "Invalid request"
 }
 ```

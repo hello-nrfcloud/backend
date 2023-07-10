@@ -106,23 +106,23 @@ describe('queryGenerator', () => {
 			])
 		})
 
-		it('returns an array of attributes when the request message is "voltage"', () => {
-			request.message = 'voltage'
+		it('returns an array of attributes when the request message is "battery"', () => {
+			request.message = 'battery'
 			request.attributes = {
-				avgV: { attribute: 'v', aggregate: 'avg' },
-				minV: { attribute: 'v', aggregate: 'min' },
-				maxV: { attribute: 'v', aggregate: 'max' },
-				sumV: { attribute: 'v', aggregate: 'sum' },
-				countV: { attribute: 'v', aggregate: 'count' },
+				avgBat: { attribute: '%', aggregate: 'avg' },
+				minBat: { attribute: '%', aggregate: 'min' },
+				maxBat: { attribute: '%', aggregate: 'max' },
+				sumBat: { attribute: '%', aggregate: 'sum' },
+				countBat: { attribute: '%', aggregate: 'count' },
 			}
 
 			const result = getAggregates(request)
 			expect(result).toEqual([
-				'avg(measure_value::double) as avgV',
-				'min(measure_value::double) as minV',
-				'max(measure_value::double) as maxV',
-				'sum(measure_value::double) as sumV',
-				'count(measure_value::double) as countV',
+				'avg(measure_value::double) as avgBat',
+				'min(measure_value::double) as minBat',
+				'max(measure_value::double) as maxBat',
+				'sum(measure_value::double) as sumBat',
+				'count(measure_value::double) as countBat',
 			])
 		})
 
@@ -211,17 +211,17 @@ describe('queryGenerator', () => {
 			expect(result.replace(/\s+/g, ' ').trim()).toEqual(expectedQuery)
 		})
 
-		it('returns the correct query statement for voltage request', () => {
-			request.message = 'voltage'
+		it('returns the correct query statement for battery request', () => {
+			request.message = 'battery'
 			request.type = 'lastHour'
 			request.attributes = {
-				minV: { attribute: 'v', aggregate: 'min' },
-				maxV: { attribute: 'v', aggregate: 'max' },
+				minV: { attribute: '%', aggregate: 'min' },
+				maxV: { attribute: '%', aggregate: 'max' },
 			}
 
 			const deviceId = 'device123'
 			const context = new URL(
-				'https://github.com/hello-nrfcloud/proto/transformed/model/voltage',
+				'https://github.com/hello-nrfcloud/proto/transformed/model/battery',
 			)
 			const historicalDataDatabaseName = 'database1'
 			const historicalDataTableName = 'table1'
@@ -238,7 +238,7 @@ describe('queryGenerator', () => {
 				SELECT deviceId, bin(time, 1minute) as time, min(measure_value::double) as minV, max(measure_value::double) as maxV
 				FROM "database1"."table1"
 				WHERE deviceId = 'device123'
-				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/voltage'
+				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/battery'
 				AND time BETWEEN from_milliseconds(1688104200000) - 1hour AND from_milliseconds(1688104200000)
 				GROUP BY deviceId, bin(time, 1minute)
 				ORDER BY bin(time, 1minute) DESC

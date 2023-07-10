@@ -333,7 +333,7 @@ export class WebsocketAPI extends Construct {
 		new Events.Rule(this, 'publishToWebsocketClientsRule', {
 			eventPattern: {
 				source: ['thingy.ws'],
-				detailType: ['message', 'connect'],
+				detailType: ['message', 'connect', 'error'],
 			},
 			targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
 			eventBus: this.eventBus,
