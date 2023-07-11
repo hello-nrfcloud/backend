@@ -65,7 +65,7 @@ export const configStepRunners = ({
 } => ({
 	steps: createConfigStepRunners({ configWriter }),
 	cleanup: async () => {
-		const settings = await configSettings()
+		const settings = await configSettings().catch(() => ({}))
 		for (const property in settings) {
 			await configRemover({ property })
 		}

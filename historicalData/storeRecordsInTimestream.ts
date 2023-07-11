@@ -4,27 +4,27 @@ import {
 	WriteRecordsCommand,
 	type _Record,
 } from '@aws-sdk/client-timestream-write'
-import { logger } from '../lambda/util/logger.js'
-
-const log = logger('storeRecordsInTimestream')
+import type { Logger } from '@aws-lambda-powertools/logger'
 
 export const storeRecordsInTimestream =
 	({
 		timestream,
 		DatabaseName,
 		TableName,
+		log,
 	}: {
 		timestream: TimestreamWriteClient
 		DatabaseName: string
 		TableName: string
+		log?: Logger
 	}) =>
 	async (Records: _Record[], CommonAttributes?: _Record): Promise<void> => {
 		if (Records.length === 0) {
-			log.warn('No records to store.')
+			log?.warn('No records to store.')
 			return
 		}
 
-		log.debug('Saving into timestream', {
+		log?.debug('Saving into timestream', {
 			Records,
 			CommonAttributes,
 		})
@@ -42,11 +42,11 @@ export const storeRecordsInTimestream =
 		} catch (err) {
 			const error = err as Error
 			if (error instanceof RejectedRecordsException) {
-				log.error('Error writing records [RejectedRecordsException]', {
+				log?.error('Error writing records [RejectedRecordsException]', {
 					RejectedRecords: error.RejectedRecords,
 				})
 			} else {
-				log.error('Error writing records', { error })
+				log?.error('Error writing records', { error })
 			}
 
 			throw error

@@ -28,6 +28,7 @@ const store = storeRecordsInTimestream({
 	timestream: client,
 	DatabaseName,
 	TableName,
+	log,
 })
 
 /**
