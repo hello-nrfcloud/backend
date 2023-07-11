@@ -63,7 +63,7 @@ Soon I should receive a message on the websocket that is equal to
 
 ```json
 {
-  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/historical-data",
+  "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
   "@id": "420eac59-5ce8-4751-b7d1-217811382095",
   "attributes": {
     "avgMA": [
@@ -138,7 +138,7 @@ Soon I should receive a message on the websocket that is equal to
 
 ```json
 {
-  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/historical-data",
+  "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
   "@id": "b42b7880-0217-484f-8e72-380950ffae46",
   "attributes": {
     "minBat": [
@@ -202,7 +202,7 @@ Soon I should receive a message on the websocket that matches
 {
   "@context": "https://github.com/hello-nrfcloud/proto/ProblemDetail",
   "@id": "0c0123ff-f03d-4fc4-934e-0bf1edb7c304",
-  "type": "https://github.com/hello-nrfcloud/proto/error/BadRequest",
+  "type": "https://hello.nrfcloud.com/errors/BadRequest",
   "status": 400,
   "title": "Invalid request"
 }
@@ -265,7 +265,7 @@ Soon I should receive a message on the websocket that matches
 
 ```json
 {
-  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/historical-data",
+  "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
   "@id": "ce324e8e-2aac-4525-b763-5c036148c167",
   "attributes": [
     {

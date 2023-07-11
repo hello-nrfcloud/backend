@@ -133,6 +133,7 @@ export const historicalDataRepository = ({
 		)
 
 		// Transform request
+		let attributes: Record<string, unknown[]> | Record<string, unknown>[]
 		if (request.message === 'location') {
 			const parsedResult = normalizedData(parseResult(res))
 			const mapKeys = Object.entries(request.attributes).map(([k, v]) => ({
@@ -140,17 +141,10 @@ export const historicalDataRepository = ({
 				toKey: k,
 			}))
 
-			const attributes = transformTimestreamData(parsedResult, mapKeys)
-			return {
-				'@context': Context.model(model)
-					.transformed('historical-data')
-					.toString(),
-				'@id': request['@id'],
-				attributes,
-			} as HistoricalResponse
+			attributes = transformTimestreamData(parsedResult, mapKeys)
 		} else {
 			const parsedResult = parseResult(res)
-			const attributes: Record<string, unknown[]> = {}
+			attributes = {}
 			for (const attribute in request.attributes) {
 				attributes[attribute] = transformTimestreamData(parsedResult, [
 					{
@@ -159,13 +153,12 @@ export const historicalDataRepository = ({
 					},
 				])
 			}
-			return {
-				'@context': Context.model(model)
-					.transformed('historical-data')
-					.toString(),
-				'@id': request['@id'],
-				attributes,
-			} as HistoricalResponse
 		}
+
+		return {
+			'@context': Context.historicalDataResponse.toString(),
+			'@id': request['@id'],
+			attributes,
+		} as HistoricalResponse
 	},
 })
