@@ -12,8 +12,8 @@ needs:
 
 Given I store `$millis()` into `ts`
 
-When the device `${fingerprint:deviceId}` publishes this message to the topic
-`m/d/${fingerprint:deviceId}/d2c`
+When the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {

@@ -7,20 +7,20 @@
 
 Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
-And there is this device shadow data for `${fingerprint:deviceId}` in nRF Cloud
+And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
 ```json
 {
   "items": [
     {
-      "id": "${fingerprint:deviceId}",
+      "id": "${fingerprint_deviceId}",
       "tags": ["configuration:solar-shield", "model:PCA20035"],
       "tenantId": "a0673464-e4e1-4b87-bffd-6941a012067b",
       "$meta": {
         "updatedAt": "2023-04-20T07:29:46.467Z",
         "createdAt": "2023-04-19T11:49:07.370Z"
       },
-      "name": "${fingerprint:deviceId}",
+      "name": "${fingerprint_deviceId}",
       "type": "Generic",
       "subType": "PCA10090",
       "firmware": {
@@ -37,8 +37,8 @@ And there is this device shadow data for `${fingerprint:deviceId}` in nRF Cloud
           "pairing": {
             "state": "paired",
             "topics": {
-              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/d2c",
-              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/+/r"
+              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint_deviceId}/d2c",
+              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint_deviceId}/+/r"
             }
           }
         },
@@ -61,8 +61,8 @@ And there is this device shadow data for `${fingerprint:deviceId}` in nRF Cloud
           "pairing": {
             "state": "paired",
             "topics": {
-              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/d2c",
-              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint:deviceId}/+/r"
+              "d2c": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint_deviceId}/d2c",
+              "c2d": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/m/d/${fingerprint_deviceId}/+/r"
             }
           },
           "nrfcloud_mqtt_topic_prefix": "prod/a0673464-e4e1-4b87-bffd-6941a012067b/",
