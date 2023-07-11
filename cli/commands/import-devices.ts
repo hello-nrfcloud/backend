@@ -34,7 +34,7 @@ export const importDevicesCommand = ({
 		const devices: [imei: string, fingerprint: string, publicKey: string][] =
 			devicesList
 				.map(
-					([imei, _, fingerprint, publicKey]) =>
+					([imei, , fingerprint, publicKey]) =>
 						[imei, fingerprint, (publicKey ?? '').replace(/\\n/g, os.EOL)] as [
 							string,
 							string,
@@ -99,7 +99,7 @@ export const importDevicesCommand = ({
 		})
 
 		const registration = await client.registerDevices(
-			devices.map(([imei, _, publicKey]) => {
+			devices.map(([imei, , publicKey]) => {
 				const deviceId = `oob-${imei}`
 				const certPem = publicKey
 				return {

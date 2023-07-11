@@ -95,10 +95,6 @@ const dateParser = (key: string, value: any) => {
 
 const assertResult = async ({
 	step,
-	log: {
-		step: { progress },
-	},
-	context: { wsClient },
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match = /^the Timestream result should match$/.exec(step.title)
 	if (match === null) return noMatch
