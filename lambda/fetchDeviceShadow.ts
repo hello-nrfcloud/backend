@@ -9,13 +9,14 @@ import { proto } from '@hello.nrfcloud.com/proto/hello'
 import { getShadowUpdateTime } from '@hello.nrfcloud.com/proto/nrfCloud'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { chunk, once } from 'lodash-es'
+import { chunk, once, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
 import { getSettings } from '../util/settings.js'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
 } from '../websocket/connectionsRepository.js'
+import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
@@ -71,36 +72,57 @@ const h = async (): Promise<void> => {
 		}
 
 		const deviceShadow = await getShadowFetcher()
+		const executionTime = new Date()
+
 		const connections = await connectionsRepo.getAll()
 		log.info(`Found ${connections.length} active connections`)
 		track('connections', MetricUnits.Count, connections.length)
-		const deviceConnectionsMap = connections
+
+		if (connections.length === 0) return
+
+		// Filter based on the configuration
+		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
+			executionTime,
+		)
+		const devicesToCheckShadowUpdate = connections.filter((connection) => {
 			// The health check device does not publish a valid shadow, so do not fetch it
-			.filter(({ deviceId }) => {
-				if (deviceId === healthCheckClientId) {
-					console.debug(
-						`Ignoring shadow request for health check device`,
-						healthCheckClientId,
-					)
-					return false
-				}
-				return true
+			if (connection.deviceId === healthCheckClientId) {
+				console.debug(
+					`Ignoring shadow request for health check device`,
+					healthCheckClientId,
+				)
+				return false
+			}
+
+			return deviceShadowUpdateChecker({
+				model: connection.model,
+				updatedAt: new Date(
+					connection.updatedAt ?? executionTime.getTime() - 60 * 60 * 1000,
+				),
+				count: connection.count ?? 0,
 			})
-			.reduce(
-				(map, connection) => ({
-					...map,
-					[connection.deviceId]: [
-						...(map[connection.deviceId] ?? []),
-						connection,
-					],
-				}),
-				{} as Record<string, WebsocketDeviceConnectionShadowInfo[]>,
-			)
+		})
+		log.info(`Found ${devicesToCheckShadowUpdate.length} devices to get shadow`)
+		if (devicesToCheckShadowUpdate.length === 0) return
+
+		const deviceConnectionsMap = connections.reduce(
+			(map, connection) => ({
+				...map,
+				[connection.deviceId]: [
+					...(map[connection.deviceId] ?? []),
+					connection,
+				],
+			}),
+			{} as Record<string, WebsocketDeviceConnectionShadowInfo[]>,
+		)
 
 		// Bulk fetching device shadow to avoid rate limit
 		const deviceShadows = (
 			await Promise.all(
-				chunk(connections, 50).map(async (devices) =>
+				chunk(
+					uniqBy(devicesToCheckShadowUpdate, (device) => device.deviceId),
+					50,
+				).map(async (devices) =>
 					limit(async () => {
 						const start = Date.now()
 						const res = await deviceShadow(
@@ -138,6 +160,7 @@ const h = async (): Promise<void> => {
 				const isUpdated = await connectionsRepo.updateDeviceVersion(
 					d.connectionId,
 					deviceShadow.state.version,
+					executionTime,
 				)
 
 				if (!isUpdated) {
@@ -206,7 +229,7 @@ const h = async (): Promise<void> => {
 			}
 		}
 	} catch (error) {
-		console.error(error)
+		log.error(`fetch device shadow error`, { error })
 	} finally {
 		await lock.releaseLock(lockName)
 	}

@@ -18,6 +18,7 @@ export type WebsocketDeviceConnection = {
 export type WebsocketDeviceConnectionShadowInfo = WebsocketDeviceConnection & {
 	version?: number
 	count?: number
+	updatedAt?: string
 }
 
 /**
@@ -33,6 +34,7 @@ export const connectionsRepository: (
 	updateDeviceVersion: (
 		connectionId: string,
 		version: number,
+		executionTime: Date,
 	) => Promise<boolean>
 } = (db: DynamoDBClient, tableName: string) => ({
 	add: async (connection) => {
@@ -103,29 +105,34 @@ export const connectionsRepository: (
 	updateDeviceVersion: async (
 		connectionId: string,
 		version: number,
+		executionTime: Date,
 	): Promise<boolean> => {
 		try {
-			await db.send(
+			const result = await db.send(
 				new UpdateItemCommand({
 					TableName: tableName,
 					Key: {
 						connectionId: { S: connectionId },
 					},
-					UpdateExpression: 'SET #version = :version ADD #count :increase',
+					UpdateExpression:
+						'SET #version = :version, #updatedAt = :updatedAt ADD #count :increase',
 					ExpressionAttributeNames: {
 						'#version': 'version',
+						'#updatedAt': 'updatedAt',
 						'#count': 'count',
 					},
 					ExpressionAttributeValues: {
 						':version': { N: version.toString() },
+						':updatedAt': { S: executionTime.toISOString() },
 						':increase': { N: '1' },
 					},
 					ConditionExpression:
-						'attribute_not_exists(#version) OR :version > #version',
+						'attribute_not_exists(#version) OR #version <= :version',
+					ReturnValues: 'ALL_OLD',
 				}),
 			)
 
-			return true
+			return version > parseInt(result.Attributes?.version?.N ?? '0', 10)
 		} catch (error) {
 			if (error instanceof ConditionalCheckFailedException) {
 				return false

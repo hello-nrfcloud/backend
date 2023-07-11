@@ -20,8 +20,8 @@ export const cleanup = async (): Promise<void> => {
 			ascendingOrder: false,
 		}),
 	)
-	const policies = allPolicies.policies?.filter((policy) =>
-		policy.policyName?.startsWith(STACK_NAME),
+	const policies = allPolicies.policies?.filter(
+		(policy) => policy.policyName?.startsWith(STACK_NAME),
 	)
 
 	// Find all certificates attached to these policies

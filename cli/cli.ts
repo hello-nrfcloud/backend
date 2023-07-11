@@ -23,6 +23,7 @@ import { logsCommand } from './commands/logs.js'
 import { provisionDkCommand } from './commands/provision-dk.js'
 import { registerDeviceCommand } from './commands/register-device.js'
 import { registerSimulatorDeviceCommand } from './commands/register-simulator-device.js'
+import { setShadowFetcherCommand } from './commands/set-shadow-fetcher.js'
 import { showDeviceCommand } from './commands/show-device.js'
 import { showFingerprintCommand } from './commands/show-fingerprint.js'
 import { showNRFCloudAccount } from './commands/show-nrfcloud-account.js'
@@ -58,6 +59,7 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 
 	const commands: CommandDefinition[] = [
 		configureCommand({ ssm }),
+		setShadowFetcherCommand({ ssm }),
 		logsCommand({ stackName: STACK_NAME, cf, logs }),
 	]
 

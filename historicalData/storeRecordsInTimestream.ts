@@ -24,6 +24,11 @@ export const storeRecordsInTimestream =
 			return
 		}
 
+		log.debug('Saving into timestream', {
+			Records,
+			CommonAttributes,
+		})
+
 		const request = timestream.send(
 			new WriteRecordsCommand({
 				DatabaseName,

@@ -15,8 +15,10 @@ import {
 } from '../cdk/stacks/stackConfig.js'
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import { getSettings } from '../nrfcloud/settings.js'
+import { getSettings as nrfCloudSettings } from '../nrfcloud/settings.js'
+import { deleteSettings, getSettings, putSettings } from '../util/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
+import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
@@ -52,10 +54,29 @@ export type World = {
 	requestsTableName: string
 } & Record<string, string>
 
-const accountDeviceSettings = await getSettings({
+const accountDeviceSettings = await nrfCloudSettings({
 	ssm,
 	stackName: STACK_NAME,
 })()
+const configWriter = putSettings({
+	ssm,
+	stackName: STACK_NAME,
+	scope: 'config',
+	system: 'stack',
+})
+const configRemover = deleteSettings({
+	ssm,
+	stackName: STACK_NAME,
+	scope: 'config',
+	system: 'stack',
+})
+const configSettings = getSettings({
+	ssm,
+	stackName: STACK_NAME,
+	scope: 'config',
+	system: 'stack',
+})
+
 const db = new DynamoDBClient({})
 const timestream = new TimestreamQueryClient({})
 const writeTimestream = new TimestreamWriteClient({})
@@ -103,12 +124,20 @@ const { steps: webSocketSteps, cleanup: websocketCleanup } =
 	websocketStepRunners()
 cleaners.push(websocketCleanup)
 
+const { steps: configSteps, cleanup: configCleanup } = configStepRunners({
+	configWriter,
+	configRemover,
+	configSettings,
+})
+cleaners.push(configCleanup)
+
 runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(...deviceSteps(accountDeviceSettings, db))
 	.addStepRunners(...mocknRFCloudSteps({ db }))
 	.addStepRunners(...historicalDataSteps({ timestream, storeTimestream }))
 	.addStepRunners(...storageSteps())
+	.addStepRunners(...configSteps)
 
 const res = await runner.run({
 	websocketUri: config.webSocketURI,

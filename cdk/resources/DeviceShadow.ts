@@ -110,6 +110,8 @@ export class DeviceShadow extends Construct {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
 				NODE_NO_WARNINGS: '1',
+				PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED: 'FALSE',
+				PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			initialPolicy: [
@@ -133,6 +135,16 @@ export class DeviceShadow extends Construct {
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
+		const ssmReadPolicy = new IAM.PolicyStatement({
+			effect: IAM.Effect.ALLOW,
+			actions: ['ssm:GetParametersByPath'],
+			resources: [
+				`arn:aws:ssm:${Stack.of(this).region}:${
+					Stack.of(this).account
+				}:parameter/${Stack.of(this).stackName}/config/stack`,
+			],
+		})
+		fetchDeviceShadow.addToRolePolicy(ssmReadPolicy)
 		websocketAPI.eventBus.grantPutEventsTo(fetchDeviceShadow)
 		websocketAPI.connectionsTable.grantReadWriteData(fetchDeviceShadow)
 		lockTable.grantReadWriteData(fetchDeviceShadow)

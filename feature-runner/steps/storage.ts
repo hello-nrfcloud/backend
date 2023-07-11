@@ -6,11 +6,11 @@ import {
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
-import { assert } from 'chai'
+import assert from 'node:assert/strict'
 import jsonata from 'jsonata'
 import type { World } from '../run-features.js'
 
-const store = async ({
+export const store = async ({
 	step,
 	log: {
 		step: { progress },
@@ -29,7 +29,7 @@ const store = async ({
 	const e = jsonata(match.exp)
 	const result = await e.evaluate(context)
 	progress(`Evaluate: ${result}`)
-	assert.isDefined(result)
+	assert.notEqual(result, undefined)
 
 	context[match.storeName] = result
 }

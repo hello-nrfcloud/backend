@@ -70,8 +70,8 @@ const queryTimestream =
 		}
 		const res = await pRetry(query, {
 			retries: 5,
-			minTimeout: 500,
-			maxTimeout: 1000,
+			minTimeout: 1000,
+			maxTimeout: 2000,
 			onFailedAttempt: (error) => {
 				progress(`attempt #${error.attemptNumber}`)
 			},

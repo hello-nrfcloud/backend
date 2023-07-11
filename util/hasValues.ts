@@ -11,9 +11,8 @@ export type AssertObject<T> = {
 export const hasValues = <T>(
 	obj: T,
 	...props: (keyof T)[]
-): obj is
-	| PartialObject<Omit<T, (typeof props)[number]>> &
-			AssertObject<Pick<T, (typeof props)[number]>> => {
+): obj is PartialObject<Omit<T, (typeof props)[number]>> &
+	AssertObject<Pick<T, (typeof props)[number]>> => {
 	if (typeof obj === 'object' && obj !== null) {
 		for (const prop of props) {
 			if (isNullOrUndefined(obj[prop])) return false
