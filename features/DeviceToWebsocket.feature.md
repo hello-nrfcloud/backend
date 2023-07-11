@@ -19,7 +19,7 @@ When the device `${fingerprint:deviceId}` publishes this message to the topic
 {
   "appId": "SOLAR",
   "messageType": "DATA",
-  "ts": ${ts},
+  "ts": "$number{ts}",
   "data": "3.123456"
 }
 ```
@@ -31,7 +31,7 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain",
-  "ts": ${ts},
+  "ts": "$number{ts}",
   "mA": 3.123456
 }
 ```

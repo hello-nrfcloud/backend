@@ -18,7 +18,7 @@ And the device `${fingerprint:deviceId}` publishes this message to the topic
 {
   "appId": "SOLAR",
   "messageType": "DATA",
-  "ts": ${ts},
+  "ts": "$number{ts}",
   "data": "3.123456"
 }
 ```
