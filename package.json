@@ -121,7 +121,7 @@
     "@middy/core": "4.5.5",
     "@nordicsemiconductor/from-env": "2.0.0",
     "@nordicsemiconductor/timestream-helpers": "5.0.0",
-    "@sinclair/typebox": "0.29.3",
+    "@sinclair/typebox": "0.29.4",
     "ajv": "8.12.0",
     "lodash-es": "4.17.21",
     "p-limit": "4.0.0",
