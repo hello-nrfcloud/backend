@@ -51,6 +51,17 @@ export const ensureGitHubOIDCProvider = async ({
 		new CreateOpenIDConnectProviderCommand({
 			Url: `https://token.actions.githubusercontent.com`,
 			ClientIDList: ['sts.amazonaws.com'],
+			/**
+			 * Starting July 6, 2023, AWS began securing communication with
+			 * GitHub’s OIDC identity provider (IdP) using our library of
+			 * trusted root Certificate Authorities instead of using a
+			 * certificate thumbprint to verify the IdP’s server certificate.
+			 * This approach ensures that your GitHub OIDC configuration behaves
+			 * correctly without disruption during future certificate rotations
+			 * and changes. With this new validation approach in place, your
+			 * legacy thumbprint(s) will remain in your configuration but will
+			 * no longer be needed for validation purposes.
+			 */
 			ThumbprintList: ['6938fd4d98bab03faadb97b34396831e3780aea1'],
 		}),
 	)
