@@ -113,7 +113,6 @@ const writeTimestream =
 		log: {
 			step: { progress },
 		},
-		context: { historicalDataTableInfo },
 	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({

@@ -96,8 +96,6 @@ export const historicalDataRepository = ({
 	timestream,
 	historicalDataDatabaseName,
 	historicalDataTableName,
-	log,
-	track,
 }: {
 	timestream: TimestreamQueryClient
 	historicalDataDatabaseName: string
