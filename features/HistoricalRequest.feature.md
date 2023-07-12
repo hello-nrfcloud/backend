@@ -114,7 +114,7 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
-And I send websocket request
+And I send this message via the websocket
 
 ```json
 {
@@ -177,7 +177,7 @@ Soon I should receive a message on the websocket that is equal to
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
-And I send websocket request
+And I send this message via the websocket
 
 ```json
 {
@@ -239,7 +239,7 @@ message
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
-And I send websocket request
+And I send this message via the websocket
 
 ```json
 {
