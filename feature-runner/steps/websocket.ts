@@ -117,7 +117,7 @@ const wsSend = async ({
 	},
 	context,
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = /^I send websocket request$/.exec(step.title)
+	const match = /^I send this message via the websocket$/.exec(step.title)
 	if (match === null) return noMatch
 
 	const { wsClient } = context
