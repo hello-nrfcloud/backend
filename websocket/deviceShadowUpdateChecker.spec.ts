@@ -13,13 +13,16 @@ let returnedMockData: { [key: string]: string }
 const hashConfig = (config: {
 	[key: string]: string
 }): { [key: string]: string } =>
-	Object.entries(config).reduce((result, [k, v]) => {
-		if (k !== 'default') {
-			k = hashSHA1(k)
-		}
-		result[k] = v
-		return result
-	}, {} as { [key: string]: string })
+	Object.entries(config).reduce(
+		(result, [k, v]) => {
+			if (k !== 'default') {
+				k = hashSHA1(k)
+			}
+			result[k] = v
+			return result
+		},
+		{} as { [key: string]: string },
+	)
 
 describe('parseConfig', () => {
 	it('should parse a valid configuration object', () => {

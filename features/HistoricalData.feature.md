@@ -14,19 +14,19 @@ And I store `$millis()` into `ts`
 
 And I store `$fromMillis(${ts})` into `tsISO`
 
-And the device `${fingerprint:deviceId}` publishes this message to the topic
-`m/d/${fingerprint:deviceId}/d2c`
+And the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {
   "appId": "SOLAR",
   "messageType": "DATA",
   "data": "3.123457",
-  "ts": ${ts}
+  "ts": "$number{ts}"
 }
 ```
 
-When I query Timestream for the device `${fingerprint:deviceId}` and the
+When I query Timestream for the device `${fingerprint_deviceId}` and the
 dimension `@context` with the value
 `https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain`
 starting at `${tsISO}`
@@ -36,7 +36,7 @@ Then the Timestream result should match
 ```json
 [
   {
-    "deviceId": "${fingerprint:deviceId}",
+    "deviceId": "${fingerprint_deviceId}",
     "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain",
     "measure_name": "mA",
     "measure_value::double": 3.123457,

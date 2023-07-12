@@ -90,7 +90,7 @@ const createDeviceForModel =
 		)
 
 		context[storageName] = fingerprint
-		context[`${storageName}:deviceId`] = id
+		context[`${storageName}_deviceId`] = id
 
 		progress(`Device registered: ${fingerprint} (${id})`)
 	}

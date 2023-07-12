@@ -18,7 +18,7 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/deviceIdentity",
-  "id": "${fingerprint:deviceId}",
+  "id": "${fingerprint_deviceId}",
   "model": "PCA20035+solar"
 }
 ```

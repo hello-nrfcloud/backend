@@ -12,14 +12,14 @@ needs:
 
 Given I store `$millis()` into `ts`
 
-When the device `${fingerprint:deviceId}` publishes this message to the topic
-`m/d/${fingerprint:deviceId}/d2c`
+When the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {
   "appId": "SOLAR",
   "messageType": "DATA",
-  "ts": ${ts},
+  "ts": "$number{ts}",
   "data": "3.123456"
 }
 ```
@@ -31,7 +31,7 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain",
-  "ts": ${ts},
+  "ts": "$number{ts}",
   "mA": 3.123456
 }
 ```
