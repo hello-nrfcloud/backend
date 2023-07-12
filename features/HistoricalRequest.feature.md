@@ -14,15 +14,15 @@ And I store
 
 Given I store `ts - ${deductMsFromTS}` into `pastTs`
 
-And the device `${fingerprint:deviceId}` publishes this message to the topic
-`m/d/${fingerprint:deviceId}/d2c`
+And the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {
   "appId": "${appId}",
   "messageType": "DATA",
   "data": "${data}",
-  "ts": ${pastTs}
+  "ts": "$number{pastTs}"
 }
 ```
 
@@ -69,15 +69,15 @@ Soon I should receive a message on the websocket that is equal to
     "avgMA": [
       {
         "mA": 3.40141,
-        "ts": `ts`
+        "ts": "$number{ts}"
       },
       {
         "mA": 3.74543,
-        "ts": `ts - 60000`
+        "ts": "$number{ts - 60000}"
       },
       {
         "mA": 3.4148300000000003,
-        "ts": `ts - 120000`
+        "ts": "$number{ts - 120000}"
       }
     ]
   }
@@ -88,15 +88,15 @@ Soon I should receive a message on the websocket that is equal to
 
 Given I store `ts - ${deductMsFromTS}` into `pastTs`
 
-And the device `${fingerprint:deviceId}` publishes this message to the topic
-`m/d/${fingerprint:deviceId}/d2c`
+And the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {
   "appId": "${appId}",
   "messageType": "DATA",
   "data": "${data}",
-  "ts": ${pastTs}
+  "ts": "$number{pastTs}"
 }
 ```
 
@@ -144,29 +144,29 @@ Soon I should receive a message on the websocket that is equal to
     "minBat": [
       {
         "%": 18,
-        "ts": `ts`
+        "ts": "$number{ts}"
       },
       {
         "%": 19,
-        "ts": `ts - 60000`
+        "ts": "$number{ts - 60000}"
       },
       {
         "%": 21,
-        "ts": `ts - 120000`
+        "ts": "$number{ts - 120000}"
       }
     ],
     "maxBat": [
       {
         "%": 18,
-        "ts": `ts`
+        "ts": "$number{ts}"
       },
       {
         "%": 20,
-        "ts": `ts - 60000`
+        "ts": "$number{ts - 60000}"
       },
       {
         "%": 22,
-        "ts": `ts - 120000`
+        "ts": "$number{ts - 120000}"
       }
     ]
   }
@@ -212,16 +212,16 @@ Soon I should receive a message on the websocket that matches
 
 Given I store `ts - ${deductMsFromTS}` into `pastTs`
 
-And I write Timestream for the device `${fingerprint:deviceId}` with this
+And I write Timestream for the device `${fingerprint_deviceId}` with this
 message
 
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/location",
-  "lat": ${lat},
-  "lng": ${lng},
-  "acc": ${acc},
-  "ts": ${pastTs}
+  "lat": "$number{lat}",
+  "lng": "$number{lng}",
+  "acc": "$number{acc}",
+  "ts": "$number{pastTs}"
 }
 ```
 
@@ -272,31 +272,31 @@ Soon I should receive a message on the websocket that matches
       "lat": 63.42061758,
       "lng": 10.43935061,
       "acc": 526,
-      "ts": `ts`
+      "ts": "$number{ts}"
     },
     {
       "lat": 63.41879947,
       "lng": 10.44127392,
       "acc": 530,
-      "ts": `ts - 30000`
+      "ts": "$number{ts - 30000}"
     },
     {
       "lat": 63.41984024,
       "lng": 10.43768981,
       "acc": 520,
-      "ts": `ts - 60000`
+      "ts": "$number{ts - 60000}"
     },
     {
       "lat": 63.42006573,
       "lng": 10.44087654,
       "acc": 528,
-      "ts": `ts - 90000`
+      "ts": "$number{ts - 90000}"
     },
     {
       "lat": 63.42129386,
       "lng": 10.44011945,
       "acc": 524,
-      "ts": `ts - 120000`
+      "ts": "$number{ts - 120000}"
     }
   ]
 }

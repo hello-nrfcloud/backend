@@ -11,7 +11,6 @@ import assert from 'assert/strict'
 import * as chai from 'chai'
 import { expect } from 'chai'
 import chaiSubset from 'chai-subset'
-import { codeBlockReplacer } from '../lib/codeBlockReplacer.js'
 import {
 	createWebsocketClient,
 	type WebSocketClient,
@@ -82,13 +81,8 @@ const receive = async ({
 	if (match === null) return noMatch
 	const { equalOrMatch } = match
 
-	const evaluatedCodeBlock = await codeBlockReplacer(
-		codeBlockOrThrow(step).code,
-		context,
-	)
-
 	const { wsClient } = context
-	const expected = JSON.parse(evaluatedCodeBlock)
+	const expected = JSON.parse(codeBlockOrThrow(step).code)
 	const found = Object.entries(wsClient?.messages ?? {}).find(
 		([id, message]) => {
 			debug(
