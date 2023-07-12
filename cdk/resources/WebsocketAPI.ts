@@ -110,6 +110,7 @@ export class WebsocketAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+				EVENTBUS_NAME: this.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
@@ -117,6 +118,7 @@ export class WebsocketAPI extends Construct {
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
+		this.eventBus.grantPutEventsTo(onMessage)
 		this.connectionsTable.grantWriteData(onMessage)
 
 		// OnDisconnect
@@ -331,7 +333,7 @@ export class WebsocketAPI extends Construct {
 		new Events.Rule(this, 'publishToWebsocketClientsRule', {
 			eventPattern: {
 				source: ['thingy.ws'],
-				detailType: ['message', 'connect'],
+				detailType: ['message', 'connect', 'error'],
 			},
 			targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
 			eventBus: this.eventBus,

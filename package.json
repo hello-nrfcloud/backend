@@ -128,9 +128,20 @@
     "table": "6.8.1"
   },
   "jest": {
+    "transformIgnorePatterns": [
+      "lodash_es"
+    ],
     "transform": {
       "^.+\\.(t|j)sx?$": [
-        "@swc/jest"
+        "@swc/jest",
+        {
+          "$schema": "https://json.schemastore.org/swcrc",
+          "jsc": {
+            "parser": {
+              "syntax": "typescript"
+            }
+          }
+        }
       ]
     },
     "testRegex": ".+\\.spec\\.ts$",

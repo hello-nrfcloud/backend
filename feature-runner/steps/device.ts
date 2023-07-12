@@ -1,4 +1,5 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
+import { unmarshall } from '@aws-sdk/util-dynamodb'
 import {
 	codeBlockOrThrow,
 	matchGroups,
@@ -8,6 +9,7 @@ import {
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
+import assert from 'assert/strict'
 import mqtt from 'mqtt'
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -41,8 +43,8 @@ const createDeviceForModel =
 			step.title,
 		)
 		if (match === null) return noMatch
-		const { model, storageName } = match
 
+		const { model, storageName } = match
 		const fingerprint = `92b.${generateCode()}`
 		const id = randomUUID()
 
@@ -93,8 +95,45 @@ const createDeviceForModel =
 		progress(`Device registered: ${fingerprint} (${id})`)
 	}
 
+const getDevice =
+	({ db }: { db: DynamoDBClient }) =>
+	async ({
+		step,
+		log: {
+			step: { progress },
+		},
+		context: { devicesTable },
+	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+		const match = matchGroups(
+			Type.Object({
+				key: Type.String(),
+			}),
+		)(/^The device id `(?<key>[^`]+)` should equal$/, step.title)
+
+		if (match === null) return noMatch
+
+		progress(`Get data with id ${match.key} from ${devicesTable}`)
+		const res = await db.send(
+			new GetItemCommand({
+				TableName: devicesTable,
+				Key: {
+					deviceId: { S: match.key ?? '' },
+				},
+			}),
+		)
+
+		progress(
+			`Data returned from query: `,
+			JSON.stringify(res.Item ?? {}, null, 2),
+		)
+		assert.deepEqual(
+			unmarshall(res.Item ?? {}),
+			JSON.parse(codeBlockOrThrow(step).code),
+		)
+	}
+
 const publishDeviceMessage =
-	(bridgeInfo: Settings) =>
+	(nRFCloudSettings: Settings) =>
 	async ({
 		step,
 		log: {
@@ -117,14 +156,14 @@ const publishDeviceMessage =
 		progress(`Device id ${match.id} publishes to topic ${match.topic}`)
 		await new Promise((resolve, reject) => {
 			const mqttClient = mqtt.connect({
-				host: bridgeInfo.mqttEndpoint,
+				host: nRFCloudSettings.mqttEndpoint,
 				port: 8883,
 				protocol: 'mqtts',
 				protocolVersion: 4,
 				clean: true,
 				clientId: match.id,
-				key: bridgeInfo.accountDevicePrivateKey,
-				cert: bridgeInfo.accountDeviceClientCert,
+				key: nRFCloudSettings.accountDevicePrivateKey,
+				cert: nRFCloudSettings.accountDeviceClientCert,
 				ca: readFileSync(
 					path.join(process.cwd(), 'data', 'AmazonRootCA1.pem'),
 					'utf-8',
@@ -133,7 +172,7 @@ const publishDeviceMessage =
 
 			mqttClient.on('connect', () => {
 				progress('connected')
-				const topic = `${bridgeInfo.mqttTopicPrefix}${match.topic}`
+				const topic = `${nRFCloudSettings.mqttTopicPrefix}${match.topic}`
 				progress('publishing', message, topic)
 				mqttClient.publish(topic, JSON.stringify(message), (error) => {
 					if (error) return reject(error)
@@ -150,9 +189,10 @@ const publishDeviceMessage =
 	}
 
 export const steps = (
-	bridgeInfo: Settings,
+	nRFCloudSettings: Settings,
 	db: DynamoDBClient,
 ): StepRunner<World & Record<string, string>>[] => [
 	createDeviceForModel({ db }),
-	publishDeviceMessage(bridgeInfo),
+	getDevice({ db }),
+	publishDeviceMessage(nRFCloudSettings),
 ]

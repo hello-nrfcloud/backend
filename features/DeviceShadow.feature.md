@@ -326,18 +326,6 @@ Soon I should receive a message on the websocket that matches
       "eest": 7
     }
   },
-  "ts": 1682072423000,
-  "lastUpdate": {
-    "device": {
-      "networkInfo": {
-        "networkMode": 1682072423000,
-        "mccmnc": 1682072423000,
-        "eest": 1682072423000
-      },
-      "deviceInfo": {
-        "appVersion": 1681975785000
-      }
-    }
-  }
+  "ts": 1682072423000
 }
 ```

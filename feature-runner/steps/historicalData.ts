@@ -16,6 +16,8 @@ import * as chai from 'chai'
 import { expect } from 'chai'
 import chaiSubset from 'chai-subset'
 import pRetry from 'p-retry'
+import { convertMessageToTimestreamRecords } from '../../historicalData/convertMessageToTimestreamRecords.js'
+import { storeRecordsInTimestream } from '../../historicalData/storeRecordsInTimestream.js'
 import type { World } from '../run-features.js'
 
 chai.use(chaiSubset)
@@ -104,8 +106,46 @@ const assertResult = async ({
 	)
 }
 
+const writeTimestream =
+	(store: ReturnType<typeof storeRecordsInTimestream>) =>
+	async ({
+		step,
+		log: {
+			step: { progress },
+		},
+		context: { historicalDataTableInfo },
+	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+		const match = matchGroups(
+			Type.Object({
+				deviceId: Type.String(),
+			}),
+		)(
+			/^I write Timestream for the device `(?<deviceId>[^`]+)` with this message$/,
+			step.title,
+		)
+		if (match === null) return noMatch
+
+		const message = JSON.parse(codeBlockOrThrow(step).code)
+		await store(convertMessageToTimestreamRecords(message), {
+			Dimensions: [
+				{
+					Name: 'deviceId',
+					Value: match.deviceId,
+				},
+			],
+		})
+
+		progress(`Write to timestream: ${JSON.stringify(message, null, 2)}`)
+	}
+
 export const steps = ({
 	timestream,
+	storeTimestream,
 }: {
 	timestream: TimestreamQueryClient
-}): StepRunner<World>[] => [queryTimestream(timestream), assertResult]
+	storeTimestream: ReturnType<typeof storeRecordsInTimestream>
+}): StepRunner<World>[] => [
+	queryTimestream(timestream),
+	writeTimestream(storeTimestream),
+	assertResult,
+]

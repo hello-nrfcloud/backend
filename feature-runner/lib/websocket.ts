@@ -4,6 +4,7 @@ import { ulid } from '../../util/ulid.js'
 export type WebSocketClient = {
 	connect: () => Promise<any>
 	close: () => void
+	send: (message: Record<string, unknown>) => Promise<void>
 	messages: Record<string, unknown>
 }
 const clients: Record<string, WebSocketClient> = {}
@@ -41,6 +42,13 @@ export const createWebsocketClient = ({
 				delete clients[id]
 			},
 			messages,
+			send: async (message) =>
+				new Promise<void>((resolve, reject) => {
+					client.send(JSON.stringify(message), (error) => {
+						if (error) return reject(error)
+						resolve()
+					})
+				}),
 		}
 	}
 

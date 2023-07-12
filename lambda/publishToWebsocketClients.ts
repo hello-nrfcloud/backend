@@ -34,7 +34,7 @@ const notifier = notifyClients({
 
 export const handler = async (
 	event: EventBridgeEvent<
-		'message' | 'connect' | 'disconnect',
+		'message' | 'connect' | 'disconnect' | 'error',
 		WebsocketPayload
 	>,
 ): Promise<void> => {

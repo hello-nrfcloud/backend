@@ -20,7 +20,6 @@ import type { World } from '../run-features.js'
 chai.use(chaiSubset)
 
 const wsClients: Record<string, WebSocketClient> = {}
-
 const wsConnect = async ({
 	step,
 	log: {
@@ -66,7 +65,7 @@ const receive = async ({
 	log: {
 		step: { debug },
 	},
-	context: { wsClient },
+	context,
 }: StepRunnerArgs<World>): Promise<StepRunResult> => {
 	const match = matchGroups(
 		Type.Object({
@@ -82,6 +81,7 @@ const receive = async ({
 	if (match === null) return noMatch
 	const { equalOrMatch } = match
 
+	const { wsClient } = context
 	const expected = JSON.parse(codeBlockOrThrow(step).code)
 	const found = Object.entries(wsClient?.messages ?? {}).find(
 		([id, message]) => {
@@ -110,11 +110,27 @@ const receive = async ({
 		throw new Error(`No message found for ${JSON.stringify(expected)}`)
 }
 
+const wsSend = async ({
+	step,
+	log: {
+		step: { progress },
+	},
+	context,
+}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	const match = /^I send this message via the websocket$/.exec(step.title)
+	if (match === null) return noMatch
+
+	const { wsClient } = context
+	const message = JSON.parse(codeBlockOrThrow(step).code)
+	await wsClient?.send(message)
+	progress(`Sent ws message`, JSON.stringify(message, null, 2))
+}
+
 export const websocketStepRunners = (): {
 	steps: StepRunner<World>[]
 	cleanup: () => Promise<void>
 } => ({
-	steps: [wsConnect, receive],
+	steps: [wsConnect, receive, wsSend],
 	cleanup: async (): Promise<void> => {
 		await Promise.all(Object.values(wsClients).map((client) => client.close()))
 	},
