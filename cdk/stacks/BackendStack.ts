@@ -86,7 +86,11 @@ export class BackendStack extends Stack {
 			this,
 			'healthCheckLayer',
 			{
-				code: Lambda.Code.fromAsset(healthCheckLayer.layerZipFile),
+				code: new LambdaSource(this, {
+					id: 'healthcheckLayer',
+					zipFile: healthCheckLayer.layerZipFile,
+					hash: healthCheckLayer.hash,
+				}).code,
 				compatibleArchitectures: [Lambda.Architecture.ARM_64],
 				compatibleRuntimes: [Lambda.Runtime.NODEJS_18_X],
 			},

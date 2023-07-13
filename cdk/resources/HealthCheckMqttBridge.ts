@@ -12,6 +12,7 @@ import { type Settings as BridgeSettings } from '../../bridge/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
+import { LambdaSource } from './LambdaSource.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -46,7 +47,7 @@ export class HealthCheckMqttBridge extends Construct {
 			runtime: Lambda.Runtime.NODEJS_18_X,
 			timeout: Duration.seconds(15),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.healthCheck.zipFile),
+			code: new LambdaSource(this, lambdaSources.healthCheck).code,
 			description: 'End to end test for mqtt bridge',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
