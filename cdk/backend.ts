@@ -2,6 +2,7 @@ import { ECRClient } from '@aws-sdk/client-ecr'
 import { IAMClient } from '@aws-sdk/client-iam'
 import { IoTClient } from '@aws-sdk/client-iot'
 import { STS } from '@aws-sdk/client-sts'
+import { SSMClient } from '@aws-sdk/client-ssm'
 import path from 'node:path'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { getOrBuildDockerImage } from '../aws/getOrBuildDockerImage.js'
@@ -16,6 +17,13 @@ import { env } from './helpers/env.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { ECR_NAME } from './stacks/stackConfig.js'
+import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
+import { caLocation } from '../bridge/caLocation.js'
+import {
+	backupCertificatesToSSM,
+	restoreCertificatesFromSSM,
+} from '../bridge/certificatesSSM.js'
+import { mkdir } from 'node:fs/promises'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -27,6 +35,7 @@ const iot = new IoTClient({})
 const sts = new STS({})
 const ecr = new ECRClient({})
 const iam = new IAMClient({})
+const ssm = new SSMClient({})
 
 const accountEnv = await env({ sts })
 
@@ -49,6 +58,25 @@ const certsDir = path.join(
 	'certificates',
 	`${accountEnv.account}@${accountEnv.region}`,
 )
+await mkdir(certsDir, { recursive: true })
+await Promise.all([
+	restoreCertificatesFromSSM({
+		ssm,
+		parameterNamePrefix: 'mqttBridgeCertificate',
+		certificates: mqttBridgeCertificateLocation({
+			certsDir,
+		}),
+		debug: debug('Restore MQTT Certificate'),
+	}),
+	restoreCertificatesFromSSM({
+		ssm,
+		parameterNamePrefix: 'caCertificate',
+		certificates: caLocation({
+			certsDir,
+		}),
+		debug: debug('Restore CA Certificate'),
+	}),
+])
 const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
 	iot,
 	certsDir,
@@ -59,6 +87,18 @@ const caCertificate = await ensureCA({
 	iot,
 	debug: debug('CA certificate'),
 })()
+await Promise.all([
+	backupCertificatesToSSM({
+		ssm,
+		parameterNamePrefix: 'mqttBridgeCertificate',
+		certificates: mqttBridgeCertificate,
+	}),
+	backupCertificatesToSSM({
+		ssm,
+		parameterNamePrefix: 'caCertificate',
+		certificates: caCertificate,
+	}),
+])
 
 // Prebuild / reuse docker image
 // NOTE: It is intention that release image tag can be undefined during the development,
