@@ -69,7 +69,7 @@
     "check-node-version": "4.2.1",
     "commander": "11.0.0",
     "constructs": "10.2.69",
-    "eslint-plugin-unicorn": "47.0.0",
+    "eslint-plugin-unicorn": "48.0.0",
     "glob": "10.3.3",
     "husky": "8.0.3",
     "id128": "1.6.6",
