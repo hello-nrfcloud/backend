@@ -10,11 +10,14 @@ export const backupCertificatesToSSM = async ({
 	ssm,
 	parameterNamePrefix,
 	certificates,
+	debug,
 }: {
 	ssm: SSMClient
 	parameterNamePrefix: string
+	debug?: logFn
 	certificates: CAFiles | CertificateFiles
 }): Promise<void> => {
+	debug?.(`Writing to SSM`)
 	await Promise.all(
 		Object.entries(certificates).map(async ([k, v]) =>
 			putSettings({

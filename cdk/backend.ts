@@ -92,11 +92,13 @@ await Promise.all([
 		ssm,
 		parameterNamePrefix: 'mqttBridgeCertificate',
 		certificates: mqttBridgeCertificate,
+		debug: debug('Backup MQTT Certificate'),
 	}),
 	backupCertificatesToSSM({
 		ssm,
 		parameterNamePrefix: 'caCertificate',
 		certificates: caCertificate,
+		debug: debug('Backup CA Certificate'),
 	}),
 ])
 
