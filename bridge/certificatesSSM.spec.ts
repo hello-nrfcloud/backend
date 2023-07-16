@@ -97,12 +97,13 @@ describe('restoreCertificatesFromSSM', () => {
 			'test-prefix_cert': 'Cert content',
 		})
 
-		await restoreCertificatesFromSSM({
+		const restored = await restoreCertificatesFromSSM({
 			ssm: jest.fn() as any,
 			parameterNamePrefix,
 			certificates,
 		})
 
+		expect(restored).toBeTruthy()
 		expect(writeFile).toHaveBeenCalledTimes(3)
 		expect(writeFile).toHaveBeenCalledWith('/path/to/key.crt', 'Key content', {
 			encoding: 'utf-8',
@@ -122,12 +123,13 @@ describe('restoreCertificatesFromSSM', () => {
 	it('should not restore certificates if parameters are null', async () => {
 		getSettingsOptionalFnMock.mockResolvedValue(null)
 
-		await restoreCertificatesFromSSM({
+		const restored = await restoreCertificatesFromSSM({
 			ssm: jest.fn() as any,
 			parameterNamePrefix,
 			certificates,
 		})
 
+		expect(restored).toBeFalsy()
 		expect(writeFile).not.toHaveBeenCalled()
 	})
 })

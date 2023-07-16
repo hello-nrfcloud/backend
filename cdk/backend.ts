@@ -59,7 +59,7 @@ const certsDir = path.join(
 	`${accountEnv.account}@${accountEnv.region}`,
 )
 await mkdir(certsDir, { recursive: true })
-await Promise.all([
+const useRestoredCertificates = await Promise.all([
 	restoreCertificatesFromSSM({
 		ssm,
 		parameterNamePrefix: 'mqttBridgeCertificate',
@@ -87,20 +87,22 @@ const caCertificate = await ensureCA({
 	iot,
 	debug: debug('CA certificate'),
 })()
-await Promise.all([
-	backupCertificatesToSSM({
-		ssm,
-		parameterNamePrefix: 'mqttBridgeCertificate',
-		certificates: mqttBridgeCertificate,
-		debug: debug('Backup MQTT Certificate'),
-	}),
-	backupCertificatesToSSM({
-		ssm,
-		parameterNamePrefix: 'caCertificate',
-		certificates: caCertificate,
-		debug: debug('Backup CA Certificate'),
-	}),
-])
+if (!useRestoredCertificates.some(Boolean)) {
+	await Promise.all([
+		backupCertificatesToSSM({
+			ssm,
+			parameterNamePrefix: 'mqttBridgeCertificate',
+			certificates: mqttBridgeCertificate,
+			debug: debug('Backup MQTT Certificate'),
+		}),
+		backupCertificatesToSSM({
+			ssm,
+			parameterNamePrefix: 'caCertificate',
+			certificates: caCertificate,
+			debug: debug('Backup CA Certificate'),
+		}),
+	])
+}
 
 // Prebuild / reuse docker image
 // NOTE: It is intention that release image tag can be undefined during the development,

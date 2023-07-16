@@ -43,7 +43,9 @@ export const restoreCertificatesFromSSM = async ({
 	parameterNamePrefix: string
 	certificates: CAFiles | CertificateFiles
 	debug?: logFn
-}): Promise<void> => {
+}): Promise<boolean> => {
+	let hasRestored = false
+
 	const parameters = await getSettingsOptional<Record<string, string>, null>({
 		ssm,
 		stackName: STACK_NAME,
@@ -51,7 +53,7 @@ export const restoreCertificatesFromSSM = async ({
 		system: 'stack',
 	})(null)
 
-	if (parameters === null) return
+	if (parameters === null) return false
 
 	const result: Record<string, Record<string, string>> = {}
 	for (const [key, value] of Object.entries(parameters)) {
@@ -72,7 +74,10 @@ export const restoreCertificatesFromSSM = async ({
 					certificates[key as keyof CAFiles & keyof CertificateFiles]
 				debug?.(`Writing file ${filename}`)
 				await writeFile(filename, content, { encoding: 'utf-8' })
+				hasRestored = true
 			}
 		}
 	}
+
+	return hasRestored
 }
