@@ -71,7 +71,7 @@ jobs:
         run: |
           npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never
           MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
-          ./cli.sh configure thirdParty nrfcloud apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          ./cli.sh configure thirdParty/nrfcloud/apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
           ./cli.sh configure thirdParty/nrfcloud/apiKey apiKey
 
       - name: Deploy solution stack
@@ -105,7 +105,7 @@ jobs:
           npx cdk destroy -f
           npx cdk --app 'npx tsx --no-warnings cdk/test-resources.ts' destroy -f
           ./cli.sh fake-nrfcloud-account-device --remove
-          ./cli.sh configure thirdParty nrfcloud apiEndpoint -X
+          ./cli.sh configure thirdParty/nrfcloud/apiEndpoint -X
           ./cli.sh configure thirdParty/nrfcloud/apiKey -X
 
   release:
