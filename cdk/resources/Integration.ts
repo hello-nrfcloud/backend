@@ -106,7 +106,7 @@ export class Integration extends Construct {
 				simpleName: false,
 				parameterName: settingsPath({
 					stackName: Stack.of(this).stackName,
-					scope: Scope.CDK_CONTEXT,
+					scope: Scope.STACK_CONFIG,
 					property: 'bridgeCertificatePEM',
 				}),
 			},
@@ -119,7 +119,7 @@ export class Integration extends Construct {
 				simpleName: false,
 				parameterName: settingsPath({
 					stackName: Stack.of(this).stackName,
-					scope: Scope.CDK_CONTEXT,
+					scope: Scope.STACK_CONFIG,
 					property: 'bridgePrivateKey',
 				}),
 			},

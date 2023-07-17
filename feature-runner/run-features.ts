@@ -66,17 +66,17 @@ const accountDeviceSettings = await nrfCloudSettings({
 const configWriter = putSettings({
 	ssm,
 	stackName: STACK_NAME,
-	scope: Scope.CDK_CONTEXT,
+	scope: Scope.STACK_CONFIG,
 })
 const configRemover = deleteSettings({
 	ssm,
 	stackName: STACK_NAME,
-	scope: Scope.CDK_CONTEXT,
+	scope: Scope.STACK_CONFIG,
 })
 const configSettings = getSettings({
 	ssm,
 	stackName: STACK_NAME,
-	scope: Scope.CDK_CONTEXT,
+	scope: Scope.STACK_CONFIG,
 })
 
 const db = new DynamoDBClient({})

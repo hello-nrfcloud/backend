@@ -25,7 +25,7 @@ export const setShadowFetcherCommand = ({
 			const { name } = await deleteSettings({
 				ssm,
 				stackName: STACK_NAME,
-				scope: Scope.CDK_CONTEXT,
+				scope: Scope.STACK_CONFIG,
 			})({
 				property: modelHash,
 			})
@@ -50,7 +50,7 @@ export const setShadowFetcherCommand = ({
 		const { name } = await putSettings({
 			ssm,
 			stackName: STACK_NAME,
-			scope: Scope.CDK_CONTEXT,
+			scope: Scope.STACK_CONFIG,
 		})({
 			property: modelHash,
 			value,

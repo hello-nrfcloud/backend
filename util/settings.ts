@@ -8,7 +8,7 @@ import {
 import { paginate } from './paginate.js'
 
 export enum Scope {
-	CDK_CONTEXT = 'stack/context',
+	STACK_CONFIG = 'stack/context',
 	NRFCLOUD_CONFIG = 'thirdParty/nrfcloud',
 }
 

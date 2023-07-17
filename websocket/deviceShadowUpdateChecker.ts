@@ -31,7 +31,7 @@ const stackConfig = getSettingsOptional<
 >({
 	ssm,
 	stackName: STACK_NAME,
-	scope: Scope.CDK_CONTEXT,
+	scope: Scope.STACK_CONFIG,
 })
 
 const notNull = <T>(value: T | null): value is T => {
