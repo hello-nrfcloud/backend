@@ -141,7 +141,7 @@ export class DeviceShadow extends Construct {
 			resources: [
 				`arn:aws:ssm:${Stack.of(this).region}:${
 					Stack.of(this).account
-				}:parameter/${Stack.of(this).stackName}/config/stack`,
+				}:parameter/${Stack.of(this).stackName}/stack/context`,
 			],
 		})
 		fetchDeviceShadow.addToRolePolicy(ssmReadPolicy)
