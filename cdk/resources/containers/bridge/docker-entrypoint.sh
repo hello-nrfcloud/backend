@@ -9,6 +9,8 @@ else
   MQ_INTERACTIVE=${MQ_INTERACTIVE:-0}
 fi
 
+MQ_BRIDGE_COUNT=${MQ_BRIDGE_COUNT:-0}
+
 # All (good?) defaults
 
 # Set this to 1 for increase verbosity inside the entrypoint
@@ -23,7 +25,20 @@ MQ_CONFIG=${MQ_CONFIG:-"/mosquitto/config/mosquitto.conf"}
 # be created. Pattern matching will not respect case and will occur against the
 # content of the lines of the comment at the beginning of the section (without
 # the comment character).
-MQ_MATCHER=${MQ_MATCHER:-"default?listener* default extra?listener* extra *persist* persistence *log* logging *secur* security *bridge01* bridge01 *bridge02 bridge02"}
+# MQ_MATCHER=${MQ_MATCHER:-"default?listener* default extra?listener* extra *persist* persistence *log* logging *secur* security *bridge01* bridge01 *bridge02 bridge02"}
+MQ_BASE_MATCHER="default?listener* default extra?listener* extra *persist* persistence *log* logging *secur* security"
+MQ_MATCHER=${MQ_BASE_MATCHER}
+cat mosquitto.general.conf > $MQ_CONFIG
+i=1
+while [ $i -le $MQ_BRIDGE_COUNT ]
+do
+  num_padded=$(expr $i + 100 | cut -c 2-)
+  MQ_MATCHER="${MQ_MATCHER} *bridge${num_padded} bridge${num_padded}"
+
+  echo -e "\n\n" >> $MQ_CONFIG
+  sed "s/# Bridge_name/# Bridge${num_padded}/" mosquitto.bridge.conf >> $MQ_CONFIG
+  i=$((i + 1))
+done
 
 # List of directives for files to watch for changes. Directives are composed of
 # the name of a section (matching section names from above) and the name of a

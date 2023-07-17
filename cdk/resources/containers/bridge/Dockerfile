@@ -13,7 +13,7 @@ COPY  *.tcl *.sh /
 RUN chmod +x /*.tcl && chmod +x /*.sh
 
 # Override default config
-COPY mosquitto.default.conf /mosquitto/config/mosquitto.conf
+COPY *.conf /
 RUN touch /var/run/mosquitto.pid && chown mosquitto:mosquitto /var/run/mosquitto.pid
 
 ENTRYPOINT ["tini", "--", "./env2file.sh", "/docker-entrypoint.sh", "--verbose", "--", "/usr/sbin/mosquitto"]
