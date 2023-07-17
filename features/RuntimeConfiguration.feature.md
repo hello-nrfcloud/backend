@@ -281,7 +281,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
-<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
+<!-- @retry:tries=5,initialDelay=5000,delayFactor=1.5 -->
 
 Soon the duration between 2 consecutive device shadow requests for
 `${fingerprint_deviceId}` should be `5` seconds
@@ -292,7 +292,7 @@ Given device shadow fetching config for model `PCA20035+solar` is `10`
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
-<!-- @retry:tries=5,initialDelay=10000,delayFactor=1 -->
+<!-- @retry:tries=5,initialDelay=10000,delayFactor=1.5 -->
 
 Soon the duration between 2 consecutive device shadow requests for
 `${fingerprint_deviceId}` should be `10` seconds
