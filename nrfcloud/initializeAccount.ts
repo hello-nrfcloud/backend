@@ -3,7 +3,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
-import { getSettings } from '../util/settings.js'
+import { Scope, getSettings } from '../util/settings.js'
 import { createAccountDevice } from './createAccountDevice.js'
 import { deleteAccountDevice } from './deleteNrfcloudCredentials.js'
 import { getAccountInfo } from './getAccountInfo.js'
@@ -31,8 +31,7 @@ export const initializeAccount =
 		const settingsReader = getSettings({
 			ssm,
 			stackName,
-			scope: 'thirdParty',
-			system: 'nrfcloud',
+			scope: Scope.NRFCLOUD_CONFIG,
 		})
 
 		const { apiKey, apiEndpoint } = await settingsReader()

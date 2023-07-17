@@ -1,5 +1,6 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import {
+	Scope,
 	getSettings as getSSMSettings,
 	putSettings,
 	settingsPath,
@@ -27,8 +28,7 @@ export const getSettings = ({
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: 'thirdParty',
-		system: 'nrfcloud',
+		scope: Scope.NRFCLOUD_CONFIG,
 	})
 	return async (): Promise<Settings> => {
 		const p = await settingsReader()
@@ -77,8 +77,7 @@ export const getAPISettings = ({
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: 'thirdParty',
-		system: 'nrfcloud',
+		scope: Scope.NRFCLOUD_CONFIG,
 	})
 	return async (): Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>> => {
 		const p = await settingsReader()
@@ -104,8 +103,7 @@ export const updateSettings = ({
 	const settingsWriter = putSettings({
 		ssm,
 		stackName,
-		scope: 'thirdParty',
-		system: 'nrfcloud',
+		scope: Scope.NRFCLOUD_CONFIG,
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(
@@ -125,7 +123,6 @@ export const parameterName = (
 ): string =>
 	settingsPath({
 		stackName,
-		scope: 'thirdParty',
-		system: 'nrfcloud',
+		scope: Scope.NRFCLOUD_CONFIG,
 		property: parameterName,
 	})

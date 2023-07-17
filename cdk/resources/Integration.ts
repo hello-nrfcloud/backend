@@ -20,7 +20,7 @@ import {
 	parameterName,
 	type Settings as nRFCloudSettings,
 } from '../../nrfcloud/settings.js'
-import { settingsPath } from '../../util/settings.js'
+import { Scope, settingsPath } from '../../util/settings.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -106,8 +106,7 @@ export class Integration extends Construct {
 				simpleName: false,
 				parameterName: settingsPath({
 					stackName: Stack.of(this).stackName,
-					scope: 'context',
-					system: 'stack',
+					scope: Scope.CDK_CONTEXT,
 					property: 'bridgeCertificatePEM',
 				}),
 			},
@@ -120,8 +119,7 @@ export class Integration extends Construct {
 				simpleName: false,
 				parameterName: settingsPath({
 					stackName: Stack.of(this).stackName,
-					scope: 'context',
-					system: 'stack',
+					scope: Scope.CDK_CONTEXT,
 					property: 'bridgePrivateKey',
 				}),
 			},

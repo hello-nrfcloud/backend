@@ -24,7 +24,7 @@ import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
-import { settingsPath } from '../../util/settings.js'
+import { Scope, settingsPath } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
@@ -105,8 +105,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				new GetParametersByPathCommand({
 					Path: settingsPath({
 						stackName: STACK_NAME,
-						scope: 'thirdParty',
-						system: 'nrfcloud',
+						scope: Scope.NRFCLOUD_CONFIG,
 					}),
 				}),
 			)

@@ -6,6 +6,9 @@ import {
 jest.mock('@aws-lambda-powertools/logger')
 jest.mock('../util/settings.js', () => ({
 	getSettingsOptional: () => async () => returnedMockData,
+	Scope: {
+		CDK_CONTEXT: 'stack/context',
+	},
 }))
 
 let returnedMockData: { [key: string]: string }

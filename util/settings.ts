@@ -7,49 +7,45 @@ import {
 } from '@aws-sdk/client-ssm'
 import { paginate } from './paginate.js'
 
-type Scopes = 'context' | 'config' | 'thirdParty' | 'codebuild'
-type Systems = 'stack' | 'github' | 'nrfcloud' | 'sentry'
+export enum Scope {
+	CDK_CONTEXT = 'stack/context',
+	NRFCLOUD_CONFIG = 'thirdParty/nrfcloud',
+}
 
 export const settingsPath = ({
 	stackName,
 	scope,
-	system,
 	property,
 }: {
 	stackName: string
-	scope: Scopes
-	system: Systems
+	scope: Scope
 	property?: string
 }): string => {
-	const base = `/${stackName}/${scope}/${system}`
+	const base = `/${stackName}/${scope}/`
 	return property === undefined ? base : `${base}/${property}`
 }
 
 const settingsName = ({
 	stackName,
 	scope,
-	system,
 	property,
 }: {
 	stackName: string
-	scope: Scopes
-	system: Systems
+	scope: Scope
 	property: string
-}): string => settingsPath({ stackName, scope, system, property })
+}): string => settingsPath({ stackName, scope, property })
 export const getSettings =
 	<Settings extends Record<string, string>>({
 		ssm,
 		stackName,
 		scope,
-		system,
 	}: {
 		ssm: SSMClient
 		stackName: string
-		scope: Scopes
-		system: Systems
+		scope: Scope
 	}) =>
 	async (): Promise<Settings> => {
-		const Path = settingsPath({ stackName, scope, system })
+		const Path = settingsPath({ stackName, scope })
 		const Parameters: Parameter[] = []
 		await paginate({
 			paginator: async (NextToken?: string) =>
@@ -88,12 +84,10 @@ export const putSettings =
 		ssm,
 		stackName,
 		scope,
-		system,
 	}: {
 		ssm: SSMClient
 		stackName: string
-		scope: Scopes
-		system: Systems
+		scope: Scope
 	}) =>
 	async ({
 		property,
@@ -107,7 +101,7 @@ export const putSettings =
 		 */
 		deleteBeforeUpdate?: boolean
 	}): Promise<{ name: string }> => {
-		const Name = settingsName({ stackName, scope, system, property })
+		const Name = settingsName({ stackName, scope, property })
 		if (deleteBeforeUpdate ?? false) {
 			try {
 				await ssm.send(
@@ -135,15 +129,13 @@ export const deleteSettings =
 		ssm,
 		stackName,
 		scope,
-		system,
 	}: {
 		ssm: SSMClient
 		stackName: string
-		scope: Scopes
-		system: Systems
+		scope: Scope
 	}) =>
 	async ({ property }: { property: string }): Promise<{ name: string }> => {
-		const Name = settingsName({ stackName, scope, system, property })
+		const Name = settingsName({ stackName, scope, property })
 		try {
 			await ssm.send(
 				new DeleteParameterCommand({

@@ -16,7 +16,12 @@ import {
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
 import { getSettings as nrfCloudSettings } from '../nrfcloud/settings.js'
-import { deleteSettings, getSettings, putSettings } from '../util/settings.js'
+import {
+	Scope,
+	deleteSettings,
+	getSettings,
+	putSettings,
+} from '../util/settings.js'
 import type { WebSocketClient } from './lib/websocket.js'
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
@@ -61,20 +66,17 @@ const accountDeviceSettings = await nrfCloudSettings({
 const configWriter = putSettings({
 	ssm,
 	stackName: STACK_NAME,
-	scope: 'config',
-	system: 'stack',
+	scope: Scope.CDK_CONTEXT,
 })
 const configRemover = deleteSettings({
 	ssm,
 	stackName: STACK_NAME,
-	scope: 'config',
-	system: 'stack',
+	scope: Scope.CDK_CONTEXT,
 })
 const configSettings = getSettings({
 	ssm,
 	stackName: STACK_NAME,
-	scope: 'config',
-	system: 'stack',
+	scope: Scope.CDK_CONTEXT,
 })
 
 const db = new DynamoDBClient({})

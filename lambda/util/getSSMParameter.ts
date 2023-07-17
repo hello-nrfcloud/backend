@@ -1,5 +1,5 @@
 import { type Settings } from '../../nrfcloud/settings.js'
-import { settingsPath } from '../../util/settings.js'
+import { Scope, settingsPath } from '../../util/settings.js'
 
 /**
  * @see https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html
@@ -52,8 +52,7 @@ export const getNRFCloudSSMParameters = async (
 		properties.map(async (property) =>
 			getSSMParameter({
 				stackName,
-				scope: 'thirdParty',
-				system: 'nrfcloud',
+				scope: Scope.NRFCLOUD_CONFIG,
 				property,
 			}),
 		),

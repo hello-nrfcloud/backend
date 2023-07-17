@@ -2,7 +2,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { hashSHA1 } from '../../util/hashSHA1.js'
-import { deleteSettings, putSettings } from '../../util/settings.js'
+import { Scope, deleteSettings, putSettings } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const setShadowFetcherCommand = ({
@@ -25,8 +25,7 @@ export const setShadowFetcherCommand = ({
 			const { name } = await deleteSettings({
 				ssm,
 				stackName: STACK_NAME,
-				scope: 'config',
-				system: 'stack',
+				scope: Scope.CDK_CONTEXT,
 			})({
 				property: modelHash,
 			})
@@ -51,8 +50,7 @@ export const setShadowFetcherCommand = ({
 		const { name } = await putSettings({
 			ssm,
 			stackName: STACK_NAME,
-			scope: 'config',
-			system: 'stack',
+			scope: Scope.CDK_CONTEXT,
 		})({
 			property: modelHash,
 			value,

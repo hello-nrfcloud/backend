@@ -2,7 +2,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { logger } from '../lambda/util/logger.js'
 import { hashSHA1 } from '../util/hashSHA1.js'
-import { getSettingsOptional } from '../util/settings.js'
+import { Scope, getSettingsOptional } from '../util/settings.js'
 
 // Format:
 //   'model name': 'interval'
@@ -31,8 +31,7 @@ const stackConfig = getSettingsOptional<
 >({
 	ssm,
 	stackName: STACK_NAME,
-	scope: 'config',
-	system: 'stack',
+	scope: Scope.CDK_CONTEXT,
 })
 
 const notNull = <T>(value: T | null): value is T => {

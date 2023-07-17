@@ -11,7 +11,7 @@ import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, once, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
-import { getSettings } from '../util/settings.js'
+import { getSettings, Scope } from '../util/settings.js'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
@@ -56,8 +56,7 @@ const ssm = new SSMClient({})
 const { healthCheckClientId } = await getSettings({
 	ssm,
 	stackName,
-	scope: 'thirdParty',
-	system: 'nrfcloud',
+	scope: Scope.NRFCLOUD_CONFIG,
 })()
 
 // Make sure to call it in the handler, so the AWS Parameters and Secrets Lambda Extension is ready.

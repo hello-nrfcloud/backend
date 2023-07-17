@@ -2,15 +2,18 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import fs from 'fs'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
-import { deleteSettings, putSettings } from '../../util/settings.js'
+import { Scope, deleteSettings, putSettings } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+
+const validScopes = [Scope.NRFCLOUD_CONFIG]
+const isScope = (s: string): s is Scope => validScopes.includes(s as Scope)
 
 export const configureCommand = ({
 	ssm,
 }: {
 	ssm: SSMClient
 }): CommandDefinition => ({
-	command: 'configure <scope> <system> <property> [value]',
+	command: 'configure <path> [value]',
 	options: [
 		{
 			flags: '-d, --deleteBeforeUpdate',
@@ -22,19 +25,27 @@ export const configureCommand = ({
 		},
 	],
 	action: async (
-		scope: any,
-		system: any,
-		property: string,
+		path: string,
 		value: string | undefined,
 		{ deleteBeforeUpdate, deleteParameter },
 	) => {
+		const parts = path.split('/')
+		const property = parts.pop()
+
+		const scope = parts.join('/')
+
+		if (!isScope(scope))
+			throw new Error(`Scope must be one of ${validScopes.join(',')}`)
+
+		if (property === undefined || property.length === 0)
+			throw new Error(`Must specify a parameter.`)
+
 		if (deleteParameter !== undefined) {
 			// Delete
 			const { name } = await deleteSettings({
 				ssm,
 				stackName: STACK_NAME,
 				scope,
-				system,
 			})({
 				property,
 			})
@@ -55,7 +66,6 @@ export const configureCommand = ({
 			ssm,
 			stackName: STACK_NAME,
 			scope,
-			system,
 		})({
 			property,
 			value: v,
