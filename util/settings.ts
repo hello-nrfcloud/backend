@@ -21,7 +21,7 @@ export const settingsPath = ({
 	scope: Scope
 	property?: string
 }): string => {
-	const base = `/${stackName}/${scope}/`
+	const base = `/${stackName}/${scope}`
 	return property === undefined ? base : `${base}/${property}`
 }
 
