@@ -7,10 +7,15 @@ import { readFile, writeFile } from 'node:fs/promises'
 import type { CertificateFiles } from './mqttBridgeCertificateLocation.js'
 import { putSettings, getSettingsOptional } from '../util/settings.js'
 
-jest.mock('../util/settings.js', () => ({
-	putSettings: jest.fn().mockReturnValue(jest.fn()),
-	getSettingsOptional: jest.fn().mockReturnValue(jest.fn()),
-}))
+jest.mock('../util/settings.js', () => {
+	const originalModule = jest.requireActual('../util/settings.js')
+
+	return {
+		...originalModule,
+		putSettings: jest.fn().mockReturnValue(jest.fn()),
+		getSettingsOptional: jest.fn().mockReturnValue(jest.fn()),
+	}
+})
 jest.mock('node:fs/promises')
 
 describe('backupCertificatesToSSM', () => {
@@ -55,15 +60,15 @@ describe('backupCertificatesToSSM', () => {
 		})
 
 		expect(putSettingsFnMock).toHaveBeenCalledWith({
-			property: 'test-prefix_key',
+			property: 'test-prefix/key',
 			value: 'Content1',
 		})
 		expect(putSettingsFnMock).toHaveBeenCalledWith({
-			property: 'test-prefix_csr',
+			property: 'test-prefix/csr',
 			value: 'Content2',
 		})
 		expect(putSettingsFnMock).toHaveBeenCalledWith({
-			property: 'test-prefix_cert',
+			property: 'test-prefix/cert',
 			value: 'Content3',
 		})
 	})
@@ -92,9 +97,11 @@ describe('restoreCertificatesFromSSM', () => {
 
 	it('should restore certificates from SSM', async () => {
 		getSettingsOptionalFnMock.mockResolvedValue({
-			'test-prefix_key': 'Key content',
-			'test-prefix_csr': 'CSR content',
-			'test-prefix_cert': 'Cert content',
+			'test-prefix': {
+				key: 'Key content',
+				csr: 'CSR content',
+				cert: 'Cert content',
+			},
 		})
 
 		const restored = await restoreCertificatesFromSSM({

@@ -6,7 +6,7 @@ import {
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
-import { settingsPath } from '../../util/settings.js'
+import { Scope, settingsPath } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const cleanBackupCertificates = ({
@@ -21,9 +21,9 @@ export const cleanBackupCertificates = ({
 			new GetParametersByPathCommand({
 				Path: settingsPath({
 					stackName: STACK_NAME,
-					scope: 'codebuild',
-					system: 'stack',
+					scope: Scope.NRFCLOUD_BRIDGE_CONFIG,
 				}),
+				Recursive: true,
 			}),
 		)
 

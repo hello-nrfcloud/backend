@@ -1,6 +1,6 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
-import { getSettingsOptional, putSettings } from '../util/settings.js'
+import { Scope, getSettingsOptional, putSettings } from '../util/settings.js'
 import type { CAFiles } from './caLocation.js'
 import { readFile, writeFile } from 'node:fs/promises'
 import type { CertificateFiles } from './mqttBridgeCertificateLocation.js'
@@ -23,10 +23,9 @@ export const backupCertificatesToSSM = async ({
 			putSettings({
 				ssm,
 				stackName: STACK_NAME,
-				scope: 'codebuild',
-				system: 'stack',
+				scope: Scope.NRFCLOUD_BRIDGE_CONFIG,
 			})({
-				property: `${parameterNamePrefix}_${k}`,
+				property: `${parameterNamePrefix}/${k}`,
 				value: await readFile(v, { encoding: 'utf-8' }),
 			}),
 		),
@@ -49,26 +48,15 @@ export const restoreCertificatesFromSSM = async ({
 	const parameters = await getSettingsOptional<Record<string, string>, null>({
 		ssm,
 		stackName: STACK_NAME,
-		scope: 'codebuild',
-		system: 'stack',
+		scope: Scope.NRFCLOUD_BRIDGE_CONFIG,
 	})(null)
 
 	if (parameters === null) return false
 
-	const result: Record<string, Record<string, string>> = {}
-	for (const [key, value] of Object.entries(parameters)) {
-		const [groupName, nestedKey] = key.split('_')
-		if (groupName !== undefined && nestedKey !== undefined) {
-			const group = result[groupName] ?? {}
-			group[nestedKey] = value
-			result[groupName] = group
-		}
-	}
-
-	if (parameterNamePrefix in result) {
-		const certificatesInSSM = result[parameterNamePrefix] ?? {}
+	if (parameterNamePrefix in parameters) {
+		const certificatesInSSM = parameters[parameterNamePrefix]
 		for (const key in certificates) {
-			if (key in certificatesInSSM) {
+			if (typeof certificatesInSSM === 'object' && key in certificatesInSSM) {
 				const content = certificatesInSSM[key] ?? ''
 				const filename =
 					certificates[key as keyof CAFiles & keyof CertificateFiles]
