@@ -80,9 +80,7 @@ jobs:
         run: npx cdk deploy --require-approval never
 
       - name: Run End-to-End Tests
-        run: |
-          set -o pipefail
-          npx tsx --no-warnings ./feature-runner/run-features.ts | npx tsx --no-warnings ./feature-runner/console-reporter.ts
+        run: npm run test:e2e
 
       - name: Get logs
         if: failure()

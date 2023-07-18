@@ -1,4 +1,7 @@
-import { consoleReporter } from '@nordicsemiconductor/bdd-markdown'
+import {
+	type SuiteResult,
+	consoleReporter,
+} from '@nordicsemiconductor/bdd-markdown'
 
 const chunks: string[] = []
 
@@ -6,6 +9,10 @@ process.stdin.on('data', (data) => {
 	chunks.push(data.toString())
 })
 
-process.stdin.on('end', () => {
-	consoleReporter(JSON.parse(chunks.join('')), console.log)
-})
+const res = await new Promise<SuiteResult>((resolve) =>
+	process.stdin.on('end', () => resolve(JSON.parse(chunks.join('')))),
+)
+
+consoleReporter(res, console.log)
+
+if (!res.ok) process.exit(1)
