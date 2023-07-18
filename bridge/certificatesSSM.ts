@@ -2,7 +2,6 @@ import type { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { Scope, getSettingsOptional, putSettings } from '../util/settings.js'
 import type { CAFiles } from './caLocation.js'
-import { readFile, writeFile } from 'node:fs/promises'
 import type { CertificateFiles } from './mqttBridgeCertificateLocation.js'
 import type { logFn } from '../cli/log.js'
 
@@ -11,10 +10,12 @@ export const backupCertificatesToSSM = async ({
 	parameterNamePrefix,
 	certificates,
 	debug,
+	reader,
 }: {
 	ssm: SSMClient
 	parameterNamePrefix: string
 	debug?: logFn
+	reader: (filename: string) => Promise<string>
 	certificates: CAFiles | CertificateFiles
 }): Promise<void> => {
 	debug?.(`Writing to SSM`)
@@ -26,7 +27,7 @@ export const backupCertificatesToSSM = async ({
 				scope: Scope.NRFCLOUD_BRIDGE_CONFIG,
 			})({
 				property: `${parameterNamePrefix}/${k}`,
-				value: await readFile(v, { encoding: 'utf-8' }),
+				value: await reader(v),
 			}),
 		),
 	)
@@ -37,10 +38,12 @@ export const restoreCertificatesFromSSM = async ({
 	parameterNamePrefix,
 	certificates,
 	debug,
+	writer,
 }: {
 	ssm: SSMClient
 	parameterNamePrefix: string
 	certificates: CAFiles | CertificateFiles
+	writer: (filename: string, data: string) => Promise<void>
 	debug?: logFn
 }): Promise<boolean> => {
 	let hasRestored = false
@@ -61,7 +64,7 @@ export const restoreCertificatesFromSSM = async ({
 				const filename =
 					certificates[key as keyof CAFiles & keyof CertificateFiles]
 				debug?.(`Writing file ${filename}`)
-				await writeFile(filename, content, { encoding: 'utf-8' })
+				await writer(filename, content)
 				hasRestored = true
 			}
 		}

@@ -23,7 +23,7 @@ import {
 	backupCertificatesToSSM,
 	restoreCertificatesFromSSM,
 } from '../bridge/certificatesSSM.js'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, writeFile, readFile } from 'node:fs/promises'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -66,6 +66,8 @@ const useRestoredCertificates = await Promise.all([
 		certificates: mqttBridgeCertificateLocation({
 			certsDir,
 		}),
+		writer: async (filename, data) =>
+			writeFile(filename, data, { encoding: 'utf8' }),
 		debug: debug('Restore MQTT Certificate'),
 	}),
 	restoreCertificatesFromSSM({
@@ -74,6 +76,8 @@ const useRestoredCertificates = await Promise.all([
 		certificates: caLocation({
 			certsDir,
 		}),
+		writer: async (filename, data) =>
+			writeFile(filename, data, { encoding: 'utf8' }),
 		debug: debug('Restore CA Certificate'),
 	}),
 ])
@@ -94,12 +98,14 @@ if (!useRestoredCertificates.some(Boolean)) {
 			parameterNamePrefix: 'mqttBridgeCertificate',
 			certificates: mqttBridgeCertificate,
 			debug: debug('Backup MQTT Certificate'),
+			reader: async (filename) => readFile(filename, { encoding: 'utf8' }),
 		}),
 		backupCertificatesToSSM({
 			ssm,
 			parameterNamePrefix: 'caCertificate',
 			certificates: caCertificate,
 			debug: debug('Backup CA Certificate'),
+			reader: async (filename) => readFile(filename, { encoding: 'utf8' }),
 		}),
 	])
 }

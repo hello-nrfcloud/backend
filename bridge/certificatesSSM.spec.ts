@@ -3,7 +3,6 @@ import {
 	restoreCertificatesFromSSM,
 } from './certificatesSSM.js'
 import type { CAFiles } from './caLocation.js'
-import { readFile, writeFile } from 'node:fs/promises'
 import type { CertificateFiles } from './mqttBridgeCertificateLocation.js'
 import { putSettings, getSettingsOptional } from '../util/settings.js'
 
@@ -16,7 +15,6 @@ jest.mock('../util/settings.js', () => {
 		getSettingsOptional: jest.fn().mockReturnValue(jest.fn()),
 	}
 })
-jest.mock('node:fs/promises')
 
 describe('backupCertificatesToSSM', () => {
 	let parameterNamePrefix: string
@@ -38,7 +36,8 @@ describe('backupCertificatesToSSM', () => {
 	})
 
 	it('should backup the certificates to SSM', async () => {
-		;(readFile as jest.Mock)
+		const reader = jest
+			.fn()
 			.mockResolvedValueOnce('Content1')
 			.mockResolvedValueOnce('Content2')
 			.mockResolvedValueOnce('Content3')
@@ -47,17 +46,12 @@ describe('backupCertificatesToSSM', () => {
 			ssm: jest.fn() as any,
 			parameterNamePrefix,
 			certificates,
+			reader,
 		})
 
-		expect(readFile).toHaveBeenCalledWith('/path/to/key.crt', {
-			encoding: 'utf-8',
-		})
-		expect(readFile).toHaveBeenCalledWith('/path/to/csr.crt', {
-			encoding: 'utf-8',
-		})
-		expect(readFile).toHaveBeenCalledWith('/path/to/cert.crt', {
-			encoding: 'utf-8',
-		})
+		expect(reader).toHaveBeenCalledWith('/path/to/key.crt')
+		expect(reader).toHaveBeenCalledWith('/path/to/csr.crt')
+		expect(reader).toHaveBeenCalledWith('/path/to/cert.crt')
 
 		expect(putSettingsFnMock).toHaveBeenCalledWith({
 			property: 'test-prefix/key',
@@ -104,39 +98,33 @@ describe('restoreCertificatesFromSSM', () => {
 			},
 		})
 
+		const writer = jest.fn()
 		const restored = await restoreCertificatesFromSSM({
 			ssm: jest.fn() as any,
 			parameterNamePrefix,
 			certificates,
+			writer,
 		})
 
 		expect(restored).toBeTruthy()
-		expect(writeFile).toHaveBeenCalledTimes(3)
-		expect(writeFile).toHaveBeenCalledWith('/path/to/key.crt', 'Key content', {
-			encoding: 'utf-8',
-		})
-		expect(writeFile).toHaveBeenCalledWith('/path/to/csr.crt', 'CSR content', {
-			encoding: 'utf-8',
-		})
-		expect(writeFile).toHaveBeenCalledWith(
-			'/path/to/cert.crt',
-			'Cert content',
-			{
-				encoding: 'utf-8',
-			},
-		)
+		expect(writer).toHaveBeenCalledTimes(3)
+		expect(writer).toHaveBeenCalledWith('/path/to/key.crt', 'Key content')
+		expect(writer).toHaveBeenCalledWith('/path/to/csr.crt', 'CSR content')
+		expect(writer).toHaveBeenCalledWith('/path/to/cert.crt', 'Cert content')
 	})
 
 	it('should not restore certificates if parameters are null', async () => {
 		getSettingsOptionalFnMock.mockResolvedValue(null)
 
+		const writer = jest.fn()
 		const restored = await restoreCertificatesFromSSM({
 			ssm: jest.fn() as any,
 			parameterNamePrefix,
 			certificates,
+			writer,
 		})
 
 		expect(restored).toBeFalsy()
-		expect(writeFile).not.toHaveBeenCalled()
+		expect(writer).not.toHaveBeenCalled()
 	})
 })

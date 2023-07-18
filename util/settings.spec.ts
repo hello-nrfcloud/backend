@@ -39,15 +39,15 @@ describe('getSettings()', () => {
 	it('should return the object with same scope', async () => {
 		const returnedValues = [
 			{
-				Name: `/${'STACK_NAME'}/${Scope.STACK_CONFIG}/key1`,
+				Name: `/hello-nrfcloud/stack/context/key1`,
 				Value: 'value1',
 			},
 			{
-				Name: `/${'STACK_NAME'}/${Scope.STACK_CONFIG}/key2`,
+				Name: `/hello-nrfcloud/stack/context/key2`,
 				Value: 'value2',
 			},
 			{
-				Name: `/${'STACK_NAME'}/${Scope.STACK_CONFIG}/key3`,
+				Name: `/hello-nrfcloud/stack/context/key3`,
 				Value: 'value3',
 			},
 		]
@@ -56,7 +56,7 @@ describe('getSettings()', () => {
 			ssm: {
 				send: jest.fn().mockResolvedValue({ Parameters: returnedValues }),
 			} as unknown as SSMClient,
-			stackName: 'STACK_NAME',
+			stackName: 'hello-nrfcloud',
 			scope: Scope.STACK_CONFIG,
 		})
 
@@ -71,19 +71,19 @@ describe('getSettings()', () => {
 	it('should return the nested value if parameters in the same scope contain slash', async () => {
 		const returnedValues = [
 			{
-				Name: `/${'STACK_NAME'}/${Scope.STACK_CONFIG}/group1/key1`,
+				Name: `/hello-nrfcloud/stack/context/group1/key1`,
 				Value: 'value1',
 			},
 			{
-				Name: `/${'STACK_NAME'}/${Scope.STACK_CONFIG}/group1/key2`,
+				Name: `/hello-nrfcloud/stack/context/group1/key2`,
 				Value: 'value2',
 			},
 			{
-				Name: `/${'STACK_NAME'}/${Scope.STACK_CONFIG}/group2/key1`,
+				Name: `/hello-nrfcloud/stack/context/group2/key1`,
 				Value: 'value3',
 			},
 			{
-				Name: `/${'STACK_NAME'}/${Scope.STACK_CONFIG}/group3`,
+				Name: `/hello-nrfcloud/stack/context/group3`,
 				Value: 'value4',
 			},
 		]
@@ -92,7 +92,7 @@ describe('getSettings()', () => {
 			ssm: {
 				send: jest.fn().mockResolvedValue({ Parameters: returnedValues }),
 			} as unknown as SSMClient,
-			stackName: 'STACK_NAME',
+			stackName: 'hello-nrfcloud',
 			scope: Scope.STACK_CONFIG,
 		})
 
