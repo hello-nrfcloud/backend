@@ -1,6 +1,6 @@
 #!/bin/sh
 
-MQ_BRIDGE_COUNT=${MQ_BRIDGE_COUNT:-0}
+MQ_BRIDGE_COUNT=$(find "$MOSQUITTO_INCLUDE_DIR" -maxdepth 1 -type f -name 'bridge*.conf' | wc -l)
 
 results=$(mosquitto_sub -p 1883 -t "\$SYS/broker/connection/#" -i health-check -C $MQ_BRIDGE_COUNT -W 3 2>/dev/null)
 expected_results="1"
@@ -12,8 +12,8 @@ do
 done
 
 if [[ "$results" == "$expected_results" ]]; then
-  echo "Both commands were successful."
+  echo "All commands were successful."
 else
-  echo "One or both commands failed."
+  echo "At least one command failed."
   exit 1
 fi

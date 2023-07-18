@@ -9,7 +9,14 @@ else
   MQ_INTERACTIVE=${MQ_INTERACTIVE:-0}
 fi
 
-MQ_BRIDGE_COUNT=${MQ_BRIDGE_COUNT:-0}
+# Detect number of bridges
+MQ_BRIDGE_COUNT=0
+for VAR in $(env); do
+  if echo "$VAR" | sed -r "s/(MOSQUITTO__[^=]*)=.*/\1/g" | grep -Eq '^MOSQUITTO__BRIDGE[0-9]*__CONNECTION$'; then
+    MQ_BRIDGE_COUNT=$((MQ_BRIDGE_COUNT + 1))
+  fi
+done
+echo "Found $MQ_BRIDGE_COUNT bridge configurations"
 
 # All (good?) defaults
 
