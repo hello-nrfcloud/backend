@@ -21,6 +21,8 @@ import { mkdir } from 'node:fs/promises'
 import { Scope, getSettingsOptional, putSettings } from '../util/settings.js'
 import { readFilesFromMap } from './helpers/readFilesFromMap.js'
 import { writeFilesFromMap } from './helpers/writeFilesFromMap.js'
+import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
+import { caLocation } from '../bridge/caLocation.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -56,22 +58,42 @@ const certsDir = path.join(
 	`${accountEnv.account}@${accountEnv.region}`,
 )
 await mkdir(certsDir, { recursive: true })
+const mqttBridgeCertificateFiles = mqttBridgeCertificateLocation({
+	certsDir,
+})
+const caCertificateFiles = caLocation({
+	certsDir,
+})
+
 const mqttBridgeDebug = debug('MQTT bridge')
 const caDebug = debug('CA certificate')
-const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
-	iot,
-	certsDir,
-	debug: mqttBridgeDebug,
-})()
-const caCertificate = await ensureCA({
-	certsDir,
-	iot,
-	debug: caDebug,
-})()
-const restoreCertsFromSettings =
-	(certsMap: Record<string, string>, debug: logFn) =>
-	async (settings: null | Record<string, string>): Promise<boolean> => {
-		if (settings === null) return false
+
+const certificates = [
+	// MQTT certificate
+	[
+		Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+		mqttBridgeCertificateFiles,
+		mqttBridgeDebug,
+	],
+	// CA certificate
+	[Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA, caCertificateFiles, caDebug],
+] as [Scope, Record<string, string>, logFn][]
+
+// Restore message bridge certificates from SSM
+const restoredCertificates = await Promise.all<boolean>(
+	certificates.map(async ([scope, certsMap, debug]) => {
+		debug(`Getting settings`, scope)
+		const settings = await getSettingsOptional<Record<string, string>, null>({
+			ssm,
+			stackName: STACK_NAME,
+			scope,
+		})(null)
+		if (settings === null) {
+			debug(`No certificate in settings.`)
+			return false
+		}
+
+		debug(`Restoring`)
 		const locations: Record<string, string> = Object.entries(settings).reduce(
 			(locations, [k, v]) => {
 				const path = certsMap[k]
@@ -85,6 +107,7 @@ const restoreCertsFromSettings =
 			{},
 		)
 		// Make sure all required locations exist
+
 		for (const k of Object.keys(certsMap)) {
 			if (locations[k] === undefined) {
 				debug(`Restored certificate settings are missing key`, k)
@@ -94,47 +117,41 @@ const restoreCertsFromSettings =
 		for (const k of Object.keys(locations)) debug(`Restoring:`, k)
 		await writeFilesFromMap(settings)
 		return true
-	}
-const useRestoredCertificates = await Promise.all([
-	getSettingsOptional<Record<string, string>, null>({
-		ssm,
-		stackName: STACK_NAME,
-		scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
-	})(null).then(
-		restoreCertsFromSettings(mqttBridgeCertificate, mqttBridgeDebug),
-	),
-	getSettingsOptional<Record<string, string>, null>({
-		ssm,
-		stackName: STACK_NAME,
-		scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
-	})(null).then(restoreCertsFromSettings(caCertificate, caDebug)),
-])
+	}),
+)
 
-if (!useRestoredCertificates.some(Boolean)) {
-	await Promise.all([
-		Object.entries(readFilesFromMap(mqttBridgeCertificate)).map(
-			async ([k, v]) =>
-				putSettings({
-					ssm,
-					stackName: STACK_NAME,
-					scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
-				})({
-					property: k,
-					value: v,
-				}),
-		),
-		Object.entries(readFilesFromMap(caCertificate)).map(async ([k, v]) =>
+// Pick up existing, or create new certificates
+const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
+	iot,
+	certsDir,
+	debug: mqttBridgeDebug,
+})()
+const caCertificate = await ensureCA({
+	certsDir,
+	iot,
+	debug: caDebug,
+})()
+
+// Store message bridge certificates in SSM
+await Promise.all(
+	certificates.map(async ([scope, certsMap, debug], k) => {
+		if (restoredCertificates[k] === true) {
+			debug(`Certificate was restored. Nothing to store.`)
+			return
+		}
+		for (const k of Object.keys(certsMap)) debug(`Storing:`, k)
+		Object.entries(readFilesFromMap(certsMap)).map(async ([k, v]) =>
 			putSettings({
 				ssm,
 				stackName: STACK_NAME,
-				scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
+				scope,
 			})({
 				property: k,
 				value: v,
 			}),
-		),
-	])
-}
+		)
+	}),
+)
 
 // Prebuild / reuse docker image
 // NOTE: It is intention that release image tag can be undefined during the development,
