@@ -11,7 +11,8 @@ import { merge } from 'lodash-es'
 export enum Scope {
 	STACK_CONFIG = 'stack/context',
 	NRFCLOUD_CONFIG = 'thirdParty/nrfcloud',
-	NRFCLOUD_BRIDGE_CONFIG = 'nrfcloud/bridgeConfig',
+	NRFCLOUD_BRIDGE_CERTIFICATE_MQTT = 'nRFCloudBridgeCertificate/MQTT',
+	NRFCLOUD_BRIDGE_CERTIFICATE_CA = 'nRFCloudBridgeCertificate/CA',
 }
 
 export const settingsPath = ({

@@ -17,12 +17,10 @@ import { env } from './helpers/env.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { ECR_NAME, STACK_NAME } from './stacks/stackConfig.js'
-import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
-import { caLocation } from '../bridge/caLocation.js'
-import { restoreCertificatesFromSSM } from '../bridge/certificatesSSM.js'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { Scope, putSettings } from '../util/settings.js'
+import { mkdir } from 'node:fs/promises'
+import { Scope, getSettingsOptional, putSettings } from '../util/settings.js'
 import { readFilesFromMap } from './helpers/readFilesFromMap.js'
+import { writeFilesFromMap } from './helpers/writeFilesFromMap.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -58,27 +56,24 @@ const certsDir = path.join(
 	`${accountEnv.account}@${accountEnv.region}`,
 )
 await mkdir(certsDir, { recursive: true })
+const restoreCertsFromSettings = async (
+	settings: null | Record<string, string>,
+): Promise<boolean> => {
+	if (settings === null) return false
+	await writeFilesFromMap(settings)
+	return true
+}
 const useRestoredCertificates = await Promise.all([
-	restoreCertificatesFromSSM({
+	getSettingsOptional<Record<string, string>, null>({
 		ssm,
-		parameterNamePrefix: 'mqttBridgeCertificate',
-		certificates: mqttBridgeCertificateLocation({
-			certsDir,
-		}),
-		writer: async (filename, data) =>
-			writeFile(filename, data, { encoding: 'utf8' }),
-		debug: debug('Restore MQTT Certificate'),
-	}),
-	restoreCertificatesFromSSM({
+		stackName: STACK_NAME,
+		scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+	})(null).then(restoreCertsFromSettings),
+	getSettingsOptional<Record<string, string>, null>({
 		ssm,
-		parameterNamePrefix: 'caCertificate',
-		certificates: caLocation({
-			certsDir,
-		}),
-		writer: async (filename, data) =>
-			writeFile(filename, data, { encoding: 'utf8' }),
-		debug: debug('Restore CA Certificate'),
-	}),
+		stackName: STACK_NAME,
+		scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
+	})(null).then(restoreCertsFromSettings),
 ])
 const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
 	iot,
@@ -91,22 +86,25 @@ const caCertificate = await ensureCA({
 	debug: debug('CA certificate'),
 })()
 if (!useRestoredCertificates.some(Boolean)) {
-	const putBridgeSettings = putSettings({
-		ssm,
-		stackName: STACK_NAME,
-		scope: Scope.NRFCLOUD_BRIDGE_CONFIG,
-	})
 	await Promise.all([
 		Object.entries(readFilesFromMap(mqttBridgeCertificate)).map(
 			async ([k, v]) =>
-				putBridgeSettings({
-					property: `mqttBridgeCertificate/${k}`,
+				putSettings({
+					ssm,
+					stackName: STACK_NAME,
+					scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+				})({
+					property: k,
 					value: v,
 				}),
 		),
 		Object.entries(readFilesFromMap(caCertificate)).map(async ([k, v]) =>
-			putBridgeSettings({
-				property: `caCertificate/${k}`,
+			putSettings({
+				ssm,
+				stackName: STACK_NAME,
+				scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
+			})({
+				property: k,
 				value: v,
 			}),
 		),

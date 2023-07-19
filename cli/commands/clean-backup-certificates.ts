@@ -17,24 +17,29 @@ export const cleanBackupCertificates = ({
 	command: 'clean-backup-certificates',
 	action: async () => {
 		console.debug(chalk.magenta(`Deleting backup certificates`))
-		const parameters = await ssm.send(
-			new GetParametersByPathCommand({
-				Path: settingsPath({
-					stackName: STACK_NAME,
-					scope: Scope.NRFCLOUD_BRIDGE_CONFIG,
-				}),
-				Recursive: true,
-			}),
-		)
-
-		const names = [...(parameters.Parameters?.map((p) => p.Name) ?? [])]
-		const namesChunk = chunk(names, 10)
-		for (const names of namesChunk) {
-			await ssm.send(
-				new DeleteParametersCommand({
-					Names: names as string[],
+		for (const scope of [
+			Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
+			Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+		]) {
+			const parameters = await ssm.send(
+				new GetParametersByPathCommand({
+					Path: settingsPath({
+						stackName: STACK_NAME,
+						scope,
+					}),
+					Recursive: true,
 				}),
 			)
+
+			const names = [...(parameters.Parameters?.map((p) => p.Name) ?? [])]
+			const namesChunk = chunk(names, 10)
+			for (const names of namesChunk) {
+				await ssm.send(
+					new DeleteParametersCommand({
+						Names: names as string[],
+					}),
+				)
+			}
 		}
 	},
 	help: 'Clean backup certificates on SSM',
