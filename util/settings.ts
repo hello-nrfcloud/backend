@@ -6,7 +6,6 @@ import {
 	type Parameter,
 } from '@aws-sdk/client-ssm'
 import { paginate } from './paginate.js'
-import { merge } from 'lodash-es'
 
 export enum Scope {
 	STACK_CONFIG = 'stack/context',
@@ -73,16 +72,13 @@ export const getSettings =
 		return Parameters.map(({ Name, ...rest }) => ({
 			...rest,
 			Name: Name?.replace(`${Path}/`, ''),
-		})).reduce((settings, { Name, Value }) => {
-			const paths = Name?.split('/') ?? []
-			const obj = paths.reverse().reduce((nestedObj, path, index) => {
-				return index === 0
-					? Object.fromEntries([[path, Value]])
-					: Object.fromEntries([[path, nestedObj]])
-			}, {})
-
-			return merge(settings, obj)
-		}, {} as Settings)
+		})).reduce(
+			(settings, { Name, Value }) => ({
+				...settings,
+				[Name ?? '']: Value ?? '',
+			}),
+			{} as Settings,
+		)
 	}
 
 export const putSettings =

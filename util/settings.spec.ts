@@ -67,40 +67,4 @@ describe('getSettings()', () => {
 			key3: 'value3',
 		})
 	})
-
-	it('should return the nested value if parameters in the same scope contain slash', async () => {
-		const returnedValues = [
-			{
-				Name: `/hello-nrfcloud/stack/context/group1/key1`,
-				Value: 'value1',
-			},
-			{
-				Name: `/hello-nrfcloud/stack/context/group1/key2`,
-				Value: 'value2',
-			},
-			{
-				Name: `/hello-nrfcloud/stack/context/group2/key1`,
-				Value: 'value3',
-			},
-			{
-				Name: `/hello-nrfcloud/stack/context/group3`,
-				Value: 'value4',
-			},
-		]
-
-		const stackConfig = getSettings({
-			ssm: {
-				send: jest.fn().mockResolvedValue({ Parameters: returnedValues }),
-			} as unknown as SSMClient,
-			stackName: 'hello-nrfcloud',
-			scope: Scope.STACK_CONFIG,
-		})
-
-		const result = await stackConfig()
-		expect(result).toEqual({
-			group1: { key1: 'value1', key2: 'value2' },
-			group2: { key1: 'value3' },
-			group3: 'value4',
-		})
-	})
 })
