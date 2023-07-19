@@ -2,20 +2,25 @@ import { ECRClient } from '@aws-sdk/client-ecr'
 import { IAMClient } from '@aws-sdk/client-iam'
 import { IoTClient } from '@aws-sdk/client-iot'
 import { STS } from '@aws-sdk/client-sts'
+import { SSMClient } from '@aws-sdk/client-ssm'
 import path from 'node:path'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { getOrBuildDockerImage } from '../aws/getOrBuildDockerImage.js'
 import { getOrCreateRepository } from '../aws/getOrCreateRepository.js'
 import { ensureCA } from '../bridge/ensureCA.js'
 import { ensureMQTTBridgeCredentials } from '../bridge/ensureMQTTBridgeCredentials.js'
-import { debug } from '../cli/log.js'
+import { debug, type logFn } from '../cli/log.js'
 import pJSON from '../package.json'
 import { BackendApp } from './BackendApp.js'
 import { ensureGitHubOIDCProvider } from './ensureGitHubOIDCProvider.js'
 import { env } from './helpers/env.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
-import { ECR_NAME } from './stacks/stackConfig.js'
+import { ECR_NAME, STACK_NAME } from './stacks/stackConfig.js'
+import { mkdir } from 'node:fs/promises'
+import { Scope, getSettingsOptional, putSettings } from '../util/settings.js'
+import { readFilesFromMap } from './helpers/readFilesFromMap.js'
+import { writeFilesFromMap } from './helpers/writeFilesFromMap.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -27,6 +32,7 @@ const iot = new IoTClient({})
 const sts = new STS({})
 const ecr = new ECRClient({})
 const iam = new IAMClient({})
+const ssm = new SSMClient({})
 
 const accountEnv = await env({ sts })
 
@@ -49,16 +55,86 @@ const certsDir = path.join(
 	'certificates',
 	`${accountEnv.account}@${accountEnv.region}`,
 )
+await mkdir(certsDir, { recursive: true })
+const mqttBridgeDebug = debug('MQTT bridge')
+const caDebug = debug('CA certificate')
 const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
 	iot,
 	certsDir,
-	debug: debug('MQTT bridge'),
+	debug: mqttBridgeDebug,
 })()
 const caCertificate = await ensureCA({
 	certsDir,
 	iot,
-	debug: debug('CA certificate'),
+	debug: caDebug,
 })()
+const restoreCertsFromSettings =
+	(certsMap: Record<string, string>, debug: logFn) =>
+	async (settings: null | Record<string, string>): Promise<boolean> => {
+		if (settings === null) return false
+		const locations: Record<string, string> = Object.entries(settings).reduce(
+			(locations, [k, v]) => {
+				const path = certsMap[k]
+				debug(`Unrecognized path:`, k)
+				if (path === undefined) return locations
+				return {
+					...locations,
+					[path]: v,
+				}
+			},
+			{},
+		)
+		// Make sure all required locations exist
+		for (const k of Object.keys(certsMap)) {
+			if (locations[k] === undefined) {
+				debug(`Restored certificate settings are missing key`, k)
+				return false
+			}
+		}
+		for (const k of Object.keys(locations)) debug(`Restoring:`, k)
+		await writeFilesFromMap(settings)
+		return true
+	}
+const useRestoredCertificates = await Promise.all([
+	getSettingsOptional<Record<string, string>, null>({
+		ssm,
+		stackName: STACK_NAME,
+		scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+	})(null).then(
+		restoreCertsFromSettings(mqttBridgeCertificate, mqttBridgeDebug),
+	),
+	getSettingsOptional<Record<string, string>, null>({
+		ssm,
+		stackName: STACK_NAME,
+		scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
+	})(null).then(restoreCertsFromSettings(caCertificate, caDebug)),
+])
+
+if (!useRestoredCertificates.some(Boolean)) {
+	await Promise.all([
+		Object.entries(readFilesFromMap(mqttBridgeCertificate)).map(
+			async ([k, v]) =>
+				putSettings({
+					ssm,
+					stackName: STACK_NAME,
+					scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+				})({
+					property: k,
+					value: v,
+				}),
+		),
+		Object.entries(readFilesFromMap(caCertificate)).map(async ([k, v]) =>
+			putSettings({
+				ssm,
+				stackName: STACK_NAME,
+				scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
+			})({
+				property: k,
+				value: v,
+			}),
+		),
+	])
+}
 
 // Prebuild / reuse docker image
 // NOTE: It is intention that release image tag can be undefined during the development,

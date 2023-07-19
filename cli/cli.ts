@@ -28,6 +28,7 @@ import { showDeviceCommand } from './commands/show-device.js'
 import { showFingerprintCommand } from './commands/show-fingerprint.js'
 import { showNRFCloudAccount } from './commands/show-nrfcloud-account.js'
 import { simulateDeviceCommand } from './commands/simulate-device.js'
+import { cleanBackupCertificates } from './commands/clean-backup-certificates.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -61,6 +62,7 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		configureCommand({ ssm }),
 		setShadowFetcherCommand({ ssm }),
 		logsCommand({ stackName: STACK_NAME, cf, logs }),
+		cleanBackupCertificates({ ssm }),
 	]
 
 	if (isCI) {

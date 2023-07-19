@@ -1,5 +1,10 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { Scope, getSettingsOptional, settingsPath } from './settings.js'
+import {
+	Scope,
+	getSettingsOptional,
+	settingsPath,
+	getSettings,
+} from './settings.js'
 
 describe('getSettingsOptional()', () => {
 	it('should return the given default value if parameter does not exist', async () => {
@@ -28,4 +33,38 @@ describe('settingsPath()', () => {
 				property: 'someProperty',
 			}),
 		).toEqual('/hello-nrfcloud/stack/context/someProperty'))
+})
+
+describe('getSettings()', () => {
+	it('should return the object with same scope', async () => {
+		const returnedValues = [
+			{
+				Name: `/hello-nrfcloud/stack/context/key1`,
+				Value: 'value1',
+			},
+			{
+				Name: `/hello-nrfcloud/stack/context/key2`,
+				Value: 'value2',
+			},
+			{
+				Name: `/hello-nrfcloud/stack/context/key3`,
+				Value: 'value3',
+			},
+		]
+
+		const stackConfig = getSettings({
+			ssm: {
+				send: jest.fn().mockResolvedValue({ Parameters: returnedValues }),
+			} as unknown as SSMClient,
+			stackName: 'hello-nrfcloud',
+			scope: Scope.STACK_CONFIG,
+		})
+
+		const result = await stackConfig()
+		expect(result).toEqual({
+			key1: 'value1',
+			key2: 'value2',
+			key3: 'value3',
+		})
+	})
 })

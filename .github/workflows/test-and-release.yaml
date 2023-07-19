@@ -105,6 +105,7 @@ jobs:
           ./cli.sh fake-nrfcloud-account-device --remove
           ./cli.sh configure thirdParty/nrfcloud/apiEndpoint -X
           ./cli.sh configure thirdParty/nrfcloud/apiKey -X
+          ./cli.sh clean-backup-certificates
 
   release:
     needs:
