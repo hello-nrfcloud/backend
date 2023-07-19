@@ -9,7 +9,7 @@ import { getOrBuildDockerImage } from '../aws/getOrBuildDockerImage.js'
 import { getOrCreateRepository } from '../aws/getOrCreateRepository.js'
 import { ensureCA } from '../bridge/ensureCA.js'
 import { ensureMQTTBridgeCredentials } from '../bridge/ensureMQTTBridgeCredentials.js'
-import { debug } from '../cli/log.js'
+import { debug, type logFn } from '../cli/log.js'
 import pJSON from '../package.json'
 import { BackendApp } from './BackendApp.js'
 import { ensureGitHubOIDCProvider } from './ensureGitHubOIDCProvider.js'
@@ -56,35 +56,60 @@ const certsDir = path.join(
 	`${accountEnv.account}@${accountEnv.region}`,
 )
 await mkdir(certsDir, { recursive: true })
-const restoreCertsFromSettings = async (
-	settings: null | Record<string, string>,
-): Promise<boolean> => {
-	if (settings === null) return false
-	await writeFilesFromMap(settings)
-	return true
-}
+const mqttBridgeDebug = debug('MQTT bridge')
+const caDebug = debug('CA certificate')
+const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
+	iot,
+	certsDir,
+	debug: mqttBridgeDebug,
+})()
+const caCertificate = await ensureCA({
+	certsDir,
+	iot,
+	debug: caDebug,
+})()
+const restoreCertsFromSettings =
+	(certsMap: Record<string, string>, debug: logFn) =>
+	async (settings: null | Record<string, string>): Promise<boolean> => {
+		if (settings === null) return false
+		const locations: Record<string, string> = Object.entries(settings).reduce(
+			(locations, [k, v]) => {
+				const path = certsMap[k]
+				debug(`Unrecognized path:`, k)
+				if (path === undefined) return locations
+				return {
+					...locations,
+					[path]: v,
+				}
+			},
+			{},
+		)
+		// Make sure all required locations exist
+		for (const k of Object.keys(certsMap)) {
+			if (locations[k] === undefined) {
+				debug(`Restored certificate settings are missing key`, k)
+				return false
+			}
+		}
+		for (const k of Object.keys(locations)) debug(`Restoring:`, k)
+		await writeFilesFromMap(settings)
+		return true
+	}
 const useRestoredCertificates = await Promise.all([
 	getSettingsOptional<Record<string, string>, null>({
 		ssm,
 		stackName: STACK_NAME,
 		scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
-	})(null).then(restoreCertsFromSettings),
+	})(null).then(
+		restoreCertsFromSettings(mqttBridgeCertificate, mqttBridgeDebug),
+	),
 	getSettingsOptional<Record<string, string>, null>({
 		ssm,
 		stackName: STACK_NAME,
 		scope: Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
-	})(null).then(restoreCertsFromSettings),
+	})(null).then(restoreCertsFromSettings(caCertificate, caDebug)),
 ])
-const mqttBridgeCertificate = await ensureMQTTBridgeCredentials({
-	iot,
-	certsDir,
-	debug: debug('MQTT bridge'),
-})()
-const caCertificate = await ensureCA({
-	certsDir,
-	iot,
-	debug: debug('CA certificate'),
-})()
+
 if (!useRestoredCertificates.some(Boolean)) {
 	await Promise.all([
 		Object.entries(readFilesFromMap(mqttBridgeCertificate)).map(
