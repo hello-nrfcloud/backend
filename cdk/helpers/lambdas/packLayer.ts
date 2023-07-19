@@ -4,7 +4,7 @@ import { copyFile, mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { glob } from 'glob'
 import path from 'path'
 import { ZipFile } from 'yazl'
-import { checkSumOfFiles } from './checksumOfFiles.js'
+import { checkSumOfFiles, checkSumOfStrings } from './checksumOfFiles.js'
 
 export type PackedLayer = { layerZipFile: string; hash: string }
 
@@ -58,8 +58,6 @@ export const packLayer = async ({
 	const packageLock = path.join(nodejsDir, 'package-lock.json')
 	await copyFile(packageLockJsonFile, packageLock)
 
-	const hash = await checkSumOfFiles([packageJSON, packageLock])
-
 	await new Promise<void>((resolve, reject) => {
 		const [cmd, ...args] = [
 			'npm',
@@ -103,6 +101,9 @@ export const packLayer = async ({
 
 	return {
 		layerZipFile: zipFileName,
-		hash,
+		hash: checkSumOfStrings([
+			JSON.stringify(dependencies),
+			await checkSumOfFiles([packageJSON, packageLock]),
+		]),
 	}
 }

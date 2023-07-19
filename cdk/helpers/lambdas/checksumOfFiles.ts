@@ -12,7 +12,7 @@ export const checkSumOfFiles = async (files: string[]): Promise<string> => {
 	return checksum
 }
 
-const checkSumOfStrings = (strings: string[]): string => {
+export const checkSumOfStrings = (strings: string[]): string => {
 	const hash = crypto.createHash('sha1')
 	hash.update(strings.join(''))
 	return hash.digest('hex')
