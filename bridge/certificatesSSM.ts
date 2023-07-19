@@ -1,37 +1,9 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
-import { Scope, getSettingsOptional, putSettings } from '../util/settings.js'
+import { Scope, getSettingsOptional } from '../util/settings.js'
 import type { CAFiles } from './caLocation.js'
 import type { CertificateFiles } from './mqttBridgeCertificateLocation.js'
 import type { logFn } from '../cli/log.js'
-
-export const backupCertificatesToSSM = async ({
-	ssm,
-	parameterNamePrefix,
-	certificates,
-	debug,
-	reader,
-}: {
-	ssm: SSMClient
-	parameterNamePrefix: string
-	debug?: logFn
-	reader: (filename: string) => Promise<string>
-	certificates: CAFiles | CertificateFiles
-}): Promise<void> => {
-	debug?.(`Writing to SSM`)
-	await Promise.all(
-		Object.entries(certificates).map(async ([k, v]) =>
-			putSettings({
-				ssm,
-				stackName: STACK_NAME,
-				scope: Scope.NRFCLOUD_BRIDGE_CONFIG,
-			})({
-				property: `${parameterNamePrefix}/${k}`,
-				value: await reader(v),
-			}),
-		),
-	)
-}
 
 export const restoreCertificatesFromSSM = async ({
 	ssm,

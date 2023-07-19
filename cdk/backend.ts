@@ -16,14 +16,13 @@ import { ensureGitHubOIDCProvider } from './ensureGitHubOIDCProvider.js'
 import { env } from './helpers/env.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
-import { ECR_NAME } from './stacks/stackConfig.js'
+import { ECR_NAME, STACK_NAME } from './stacks/stackConfig.js'
 import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
 import { caLocation } from '../bridge/caLocation.js'
-import {
-	backupCertificatesToSSM,
-	restoreCertificatesFromSSM,
-} from '../bridge/certificatesSSM.js'
-import { mkdir, writeFile, readFile } from 'node:fs/promises'
+import { restoreCertificatesFromSSM } from '../bridge/certificatesSSM.js'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { Scope, putSettings } from '../util/settings.js'
+import { readFilesFromMap } from './helpers/readFilesFromMap.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -92,21 +91,25 @@ const caCertificate = await ensureCA({
 	debug: debug('CA certificate'),
 })()
 if (!useRestoredCertificates.some(Boolean)) {
+	const putBridgeSettings = putSettings({
+		ssm,
+		stackName: STACK_NAME,
+		scope: Scope.NRFCLOUD_BRIDGE_CONFIG,
+	})
 	await Promise.all([
-		backupCertificatesToSSM({
-			ssm,
-			parameterNamePrefix: 'mqttBridgeCertificate',
-			certificates: mqttBridgeCertificate,
-			debug: debug('Backup MQTT Certificate'),
-			reader: async (filename) => readFile(filename, { encoding: 'utf8' }),
-		}),
-		backupCertificatesToSSM({
-			ssm,
-			parameterNamePrefix: 'caCertificate',
-			certificates: caCertificate,
-			debug: debug('Backup CA Certificate'),
-			reader: async (filename) => readFile(filename, { encoding: 'utf8' }),
-		}),
+		Object.entries(readFilesFromMap(mqttBridgeCertificate)).map(
+			async ([k, v]) =>
+				putBridgeSettings({
+					property: `mqttBridgeCertificate/${k}`,
+					value: v,
+				}),
+		),
+		Object.entries(readFilesFromMap(caCertificate)).map(async ([k, v]) =>
+			putBridgeSettings({
+				property: `caCertificate/${k}`,
+				value: v,
+			}),
+		),
 	])
 }
 
