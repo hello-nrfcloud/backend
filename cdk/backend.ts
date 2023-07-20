@@ -18,11 +18,11 @@ import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { ECR_NAME, STACK_NAME } from './stacks/stackConfig.js'
 import { mkdir } from 'node:fs/promises'
-import { Scope, getSettingsOptional, putSettings } from '../util/settings.js'
-import { readFilesFromMap } from './helpers/readFilesFromMap.js'
-import { writeFilesFromMap } from './helpers/writeFilesFromMap.js'
+import { Scope } from '../util/settings.js'
 import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
 import { caLocation } from '../bridge/caLocation.js'
+import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'
+import { storeCertificateInSSM } from './helpers/certificates/storeCertificateInSSM.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -80,44 +80,14 @@ const certificates = [
 ] as [Scope, Record<string, string>, logFn][]
 
 // Restore message bridge certificates from SSM
-const restoredCertificates = await Promise.all<boolean>(
-	certificates.map(async ([scope, certsMap, debug]) => {
-		debug(`Getting settings`, scope)
-		const settings = await getSettingsOptional<Record<string, string>, null>({
-			ssm,
-			stackName: STACK_NAME,
+const restoredCertificates = await Promise.all(
+	certificates.map(async ([scope, certsMap, debug]) =>
+		restoreCertificateFromSSM({ ssm, stackName: STACK_NAME })(
 			scope,
-		})(null)
-		if (settings === null) {
-			debug(`No certificate in settings.`)
-			return false
-		}
-
-		debug(`Restoring`)
-		const locations: Record<string, string> = Object.entries(settings).reduce(
-			(locations, [k, v]) => {
-				const path = certsMap[k]
-				debug(`Unrecognized path:`, k)
-				if (path === undefined) return locations
-				return {
-					...locations,
-					[path]: v,
-				}
-			},
-			{},
-		)
-		// Make sure all required locations exist
-
-		for (const k of Object.keys(certsMap)) {
-			if (locations[k] === undefined) {
-				debug(`Restored certificate settings are missing key`, k)
-				return false
-			}
-		}
-		for (const k of Object.keys(locations)) debug(`Restoring:`, k)
-		await writeFilesFromMap(settings)
-		return true
-	}),
+			certsMap,
+			debug,
+		),
+	),
 )
 
 // Pick up existing, or create new certificates
@@ -139,16 +109,10 @@ await Promise.all(
 			debug(`Certificate was restored. Nothing to store.`)
 			return
 		}
-		for (const k of Object.keys(certsMap)) debug(`Storing:`, k)
-		Object.entries(readFilesFromMap(certsMap)).map(async ([k, v]) =>
-			putSettings({
-				ssm,
-				stackName: STACK_NAME,
-				scope,
-			})({
-				property: k,
-				value: v,
-			}),
+		await storeCertificateInSSM({ ssm, stackName: STACK_NAME })(
+			scope,
+			certsMap,
+			debug,
 		)
 	}),
 )

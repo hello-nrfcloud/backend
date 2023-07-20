@@ -8,5 +8,5 @@ npm-debug.log
 cdk.out/
 dist/
 .envrc
-certificates/
+/certificates/
 cdk.context.json
