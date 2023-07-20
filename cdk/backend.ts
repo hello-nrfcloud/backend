@@ -97,7 +97,6 @@ const restoredCertificates = await Promise.all<boolean>(
 		const locations: Record<string, string> = Object.entries(settings).reduce(
 			(locations, [k, v]) => {
 				const path = certsMap[k]
-				debug(`Unrecognized path:`, k)
 				if (path === undefined) return locations
 				return {
 					...locations,
@@ -108,14 +107,14 @@ const restoredCertificates = await Promise.all<boolean>(
 		)
 		// Make sure all required locations exist
 
-		for (const k of Object.keys(certsMap)) {
+		for (const k of Object.values(certsMap)) {
 			if (locations[k] === undefined) {
 				debug(`Restored certificate settings are missing key`, k)
 				return false
 			}
 		}
 		for (const k of Object.keys(locations)) debug(`Restoring:`, k)
-		await writeFilesFromMap(settings)
+		await writeFilesFromMap(locations)
 		return true
 	}),
 )
@@ -140,15 +139,16 @@ await Promise.all(
 			return
 		}
 		for (const k of Object.keys(certsMap)) debug(`Storing:`, k)
-		Object.entries(readFilesFromMap(certsMap)).map(async ([k, v]) =>
-			putSettings({
-				ssm,
-				stackName: STACK_NAME,
-				scope,
-			})({
-				property: k,
-				value: v,
-			}),
+		return Object.entries(await readFilesFromMap(certsMap)).map(
+			async ([k, v]) =>
+				putSettings({
+					ssm,
+					stackName: STACK_NAME,
+					scope,
+				})({
+					property: k,
+					value: v,
+				}),
 		)
 	}),
 )
