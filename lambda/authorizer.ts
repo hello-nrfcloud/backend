@@ -81,7 +81,7 @@ const h = async (event: {
 		return deny
 	}
 
-	const { model, deviceId } = device
+	const { model, deviceId, account } = device
 
 	// Track usage of fingerprint
 	const now = new Date()
@@ -128,7 +128,7 @@ const h = async (event: {
 				},
 			],
 		},
-		context: { model, deviceId },
+		context: { model, deviceId, account },
 	}
 }
 

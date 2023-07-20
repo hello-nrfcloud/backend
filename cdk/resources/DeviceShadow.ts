@@ -15,6 +15,7 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
+import { allAccountScopes } from '../../nrfcloud/allAccounts.js'
 
 export class DeviceShadow extends Construct {
 	public constructor(
@@ -93,6 +94,26 @@ export class DeviceShadow extends Construct {
 		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
 		shadowQueue.grantSendMessages(prepareDeviceShadow)
 
+		const policies = allAccountScopes
+			.map((scope) => [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/${scope.toString()}/*`,
+					],
+				}),
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/${scope.toString()}`,
+					],
+				}),
+			])
+			.flat()
 		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
 			handler: lambdaSources.fetchDeviceShadow.handler,
 			architecture: Lambda.Architecture.ARM_64,
@@ -114,24 +135,7 @@ export class DeviceShadow extends Construct {
 				PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/exeger/*`,
-					],
-				}),
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/exeger`,
-					],
-				}),
-			],
+			initialPolicy: policies,
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
