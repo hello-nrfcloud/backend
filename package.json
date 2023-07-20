@@ -30,7 +30,7 @@
   "devDependencies": {
     "@aws-lambda-powertools/logger": "1.11.1",
     "@aws-sdk/client-apigatewaymanagementapi": "3.370.0",
-    "@aws-sdk/client-cloudformation": "3.370.0",
+    "@aws-sdk/client-cloudformation": "3.373.0",
     "@aws-sdk/client-cloudwatch-logs": "3.370.0",
     "@aws-sdk/client-dynamodb": "3.370.0",
     "@aws-sdk/client-ecr": "3.370.0",
