@@ -120,7 +120,7 @@ export class DeviceShadow extends Construct {
 					resources: [
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud/*`,
+						}:parameter/${Stack.of(this).stackName}/thirdParty/exeger/*`,
 					],
 				}),
 				new IAM.PolicyStatement({
@@ -128,7 +128,7 @@ export class DeviceShadow extends Construct {
 					resources: [
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud`,
+						}:parameter/${Stack.of(this).stackName}/thirdParty/exeger`,
 					],
 				}),
 			],
