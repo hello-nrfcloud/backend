@@ -23,6 +23,10 @@ import { ensureProductionRunCACertificate } from '../devices/ensureProductionRun
 import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
 import { signDeviceCertificate } from '../devices/signDeviceCertificate.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import {
+	convertTonRFAccount,
+	validnRFCloudAccount,
+} from '../validnRFCloudAccount.js'
 
 export const defaultPort = '/dev/ttyACM0'
 
@@ -39,7 +43,7 @@ export const provisionDkCommand = ({
 	stackName: string
 	env: Required<Environment>
 }): CommandDefinition => ({
-	command: 'provision-dk <productionRun> <model>',
+	command: 'provision-dk <account> <productionRun> <model>',
 	options: [
 		{
 			flags: '-p, --port <port>',
@@ -63,10 +67,17 @@ export const provisionDkCommand = ({
 		},
 	],
 	action: async (
+		account,
 		productionRun,
 		model,
 		{ port, dk, atHost, debug, deletePrivateKey },
 	) => {
+		const scope = convertTonRFAccount(account)
+		if (!validnRFCloudAccount(scope)) {
+			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			process.exit(1)
+		}
+
 		const dir = ensureCertificateDir(env)
 		const {
 			privateKey: caPrivateKeyLocation,
@@ -154,6 +165,7 @@ export const provisionDkCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			scope,
 		})()
 
 		const client = apiClient({
@@ -193,6 +205,7 @@ export const provisionDkCommand = ({
 			id: deviceId,
 			model,
 			fingerprint,
+			account,
 		})
 		if ('error' in res) {
 			console.error(chalk.red(`Failed to store device fingerprint!`))

@@ -21,14 +21,16 @@ export type Settings = {
 export const getSettings = ({
 	ssm,
 	stackName,
+	scope,
 }: {
 	ssm: SSMClient
 	stackName: string
+	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
 }): (() => Promise<Settings>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 	})
 	return async (): Promise<Settings> => {
 		const p = await settingsReader()
@@ -70,14 +72,16 @@ export const getSettings = ({
 export const getAPISettings = ({
 	ssm,
 	stackName,
+	scope,
 }: {
 	ssm: SSMClient
 	stackName: string
+	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
 }): (() => Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 	})
 	return async (): Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>> => {
 		const p = await settingsReader()
@@ -96,14 +100,16 @@ export const getAPISettings = ({
 export const updateSettings = ({
 	ssm,
 	stackName,
+	scope,
 }: {
 	ssm: SSMClient
 	stackName: string
+	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
 }): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(
@@ -119,10 +125,11 @@ export const updateSettings = ({
 
 export const parameterName = (
 	stackName: string,
+	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG,
 	parameterName: keyof Settings,
 ): string =>
 	settingsPath({
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 		property: parameterName,
 	})

@@ -48,6 +48,7 @@ const testConfig = await stackOutput(
 const accountDeviceSettings = await nrfCloudSettings({
 	ssm,
 	stackName: STACK_NAME,
+	scope: Scope.EXEGER_CONFIG,
 })()
 const configWriter = putSettings({
 	ssm,

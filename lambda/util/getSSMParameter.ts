@@ -52,7 +52,7 @@ export const getNRFCloudSSMParameters = async (
 		properties.map(async (property) =>
 			getSSMParameter({
 				stackName,
-				scope: Scope.NRFCLOUD_CONFIG,
+				scope: Scope.EXEGER_CONFIG,
 				property,
 			}),
 		),

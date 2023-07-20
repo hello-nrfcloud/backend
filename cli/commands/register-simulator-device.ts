@@ -12,6 +12,10 @@ import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import {
+	convertTonRFAccount,
+	validnRFCloudAccount,
+} from '../validnRFCloudAccount.js'
 
 export const registerSimulatorDeviceCommand = ({
 	ssm,
@@ -26,11 +30,18 @@ export const registerSimulatorDeviceCommand = ({
 	devicesTableName: string
 	env: Required<Environment>
 }): CommandDefinition => ({
-	command: 'register-simulator-device',
-	action: async () => {
+	command: 'register-simulator-device <account>',
+	action: async (account) => {
+		const scope = convertTonRFAccount(account)
+		if (!validnRFCloudAccount(scope)) {
+			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			process.exit(1)
+		}
+
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			scope,
 		})()
 
 		const client = apiClient({
@@ -102,6 +113,7 @@ export const registerSimulatorDeviceCommand = ({
 			id: deviceId,
 			model: 'PCA20035+solar',
 			fingerprint,
+			account,
 		})
 		if ('error' in res) {
 			console.error(chalk.red(`Failed to store device fingerprint!`))

@@ -43,14 +43,15 @@ const createDeviceForModel =
 			Type.Object({
 				model: Type.String(),
 				storageName: Type.String(),
+				account: Type.String(),
 			}),
 		)(
-			/^I have the fingerprint for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/,
+			/^I have the fingerprint under `(?<account>[^`]+)` account for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/,
 			step.title,
 		)
 		if (match === null) return noMatch
 
-		const { model, storageName } = match
+		const { model, storageName, account } = match
 		const fingerprint = `92b.${generateCode()}`
 		const id = randomUUID()
 
@@ -59,6 +60,7 @@ const createDeviceForModel =
 			id,
 			model,
 			fingerprint,
+			account,
 		})
 
 		await pRetry(

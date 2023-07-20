@@ -16,14 +16,16 @@ export type Settings = {
 export const updateSettings = ({
 	ssm,
 	stackName,
+	scope,
 }: {
 	ssm: SSMClient
 	stackName: string
+	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
 }): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(
@@ -40,14 +42,16 @@ export const updateSettings = ({
 export const getSettings = ({
 	ssm,
 	stackName,
+	scope,
 }: {
 	ssm: SSMClient
 	stackName: string
+	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
 }): (() => Promise<Settings>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 	})
 	return async (): Promise<Settings> => {
 		const p = await settingsReader()

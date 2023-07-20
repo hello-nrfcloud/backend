@@ -21,6 +21,7 @@ export const getDevice =
 					id: string
 					fingerprint: string
 					model: string
+					account: string
 				}
 		  }
 		| { error: Error }
@@ -50,12 +51,14 @@ export const getDevice =
 				deviceId: string
 				fingerprint: string
 				model: string
+				account: string
 			}
 			return {
 				device: {
 					id: device.deviceId,
 					model: device.model,
 					fingerprint: device.fingerprint,
+					account: device.account,
 				},
 			}
 		} catch (error) {

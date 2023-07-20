@@ -5,7 +5,7 @@ import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { Scope, deleteSettings, putSettings } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
-const validScopes = [Scope.NRFCLOUD_CONFIG]
+const validScopes = [Scope.EXEGER_CONFIG, Scope.NODIC_CONFIG]
 const isScope = (s: string): s is Scope => validScopes.includes(s as Scope)
 
 export const configureCommand = ({

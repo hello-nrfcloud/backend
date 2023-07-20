@@ -8,6 +8,10 @@ import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import type { Nullable } from '../../util/types.js'
+import {
+	validnRFCloudAccount,
+	convertTonRFAccount,
+} from '../validnRFCloudAccount.js'
 
 const defaultActiveWaitTimeSeconds = 60
 const defaultLocationTimeoutSeconds = 30
@@ -25,7 +29,7 @@ export const configureDeviceCommand = ({
 	devicesIndexName: string
 	stackName: string
 }): CommandDefinition => ({
-	command: 'configure-device <fingerprint>',
+	command: 'configure-device <account> <fingerprint>',
 	options: [
 		{ flags: '--passiveMode', description: `Set device in passive mode` },
 		{ flags: '--disableGNSS', description: `Whether to disable GNSS` },
@@ -39,9 +43,16 @@ export const configureDeviceCommand = ({
 		},
 	],
 	action: async (
+		account,
 		fingerprint,
 		{ activeWaitTime, locationTimeout, disableGNSS },
 	) => {
+		const scope = convertTonRFAccount(account)
+		if (!validnRFCloudAccount(scope)) {
+			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			process.exit(1)
+		}
+
 		const maybeDevice = await getDevice({
 			db,
 			devicesTableName,
@@ -62,6 +73,7 @@ export const configureDeviceCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			scope,
 		})()
 
 		const client = apiClient({

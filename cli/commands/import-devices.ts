@@ -10,6 +10,10 @@ import { registerDevice } from '../../devices/registerDevice.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import {
+	validnRFCloudAccount,
+	convertTonRFAccount,
+} from '../validnRFCloudAccount.js'
 
 export const importDevicesCommand = ({
 	ssm,
@@ -22,8 +26,14 @@ export const importDevicesCommand = ({
 	devicesTableName: string
 	stackName: string
 }): CommandDefinition => ({
-	command: 'import-devices <model> <provisioningList>',
-	action: async (model, provisioningList) => {
+	command: 'import-devices <account> <model> <provisioningList>',
+	action: async (account, model, provisioningList) => {
+		const scope = convertTonRFAccount(account)
+		if (!validnRFCloudAccount(scope)) {
+			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			process.exit(1)
+		}
+
 		const devicesList = (await readFile(provisioningList, 'utf-8'))
 			.trim()
 			.split('\r\n')
@@ -91,6 +101,7 @@ export const importDevicesCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			scope,
 		})()
 
 		const client = apiClient({
@@ -132,6 +143,7 @@ export const importDevicesCommand = ({
 				id: deviceId,
 				model,
 				fingerprint,
+				account,
 			})
 			if ('error' in res) {
 				console.error(

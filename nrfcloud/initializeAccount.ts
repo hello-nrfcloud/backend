@@ -22,16 +22,18 @@ export const initializeAccount =
 		iot,
 		ssm,
 		stackName,
+		scope,
 	}: {
 		iot: IoTClient
 		ssm: SSMClient
 		stackName: string
+		scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
 	}) =>
 	async (reset = false): Promise<void> => {
 		const settingsReader = getSettings({
 			ssm,
 			stackName,
-			scope: Scope.NRFCLOUD_CONFIG,
+			scope,
 		})
 
 		const { apiKey, apiEndpoint } = await settingsReader()
@@ -43,6 +45,7 @@ export const initializeAccount =
 			settingsWithAccountDevice = await getNRFCloudSettings({
 				ssm,
 				stackName: STACK_NAME,
+				scope,
 			})()
 			console.log(chalk.white('Stack settings'))
 			Object.entries(settingsWithAccountDevice).forEach(([k, v]) =>
@@ -94,7 +97,7 @@ export const initializeAccount =
 			}
 			console.log(chalk.green(`Account device created.`))
 
-			await updateSettings({ ssm, stackName: STACK_NAME })({
+			await updateSettings({ ssm, stackName: STACK_NAME, scope })({
 				accountDeviceClientCert: clientCert,
 				accountDevicePrivateKey: privateKey,
 				accountDeviceClientId: `account-${accountInfo.tenantId}`,

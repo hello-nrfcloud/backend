@@ -10,9 +10,10 @@ import { paginate } from './paginate.js'
 export enum Scope {
 	STACK_CONFIG = 'stack/context',
 	STACK_MQTT_BRIDGE = 'stack/mqttBridge',
-	NRFCLOUD_CONFIG = 'thirdParty/nrfcloud',
 	NRFCLOUD_BRIDGE_CERTIFICATE_MQTT = 'nRFCloudBridgeCertificate/MQTT',
 	NRFCLOUD_BRIDGE_CERTIFICATE_CA = 'nRFCloudBridgeCertificate/CA',
+	NODIC_CONFIG = 'thirdParty/nordic',
+	EXEGER_CONFIG = 'thirdParty/exeger',
 }
 
 export const settingsPath = ({

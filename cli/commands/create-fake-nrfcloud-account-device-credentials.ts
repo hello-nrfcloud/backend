@@ -105,7 +105,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				new GetParametersByPathCommand({
 					Path: settingsPath({
 						stackName: STACK_NAME,
-						scope: Scope.NRFCLOUD_CONFIG,
+						scope: Scope.EXEGER_CONFIG,
 					}),
 				}),
 			)
@@ -168,7 +168,11 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			mqttEndpoint: await getIoTEndpoint({ iot })(),
 			mqttTopicPrefix: `prod/${tenantId}/`,
 		}
-		await updateSettings({ ssm, stackName: STACK_NAME })(settings)
+		await updateSettings({
+			ssm,
+			stackName: STACK_NAME,
+			scope: Scope.EXEGER_CONFIG,
+		})(settings)
 
 		console.debug(chalk.white(`nRF Cloud settings:`))
 		Object.entries(settings).forEach(([k, v]) => {

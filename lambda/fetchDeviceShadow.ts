@@ -56,7 +56,7 @@ const ssm = new SSMClient({})
 const { healthCheckClientId } = await getSettings({
 	ssm,
 	stackName,
-	scope: Scope.NRFCLOUD_CONFIG,
+	scope: Scope.EXEGER_CONFIG,
 })()
 
 // Make sure to call it in the handler, so the AWS Parameters and Secrets Lambda Extension is ready.

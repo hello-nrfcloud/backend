@@ -151,7 +151,7 @@ export class Integration extends Construct {
 			StringParameter.fromStringParameterName(
 				this,
 				`${property}Parameter`,
-				parameterName(Stack.of(this).stackName, property),
+				parameterName(Stack.of(this).stackName, Scope.EXEGER_CONFIG, property),
 			)
 
 		const nrfCloudSettingSecret = (property: keyof nRFCloudSettings) =>

@@ -15,6 +15,7 @@ import {
 import { defer } from '../util/defer.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import { logger } from './util/logger.js'
+import { Scope } from '../util/settings.js'
 
 const { DevicesTableName, stackName, websocketUrl } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -25,6 +26,8 @@ const { DevicesTableName, stackName, websocketUrl } = fromEnv({
 const log = logger('healthCheck')
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
+// TODO:Loop through all nRF Accounts
+const scope = Scope.EXEGER_CONFIG
 
 const { track, metrics } = metricsForComponent('healthCheck')
 
@@ -56,9 +59,9 @@ const {
 	healthCheckClientId: deviceId,
 	healthCheckModel: model,
 	healthCheckFingerPrint: fingerprint,
-} = await getHealthCheckSettings({ ssm, stackName })()
+} = await getHealthCheckSettings({ ssm, stackName, scope })()
 
-const nrfCloudSettings = await getNrfCloudSettings({ ssm, stackName })()
+const nrfCloudSettings = await getNrfCloudSettings({ ssm, stackName, scope })()
 
 const publishDeviceMessage =
 	({
@@ -151,10 +154,11 @@ const checkMessageFromWebsocket = async ({
 	return promise
 }
 
+const account = scope.toString().split('/')[1] ?? ''
 await registerDevice({
 	db,
 	devicesTableName: DevicesTableName,
-})({ id: deviceId, model, fingerprint })
+})({ id: deviceId, model, fingerprint, account })
 
 const h = async (): Promise<void> => {
 	let ts: number
