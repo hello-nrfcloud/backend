@@ -64,15 +64,15 @@ jobs:
       # During e2e test the MQTT bridge will connect to the AWS IoT broker
       - name: Fake nRF Cloud account device
         run: |
-          ./cli.sh fake-nrfcloud-account-device
-          ./cli.sh create-fake-nrfcloud-health-check-device
+          ./cli.sh fake-nrfcloud-account-device exeger
+          ./cli.sh create-fake-nrfcloud-health-check-device exeger
 
       - name: Deploy test resources stack
         run: |
           npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never
           MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
-          ./cli.sh configure thirdParty/nrfcloud/apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
-          ./cli.sh configure thirdParty/nrfcloud/apiKey apiKey
+          ./cli.sh configure thirdParty/exeger/apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          ./cli.sh configure thirdParty/exeger/apiKey apiKey
 
       - name: Deploy solution stack
         env:

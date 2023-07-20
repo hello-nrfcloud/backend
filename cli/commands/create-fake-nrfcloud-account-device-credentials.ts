@@ -24,8 +24,12 @@ import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
-import { Scope, settingsPath } from '../../util/settings.js'
+import { settingsPath } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import {
+	convertTonRFAccount,
+	validnRFCloudAccount,
+} from '../validnRFCloudAccount.js'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot,
@@ -34,14 +38,20 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot: IoTClient
 	ssm: SSMClient
 }): CommandDefinition => ({
-	command: 'fake-nrfcloud-account-device',
+	command: 'fake-nrfcloud-account-device <account>',
 	options: [
 		{
 			flags: '-X, --remove',
 			description: `remove the fake device`,
 		},
 	],
-	action: async ({ remove }) => {
+	action: async (account, { remove }) => {
+		const scope = convertTonRFAccount(account)
+		if (!validnRFCloudAccount(scope)) {
+			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			process.exit(1)
+		}
+
 		const fakeTenantParameter = `/${STACK_NAME}/fakeTenant`
 		if (remove === true) {
 			// check if has fake device
@@ -105,7 +115,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				new GetParametersByPathCommand({
 					Path: settingsPath({
 						stackName: STACK_NAME,
-						scope: Scope.EXEGER_CONFIG,
+						scope,
 					}),
 				}),
 			)
@@ -171,7 +181,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 		await updateSettings({
 			ssm,
 			stackName: STACK_NAME,
-			scope: Scope.EXEGER_CONFIG,
+			scope,
 		})(settings)
 
 		console.debug(chalk.white(`nRF Cloud settings:`))

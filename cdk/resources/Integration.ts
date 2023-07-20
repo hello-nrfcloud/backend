@@ -158,7 +158,6 @@ export class Integration extends Construct {
 			ECS.Secret.fromSsmParameter(nrfCloudSetting(property))
 
 		const environment: Record<string, string> = {
-			MQ_BRIDGE_COUNT: `2`,
 			ENV__FILE__NRFCLOUD_CA_CRT:
 				'-----BEGIN CERTIFICATE-----\n' +
 				'MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF\n' +
