@@ -109,3 +109,19 @@ of a device, and `count` represents the number of iterations.
 - `5:30, 30:20, 60` will fetch the shadow of a device every 5 seconds for 30
   times, then switch to fetching it every 30 seconds for another 20 times.
   Finally, fetching the shadow every 60 seconds indefinitely
+
+## Continuous Integration
+
+To run continuous integration tests, deploy the CI application **in a seperate
+account**:
+
+```bash
+npx cdk --app 'npx tsx --no-warnings cdk/ci.ts' deploy
+```
+
+and provide the Role ARN to GitHub Actions:
+
+```bash
+CI_ROLE=`aws cloudformation describe-stacks --stack-name ${STACK_NAME:-hello-nrfcloud-backend}-ci | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ciRoleArn") | .OutputValue'`
+gh secret set AWS_ROLE --env ci --body $CI_ROLE
+```
