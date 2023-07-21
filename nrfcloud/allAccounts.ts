@@ -47,7 +47,7 @@ const healthCheckSettings = async ({
 	scope: (typeof allAccountScopes)[number]
 }): Promise<HealthCheckSettings | Record<string, never>> => {
 	try {
-		return getHealthCheckSettings({ ssm, stackName, scope })()
+		return await getHealthCheckSettings({ ssm, stackName, scope })()
 	} catch {
 		return {}
 	}
@@ -63,7 +63,7 @@ const nRFCloudSettings = async ({
 	scope: (typeof allAccountScopes)[number]
 }): Promise<Settings | Record<string, never>> => {
 	try {
-		return getSettings({ ssm, stackName, scope })()
+		return await getSettings({ ssm, stackName, scope })()
 	} catch {
 		return {}
 	}
