@@ -150,6 +150,7 @@ const h = async (): Promise<void> => {
 							).map(async (devices) =>
 								limit(async () => {
 									const start = Date.now()
+									log.debug(`Prepare fetching shadow under ${account} account`)
 									const res = await deviceShadow(
 										devices.map((device) => device.deviceId),
 									)
