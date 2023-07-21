@@ -1,7 +1,10 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { Scope, getSettingsOptional } from '../util/settings.js'
 
-export const allAccountScopes = [Scope.EXEGER_CONFIG, Scope.NODIC_CONFIG]
+export const allAccountScopes = [
+	Scope.EXEGER_CONFIG,
+	Scope.NODIC_CONFIG,
+] as const
 
 export const getAllAccountsSettings =
 	<T extends Record<string, string>>({

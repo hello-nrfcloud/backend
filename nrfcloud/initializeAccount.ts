@@ -3,7 +3,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
-import { Scope, getSettings } from '../util/settings.js'
+import { getSettings } from '../util/settings.js'
 import { createAccountDevice } from './createAccountDevice.js'
 import { deleteAccountDevice } from './deleteNrfcloudCredentials.js'
 import { getAccountInfo } from './getAccountInfo.js'
@@ -13,6 +13,7 @@ import {
 	updateSettings,
 	type Settings,
 } from './settings.js'
+import type { allAccountScopes } from './allAccounts.js'
 
 /**
  * Initializes the nRF Cloud Account
@@ -27,7 +28,7 @@ export const initializeAccount =
 		iot: IoTClient
 		ssm: SSMClient
 		stackName: string
-		scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
+		scope: (typeof allAccountScopes)[number]
 	}) =>
 	async (reset = false): Promise<void> => {
 		const settingsReader = getSettings({

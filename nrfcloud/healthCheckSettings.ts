@@ -1,9 +1,6 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import {
-	Scope,
-	getSettings as getSSMSettings,
-	putSettings,
-} from '../util/settings.js'
+import { getSettings as getSSMSettings, putSettings } from '../util/settings.js'
+import type { allAccountScopes } from './allAccounts.js'
 
 export type Settings = {
 	healthCheckClientCert: string
@@ -20,7 +17,7 @@ export const updateSettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
+	scope: (typeof allAccountScopes)[number]
 }): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
@@ -46,7 +43,7 @@ export const getSettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
+	scope: (typeof allAccountScopes)[number]
 }): (() => Promise<Settings>) => {
 	const settingsReader = getSSMSettings({
 		ssm,

@@ -9,7 +9,7 @@ export const convertTonRFAccount = (v: string): Scope => {
 
 export const validnRFCloudAccount = (
 	v: Scope,
-): v is Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG => {
+): v is (typeof allAccountScopes)[number] => {
 	return allAccountScopes.some((s) => s === v)
 }
 

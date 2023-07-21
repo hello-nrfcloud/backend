@@ -1,10 +1,10 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import {
-	Scope,
 	getSettings as getSSMSettings,
 	putSettings,
 	settingsPath,
 } from '../util/settings.js'
+import type { allAccountScopes } from './allAccounts.js'
 
 export const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
 
@@ -25,7 +25,7 @@ export const getSettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
+	scope: (typeof allAccountScopes)[number]
 }): (() => Promise<Settings>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
@@ -76,7 +76,7 @@ export const getAPISettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
+	scope: (typeof allAccountScopes)[number]
 }): (() => Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
@@ -104,7 +104,7 @@ export const updateSettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG
+	scope: (typeof allAccountScopes)[number]
 }): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
@@ -125,7 +125,7 @@ export const updateSettings = ({
 
 export const parameterName = (
 	stackName: string,
-	scope: Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG,
+	scope: (typeof allAccountScopes)[number],
 	parameterName: keyof Settings,
 ): string =>
 	settingsPath({
