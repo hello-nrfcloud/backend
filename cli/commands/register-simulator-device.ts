@@ -13,6 +13,7 @@ import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import {
+	availableAccounts,
 	convertTonRFAccount,
 	validnRFCloudAccount,
 } from '../validnRFCloudAccount.js'
@@ -34,7 +35,11 @@ export const registerSimulatorDeviceCommand = ({
 	action: async (account) => {
 		const scope = convertTonRFAccount(account)
 		if (!validnRFCloudAccount(scope)) {
-			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			console.error(
+				chalk.red('⚠️'),
+				'',
+				chalk.red(`account should be ${availableAccounts.join(', ')}`),
+			)
 			process.exit(1)
 		}
 

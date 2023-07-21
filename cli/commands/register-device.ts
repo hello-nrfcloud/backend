@@ -3,6 +3,7 @@ import chalk from 'chalk'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import {
+	availableAccounts,
 	convertTonRFAccount,
 	validnRFCloudAccount,
 } from '../validnRFCloudAccount.js'
@@ -18,7 +19,11 @@ export const registerDeviceCommand = ({
 	action: async (account, fingerprint, deviceId, model) => {
 		const scope = convertTonRFAccount(account)
 		if (!validnRFCloudAccount(scope)) {
-			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			console.error(
+				chalk.red('⚠️'),
+				'',
+				chalk.red(`account should be ${availableAccounts.join(', ')}`),
+			)
 			process.exit(1)
 		}
 

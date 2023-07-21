@@ -27,6 +27,7 @@ import { isString } from '../../util/isString.js'
 import { settingsPath } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import {
+	availableAccounts,
 	convertTonRFAccount,
 	validnRFCloudAccount,
 } from '../validnRFCloudAccount.js'
@@ -48,7 +49,11 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 	action: async (account, { remove }) => {
 		const scope = convertTonRFAccount(account)
 		if (!validnRFCloudAccount(scope)) {
-			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			console.error(
+				chalk.red('⚠️'),
+				'',
+				chalk.red(`account should be ${availableAccounts.join(', ')}`),
+			)
 			process.exit(1)
 		}
 

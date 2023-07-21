@@ -16,6 +16,7 @@ import type { CommandDefinition } from './CommandDefinition.js'
 import {
 	validnRFCloudAccount,
 	convertTonRFAccount,
+	availableAccounts,
 } from '../validnRFCloudAccount.js'
 
 export const createFakeNrfCloudHealthCheckDevice = ({
@@ -29,7 +30,11 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 	action: async (account) => {
 		const scope = convertTonRFAccount(account)
 		if (!validnRFCloudAccount(scope)) {
-			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			console.error(
+				chalk.red('⚠️'),
+				'',
+				chalk.red(`account should be ${availableAccounts.join(', ')}`),
+			)
 			process.exit(1)
 		}
 

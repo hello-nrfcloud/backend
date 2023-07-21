@@ -1,4 +1,5 @@
 import { Scope } from '../util/settings.js'
+import { allAccountScopes } from '../nrfcloud/allAccounts.js'
 
 const scopePrefix = 'thirdParty/'
 
@@ -9,6 +10,9 @@ export const convertTonRFAccount = (v: string): Scope => {
 export const validnRFCloudAccount = (
 	v: Scope,
 ): v is Scope.EXEGER_CONFIG | Scope.NODIC_CONFIG => {
-	const validScopes = [Scope.EXEGER_CONFIG, Scope.NODIC_CONFIG]
-	return validScopes.some((s) => s === v)
+	return allAccountScopes.some((s) => s === v)
 }
+
+export const availableAccounts = allAccountScopes.map((scope) =>
+	scope.toString().replace(/[^/]*\//, ''),
+)

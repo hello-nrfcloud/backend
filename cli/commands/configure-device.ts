@@ -11,6 +11,7 @@ import type { Nullable } from '../../util/types.js'
 import {
 	validnRFCloudAccount,
 	convertTonRFAccount,
+	availableAccounts,
 } from '../validnRFCloudAccount.js'
 
 const defaultActiveWaitTimeSeconds = 60
@@ -49,7 +50,11 @@ export const configureDeviceCommand = ({
 	) => {
 		const scope = convertTonRFAccount(account)
 		if (!validnRFCloudAccount(scope)) {
-			console.error(chalk.red('⚠️'), '', chalk.red(`account is invalid`))
+			console.error(
+				chalk.red('⚠️'),
+				'',
+				chalk.red(`account should be ${availableAccounts.join(', ')}`),
+			)
 			process.exit(1)
 		}
 
