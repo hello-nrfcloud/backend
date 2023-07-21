@@ -65,6 +65,8 @@ Soon I should receive a message on the websocket that is equal to
 {
   "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
   "@id": "420eac59-5ce8-4751-b7d1-217811382095",
+  "type": "lastHour",
+  "message": "gain",
   "attributes": {
     "avgMA": [
       {
@@ -140,6 +142,8 @@ Soon I should receive a message on the websocket that is equal to
 {
   "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
   "@id": "b42b7880-0217-484f-8e72-380950ffae46",
+  "type": "lastHour",
+  "message": "battery",
   "attributes": {
     "minBat": [
       {
@@ -267,6 +271,8 @@ Soon I should receive a message on the websocket that matches
 {
   "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
   "@id": "ce324e8e-2aac-4525-b763-5c036148c167",
+  "type": "lastHour",
+  "message": "location",
   "attributes": [
     {
       "lat": 63.42061758,
