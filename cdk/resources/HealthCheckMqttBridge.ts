@@ -13,6 +13,7 @@ import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from './LambdaSource.js'
+import { allAccountScopes } from '../../nrfcloud/allAccounts.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -41,6 +42,17 @@ export class HealthCheckMqttBridge extends Construct {
 		})
 
 		// Lambda functions
+		const policies = allAccountScopes.map(
+			(scope) =>
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/${scope.toString()}`,
+					],
+				}),
+		)
 		const healthCheck = new Lambda.Function(this, 'healthCheck', {
 			handler: lambdaSources.healthCheck.handler,
 			architecture: Lambda.Architecture.ARM_64,
@@ -58,20 +70,10 @@ export class HealthCheckMqttBridge extends Construct {
 				WEBSOCKET_URL: websocketAPI.websocketURI,
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
-			initialPolicy: [],
+			initialPolicy: policies,
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		const ssmReadPolicy = new IAM.PolicyStatement({
-			effect: IAM.Effect.ALLOW,
-			actions: ['ssm:GetParametersByPath'],
-			resources: [
-				`arn:aws:ssm:${Stack.of(this).region}:${
-					Stack.of(this).account
-				}:parameter/${Stack.of(this).stackName}/thirdParty/exeger`,
-			],
-		})
-		healthCheck.addToRolePolicy(ssmReadPolicy)
 		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheck))
 		deviceStorage.devicesTable.grantWriteData(healthCheck)
 	}

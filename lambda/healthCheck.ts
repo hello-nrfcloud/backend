@@ -7,15 +7,11 @@ import mqtt from 'mqtt'
 import assert from 'node:assert/strict'
 import { WebSocket, type RawData } from 'ws'
 import { registerDevice } from '../devices/registerDevice.js'
-import { getSettings as getHealthCheckSettings } from '../nrfcloud/healthCheckSettings.js'
-import {
-	getSettings as getNrfCloudSettings,
-	type Settings,
-} from '../nrfcloud/settings.js'
 import { defer } from '../util/defer.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import { logger } from './util/logger.js'
-import { Scope } from '../util/settings.js'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
+import type { Settings } from '../nrfcloud/settings.js'
 
 const { DevicesTableName, stackName, websocketUrl } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -26,8 +22,6 @@ const { DevicesTableName, stackName, websocketUrl } = fromEnv({
 const log = logger('healthCheck')
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
-// TODO:Loop through all nRF Accounts
-const scope = Scope.EXEGER_CONFIG
 
 const { track, metrics } = metricsForComponent('healthCheck')
 
@@ -53,15 +47,24 @@ const amazonRootCA1 =
 	'rqXRfboQnoZsG4q5WTP468SQvvG5\n' +
 	'-----END CERTIFICATE-----\n'
 
-const {
-	healthCheckClientCert: deviceCert,
-	healthCheckPrivateKey: devicePrivateKey,
-	healthCheckClientId: deviceId,
-	healthCheckModel: model,
-	healthCheckFingerPrint: fingerprint,
-} = await getHealthCheckSettings({ ssm, stackName, scope })()
+const allAccountsSettings = await getAllAccountsSettings({
+	ssm,
+	stackName,
+})()
 
-const nrfCloudSettings = await getNrfCloudSettings({ ssm, stackName, scope })()
+Object.entries(allAccountsSettings).map(async ([account, settings]) => {
+	if ('healthCheckSettings' in settings) {
+		await registerDevice({
+			db,
+			devicesTableName: DevicesTableName,
+		})({
+			id: settings.healthCheckSettings.healthCheckClientId,
+			model: settings.healthCheckSettings.healthCheckModel,
+			fingerprint: settings.healthCheckSettings.healthCheckFingerPrint,
+			account,
+		})
+	}
+})
 
 const publishDeviceMessage =
 	({
@@ -154,68 +157,80 @@ const checkMessageFromWebsocket = async ({
 	return promise
 }
 
-const account = scope.toString().split('/')[1] ?? ''
-await registerDevice({
-	db,
-	devicesTableName: DevicesTableName,
-})({ id: deviceId, model, fingerprint, account })
-
 const h = async (): Promise<void> => {
 	let ts: number
 	let gain: number
 	track('checkMessageFromWebsocket', MetricUnits.Count, 1)
-	try {
-		await checkMessageFromWebsocket({
-			endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
-			timeoutMS: 10000,
-			onConnect: async () => {
-				ts = Date.now()
-				gain = 3 + Number(Math.random().toFixed(5))
-				await publishDeviceMessage({
-					nrfCloudSettings,
-					deviceId,
-					deviceCert,
-					devicePrivateKey,
-				})({
-					appId: 'SOLAR',
-					messageType: 'DATA',
-					ts,
-					data: `${gain}`,
-				})
-			},
-			validate: async (message) => {
-				try {
-					const messageObj = JSON.parse(message)
-					log.debug(`ws incoming message`, { messageObj })
-					const expectedMessage = {
-						'@context':
-							'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain',
+	Object.entries(allAccountsSettings).map(async ([account, settings]) => {
+		try {
+			if (
+				!('healthCheckSettings' in settings) ||
+				!('nrfCloudSettings' in settings)
+			)
+				return
+
+			const {
+				nrfCloudSettings,
+				healthCheckSettings: {
+					healthCheckFingerPrint: fingerprint,
+					healthCheckClientId: deviceId,
+					healthCheckClientCert: deviceCert,
+					healthCheckPrivateKey: devicePrivateKey,
+				},
+			} = settings
+
+			await checkMessageFromWebsocket({
+				endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
+				timeoutMS: 10000,
+				onConnect: async () => {
+					ts = Date.now()
+					gain = 3 + Number(Math.random().toFixed(5))
+					await publishDeviceMessage({
+						nrfCloudSettings,
+						deviceId,
+						deviceCert,
+						devicePrivateKey,
+					})({
+						appId: 'SOLAR',
+						messageType: 'DATA',
 						ts,
-						mA: gain,
+						data: `${gain}`,
+					})
+				},
+				validate: async (message) => {
+					try {
+						const messageObj = JSON.parse(message)
+						log.debug(`ws incoming message`, { messageObj })
+						const expectedMessage = {
+							'@context':
+								'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain',
+							ts,
+							mA: gain,
+						}
+
+						if (messageObj['@context'] !== expectedMessage['@context'])
+							return ValidateResponse.skip
+
+						track(
+							`receivingMessageDuration:${account}`,
+							MetricUnits.Seconds,
+							(Date.now() - ts) / 1000,
+						)
+						assert.deepEqual(messageObj, expectedMessage)
+						return ValidateResponse.valid
+					} catch (error) {
+						log.error(`validate error`, { error, account })
+
+						return ValidateResponse.invalid
 					}
-
-					if (messageObj['@context'] !== expectedMessage['@context'])
-						return ValidateResponse.skip
-
-					track(
-						`receivingMessageDuration`,
-						MetricUnits.Seconds,
-						(Date.now() - ts) / 1000,
-					)
-					assert.deepEqual(messageObj, expectedMessage)
-					return ValidateResponse.valid
-				} catch (error) {
-					log.error(`validate error`, { error })
-
-					return ValidateResponse.invalid
-				}
-			},
-		})
-		track('success', MetricUnits.Count, 1)
-	} catch (error) {
-		log.error(`health check error`, { error })
-		track('fail', MetricUnits.Count, 1)
-	}
+				},
+			})
+			track(`success:${account}`, MetricUnits.Count, 1)
+		} catch (error) {
+			log.error(`health check error`, { error, account })
+			track('fail', MetricUnits.Count, 1)
+		}
+	})
 }
 
 export const handler = middy(h).use(logMetrics(metrics))

@@ -64,9 +64,9 @@ const getAllNRFCloudAccountSettings = once(
 )
 const getAllHealthCheckClientIds = once(async () => {
 	const settings = await getAllNRFCloudAccountSettings()
-	return Object.values(settings).map(
-		(settings) => settings.healthCheckClientId ?? '',
-	)
+	return Object.values(settings)
+		.map((settings) => settings?.healthCheckSettings?.healthCheckClientId)
+		.filter((x) => x !== undefined)
 })
 
 const h = async (): Promise<void> => {
@@ -77,7 +77,7 @@ const h = async (): Promise<void> => {
 			return
 		}
 
-		const nRFCloudSettings = await getAllNRFCloudAccountSettings()
+		const allNRFCloudSettings = await getAllNRFCloudAccountSettings()
 		const healthCheckClientIds = await getAllHealthCheckClientIds()
 
 		const executionTime = new Date()
@@ -130,7 +130,8 @@ const h = async (): Promise<void> => {
 				Object.entries(
 					groupBy(devicesToCheckShadowUpdate, (device) => device.account),
 				).map(async ([account, devices]) => {
-					const { apiKey, apiEndpoint } = nRFCloudSettings[account] ?? {}
+					const { apiKey, apiEndpoint } =
+						allNRFCloudSettings[account]?.nrfCloudSettings ?? {}
 					if (apiKey === undefined) return []
 
 					const deviceShadow = deviceShadowFetcher({
