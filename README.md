@@ -128,3 +128,19 @@ and provide the Role ARN to GitHub Actions:
 CI_ROLE=`aws cloudformation describe-stacks --stack-name ${STACK_NAME:-hello-nrfcloud-backend}-ci | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ciRoleArn") | .OutputValue'`
 gh secret set AWS_ROLE --env ci --body $CI_ROLE
 ```
+
+## Migration from single nRF Cloud account to multiple nRF Cloud accounts
+
+To migrate the existing data to support multiple nRF Cloud accounts, you can run
+the migration command as
+
+```bash
+./cli.sh migrate-nrfcloud <fromAccount> <toAccount>
+```
+
+This script will migrate the followings
+
+1. All parameters from `<STACK_NAME>/thirdParty/nrfcloud` to new account as
+   `<STACK_NAME>/thirdParty/<toAccount>`
+1. All devices in `DevicesTable` are migrated by adding a new `account` field
+   with `toAccount` value
