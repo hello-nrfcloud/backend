@@ -153,10 +153,14 @@ export const historicalDataRepository = ({
 			}
 		}
 
-		return {
+		const response: HistoricalResponse = {
 			'@context': Context.historicalDataResponse.toString(),
 			'@id': request['@id'],
-			attributes,
-		} as HistoricalResponse
+			attributes: attributes as HistoricalResponse['attributes'],
+			type: request.type,
+			message: request.message,
+		}
+
+		return response
 	},
 })
