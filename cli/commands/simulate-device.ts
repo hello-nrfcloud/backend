@@ -17,7 +17,8 @@ import {
 	ensureCertificateDir,
 } from '../certificates.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { convertTonRFAccount } from '../validnRFCloudAccount.js'
+import { convertTonRFAccount } from '../../nrfcloud/allAccounts.js'
+
 import type { Scope } from '../../util/settings.js'
 
 export const simulateDeviceCommand = ({

@@ -14,11 +14,11 @@ import { run } from '../../util/run.js'
 import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	validnRFCloudAccount,
 	convertTonRFAccount,
-	availableAccounts,
-} from '../validnRFCloudAccount.js'
+	validnRFCloudAccount,
+} from '../../nrfcloud/allAccounts.js'
 
 export const createHealthCheckDevice = ({
 	ssm,

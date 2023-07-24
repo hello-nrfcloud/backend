@@ -26,11 +26,11 @@ import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
 import { settingsPath } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	availableAccounts,
 	convertTonRFAccount,
 	validnRFCloudAccount,
-} from '../validnRFCloudAccount.js'
+} from '../../nrfcloud/allAccounts.js'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot,

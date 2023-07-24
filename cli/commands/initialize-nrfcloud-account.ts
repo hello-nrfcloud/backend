@@ -2,11 +2,12 @@ import { IoTClient } from '@aws-sdk/client-iot'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { initializeAccount } from '../../nrfcloud/initializeAccount.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	validnRFCloudAccount,
 	convertTonRFAccount,
-	availableAccounts,
-} from '../validnRFCloudAccount.js'
+	validnRFCloudAccount,
+} from '../../nrfcloud/allAccounts.js'
+
 import chalk from 'chalk'
 
 export const initializeNRFCloudAccountCommand = ({

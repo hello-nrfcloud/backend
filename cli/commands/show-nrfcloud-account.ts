@@ -4,11 +4,11 @@ import { table } from 'table'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	availableAccounts,
 	convertTonRFAccount,
 	validnRFCloudAccount,
-} from '../validnRFCloudAccount.js'
+} from '../../nrfcloud/allAccounts.js'
 
 export const showNRFCloudAccount = ({
 	ssm,

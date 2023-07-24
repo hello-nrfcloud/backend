@@ -12,11 +12,11 @@ import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	availableAccounts,
 	convertTonRFAccount,
 	validnRFCloudAccount,
-} from '../validnRFCloudAccount.js'
+} from '../../nrfcloud/allAccounts.js'
 
 export const registerSimulatorDeviceCommand = ({
 	ssm,

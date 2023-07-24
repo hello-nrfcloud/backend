@@ -13,11 +13,11 @@ import {
 } from '../../nrfcloud/healthCheckSettings.js'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	validnRFCloudAccount,
 	convertTonRFAccount,
-	availableAccounts,
-} from '../validnRFCloudAccount.js'
+	validnRFCloudAccount,
+} from '../../nrfcloud/allAccounts.js'
 
 export const createFakeNrfCloudHealthCheckDevice = ({
 	iot,

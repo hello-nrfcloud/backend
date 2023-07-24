@@ -10,11 +10,11 @@ import { registerDevice } from '../../devices/registerDevice.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	validnRFCloudAccount,
 	convertTonRFAccount,
-	availableAccounts,
-} from '../validnRFCloudAccount.js'
+	validnRFCloudAccount,
+} from '../../nrfcloud/allAccounts.js'
 
 export const importDevicesCommand = ({
 	ssm,

@@ -6,6 +6,8 @@ import {
 	getSettings as getHealthCheckSettings,
 } from './healthCheckSettings.js'
 
+const scopePrefix = 'thirdParty/'
+
 export const allAccountScopes = [
 	Scope.EXEGER_CONFIG,
 	Scope.NODIC_CONFIG,
@@ -14,6 +16,16 @@ export const allAccountScopes = [
 export type AllNRFCloudSettings = {
 	nrfCloudSettings: Settings
 	healthCheckSettings: HealthCheckSettings
+}
+
+export const convertTonRFAccount = (v: string): Scope => {
+	return `${scopePrefix}${v}` as Scope
+}
+
+export const validnRFCloudAccount = (
+	v: Scope,
+): v is (typeof allAccountScopes)[number] => {
+	return allAccountScopes.some((s) => s === v)
 }
 
 export const getAllAccountsSettings =

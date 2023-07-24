@@ -8,11 +8,11 @@ import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import type { Nullable } from '../../util/types.js'
+import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	validnRFCloudAccount,
 	convertTonRFAccount,
-	availableAccounts,
-} from '../validnRFCloudAccount.js'
+	validnRFCloudAccount,
+} from '../../nrfcloud/allAccounts.js'
 
 const defaultActiveWaitTimeSeconds = 60
 const defaultLocationTimeoutSeconds = 30

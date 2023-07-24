@@ -6,7 +6,8 @@ import { getDevice } from '../../devices/getDevice.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { convertTonRFAccount } from '../validnRFCloudAccount.js'
+import { convertTonRFAccount } from '../../nrfcloud/allAccounts.js'
+
 import { Scope } from '../../util/settings.js'
 
 export const showDeviceCommand = ({
