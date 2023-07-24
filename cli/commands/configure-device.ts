@@ -111,8 +111,16 @@ export const configureDeviceCommand = ({
 								: desiredValue !== reportedValue)
 						return [
 							chalk.yellow(k),
-							(diff ? chalk.red : chalk.green)(reportedValue ?? '-'),
-							chalk.cyan(desiredValue ?? '-'),
+							(diff ? chalk.red : chalk.green)(
+								k === 'nod'
+									? ((reportedValue as string[]) ?? []).join(', ')
+									: reportedValue ?? '-',
+							),
+							chalk.cyan(
+								k === 'nod'
+									? ((desiredValue as string[]) ?? []).join(', ')
+									: desiredValue ?? '-',
+							),
 						]
 					}),
 				],
