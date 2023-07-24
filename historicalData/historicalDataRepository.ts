@@ -15,15 +15,20 @@ import { groupBy } from 'lodash-es'
 import { getQueryStatement } from './queryGenerator.js'
 
 export const HistoricalChartTypes = {
+	lastHour: {
+		bin: '1minute',
+		duration: '1hour',
+		expires: '1minute',
+	},
 	lastDay: {
 		bin: '5minutes',
 		duration: '24hours',
 		expires: '5minutes',
 	},
-	lastHour: {
-		bin: '1minute',
-		duration: '1hour',
-		expires: '1minute',
+	lastWeek: {
+		bin: '1hour',
+		duration: '1week',
+		expires: '5minutes',
 	},
 	lastMonth: {
 		bin: '1hour',

@@ -32,6 +32,9 @@ describe('queryGenerator', () => {
 			request.type = 'lastDay'
 			expect(getBinnedTime(request)).toBe('bin(time, 5minute)')
 
+			request.type = 'lastWeek'
+			expect(getBinnedTime(request)).toBe('bin(time, 1hour)')
+
 			request.type = 'lastMonth'
 			expect(getBinnedTime(request)).toBe('bin(time, 1hour)')
 		})
@@ -55,6 +58,11 @@ describe('queryGenerator', () => {
 			request.type = 'lastDay'
 			expect(getStartPeriod(request, 1688104200000)).toEqual(
 				'from_milliseconds(1688104200000) - 24hour',
+			)
+
+			request.type = 'lastWeek'
+			expect(getStartPeriod(request, 1688104200000)).toEqual(
+				'from_milliseconds(1688104200000) - 1week',
 			)
 
 			request.type = 'lastMonth'
