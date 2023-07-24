@@ -97,7 +97,7 @@ export const getAggregates = (request: HistoricalRequest): string[] => {
 		const attribute =
 			request.attributes[prop as keyof typeof request.attributes]
 		if ('aggregate' in attribute) {
-			aggs.push(`${attribute.aggregate}(measure_value::double) as ${prop}`)
+			aggs.push(`${attribute.aggregate}(measure_value::double) as "${prop}"`)
 		}
 	}
 

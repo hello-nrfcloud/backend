@@ -106,11 +106,11 @@ describe('queryGenerator', () => {
 
 			const result = getAggregates(request)
 			expect(result).toEqual([
-				'avg(measure_value::double) as avgMA',
-				'min(measure_value::double) as minMA',
-				'max(measure_value::double) as maxMA',
-				'sum(measure_value::double) as sumMA',
-				'count(measure_value::double) as countMA',
+				'avg(measure_value::double) as "avgMA"',
+				'min(measure_value::double) as "minMA"',
+				'max(measure_value::double) as "maxMA"',
+				'sum(measure_value::double) as "sumMA"',
+				'count(measure_value::double) as "countMA"',
 			])
 		})
 
@@ -126,11 +126,11 @@ describe('queryGenerator', () => {
 
 			const result = getAggregates(request)
 			expect(result).toEqual([
-				'avg(measure_value::double) as avgBat',
-				'min(measure_value::double) as minBat',
-				'max(measure_value::double) as maxBat',
-				'sum(measure_value::double) as sumBat',
-				'count(measure_value::double) as countBat',
+				'avg(measure_value::double) as "avgBat"',
+				'min(measure_value::double) as "minBat"',
+				'max(measure_value::double) as "maxBat"',
+				'sum(measure_value::double) as "sumBat"',
+				'count(measure_value::double) as "countBat"',
 			])
 		})
 
@@ -205,7 +205,7 @@ describe('queryGenerator', () => {
 			})
 
 			const expectedQuery = `
-				SELECT deviceId, bin(time, 5minute) as time, avg(measure_value::double) as avgMA
+				SELECT deviceId, bin(time, 5minute) as time, avg(measure_value::double) as "avgMA"
 				FROM "database1"."table1"
 				WHERE deviceId = 'device123'
 				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/gain'
@@ -243,7 +243,7 @@ describe('queryGenerator', () => {
 			})
 
 			const expectedQuery = `
-				SELECT deviceId, bin(time, 1minute) as time, min(measure_value::double) as minV, max(measure_value::double) as maxV
+				SELECT deviceId, bin(time, 1minute) as time, min(measure_value::double) as "minV", max(measure_value::double) as "maxV"
 				FROM "database1"."table1"
 				WHERE deviceId = 'device123'
 				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/battery'
