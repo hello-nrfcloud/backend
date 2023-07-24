@@ -7,6 +7,7 @@ import { getDevice } from '../../devices/getDevice.js'
 import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import type { Nullable } from '../../util/types.js'
 
 const defaultActiveWaitTimeSeconds = 60
 const defaultLocationTimeoutSeconds = 30
@@ -122,7 +123,7 @@ export const configureDeviceCommand = ({
 			),
 		)
 
-		const newConfig: DeviceConfig = {
+		const newConfig: Nullable<DeviceConfig> = {
 			activeMode: true,
 			activeWaitTime:
 				activeWaitTime !== undefined
@@ -132,7 +133,7 @@ export const configureDeviceCommand = ({
 				locationTimeout !== undefined
 					? parseInt(locationTimeout, 10)
 					: defaultLocationTimeoutSeconds,
-			nod: disableGNSS === true ? ['gnss'] : [],
+			nod: disableGNSS === true ? ['gnss'] : null,
 		}
 		console.log(
 			table(

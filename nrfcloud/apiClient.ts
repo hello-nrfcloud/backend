@@ -1,4 +1,5 @@
 import { slashless } from '../util/slashless.js'
+import type { Nullable } from '../util/types.js'
 
 export type DeviceConfig = Partial<{
 	activeMode: boolean // e.g. false
@@ -54,6 +55,7 @@ type FwType =
 	| 'SOFTDEVICE'
 	| 'BOOTLOADER'
 	| 'MDM_FULL'
+
 export const apiClient = ({
 	endpoint,
 	apiKey,
@@ -66,7 +68,7 @@ export const apiClient = ({
 	updateConfig: (
 		id: string,
 		version: number,
-		config: DeviceConfig,
+		config: Nullable<DeviceConfig>,
 	) => Promise<{ error: Error } | { success: boolean }>
 	registerDevices: (
 		devices: {
