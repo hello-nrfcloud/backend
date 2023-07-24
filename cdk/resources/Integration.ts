@@ -21,6 +21,11 @@ import {
 	type Settings as nRFCloudSettings,
 } from '../../nrfcloud/settings.js'
 import { Scope, settingsPath } from '../../util/settings.js'
+import {
+	allAccountScopes,
+	convertTonRFAccount,
+	validnRFCloudAccount,
+} from '../../nrfcloud/allAccounts.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -34,11 +39,13 @@ export class Integration extends Construct {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
+			activeNRFAccounts,
 		}: {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
 			bridgeImageSettings: BridgeImageSettings
+			activeNRFAccounts: string[]
 		},
 	) {
 		super(parent, 'Integration')
@@ -147,17 +154,22 @@ export class Integration extends Construct {
 			repositoryUrl.pathname.replace(/^\//, ''),
 		)
 
-		const nrfCloudSetting = (property: keyof nRFCloudSettings) =>
+		const nrfCloudSetting = (
+			property: keyof nRFCloudSettings,
+			scope: (typeof allAccountScopes)[number],
+		) =>
 			StringParameter.fromStringParameterName(
 				this,
-				`${property}Parameter`,
-				parameterName(Stack.of(this).stackName, Scope.EXEGER_CONFIG, property),
+				`${property}_${scope.toString().replace(/[^/]+\//, '')}Parameter`,
+				parameterName(Stack.of(this).stackName, scope, property),
 			)
 
-		const nrfCloudSettingSecret = (property: keyof nRFCloudSettings) =>
-			ECS.Secret.fromSsmParameter(nrfCloudSetting(property))
+		const nrfCloudSettingSecret = (
+			property: keyof nRFCloudSettings,
+			scope: (typeof allAccountScopes)[number],
+		) => ECS.Secret.fromSsmParameter(nrfCloudSetting(property, scope))
 
-		const environment: Record<string, string> = {
+		const initEnvironment: Record<string, string> = {
 			ENV__FILE__NRFCLOUD_CA_CRT:
 				'-----BEGIN CERTIFICATE-----\n' +
 				'MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF\n' +
@@ -182,47 +194,93 @@ export class Integration extends Construct {
 			MOSQUITTO_INCLUDE_DIR: `/mosquitto/config/sections`,
 			MOSQUITTO__LOGGING__LOG_DEST: `stderr`,
 			MOSQUITTO__LOGGING__LOG_TYPE: `all`,
-			MOSQUITTO__BRIDGE01__CONNECTION: `nrfcloud-bridge`,
-			MOSQUITTO__BRIDGE01__ADDRESS: `${
-				nrfCloudSetting('mqttEndpoint').stringValue
-			}:8883`,
+
+			MOSQUITTO__BRIDGE01__CONNECTION: `iot-bridge`,
+			MOSQUITTO__BRIDGE01__ADDRESS: `${iotEndpoint}:8883`,
 			MOSQUITTO__BRIDGE01__BRIDGE_PROTOCOL_VERSION: `mqttv311`,
 			MOSQUITTO__BRIDGE01__BRIDGE_CAFILE: `/mosquitto/security/nrfcloud_ca.crt`,
-			MOSQUITTO__BRIDGE01__BRIDGE_CERTFILE: `/mosquitto/security/nrfcloud_client.crt`,
-			MOSQUITTO__BRIDGE01__BRIDGE_KEYFILE: `/mosquitto/security/nrfcloud_client.key`,
+			MOSQUITTO__BRIDGE01__BRIDGE_CERTFILE: `/mosquitto/security/iot.crt`,
+			MOSQUITTO__BRIDGE01__BRIDGE_KEYFILE: `/mosquitto/security/iot.key`,
 			MOSQUITTO__BRIDGE01__BRIDGE_INSECURE: `false`,
+			MOSQUITTO__BRIDGE01__BRIDGE_TRY_PRIVATE: `true`,
+			MOSQUITTO__BRIDGE01__LOCAL_CLIENTID: `iot-bridge-local`,
 			MOSQUITTO__BRIDGE01__START_TYPE: `automatic`,
 			MOSQUITTO__BRIDGE01__KEEPALIVE_INTERVAL: `30`,
 			MOSQUITTO__BRIDGE01__NOTIFICATIONS: `true`,
 			MOSQUITTO__BRIDGE01__NOTIFICATIONS_LOCAL_ONLY: `true`,
 			MOSQUITTO__BRIDGE01__CLEANSESSION: `true`,
-			MOSQUITTO__BRIDGE01__LOCAL_CLIENTID: `nrfcloud-bridge-local`,
-			MOSQUITTO__BRIDGE01__REMOTE_CLIENTID: nrfCloudSetting(
-				'accountDeviceClientId',
-			).stringValue,
-			MOSQUITTO__BRIDGE01__TOPIC: `m/# in 1 data/ ${
-				nrfCloudSetting('mqttTopicPrefix').stringValue
-			}`,
-			MOSQUITTO__BRIDGE02__CONNECTION: `iot-bridge`,
-			MOSQUITTO__BRIDGE02__ADDRESS: `${iotEndpoint}:8883`,
-			MOSQUITTO__BRIDGE02__BRIDGE_PROTOCOL_VERSION: `mqttv311`,
-			MOSQUITTO__BRIDGE02__BRIDGE_CAFILE: `/mosquitto/security/nrfcloud_ca.crt`,
-			MOSQUITTO__BRIDGE02__BRIDGE_CERTFILE: `/mosquitto/security/iot.crt`,
-			MOSQUITTO__BRIDGE02__BRIDGE_KEYFILE: `/mosquitto/security/iot.key`,
-			MOSQUITTO__BRIDGE02__BRIDGE_INSECURE: `false`,
-			MOSQUITTO__BRIDGE02__BRIDGE_TRY_PRIVATE: `true`,
-			MOSQUITTO__BRIDGE02__LOCAL_CLIENTID: `iot-bridge-local`,
-			MOSQUITTO__BRIDGE02__START_TYPE: `automatic`,
-			MOSQUITTO__BRIDGE02__KEEPALIVE_INTERVAL: `30`,
-			MOSQUITTO__BRIDGE02__NOTIFICATIONS: `true`,
-			MOSQUITTO__BRIDGE02__NOTIFICATIONS_LOCAL_ONLY: `true`,
-			MOSQUITTO__BRIDGE02__CLEANSESSION: `true`,
-			MOSQUITTO__BRIDGE02__TOPIC: `# out 1`,
+			MOSQUITTO__BRIDGE01__TOPIC: `# out 1`,
 		}
 		if (this.node.tryGetContext('isTest') === true) {
-			environment.MOSQUITTO__DEFAULT__LISTENER = `1883`
-			environment.MOSQUITTO__SECURITY__ALLOW_ANONYMOUS = `true`
+			initEnvironment.MOSQUITTO__DEFAULT__LISTENER = `1883`
+			initEnvironment.MOSQUITTO__SECURITY__ALLOW_ANONYMOUS = `true`
 		}
+
+		const initSecrets: Record<string, ECS.Secret> = {
+			ENV__FILE__IOT_CRT: ECS.Secret.fromSsmParameter(
+				brigeCertificateParameter,
+			),
+			ENV__FILE__IOT_KEY: ECS.Secret.fromSsmParameter(
+				bridgePrivateKeyParameter,
+			),
+		}
+
+		const { environment, secrets } = activeNRFAccounts.reduce(
+			(result, account, index) => {
+				const bridgeNo = String(index + 2).padStart(2, '0')
+				const scope = convertTonRFAccount(account)
+				if (validnRFCloudAccount(scope)) {
+					const bridgePrefix = `MOSQUITTO__BRIDGE${bridgeNo}`
+
+					result.environment[
+						`${bridgePrefix}__BRIDGE_PROTOCOL_VERSION`
+					] = `mqttv311`
+					result.environment[`${bridgePrefix}__BRIDGE_INSECURE`] = `false`
+					result.environment[`${bridgePrefix}__START_TYPE`] = `automatic`
+					result.environment[`${bridgePrefix}__KEEPALIVE_INTERVAL`] = `30`
+					result.environment[`${bridgePrefix}__NOTIFICATIONS`] = `true`
+					result.environment[
+						`${bridgePrefix}__NOTIFICATIONS_LOCAL_ONLY`
+					] = `true`
+					result.environment[`${bridgePrefix}__CLEANSESSION`] = `true`
+					result.environment[
+						`${bridgePrefix}__CONNECTION`
+					] = `nrfcloud-${account}-bridge`
+					result.environment[`${bridgePrefix}__ADDRESS`] = `${
+						nrfCloudSetting('mqttEndpoint', scope).stringValue
+					}:8883`
+					result.environment[
+						`${bridgePrefix}__BRIDGE_CAFILE`
+					] = `/mosquitto/security/nrfcloud_ca.crt`
+					result.environment[
+						`${bridgePrefix}__BRIDGE_CERTFILE`
+					] = `/mosquitto/security/nrfcloud_${account}_client.crt`
+					result.environment[
+						`${bridgePrefix}__BRIDGE_KEYFILE`
+					] = `/mosquitto/security/nrfcloud_${account}_client.key`
+					result.environment[
+						`${bridgePrefix}__LOCAL_CLIENTID`
+					] = `nrfcloud-${account}-bridge-local`
+					result.environment[`${bridgePrefix}__REMOTE_CLIENTID`] =
+						nrfCloudSetting('accountDeviceClientId', scope).stringValue
+					result.environment[`${bridgePrefix}__TOPIC`] = `m/# in 1 data/ ${
+						nrfCloudSetting('mqttTopicPrefix', scope).stringValue
+					}`
+
+					result.secrets[
+						`ENV__FILE__NRFCLOUD_${account.toUpperCase()}_CLIENT_CRT`
+					] = nrfCloudSettingSecret('accountDeviceClientCert', scope)
+					result.secrets[
+						`ENV__FILE__NRFCLOUD_${account.toUpperCase()}_CLIENT_KEY`
+					] = nrfCloudSettingSecret('accountDevicePrivateKey', scope)
+				}
+				return result
+			},
+			{ environment: initEnvironment, secrets: initSecrets } as {
+				environment: Record<string, string>
+				secrets: Record<string, ECS.Secret>
+			},
+		)
 
 		mqttBridgeTask.addContainer('mqttBridgeContainer', {
 			cpu: 256,
@@ -241,20 +299,7 @@ export class Integration extends Construct {
 				this.bridgeRepository,
 				bridgeImageSettings.imageTag,
 			),
-			secrets: {
-				ENV__FILE__NRFCLOUD_CLIENT_CRT: nrfCloudSettingSecret(
-					'accountDeviceClientCert',
-				),
-				ENV__FILE__NRFCLOUD_CLIENT_KEY: nrfCloudSettingSecret(
-					'accountDevicePrivateKey',
-				),
-				ENV__FILE__IOT_CRT: ECS.Secret.fromSsmParameter(
-					brigeCertificateParameter,
-				),
-				ENV__FILE__IOT_KEY: ECS.Secret.fromSsmParameter(
-					bridgePrivateKeyParameter,
-				),
-			},
+			secrets,
 			environment,
 			healthCheck: {
 				command: ['CMD-SHELL', '/health.sh'],

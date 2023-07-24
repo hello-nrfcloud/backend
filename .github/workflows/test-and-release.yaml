@@ -66,13 +66,17 @@ jobs:
         run: |
           ./cli.sh fake-nrfcloud-account-device exeger
           ./cli.sh create-fake-nrfcloud-health-check-device exeger
+          ./cli.sh fake-nrfcloud-account-device nordic
+          ./cli.sh create-fake-nrfcloud-health-check-device nordic
 
       - name: Deploy test resources stack
         run: |
           npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never
           MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
           ./cli.sh configure thirdParty/exeger/apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
-          ./cli.sh configure thirdParty/exeger/apiKey apiKey
+          ./cli.sh configure thirdParty/exeger/apiKey apiKey_Exeger
+          ./cli.sh configure thirdParty/nordic/apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          ./cli.sh configure thirdParty/nordic/apiKey apiKey_Nordic
 
       - name: Deploy solution stack
         env:
@@ -105,6 +109,9 @@ jobs:
           ./cli.sh fake-nrfcloud-account-device exeger --remove
           ./cli.sh configure thirdParty/exeger/apiEndpoint -X
           ./cli.sh configure thirdParty/exeger/apiKey -X
+          ./cli.sh fake-nrfcloud-account-device nordic --remove
+          ./cli.sh configure thirdParty/nordic/apiEndpoint -X
+          ./cli.sh configure thirdParty/nordic/apiKey -X
           ./cli.sh clean-backup-certificates
 
   release:

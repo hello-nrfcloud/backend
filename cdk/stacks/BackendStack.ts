@@ -37,6 +37,7 @@ export class BackendStack extends Stack {
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
+			activeNRFAccounts,
 			bridgeImageSettings,
 			repository,
 			gitHubOICDProviderArn,
@@ -48,6 +49,7 @@ export class BackendStack extends Stack {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
+			activeNRFAccounts: string[]
 			bridgeImageSettings: BridgeImageSettings
 			gitHubOICDProviderArn: string
 			repository: {
@@ -125,6 +127,7 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
+			activeNRFAccounts,
 		})
 
 		new HealthCheckMqttBridge(this, {
