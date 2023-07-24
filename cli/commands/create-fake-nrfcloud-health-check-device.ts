@@ -40,7 +40,7 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 
 		const deviceId = `health-check-${randomUUID()}`
 
-		const fakeTenantParameter = `/${STACK_NAME}/fakeTenant`
+		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`
 		const tenantId = (
 			await ssm.send(
 				new GetParameterCommand({
@@ -49,7 +49,9 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 			)
 		).Parameter?.Value
 		if (tenantId === undefined) {
-			throw new Error(`${STACK_NAME} has no fake nRF Cloud Account device`)
+			throw new Error(
+				`${STACK_NAME}/${account} has no fake nRF Cloud Account device`,
+			)
 		}
 
 		const policyName = `fake-nrfcloud-account-device-policy-${tenantId}`

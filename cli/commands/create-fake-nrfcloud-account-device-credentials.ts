@@ -57,7 +57,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			process.exit(1)
 		}
 
-		const fakeTenantParameter = `/${STACK_NAME}/fakeTenant`
+		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`
 		if (remove === true) {
 			// check if has fake device
 			const fakeTenant = (
@@ -68,7 +68,9 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				)
 			).Parameter?.Value
 			if (fakeTenant === undefined) {
-				throw new Error(`${STACK_NAME} has no fake nRF Cloud Account device`)
+				throw new Error(
+					`${STACK_NAME}/${account} has no fake nRF Cloud Account device`,
+				)
 			}
 			const policyName = `fake-nrfcloud-account-device-policy-${fakeTenant}`
 			const targets = await iot.send(
