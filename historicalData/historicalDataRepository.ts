@@ -62,7 +62,7 @@ export const transformTimestreamData = (
 	const groupedData = groupBy(data, (d) => d.time)
 	for (const item in groupedData) {
 		const data = groupedData[item]
-		const tranformedRecord = data?.reduce<Record<string, unknown>>(
+		const transformedRecord = data?.reduce<Record<string, unknown>>(
 			(result, record) => {
 				result = {
 					...mapKeys.reduce<Record<string, unknown>>(
@@ -86,7 +86,7 @@ export const transformTimestreamData = (
 			},
 			{},
 		)
-		if (tranformedRecord !== undefined) transformedData.push(tranformedRecord)
+		if (transformedRecord !== undefined) transformedData.push(transformedRecord)
 	}
 
 	return transformedData
