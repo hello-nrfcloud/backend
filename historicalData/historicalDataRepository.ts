@@ -27,7 +27,7 @@ export const HistoricalChartTypes = {
 	},
 	lastWeek: {
 		bin: '1hour',
-		duration: '1week',
+		duration: '7day',
 		expires: '5minutes',
 	},
 	lastMonth: {

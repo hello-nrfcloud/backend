@@ -62,7 +62,7 @@ describe('queryGenerator', () => {
 
 			request.type = 'lastWeek'
 			expect(getStartPeriod(request, 1688104200000)).toEqual(
-				'from_milliseconds(1688104200000) - 1week',
+				'from_milliseconds(1688104200000) - 7day',
 			)
 
 			request.type = 'lastMonth'
@@ -250,6 +250,43 @@ describe('queryGenerator', () => {
 				AND time BETWEEN from_milliseconds(1688104200000) - 1hour AND from_milliseconds(1688104200000)
 				GROUP BY deviceId, bin(time, 1minute)
 				ORDER BY bin(time, 1minute) DESC
+			`
+				.replace(/\s+/g, ' ')
+				.trim()
+
+			expect(result.replace(/\s+/g, ' ').trim()).toEqual(expectedQuery)
+		})
+
+		it('returns the correct query statement for weekly battery request', () => {
+			request.message = 'battery'
+			request.type = 'lastWeek'
+			request.attributes = {
+				min: { attribute: '%', aggregate: 'min' },
+			}
+
+			const deviceId = 'device123'
+			const context = new URL(
+				'https://github.com/hello-nrfcloud/proto/transformed/model/battery',
+			)
+			const historicalDataDatabaseName = 'database1'
+			const historicalDataTableName = 'table1'
+
+			const result = getQueryStatement({
+				request,
+				deviceId,
+				context,
+				historicalDataDatabaseName,
+				historicalDataTableName,
+			})
+
+			const expectedQuery = `
+				SELECT deviceId, bin(time, 1hour) as time, min(measure_value::double) as "min"
+				FROM "database1"."table1"
+				WHERE deviceId = 'device123'
+				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/battery'
+				AND time BETWEEN from_milliseconds(1688104200000) - 7day AND from_milliseconds(1688104200000)
+				GROUP BY deviceId, bin(time, 1hour)
+				ORDER BY bin(time, 1hour) DESC
 			`
 				.replace(/\s+/g, ' ')
 				.trim()

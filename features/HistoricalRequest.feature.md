@@ -177,6 +177,52 @@ Soon I should receive a message on the websocket that is equal to
 }
 ```
 
+## Request historical data for a week
+
+When I connect to the websocket using fingerprint `${fingerprint}`
+
+And I send this message via the websocket
+
+```json
+{
+  "message": "message",
+  "payload": {
+    "@context": "https://github.com/hello-nrfcloud/proto/historical-data-request",
+    "@id": "cc270d6b-725c-4033-ac64-c5dae903f73d",
+    "type": "lastWeek",
+    "message": "battery",
+    "attributes": {
+      "min": { "attribute": "%", "aggregate": "min" }
+    }
+  }
+}
+```
+
+<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
+
+Given I store
+`$toMillis($join([$substring($fromMillis(ts), 0, 13), ":00:00Z"]))` into
+`lastHour`
+
+Soon I should receive a message on the websocket that is equal to
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
+  "@id": "cc270d6b-725c-4033-ac64-c5dae903f73d",
+  "type": "lastWeek",
+  "message": "battery",
+  "attributes": {
+    "min": [
+      {
+        "%": 18,
+        "ts": "$number{lastHour}"
+      }
+    ]
+  }
+}
+```
+
 ## Verify I will get error message if the request is invalid
 
 When I connect to the websocket using fingerprint `${fingerprint}`
