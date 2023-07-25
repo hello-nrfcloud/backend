@@ -1,14 +1,13 @@
 import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { validateWithJSONSchema } from '@hello.nrfcloud.com/proto'
+import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import {
 	BadRequestError,
 	HistoricalDataRequest,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { type Static } from '@sinclair/typebox'
 import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
 import { metricsForComponent } from './metrics/metrics.js'
@@ -16,9 +15,7 @@ import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 
-const valid = validateWithJSONSchema<Static<typeof HistoricalDataRequest>>(
-	HistoricalDataRequest,
-)
+const valid = validateWithTypeBox(HistoricalDataRequest)
 
 const { TableName, EventBusName } = fromEnv({
 	TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
