@@ -220,7 +220,7 @@ const h = async (): Promise<void> => {
 								return ValidateResponse.skip
 
 							track(
-								`receivingMessageDuration:${account}`,
+								`receivingMessageDuration`,
 								MetricUnits.Seconds,
 								(Date.now() - (data?.ts ?? 0)) / 1000,
 							)
@@ -233,7 +233,7 @@ const h = async (): Promise<void> => {
 						}
 					},
 				})
-				track(`success:${account}`, MetricUnits.Count, 1)
+				track(`success`, MetricUnits.Count, 1)
 			} catch (error) {
 				log.error(`health check error`, { error, account })
 				track('fail', MetricUnits.Count, 1)
