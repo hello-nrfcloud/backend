@@ -13,6 +13,6 @@ const res = await new Promise<SuiteResult>((resolve) =>
 	process.stdin.on('end', () => resolve(JSON.parse(chunks.join('')))),
 )
 
-consoleReporter(res, console.log)
+consoleReporter(res, console.log, { withTimestamps: true })
 
 if (!res.ok) process.exit(1)

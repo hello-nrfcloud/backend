@@ -12,19 +12,18 @@ import {
 	getSettings,
 	type putSettings,
 } from '../../util/settings.js'
-import type { World } from '../run-features.js'
 
 const createConfigStepRunners = ({
 	configWriter,
 }: {
 	configWriter: ReturnType<typeof putSettings>
-}): StepRunner<World>[] => {
+}): StepRunner<Record<string, any>>[] => {
 	const setupDeviceShadowFetchingConfiguration = async ({
 		step,
 		log: {
 			step: { progress },
 		},
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				model: Type.String(),
@@ -60,7 +59,7 @@ export const configStepRunners = ({
 	configRemover: ReturnType<typeof deleteSettings>
 	configSettings: ReturnType<typeof getSettings>
 }): {
-	steps: StepRunner<World>[]
+	steps: StepRunner<Record<string, any>>[]
 	cleanup: () => Promise<void>
 } => ({
 	steps: createConfigStepRunners({ configWriter }),

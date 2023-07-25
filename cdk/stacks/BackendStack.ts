@@ -25,6 +25,7 @@ import { LambdaSource } from '../resources/LambdaSource.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { KPIs } from '../resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
+import { ConfigureDevice } from '../resources/ConfigureDevice.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -156,6 +157,12 @@ export class BackendStack extends Stack {
 			layers: lambdaLayers,
 			lastSeen,
 			deviceStorage,
+		})
+
+		new ConfigureDevice(this, {
+			lambdaSources,
+			layers: lambdaLayers,
+			websocketAPI,
 		})
 
 		// Outputs

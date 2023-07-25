@@ -14,18 +14,27 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
-import type { World } from '../run-features.js'
 
+import { parseMockRequest } from './parseMockRequest.js'
+import { check, objectMatching } from 'tsmatchers'
+import { parseMockResponse } from './parseMockResponse.js'
 let queryStartTime: Date | undefined
 
-export const steps = ({ db }: { db: DynamoDBClient }): StepRunner<World>[] => {
+export const steps = ({
+	db,
+	responsesTableName,
+	requestsTableName,
+}: {
+	db: DynamoDBClient
+	responsesTableName: string
+	requestsTableName: string
+}): StepRunner<Record<string, any>>[] => {
 	const mockShadowData = async ({
 		step,
 		log: {
 			step: { progress },
 		},
-		context: { responsesTableName },
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				deviceId: Type.String(),
@@ -83,8 +92,7 @@ ${data}
 		log: {
 			step: { progress },
 		},
-		context,
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				duration: Type.Integer(),
@@ -116,7 +124,7 @@ ${data}
 		progress(`Mock http url: ${methodPathQuery}`)
 		const result = await db.send(
 			new QueryCommand({
-				TableName: context.requestsTableName,
+				TableName: requestsTableName,
 				KeyConditionExpression:
 					'#methodPathQuery = :methodPathQuery AND #timestamp >= :timestamp',
 				ExpressionAttributeNames: {
@@ -158,5 +166,111 @@ ${data}
 		assert.equal(fitToSchedule, true)
 	}
 
-	return [mockShadowData, durationBetweenRequests]
+	const queueResponse = async ({
+		step,
+		log: {
+			step: { progress },
+		},
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
+		const rx =
+			/^this nRF Cloud API is queued for a `(?<methodPathQuery>[^`]+)` request$/
+		if (!rx.test(step.title)) return noMatch
+
+		const expectedResponse = codeBlockOrThrow(step).code
+
+		const response = parseMockResponse(expectedResponse)
+
+		const methodPathQuery = rx.exec(step.title)?.groups
+			?.methodPathQuery as string
+		progress(`expected resource: ${methodPathQuery}`)
+		const [method, resource] = methodPathQuery.split(' ') as [string, string]
+
+		const body: string[] = [
+			...Object.entries(response.headers).map(([k, v]) => `${k}: ${v}`),
+		].filter((v) => v)
+		if (response.body.length > 0) {
+			body.push(``, response.body)
+		}
+
+		await db.send(
+			new PutItemCommand({
+				TableName: responsesTableName,
+				Item: {
+					methodPathQuery: {
+						S: `${method} ${resource.slice(1)}`,
+					},
+					timestamp: {
+						S: new Date().toISOString(),
+					},
+					statusCode: {
+						N: response.statusCode.toString(),
+					},
+					body: body.length > 0 ? { S: body.join('\n') } : { NULL: true },
+					ttl: {
+						N: `${Math.round(Date.now() / 1000) + 5 * 60}`,
+					},
+					keep: {
+						BOOL: true,
+					},
+				},
+			}),
+		)
+	}
+
+	const expectRequest = async ({
+		step,
+		log: {
+			step: { progress },
+		},
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
+		if (!/^the nRF Cloud API should have been called with$/.test(step.title))
+			return noMatch
+
+		const expectedRequest = codeBlockOrThrow(step).code
+
+		const request = parseMockRequest(expectedRequest)
+
+		const methodPathQuery = `${request.method} ${request.resource.slice(1)}`
+		progress(`expected resource: ${methodPathQuery}`)
+
+		const result = await db.send(
+			new QueryCommand({
+				TableName: requestsTableName,
+				KeyConditionExpression: '#methodPathQuery = :methodPathQuery',
+				ExpressionAttributeNames: {
+					'#methodPathQuery': 'methodPathQuery',
+					'#body': 'body',
+					'#headers': 'headers',
+				},
+				ExpressionAttributeValues: {
+					':methodPathQuery': { S: methodPathQuery },
+				},
+				ProjectionExpression: '#body, #headers',
+				ScanIndexForward: false,
+			}),
+		)
+
+		const matchedRequest = (result.Items ?? [])
+			.map((item) => unmarshall(item))
+			.find(({ body, headers }) => {
+				try {
+					return (
+						body === request.body &&
+						check(JSON.parse(headers)).is(objectMatching(request.headers))
+					)
+				} catch (err) {
+					progress(JSON.stringify(err))
+					return false
+				}
+			})
+
+		if (matchedRequest !== undefined) {
+			progress(`Matched request`, JSON.stringify(matchedRequest))
+			return
+		}
+
+		throw new Error(`No request matched.`)
+	}
+
+	return [mockShadowData, durationBetweenRequests, expectRequest, queueResponse]
 }
