@@ -14,6 +14,9 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
+import type { World } from '../run-features.js'
+import { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
+import type { SSMClient } from '@aws-sdk/client-ssm'
 
 import { parseMockRequest } from './parseMockRequest.js'
 import { check, objectMatching } from 'tsmatchers'
@@ -24,10 +27,14 @@ export const steps = ({
 	db,
 	responsesTableName,
 	requestsTableName,
+	ssm,
+	stackName,
 }: {
 	db: DynamoDBClient
 	responsesTableName: string
 	requestsTableName: string
+	ssm: SSMClient
+	stackName: string
 }): StepRunner<Record<string, any>>[] => {
 	const mockShadowData = async ({
 		step,
@@ -272,5 +279,97 @@ ${data}
 		throw new Error(`No request matched.`)
 	}
 
-	return [mockShadowData, durationBetweenRequests, expectRequest, queueResponse]
+	const checkAPIKeyRequest = async ({
+		step,
+		context: { requestsTableName },
+		log: {
+			step: { progress },
+		},
+	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+		const match = matchGroups(
+			Type.Object({
+				deviceId: Type.String(),
+				account: Type.String(),
+			}),
+		)(
+			/^there is a device shadow request for `(?<deviceId>[^`]+)` with API key of `(?<account>[^`]+)` account$/,
+			step.title,
+		)
+
+		if (match === null) return noMatch
+
+		const allNRFCloudSettings = await getAllAccountsSettings({
+			ssm,
+			stackName,
+		})()
+		const allAccountsAPKeys = Object.entries(allNRFCloudSettings).reduce(
+			(result, [account, settings]) => {
+				if ('nrfCloudSettings' in settings) {
+					return {
+						...result,
+						[account]: settings['nrfCloudSettings'].apiKey,
+					}
+				}
+
+				return result
+			},
+			{} as Record<string, string>,
+		)
+
+		if (queryStartTime === undefined) queryStartTime = new Date()
+		const params: { [K: string]: any } = {
+			includeState: true,
+			includeStateMeta: true,
+			pageLimit: 100,
+			deviceIds: match.deviceId,
+		}
+		const queryString = Object.entries(params)
+			.sort((a, b) => a[0].localeCompare(b[0]))
+			.map((kv) => kv.map(encodeURIComponent).join('='))
+			.join('&')
+
+		const methodPathQuery = `GET v1/devices?${queryString}`
+		progress(`Mock http url: ${methodPathQuery}`)
+		const result = await db.send(
+			new QueryCommand({
+				TableName: requestsTableName,
+				KeyConditionExpression:
+					'#methodPathQuery = :methodPathQuery AND #timestamp >= :timestamp',
+				ExpressionAttributeNames: {
+					'#methodPathQuery': 'methodPathQuery',
+					'#headers': 'headers',
+					'#timestamp': 'timestamp',
+				},
+				ExpressionAttributeValues: {
+					':methodPathQuery': { S: methodPathQuery },
+					':timestamp': { S: queryStartTime.toISOString() },
+				},
+				ProjectionExpression: '#timestamp, #headers',
+				ScanIndexForward: false,
+				Limit: 1,
+			}),
+		)
+		const resultObj = result?.Items?.map((item) => unmarshall(item))
+		progress(`Query mock requests from ${queryStartTime.toISOString()}`)
+		progress(
+			`Query mock requests result: ${JSON.stringify(resultObj, null, 2)}`,
+		)
+
+		if (resultObj?.length === 1) {
+			const headers = JSON.parse(resultObj?.[0]?.headers ?? null)
+			const apiKey = headers['Authorization']?.replace(/^bearer\s+/i, '')
+
+			assert.equal(allAccountsAPKeys[match.account], apiKey)
+		} else {
+			throw new Error('Mock request is not found')
+		}
+	}
+
+	return [
+		mockShadowData,
+		durationBetweenRequests,
+		expectRequest,
+		queueResponse,
+		checkAPIKeyRequest,
+	]
 }
