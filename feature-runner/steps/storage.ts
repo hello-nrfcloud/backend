@@ -8,7 +8,6 @@ import {
 import { Type } from '@sinclair/typebox'
 import assert from 'node:assert/strict'
 import jsonata from 'jsonata'
-import type { World } from '../run-features.js'
 
 export const store = async ({
 	step,
@@ -34,4 +33,4 @@ export const store = async ({
 	context[match.storeName] = result
 }
 
-export const steps = (): StepRunner<World>[] => [store]
+export const steps = (): StepRunner<Record<string, any>>[] => [store]

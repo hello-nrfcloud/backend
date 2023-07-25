@@ -12,6 +12,7 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
 
 /**
  * Store devices messages in their converted format
@@ -136,7 +137,7 @@ export class HistoricalData extends Construct {
 		new Events.Rule(this, 'historicalDataRequestRule', {
 			eventPattern: {
 				source: ['thingy.ws'],
-				detailType: ['request'],
+				detailType: [Context.historicalDataRequest.toString()],
 			},
 			targets: [new EventTargets.LambdaFunction(historicalDataRequest)],
 			eventBus: websocketAPI.eventBus,

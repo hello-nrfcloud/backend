@@ -15,50 +15,54 @@ import {
 	createWebsocketClient,
 	type WebSocketClient,
 } from '../lib/websocket.js'
-import type { World } from '../run-features.js'
 
 chai.use(chaiSubset)
 
-const wsClients: Record<string, WebSocketClient> = {}
-const wsConnect = async ({
-	step,
-	log: {
-		step: { progress },
-		feature: { progress: featureProgress },
-	},
-	context,
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
-	const match = matchGroups(
-		Type.Object({
-			reconnect: Type.Optional(Type.Literal('re')),
-			fingerprint: Type.String(),
-		}),
-	)(
-		/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/,
-		step.title,
-	)
-	if (match === null) return noMatch
-
-	const { websocketUri } = context
-	const wsURL = `${websocketUri}?fingerprint=${match.fingerprint}`
-
-	if (match.reconnect !== undefined && wsClients[wsURL] === undefined) {
-		wsClients[wsURL]?.close()
-		delete wsClients[wsURL]
-	}
-
-	if (wsClients[wsURL] === undefined) {
-		progress(`Connect websocket to ${websocketUri}`)
-		wsClients[wsURL] = createWebsocketClient({
-			id: match.fingerprint,
-			url: wsURL,
-			debug: (...args) => featureProgress('[ws]', ...args),
-		})
-		await wsClients[wsURL]?.connect()
-	}
-
-	context.wsClient = wsClients[wsURL] as WebSocketClient
+type WSWorld = {
+	wsClient?: WebSocketClient
 }
+
+const wsClients: Record<string, WebSocketClient> = {}
+const wsConnect =
+	({ websocketUri }: { websocketUri: string }) =>
+	async ({
+		step,
+		log: {
+			step: { progress },
+			feature: { progress: featureProgress },
+		},
+		context,
+	}: StepRunnerArgs<WSWorld>): Promise<StepRunResult> => {
+		const match = matchGroups(
+			Type.Object({
+				reconnect: Type.Optional(Type.Literal('re')),
+				fingerprint: Type.String(),
+			}),
+		)(
+			/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/,
+			step.title,
+		)
+		if (match === null) return noMatch
+
+		const wsURL = `${websocketUri}?fingerprint=${match.fingerprint}`
+
+		if (match.reconnect !== undefined && wsClients[wsURL] === undefined) {
+			wsClients[wsURL]?.close()
+			delete wsClients[wsURL]
+		}
+
+		if (wsClients[wsURL] === undefined) {
+			progress(`Connect websocket to ${websocketUri}`)
+			wsClients[wsURL] = createWebsocketClient({
+				id: match.fingerprint,
+				url: wsURL,
+				debug: (...args) => featureProgress('[ws]', ...args),
+			})
+			await wsClients[wsURL]?.connect()
+		}
+
+		context.wsClient = wsClients[wsURL] as WebSocketClient
+	}
 
 const receive = async ({
 	step,
@@ -66,7 +70,7 @@ const receive = async ({
 		step: { debug },
 	},
 	context,
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+}: StepRunnerArgs<WSWorld>): Promise<StepRunResult> => {
 	const match = matchGroups(
 		Type.Object({
 			equalOrMatch: Type.Union([
@@ -116,7 +120,7 @@ const wsSend = async ({
 		step: { progress },
 	},
 	context,
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+}: StepRunnerArgs<WSWorld>): Promise<StepRunResult> => {
 	const match = /^I send this message via the websocket$/.exec(step.title)
 	if (match === null) return noMatch
 
@@ -126,11 +130,17 @@ const wsSend = async ({
 	progress(`Sent ws message`, JSON.stringify(message, null, 2))
 }
 
-export const websocketStepRunners = (): {
-	steps: StepRunner<World>[]
+export const websocketStepRunners = ({
+	websocketUri,
+}: {
+	websocketUri: string
+}): {
+	steps: StepRunner<{
+		wsClient?: WebSocketClient
+	}>[]
 	cleanup: () => Promise<void>
 } => ({
-	steps: [wsConnect, receive, wsSend],
+	steps: [wsConnect({ websocketUri }), receive, wsSend],
 	cleanup: async (): Promise<void> => {
 		await Promise.all(Object.values(wsClients).map((client) => client.close()))
 	},

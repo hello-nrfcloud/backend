@@ -20,19 +20,25 @@ import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
 import { getModelForDevice } from '../../devices/getModelForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { Settings } from '../../nrfcloud/settings.js'
-import type { World } from '../run-features.js'
 
 const createDeviceForModel =
-	({ db }: { db: DynamoDBClient }) =>
+	({
+		db,
+		devicesTable,
+		devicesTableFingerprintIndexName,
+	}: {
+		db: DynamoDBClient
+
+		devicesTable: string
+		devicesTableFingerprintIndexName: string
+	}) =>
 	async ({
 		step,
 		log: {
 			step: { progress },
 		},
 		context,
-	}: StepRunnerArgs<
-		World & Record<string, string>
-	>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, string>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				model: Type.String(),
@@ -48,7 +54,6 @@ const createDeviceForModel =
 		const fingerprint = `92b.${generateCode()}`
 		const id = randomUUID()
 
-		const { devicesTable, devicesTableFingerprintIndexName } = context
 		progress(`Registering device ${id} into table ${devicesTable}`)
 		await registerDevice({ db, devicesTableName: devicesTable })({
 			id,
@@ -96,14 +101,13 @@ const createDeviceForModel =
 	}
 
 const getDevice =
-	({ db }: { db: DynamoDBClient }) =>
+	({ db, devicesTable }: { db: DynamoDBClient; devicesTable: string }) =>
 	async ({
 		step,
 		log: {
 			step: { progress },
 		},
-		context: { devicesTable },
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				key: Type.String(),
@@ -139,7 +143,7 @@ const publishDeviceMessage =
 		log: {
 			step: { progress, error },
 		},
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				id: Type.String(),
@@ -191,8 +195,12 @@ const publishDeviceMessage =
 export const steps = (
 	nRFCloudSettings: Settings,
 	db: DynamoDBClient,
-): StepRunner<World & Record<string, string>>[] => [
-	createDeviceForModel({ db }),
-	getDevice({ db }),
+	{
+		devicesTableFingerprintIndexName,
+		devicesTable,
+	}: { devicesTableFingerprintIndexName: string; devicesTable: string },
+): StepRunner<Record<string, string>>[] => [
+	createDeviceForModel({ db, devicesTableFingerprintIndexName, devicesTable }),
+	getDevice({ db, devicesTable }),
 	publishDeviceMessage(nRFCloudSettings),
 ]

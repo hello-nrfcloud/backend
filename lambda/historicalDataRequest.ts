@@ -54,7 +54,10 @@ const repo = historicalDataRepository({
  * Handle historical data request
  */
 const h = async (
-	event: EventBridgeEvent<'request', Request>,
+	event: EventBridgeEvent<
+		'https://github.com/hello-nrfcloud/proto/historical-data-request', // Context.historicalDataRequest.toString()
+		Request
+	>,
 ): Promise<void> => {
 	try {
 		log.info('event', { event })

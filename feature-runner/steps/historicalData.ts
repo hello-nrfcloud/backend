@@ -18,21 +18,19 @@ import chaiSubset from 'chai-subset'
 import pRetry from 'p-retry'
 import { convertMessageToTimestreamRecords } from '../../historicalData/convertMessageToTimestreamRecords.js'
 import { storeRecordsInTimestream } from '../../historicalData/storeRecordsInTimestream.js'
-import type { World } from '../run-features.js'
 
 chai.use(chaiSubset)
 
 let lastResult: Record<string, unknown>[] = []
 
 const queryTimestream =
-	(timestream: TimestreamQueryClient) =>
+	(timestream: TimestreamQueryClient, historicalDataTableInfo: string) =>
 	async ({
 		step,
 		log: {
 			step: { progress },
 		},
-		context: { historicalDataTableInfo },
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				deviceId: Type.String(),
@@ -97,7 +95,7 @@ const dateParser = (key: string, value: any) => {
 
 const assertResult = async ({
 	step,
-}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 	const match = /^the Timestream result should match$/.exec(step.title)
 	if (match === null) return noMatch
 
@@ -113,7 +111,7 @@ const writeTimestream =
 		log: {
 			step: { progress },
 		},
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				deviceId: Type.String(),
@@ -140,11 +138,13 @@ const writeTimestream =
 export const steps = ({
 	timestream,
 	storeTimestream,
+	historicalDataTableInfo,
 }: {
 	timestream: TimestreamQueryClient
 	storeTimestream: ReturnType<typeof storeRecordsInTimestream>
-}): StepRunner<World>[] => [
-	queryTimestream(timestream),
+	historicalDataTableInfo: string
+}): StepRunner<Record<string, any>>[] => [
+	queryTimestream(timestream, historicalDataTableInfo),
 	writeTimestream(storeTimestream),
 	assertResult,
 ]

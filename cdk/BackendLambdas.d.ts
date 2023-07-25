@@ -13,4 +13,5 @@ type BackendLambdas = {
 	healthCheck: PackedLambda
 	historicalDataRequest: PackedLambda
 	kpis: PackedLambda
+	configureDevice: PackedLambda
 }

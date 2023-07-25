@@ -6,7 +6,6 @@ import { TimestreamWriteClient } from '@aws-sdk/client-timestream-write'
 import { runFolder } from '@nordicsemiconductor/bdd-markdown'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
-import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
 import {
@@ -22,7 +21,6 @@ import {
 	getSettings,
 	putSettings,
 } from '../util/settings.js'
-import type { WebSocketClient } from './lib/websocket.js'
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
@@ -46,18 +44,6 @@ const config = await stackOutput(
 const testConfig = await stackOutput(
 	new CloudFormationClient({}),
 )<TestStackOutputs>(TEST_RESOURCES_STACK_NAME)
-
-const tenantId = randomUUID()
-export type World = {
-	websocketUri: string
-	devicesTable: string
-	devicesTableFingerprintIndexName: string
-	historicalDataTableInfo: string
-	wsClient?: WebSocketClient
-	tenantId: string
-	responsesTableName: string
-	requestsTableName: string
-} & Record<string, string>
 
 const accountDeviceSettings = await nrfCloudSettings({
 	ssm,
@@ -90,31 +76,45 @@ const storeTimestream = storeRecordsInTimestream({
 	DatabaseName,
 	TableName,
 })
+
 const print = (arg: unknown) =>
 	typeof arg === 'object' ? JSON.stringify(arg) : arg
+const start = Date.now()
+const ts = () => {
+	const diff = Date.now() - start
+	return chalk.gray(`[${(diff / 1000).toFixed(3).padStart(8, ' ')}]`)
+}
 
-const runner = await runFolder<World>({
+const runner = await runFolder({
 	folder: path.join(process.cwd(), 'features'),
 	name: 'hello.nrfcloud.com backend',
 	logObserver: {
 		onDebug: (info, ...args) =>
 			console.error(
-				chalk.magenta(info.context.keyword),
+				ts(),
+				chalk.magenta.dim(info.context.keyword),
+				chalk.magenta(info.context.title),
 				...args.map((arg) => chalk.cyan(print(arg))),
 			),
 		onError: (info, ...args) =>
 			console.error(
-				chalk.magenta(info.context.keyword),
+				ts(),
+				chalk.magenta.dim(info.context.keyword),
+				chalk.magenta(info.context.title),
 				...args.map((arg) => chalk.red(print(arg))),
 			),
 		onInfo: (info, ...args) =>
 			console.error(
-				chalk.magenta(info.context.keyword),
+				ts(),
+				chalk.magenta.dim(info.context.keyword),
+				chalk.magenta(info.context.title),
 				...args.map((arg) => chalk.green(print(arg))),
 			),
 		onProgress: (info, ...args) =>
 			console.error(
-				chalk.magenta(info.context.keyword),
+				ts(),
+				chalk.magenta.dim(info.context.keyword),
+				chalk.magenta(info.context.title),
 				...args.map((arg) => chalk.yellow(print(arg))),
 			),
 	},
@@ -123,7 +123,9 @@ const runner = await runFolder<World>({
 const cleaners: (() => Promise<void>)[] = []
 
 const { steps: webSocketSteps, cleanup: websocketCleanup } =
-	websocketStepRunners()
+	websocketStepRunners({
+		websocketUri: config.webSocketURI,
+	})
 cleaners.push(websocketCleanup)
 
 const { steps: configSteps, cleanup: configCleanup } = configStepRunners({
@@ -135,21 +137,30 @@ cleaners.push(configCleanup)
 
 runner
 	.addStepRunners(...webSocketSteps)
-	.addStepRunners(...deviceSteps(accountDeviceSettings, db))
-	.addStepRunners(...mocknRFCloudSteps({ db }))
-	.addStepRunners(...historicalDataSteps({ timestream, storeTimestream }))
+	.addStepRunners(
+		...deviceSteps(accountDeviceSettings, db, {
+			devicesTableFingerprintIndexName: config.devicesTableFingerprintIndexName,
+			devicesTable: config.devicesTableName,
+		}),
+	)
+	.addStepRunners(
+		...mocknRFCloudSteps({
+			db,
+			responsesTableName: testConfig.responsesTableName,
+			requestsTableName: testConfig.requestsTableName,
+		}),
+	)
+	.addStepRunners(
+		...historicalDataSteps({
+			timestream,
+			storeTimestream,
+			historicalDataTableInfo: config.historicalDataTableInfo,
+		}),
+	)
 	.addStepRunners(...storageSteps())
 	.addStepRunners(...configSteps)
 
-const res = await runner.run({
-	websocketUri: config.webSocketURI,
-	devicesTable: config.devicesTableName,
-	devicesTableFingerprintIndexName: config.devicesTableFingerprintIndexName,
-	tenantId,
-	responsesTableName: testConfig.responsesTableName,
-	requestsTableName: testConfig.requestsTableName,
-	historicalDataTableInfo: config.historicalDataTableInfo,
-})
+const res = await runner.run({})
 
 await Promise.all(cleaners.map(async (fn) => fn()))
 
