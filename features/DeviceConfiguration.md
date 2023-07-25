@@ -1,3 +1,7 @@
+---
+run: only
+---
+
 # Device configuration
 
 > A user can configure a device
@@ -9,7 +13,7 @@
 
 Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
-And the device `${fingerprint_deviceId}` has this state
+And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
 ```json
 {
