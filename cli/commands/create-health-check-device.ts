@@ -133,7 +133,7 @@ export const createHealthCheckDevice = ({
 			),
 			healthCheckClientId: deviceId,
 			healthCheckModel: 'PCA20035+solar',
-			healthCheckFingerPrint: '29a.ch3ckr',
+			healthCheckFingerPrint: `29a.ch3ckr.${account}`,
 		}
 		await updateSettings({ ssm, stackName, scope })(settings)
 
