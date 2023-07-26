@@ -8,7 +8,6 @@ import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import type { Nullable } from '../../util/types.js'
-import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
 	convertTonRFAccount,
 	validnRFCloudAccount,
@@ -30,7 +29,7 @@ export const configureDeviceCommand = ({
 	devicesIndexName: string
 	stackName: string
 }): CommandDefinition => ({
-	command: 'configure-device <account> <fingerprint>',
+	command: 'configure-device <fingerprint>',
 	options: [
 		{ flags: '--passiveMode', description: `Set device in passive mode` },
 		{ flags: '--disableGNSS', description: `Whether to disable GNSS` },
@@ -44,20 +43,9 @@ export const configureDeviceCommand = ({
 		},
 	],
 	action: async (
-		account,
 		fingerprint,
 		{ activeWaitTime, locationTimeout, disableGNSS },
 	) => {
-		const scope = convertTonRFAccount(account)
-		if (!validnRFCloudAccount(scope)) {
-			console.error(
-				chalk.red('⚠️'),
-				'',
-				chalk.red(`account should be ${availableAccounts.join(', ')}`),
-			)
-			process.exit(1)
-		}
-
 		const maybeDevice = await getDevice({
 			db,
 			devicesTableName,
@@ -74,6 +62,12 @@ export const configureDeviceCommand = ({
 		const { device } = maybeDevice
 
 		console.log(chalk.yellow('ID'), chalk.blue(device.id))
+
+		const scope = convertTonRFAccount(device.account)
+		if (!validnRFCloudAccount(scope)) {
+			console.error(chalk.red('⚠️'), '', chalk.red(`invalid account`))
+			process.exit(1)
+		}
 
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,

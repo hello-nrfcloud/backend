@@ -29,7 +29,6 @@ import { showFingerprintCommand } from './commands/show-fingerprint.js'
 import { showNRFCloudAccount } from './commands/show-nrfcloud-account.js'
 import { simulateDeviceCommand } from './commands/simulate-device.js'
 import { cleanBackupCertificates } from './commands/clean-backup-certificates.js'
-import { migrateNRFCloudAccounts } from './commands/migrate-nrfcloud-account.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -153,11 +152,6 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					ssm,
 					stackName: STACK_NAME,
 				}),
-				migrateNRFCloudAccounts({
-					ssm,
-					db,
-					devicesTableName: outputs.devicesTableName,
-				}),
 			)
 		} catch (error) {
 			console.warn(chalk.yellow('⚠️'), chalk.yellow((error as Error).message))
@@ -173,7 +167,6 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					ran = true
 					await action(...args)
 				} catch (error) {
-					console.log('error>>>>', error)
 					console.error(
 						chalk.red.inverse(' ERROR '),
 						chalk.red(`${command} failed!`),
