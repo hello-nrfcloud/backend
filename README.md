@@ -36,8 +36,6 @@ need to prepare nRF Cloud API key.
 ./cli.sh create-health-check-device <account>
 ```
 
-**Note** Currently the supported accounts are `exeger` and `nordic`
-
 ### Deploy
 
 ```bash

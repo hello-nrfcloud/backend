@@ -3,10 +3,10 @@
 > After connecting to the websocket with a device fingerprint under specific
 > account, the device shadow is returned
 
-## Verify a Exeger device sends shadow data to nRF Cloud and there is a shadow request with the associated API key
+## Verify a ACME device sends shadow data to nRF Cloud and there is a shadow request with the associated API key
 
-Given I have the fingerprint for a `PCA20035+solar` device in the `exeger`
-account in `fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in the `acme` account
+in `fingerprint`
 
 And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
@@ -280,12 +280,12 @@ When I connect to the websocket using fingerprint `${fingerprint}`
 
 <!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
-Soon the shadow for `${fingerprint_deviceId}` in the `exeger` account has been
+Soon the shadow for `${fingerprint_deviceId}` in the `acme` account has been
 requested
 
-## Verify a Nordic device sends shadow data to nRF Cloud, then there is a shadow request with associated API key
+## Verify a Elite device sends shadow data to nRF Cloud and there is a shadow request with the associated API key
 
-Given I have the fingerprint for a `PCA20035+solar` device in the `nordic`
+Given I have the fingerprint for a `PCA20035+solar` device in the `elite`
 account in `fingerprint`
 
 And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
@@ -560,5 +560,5 @@ When I connect to the websocket using fingerprint `${fingerprint}`
 
 <!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
-Soon the shadow for `${fingerprint_deviceId}` in the `nordic` account has been
+Soon the shadow for `${fingerprint_deviceId}` in the `elite` account has been
 requested

@@ -163,9 +163,9 @@ const publishDeviceMessage =
 
 		const message = JSON.parse(codeBlockOrThrow(step).code)
 
-		const nRFCloudSettings = allAccountSettings['exeger']?.nrfCloudSettings
+		const nRFCloudSettings = allAccountSettings['acme']?.nrfCloudSettings
 		if (nRFCloudSettings === undefined) {
-			throw new Error('No default nRF Cloud settings (exeger)')
+			throw new Error('No default nRF Cloud settings (acme)')
 		}
 
 		progress(`Device id ${match.id} publishes to topic ${match.topic}`)
