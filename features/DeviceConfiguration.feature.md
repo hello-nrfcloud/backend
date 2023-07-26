@@ -34,7 +34,6 @@ When I send this message via the websocket
   "payload": {
     "@context": "https://github.com/hello-nrfcloud/proto/configure-device",
     "id": "${fingerprint_deviceId}",
-    "shadowVersion": 8835,
     "configuration": {
       "gnss": true
     }
@@ -50,7 +49,6 @@ Soon I should receive a message on the websocket that matches
 {
   "@context": "https://github.com/hello-nrfcloud/proto/device-configured",
   "id": "${fingerprint_deviceId}",
-  "shadowVersion": 8836,
   "configuration": { "gnss": true }
 }
 ```
@@ -62,7 +60,6 @@ Soon the nRF Cloud API should have been called with
 ```
 PATCH /v1/devices/${fingerprint_deviceId}/state HTTP/1.1
 Content-Type: application/json
-If-Match: 8835
 
 {"desired":{"config":{"nod":null}}}
 ```

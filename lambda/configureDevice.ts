@@ -67,7 +67,6 @@ const h = async (
 		deviceId,
 		message: {
 			request: {
-				shadowVersion,
 				configuration: { gnss },
 			},
 		},
@@ -95,7 +94,6 @@ const h = async (
 	const res = await fetch(url, {
 		method: 'PATCH',
 		headers: {
-			'If-Match': shadowVersion.toString(),
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${apiKey}`,
 		},
@@ -107,7 +105,6 @@ const h = async (
 		const message: Static<typeof DeviceConfigured> = {
 			...event.detail.message.request,
 			'@context': Context.deviceConfigured.toString(),
-			shadowVersion: event.detail.message.request.shadowVersion + 1,
 		}
 		await eventBus.putEvents({
 			Entries: [
