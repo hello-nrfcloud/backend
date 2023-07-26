@@ -13,9 +13,10 @@ import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 import type { Static } from '@sinclair/typebox'
-import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
 import { once } from 'lodash-es'
 import { slashless } from '../util/slashless.js'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
+import { SSMClient } from '@aws-sdk/client-ssm'
 
 type Request = Omit<WebsocketPayload, 'message'> & {
 	message: {
@@ -30,25 +31,43 @@ const { EventBusName, stackName } = fromEnv({
 })(process.env)
 
 const log = logger('configureDevice')
+const ssm = new SSMClient({})
 const eventBus = new EventBridge({})
 
 const { track, metrics } = metricsForComponent('configureDevice')
 
-const getNrfCloudAPIConfig: () => Promise<{
-	apiKey: string
-	apiEndpoint: URL
-}> = once(async () => {
-	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
-		'apiKey',
-		'apiEndpoint',
-	])
-	if (apiKey === undefined)
-		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
+const getAllNRFCloudAPIConfigs: () => Promise<
+	Record<
+		string,
+		{
+			apiKey: string
+			apiEndpoint: URL
+		}
+	>
+> = once(async () => {
+	const allAccountsSettings = await getAllAccountsSettings({
+		ssm,
+		stackName,
+	})()
+	return Object.entries(allAccountsSettings).reduce(
+		(result, [account, settings]) => {
+			if ('nrfCloudSettings' in settings) {
+				return {
+					...result,
+					[account]: {
+						apiKey: settings.nrfCloudSettings.apiKey,
+						apiEndpoint: new URL(
+							settings.nrfCloudSettings.apiEndpoint ??
+								'https://api.nrfcloud.com/',
+						),
+					},
+				}
+			}
 
-	return {
-		apiKey,
-		apiEndpoint: new URL(apiEndpoint ?? 'https://api.nrfcloud.com/'),
-	}
+			return result
+		},
+		{},
+	)
 })
 
 /**
@@ -61,7 +80,14 @@ const h = async (
 	>,
 ): Promise<void> => {
 	log.info('event', { event })
-	const { apiEndpoint, apiKey } = await getNrfCloudAPIConfig()
+	const account = event.detail.nRFCloudAccount
+	if (account === undefined)
+		throw new Error(`The device does not belong to any nRF Cloud account`)
+
+	const apiConfigs = await getAllNRFCloudAPIConfigs()
+	const { apiKey, apiEndpoint } = apiConfigs[account] ?? {}
+	if (apiKey === undefined || apiEndpoint === undefined)
+		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
 
 	const {
 		deviceId,

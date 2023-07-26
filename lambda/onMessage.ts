@@ -82,6 +82,7 @@ const success =
 					Detail: JSON.stringify(<WebsocketPayload>{
 						deviceId,
 						connectionId: event.requestContext.connectionId,
+						nRFCloudAccount: event.requestContext.authorizer.account,
 						message: {
 							request,
 							model,

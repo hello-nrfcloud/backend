@@ -9,6 +9,7 @@ export type WebsocketPayload = {
 	deviceId: string
 	// If present, only send payload to this specific connection
 	connectionId?: string
+	nRFCloudAccount?: string
 	message: Record<string, unknown>
 }
 

@@ -14,7 +14,6 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
-import type { World } from '../run-features.js'
 import { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 
@@ -281,11 +280,10 @@ ${data}
 
 	const checkAPIKeyRequest = async ({
 		step,
-		context: { requestsTableName },
 		log: {
 			step: { progress },
 		},
-	}: StepRunnerArgs<World>): Promise<StepRunResult> => {
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
 		const match = matchGroups(
 			Type.Object({
 				deviceId: Type.String(),

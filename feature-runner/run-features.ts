@@ -147,6 +147,8 @@ runner
 	.addStepRunners(
 		...mocknRFCloudSteps({
 			db,
+			ssm,
+			stackName: STACK_NAME,
 			responsesTableName: testConfig.responsesTableName,
 			requestsTableName: testConfig.requestsTableName,
 		}),

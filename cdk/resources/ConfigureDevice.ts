@@ -12,6 +12,7 @@ import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
+import { allAccountScopes } from '../../nrfcloud/allAccounts.js'
 
 /**
  * Handles device configuration requests
@@ -33,6 +34,26 @@ export class ConfigureDevice extends Construct {
 	) {
 		super(parent, 'configureDevice')
 
+		const policies = allAccountScopes
+			.map((scope) => [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/${scope.toString()}/*`,
+					],
+				}),
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/${scope.toString()}`,
+					],
+				}),
+			])
+			.flat()
 		const configureDevice = new Lambda.Function(this, 'configureDevice', {
 			handler: lambdaSources.configureDevice.handler,
 			architecture: Lambda.Architecture.ARM_64,
@@ -50,24 +71,7 @@ export class ConfigureDevice extends Construct {
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud/*`,
-					],
-				}),
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud`,
-					],
-				}),
-			],
+			initialPolicy: policies,
 		})
 		new Events.Rule(this, 'configureDeviceRule', {
 			eventPattern: {
