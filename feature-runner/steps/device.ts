@@ -19,7 +19,7 @@ import { generateCode } from '../../cli/devices/generateCode.js'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
 import { getModelForDevice } from '../../devices/getModelForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
-import type { Settings } from '../../nrfcloud/settings.js'
+import type { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
 
 const createDeviceForModel =
 	({
@@ -139,7 +139,11 @@ const getDevice =
 	}
 
 const publishDeviceMessage =
-	(nRFCloudSettings: Settings) =>
+	(
+		allAccountSettings: Awaited<
+			ReturnType<Awaited<ReturnType<typeof getAllAccountsSettings>>>
+		>,
+	) =>
 	async ({
 		step,
 		log: {
@@ -158,6 +162,11 @@ const publishDeviceMessage =
 		if (match === null) return noMatch
 
 		const message = JSON.parse(codeBlockOrThrow(step).code)
+
+		const nRFCloudSettings = allAccountSettings['exeger']?.nrfCloudSettings
+		if (nRFCloudSettings === undefined) {
+			throw new Error('No default nRF Cloud settings (exeger)')
+		}
 
 		progress(`Device id ${match.id} publishes to topic ${match.topic}`)
 		await new Promise((resolve, reject) => {
@@ -195,7 +204,9 @@ const publishDeviceMessage =
 	}
 
 export const steps = (
-	nRFCloudSettings: Settings,
+	allAccountSettings: Awaited<
+		ReturnType<Awaited<ReturnType<typeof getAllAccountsSettings>>>
+	>,
 	db: DynamoDBClient,
 	{
 		devicesTableFingerprintIndexName,
@@ -204,5 +215,5 @@ export const steps = (
 ): StepRunner<Record<string, string>>[] => [
 	createDeviceForModel({ db, devicesTableFingerprintIndexName, devicesTable }),
 	getDevice({ db, devicesTable }),
-	publishDeviceMessage(nRFCloudSettings),
+	publishDeviceMessage(allAccountSettings),
 ]

@@ -24,13 +24,13 @@ import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
-import { settingsPath } from '../../util/settings.js'
-import type { CommandDefinition } from './CommandDefinition.js'
-import { availableAccounts } from '../validnRFCloudAccount.js'
 import {
-	convertTonRFAccount,
-	validnRFCloudAccount,
-} from '../../nrfcloud/allAccounts.js'
+	Scope,
+	deleteSettings,
+	putSettings,
+	settingsPath,
+} from '../../util/settings.js'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot,
@@ -47,16 +47,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 		},
 	],
 	action: async (account, { remove }) => {
-		const scope = convertTonRFAccount(account)
-		if (!validnRFCloudAccount(scope)) {
-			console.error(
-				chalk.red('⚠️'),
-				'',
-				chalk.red(`account should be ${availableAccounts.join(', ')}`),
-			)
-			process.exit(1)
-		}
-
+		const scope = `thirdParty/${account}`
 		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`
 		if (remove === true) {
 			// check if has fake device
@@ -139,8 +130,16 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 					}),
 				)
 			}
+
+			await deleteSettings({
+				ssm,
+				stackName: STACK_NAME,
+				scope: Scope.NRFCLOUD_ACCOUNT,
+			})({ property: account })
+
 			return
 		}
+
 		const tenantId = randomUUID()
 		const policyName = `fake-nrfcloud-account-device-policy-${tenantId}`
 		console.debug(chalk.magenta(`Creating policy`), chalk.blue(policyName))
@@ -178,6 +177,14 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			throw new Error(`Failed to create certificate!`)
 		}
 
+		await putSettings({
+			ssm,
+			stackName: STACK_NAME,
+			scope: Scope.NRFCLOUD_ACCOUNT,
+		})({
+			property: account,
+			value: account,
+		})
 		const settings: Partial<Settings> = {
 			accountDeviceClientCert: credentials.certificatePem,
 			accountDevicePrivateKey: pk,

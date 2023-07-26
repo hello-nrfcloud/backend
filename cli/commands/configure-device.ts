@@ -8,10 +8,6 @@ import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import type { Nullable } from '../../util/types.js'
-import {
-	convertTonRFAccount,
-	validnRFCloudAccount,
-} from '../../nrfcloud/allAccounts.js'
 
 const defaultActiveWaitTimeSeconds = 60
 const defaultLocationTimeoutSeconds = 30
@@ -63,12 +59,7 @@ export const configureDeviceCommand = ({
 
 		console.log(chalk.yellow('ID'), chalk.blue(device.id))
 
-		const scope = convertTonRFAccount(device.account)
-		if (!validnRFCloudAccount(scope)) {
-			console.error(chalk.red('⚠️'), '', chalk.red(`invalid account`))
-			process.exit(1)
-		}
-
+		const scope = `thirdParty/${device.account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,

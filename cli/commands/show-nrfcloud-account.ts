@@ -4,11 +4,6 @@ import { table } from 'table'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { availableAccounts } from '../validnRFCloudAccount.js'
-import {
-	convertTonRFAccount,
-	validnRFCloudAccount,
-} from '../../nrfcloud/allAccounts.js'
 
 export const showNRFCloudAccount = ({
 	ssm,
@@ -19,16 +14,7 @@ export const showNRFCloudAccount = ({
 }): CommandDefinition => ({
 	command: 'show-nrfcloud-account <account>',
 	action: async (account) => {
-		const scope = convertTonRFAccount(account)
-		if (!validnRFCloudAccount(scope)) {
-			console.error(
-				chalk.red('⚠️'),
-				'',
-				chalk.red(`account should be ${availableAccounts.join(', ')}`),
-			)
-			process.exit(1)
-		}
-
+		const scope = `thirdParty/${account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,

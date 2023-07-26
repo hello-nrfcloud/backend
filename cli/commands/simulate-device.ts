@@ -17,9 +17,6 @@ import {
 	ensureCertificateDir,
 } from '../certificates.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { convertTonRFAccount } from '../../nrfcloud/allAccounts.js'
-
-import type { Scope } from '../../util/settings.js'
 
 export const simulateDeviceCommand = ({
 	ssm,
@@ -49,9 +46,7 @@ export const simulateDeviceCommand = ({
 			chalk.blue(maybeFingerprint.fingerprint),
 		)
 
-		const scope = convertTonRFAccount(maybeFingerprint.account) as
-			| Scope.EXEGER_CONFIG
-			| Scope.NODIC_CONFIG
+		const scope = `thirdParty/${maybeFingerprint.account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,

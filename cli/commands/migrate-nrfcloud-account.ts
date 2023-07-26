@@ -7,11 +7,6 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import chalk from 'chalk'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { availableAccounts } from '../validnRFCloudAccount.js'
-import {
-	convertTonRFAccount,
-	validnRFCloudAccount,
-} from '../../nrfcloud/allAccounts.js'
 
 import {
 	DeleteParameterCommand,
@@ -39,30 +34,6 @@ export const migrateNRFCloudAccounts = ({
 				chalk.red(`either fromAccount or toAccount must be nrfcloud`),
 			)
 			process.exit(1)
-		}
-
-		if (fromAccount === 'nrfcloud') {
-			const scope = convertTonRFAccount(toAccount)
-			if (!validnRFCloudAccount(scope)) {
-				console.error(
-					chalk.red('⚠️'),
-					'',
-					chalk.red(`account should be ${availableAccounts.join(', ')}`),
-				)
-				process.exit(1)
-			}
-		}
-
-		if (toAccount === 'nrfcloud') {
-			const scope = convertTonRFAccount(fromAccount)
-			if (!validnRFCloudAccount(scope)) {
-				console.error(
-					chalk.red('⚠️'),
-					'',
-					chalk.red(`account should be ${availableAccounts.join(', ')}`),
-				)
-				process.exit(1)
-			}
 		}
 
 		const parameters = await ssm.send(

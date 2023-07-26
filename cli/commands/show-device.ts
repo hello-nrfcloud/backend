@@ -6,9 +6,6 @@ import { getDevice } from '../../devices/getDevice.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { convertTonRFAccount } from '../../nrfcloud/allAccounts.js'
-
-import { Scope } from '../../util/settings.js'
 
 export const showDeviceCommand = ({
 	ssm,
@@ -40,9 +37,7 @@ export const showDeviceCommand = ({
 
 		const { device } = maybeDevice
 
-		const scope = convertTonRFAccount(device.account) as unknown as
-			| Scope.EXEGER_CONFIG
-			| Scope.NODIC_CONFIG
+		const scope = `thirdParty/${device.account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,

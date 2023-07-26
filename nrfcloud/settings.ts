@@ -4,7 +4,6 @@ import {
 	putSettings,
 	settingsPath,
 } from '../util/settings.js'
-import type { allAccountScopes } from './allAccounts.js'
 
 export const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
 
@@ -25,7 +24,7 @@ export const getSettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: (typeof allAccountScopes)[number]
+	scope: string
 }): (() => Promise<Settings>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
@@ -76,7 +75,7 @@ export const getAPISettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: (typeof allAccountScopes)[number]
+	scope: string
 }): (() => Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
@@ -104,7 +103,7 @@ export const updateSettings = ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: (typeof allAccountScopes)[number]
+	scope: string
 }): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
@@ -125,7 +124,7 @@ export const updateSettings = ({
 
 export const parameterName = (
 	stackName: string,
-	scope: (typeof allAccountScopes)[number],
+	scope: string,
 	parameterName: keyof Settings,
 ): string =>
 	settingsPath({

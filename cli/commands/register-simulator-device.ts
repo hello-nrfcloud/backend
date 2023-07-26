@@ -12,11 +12,6 @@ import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { availableAccounts } from '../validnRFCloudAccount.js'
-import {
-	convertTonRFAccount,
-	validnRFCloudAccount,
-} from '../../nrfcloud/allAccounts.js'
 
 export const registerSimulatorDeviceCommand = ({
 	ssm,
@@ -33,15 +28,7 @@ export const registerSimulatorDeviceCommand = ({
 }): CommandDefinition => ({
 	command: 'register-simulator-device <account>',
 	action: async (account) => {
-		const scope = convertTonRFAccount(account)
-		if (!validnRFCloudAccount(scope)) {
-			console.error(
-				chalk.red('⚠️'),
-				'',
-				chalk.red(`account should be ${availableAccounts.join(', ')}`),
-			)
-			process.exit(1)
-		}
+		const scope = `thirdParty/${account}`
 
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,

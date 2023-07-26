@@ -13,11 +13,6 @@ import {
 } from '../../nrfcloud/healthCheckSettings.js'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { availableAccounts } from '../validnRFCloudAccount.js'
-import {
-	convertTonRFAccount,
-	validnRFCloudAccount,
-} from '../../nrfcloud/allAccounts.js'
 
 export const createFakeNrfCloudHealthCheckDevice = ({
 	iot,
@@ -28,16 +23,7 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 }): CommandDefinition => ({
 	command: 'create-fake-nrfcloud-health-check-device <account>',
 	action: async (account) => {
-		const scope = convertTonRFAccount(account)
-		if (!validnRFCloudAccount(scope)) {
-			console.error(
-				chalk.red('⚠️'),
-				'',
-				chalk.red(`account should be ${availableAccounts.join(', ')}`),
-			)
-			process.exit(1)
-		}
-
+		const scope = `thirdParty/${account}`
 		const deviceId = `health-check-${randomUUID()}`
 
 		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`

@@ -2,13 +2,6 @@ import { IoTClient } from '@aws-sdk/client-iot'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { initializeAccount } from '../../nrfcloud/initializeAccount.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { availableAccounts } from '../validnRFCloudAccount.js'
-import {
-	convertTonRFAccount,
-	validnRFCloudAccount,
-} from '../../nrfcloud/allAccounts.js'
-
-import chalk from 'chalk'
 
 export const initializeNRFCloudAccountCommand = ({
 	ssm,
@@ -27,17 +20,7 @@ export const initializeNRFCloudAccountCommand = ({
 		},
 	],
 	action: async (account, { reset }) => {
-		const scope = convertTonRFAccount(account)
-		if (!validnRFCloudAccount(scope)) {
-			console.error(
-				chalk.red('⚠️'),
-				'',
-				chalk.red(`account should be ${availableAccounts.join(', ')}`),
-			)
-			process.exit(1)
-		}
-
-		await initializeAccount({ iot, ssm, stackName, scope })(reset)
+		await initializeAccount({ iot, ssm, stackName, account })(reset)
 	},
 	help: 'Initialize certificates used in MQTT bridge',
 })

@@ -37,7 +37,7 @@ export class BackendStack extends Stack {
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
-			activeNRFAccounts,
+			nRFCloudAccounts,
 			bridgeImageSettings,
 			repository,
 			gitHubOICDProviderArn,
@@ -49,7 +49,7 @@ export class BackendStack extends Stack {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
-			activeNRFAccounts: string[]
+			nRFCloudAccounts: string[]
 			bridgeImageSettings: BridgeImageSettings
 			gitHubOICDProviderArn: string
 			repository: {
@@ -120,6 +120,7 @@ export class BackendStack extends Stack {
 			websocketAPI,
 			layers: lambdaLayers,
 			lambdaSources,
+			nRFCloudAccounts,
 		})
 
 		new Integration(this, {
@@ -127,7 +128,7 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
-			activeNRFAccounts,
+			nRFCloudAccounts,
 		})
 
 		new HealthCheckMqttBridge(this, {
@@ -135,6 +136,7 @@ export class BackendStack extends Stack {
 			deviceStorage,
 			layers: [...lambdaLayers, healthCheckLayerVersion],
 			lambdaSources,
+			nRFCloudAccounts,
 		})
 
 		new ConvertDeviceMessages(this, {
@@ -166,6 +168,7 @@ export class BackendStack extends Stack {
 			lambdaSources,
 			layers: lambdaLayers,
 			websocketAPI,
+			nRFCloudAccounts,
 		})
 
 		// Outputs

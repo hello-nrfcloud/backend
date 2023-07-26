@@ -142,7 +142,7 @@ const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
 })()
-const activeNRFAccounts = Object.entries(allAccountSettings).reduce(
+const nRFCloudAccounts = Object.entries(allAccountSettings).reduce(
 	(result, [account, settings]) => {
 		if (
 			'mqttEndpoint' in settings.nrfCloudSettings &&
@@ -171,7 +171,7 @@ new BackendApp({
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
 	caCertificate,
-	activeNRFAccounts,
+	nRFCloudAccounts,
 	bridgeImageSettings: {
 		imageTag,
 		repositoryUri,

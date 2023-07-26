@@ -15,7 +15,6 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
-import { allAccountScopes } from '../../nrfcloud/allAccounts.js'
 
 export class DeviceShadow extends Construct {
 	public constructor(
@@ -24,6 +23,7 @@ export class DeviceShadow extends Construct {
 			websocketAPI,
 			lambdaSources,
 			layers,
+			nRFCloudAccounts,
 		}: {
 			websocketAPI: WebsocketAPI
 			lambdaSources: {
@@ -31,6 +31,7 @@ export class DeviceShadow extends Construct {
 				fetchDeviceShadow: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
+			nRFCloudAccounts: string[]
 		},
 	) {
 		super(parent, 'DeviceShadow')
@@ -94,14 +95,14 @@ export class DeviceShadow extends Construct {
 		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
 		shadowQueue.grantSendMessages(prepareDeviceShadow)
 
-		const policies = allAccountScopes
-			.map((scope) => [
+		const policies = nRFCloudAccounts
+			.map((account) => [
 				new IAM.PolicyStatement({
 					actions: ['ssm:GetParameter'],
 					resources: [
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${scope.toString()}/*`,
+						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}/*`,
 					],
 				}),
 				new IAM.PolicyStatement({
@@ -109,11 +110,21 @@ export class DeviceShadow extends Construct {
 					resources: [
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${scope.toString()}`,
+						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}`,
 					],
 				}),
 			])
 			.flat()
+		policies.push(
+			new IAM.PolicyStatement({
+				actions: ['ssm:GetParametersByPath'],
+				resources: [
+					`arn:aws:ssm:${Stack.of(this).region}:${
+						Stack.of(this).account
+					}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
+				],
+			}),
+		)
 		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
 			handler: lambdaSources.fetchDeviceShadow.handler,
 			architecture: Lambda.Architecture.ARM_64,

@@ -1,41 +1,42 @@
-import type { SSMClient } from '@aws-sdk/client-ssm'
+import { SSMClient } from '@aws-sdk/client-ssm'
 import { Scope } from '../util/settings.js'
-import { type Settings, getSettings } from './settings.js'
+import { type Settings } from './settings.js'
 import {
 	type Settings as HealthCheckSettings,
 	getSettings as getHealthCheckSettings,
 } from './healthCheckSettings.js'
-
-const scopePrefix = 'thirdParty/'
-
-export const allAccountScopes = [
-	Scope.EXEGER_CONFIG,
-	Scope.NODIC_CONFIG,
-] as const
+import { getSettings } from '../util/settings.js'
+import { getSettings as getnRFCloudSettings } from './settings.js'
 
 export type AllNRFCloudSettings = {
 	nrfCloudSettings: Settings
 	healthCheckSettings: HealthCheckSettings
 }
 
-export const convertTonRFAccount = (v: string): Scope => {
-	return `${scopePrefix}${v}` as Scope
-}
-
-export const validnRFCloudAccount = (
-	v: Scope,
-): v is (typeof allAccountScopes)[number] => {
-	return allAccountScopes.some((s) => s === v)
-}
+export const getAllnRFCloudAccounts = async ({
+	ssm,
+	stackName,
+}: {
+	ssm: SSMClient
+	stackName: string
+}): Promise<string[]> =>
+	Object.keys(
+		await getSettings({
+			ssm,
+			stackName,
+			scope: Scope.NRFCLOUD_ACCOUNT,
+		})(),
+	)
 
 export const getAllAccountsSettings =
 	({ ssm, stackName }: { ssm: SSMClient; stackName: string }) =>
 	async (): Promise<
 		Record<string, AllNRFCloudSettings | Record<string, never>>
-	> =>
-		allAccountScopes.reduce(async (resultPromise, scope) => {
+	> => {
+		const allAccounts = await getAllnRFCloudAccounts({ ssm, stackName })
+		return allAccounts.reduce(async (resultPromise, account) => {
 			const result = await resultPromise
-			const account = scope.toString().replace(/([^/]+\/)/, '')
+			const scope = `thirdParty/${account}`
 			return {
 				...result,
 				[account]: {
@@ -48,6 +49,7 @@ export const getAllAccountsSettings =
 				},
 			}
 		}, Promise.resolve({}))
+	}
 
 const healthCheckSettings = async ({
 	ssm,
@@ -56,7 +58,7 @@ const healthCheckSettings = async ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: (typeof allAccountScopes)[number]
+	scope: string
 }): Promise<HealthCheckSettings | Record<string, never>> => {
 	try {
 		return await getHealthCheckSettings({ ssm, stackName, scope })()
@@ -72,10 +74,10 @@ const nRFCloudSettings = async ({
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: (typeof allAccountScopes)[number]
+	scope: string
 }): Promise<Settings | Record<string, never>> => {
 	try {
-		return await getSettings({ ssm, stackName, scope })()
+		return await getnRFCloudSettings({ ssm, stackName, scope })()
 	} catch {
 		return {}
 	}

@@ -33,6 +33,25 @@ describe('settingsPath()', () => {
 				property: 'someProperty',
 			}),
 		).toEqual('/hello-nrfcloud/stack/context/someProperty'))
+
+	it('should produce a fully qualified parameter name for valid string scope', () =>
+		expect(
+			settingsPath({
+				scope: 'thirdParty/exeger',
+				stackName: 'hello-nrfcloud',
+				property: 'someProperty',
+			}),
+		).toEqual('/hello-nrfcloud/thirdParty/exeger/someProperty'))
+
+	it('should error for invalid string scope', () => {
+		expect(() =>
+			settingsPath({
+				scope: 'invalidScope',
+				stackName: 'hello-nrfcloud',
+				property: 'someProperty',
+			}),
+		).toThrowError()
+	})
 })
 
 describe('getSettings()', () => {
