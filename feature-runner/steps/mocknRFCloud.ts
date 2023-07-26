@@ -290,7 +290,7 @@ ${data}
 				account: Type.String(),
 			}),
 		)(
-			/^there is a device shadow request for `(?<deviceId>[^`]+)` with API key of `(?<account>[^`]+)` account$/,
+			/^the shadow for `(?<deviceId>[^`]+)` in the `(?<account>[^`]+)` account has been requested$/,
 			step.title,
 		)
 

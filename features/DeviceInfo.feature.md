@@ -5,8 +5,8 @@
 
 ## Background
 
-Given I have the fingerprint under `exeger` account for a `PCA20035+solar`
-device in `fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in the `exeger`
+account in `fingerprint`
 
 ## Connect with a valid fingerprint
 

@@ -4,8 +4,8 @@
 
 ## Background
 
-Given I have the fingerprint under `exeger` account for a `PCA20035+solar`
-device in `fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in the `exeger`
+account in `fingerprint`
 
 And I store
 `$toMillis($fromMillis($millis(), '[Y9999]-[M99]-[D99]T[H99]:[m]:00Z'))` into

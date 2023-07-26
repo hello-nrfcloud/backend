@@ -4,8 +4,8 @@
 
 ## Background
 
-Given I have the fingerprint under `exeger` account for a `PCA20035+solar`
-device in `fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in the `exeger`
+account in `fingerprint`
 
 ## Verify a device sends a message to nRF Cloud, then I can query historical messages
 

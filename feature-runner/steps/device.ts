@@ -46,7 +46,7 @@ const createDeviceForModel =
 				account: Type.String(),
 			}),
 		)(
-			/^I have the fingerprint under `(?<account>[^`]+)` account for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/,
+			/^I have the fingerprint for a `(?<model>[^`]+)` device(?<maybeAccount> in the `(?<account>[^`]+)` account) in `(?<storageName>[^`]+)`$/,
 			step.title,
 		)
 		if (match === null) return noMatch
