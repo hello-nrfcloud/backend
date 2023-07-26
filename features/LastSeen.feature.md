@@ -5,8 +5,8 @@
 
 ## Background
 
-Given I have the fingerprint for a `PCA20035+solar` device in the `acme` account
-in `fingerprint`
+Given I have the fingerprint under `acme` account for a `PCA20035+solar` in
+`fingerprint`
 
 <!-- The device sends in data to the cloud -->
 

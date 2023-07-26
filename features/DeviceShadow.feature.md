@@ -5,8 +5,8 @@
 
 ## Background
 
-Given I have the fingerprint for a `PCA20035+solar` device in the `acme` account
-in `fingerprint`
+Given I have the fingerprint under `acme` account for a `PCA20035+solar` in
+`fingerprint`
 
 And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
