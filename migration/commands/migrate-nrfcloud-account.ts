@@ -6,66 +6,83 @@ import {
 	ReturnValuesOnConditionCheckFailure,
 } from '@aws-sdk/client-dynamodb'
 import chalk from 'chalk'
-import type { CommandDefinition } from './CommandDefinition.js'
+import type { CommandDefinition } from '../../cli/commands/CommandDefinition.js'
 
 import {
 	DeleteParameterCommand,
-	GetParametersByPathCommand,
 	PutParameterCommand,
 	type SSMClient,
 } from '@aws-sdk/client-ssm'
-import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { Scope, getSettings, settingsPath } from '../../util/settings.js'
 
 export const migrateNRFCloudAccounts = ({
 	ssm,
 	db,
 	devicesTableName,
+	stackName,
 }: {
 	ssm: SSMClient
 	db: DynamoDBClient
 	devicesTableName: string
+	stackName: string
 }): CommandDefinition => ({
 	command: 'migrate-nrfcloud <fromAccount> <toAccount>',
 	action: async (fromAccount, toAccount) => {
-		if (!(fromAccount === 'nrfcloud' || toAccount === 'nrfcloud')) {
-			console.error(
-				chalk.red('⚠️'),
-				'',
-				chalk.red(`either fromAccount or toAccount must be nrfcloud`),
-			)
-			process.exit(1)
-		}
+		// nRF Cloud Accounts
+		console.log(chalk.green('Migrating account'))
+		await Promise.allSettled([
+			ssm.send(
+				new DeleteParameterCommand({
+					Name: settingsPath({
+						stackName,
+						scope: Scope.NRFCLOUD_ACCOUNT,
+						property: fromAccount,
+					}),
+				}),
+			),
+			ssm.send(
+				new PutParameterCommand({
+					Name: settingsPath({
+						stackName,
+						scope: Scope.NRFCLOUD_ACCOUNT,
+						property: toAccount,
+					}),
+					Value: toAccount,
+					Type: 'String',
+				}),
+			),
+		])
 
-		const parameters = await ssm.send(
-			new GetParametersByPathCommand({
-				Path: `/${STACK_NAME}/thirdParty/${fromAccount}`,
-				Recursive: true,
-			}),
-		)
-
-		const data = [
-			...(parameters.Parameters?.map((p) => ({
-				Name: p.Name,
-				Value: p.Value,
-			})) ?? []),
-		]
+		// nRF Cloud settings
+		const data = await getSettings({
+			ssm,
+			stackName,
+			scope: `thirdParty/${fromAccount}`,
+		})()
 
 		await Promise.all(
-			data.reduce<Promise<any>[]>((result, p) => {
-				const key = p.Name?.split('/').reverse()[0]
+			Object.entries(data).reduce<Promise<any>[]>((result, [key, value]) => {
 				console.log(chalk.green('Migrating key'), chalk.blue(key))
 				return [
 					...result,
 					ssm.send(
 						new PutParameterCommand({
-							Name: `/${STACK_NAME}/thirdParty/${toAccount}/${key}`,
-							Value: p.Value,
+							Name: settingsPath({
+								stackName,
+								scope: `thirdParty/${toAccount}`,
+								property: key,
+							}),
+							Value: value,
 							Type: 'String',
 						}),
 					),
 					ssm.send(
 						new DeleteParameterCommand({
-							Name: p.Name,
+							Name: settingsPath({
+								stackName,
+								scope: `thirdParty/${fromAccount}`,
+								property: key,
+							}),
 						}),
 					),
 				]
