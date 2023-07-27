@@ -4,14 +4,14 @@ import { table } from 'table'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { getAllnRFCloudAccounts } from '../../nrfcloud/allAccounts.js'
 
-export const showAccountsCommand = ({
+export const listnRFCloudAccountsCommand = ({
 	ssm,
 	stackName,
 }: {
 	ssm: SSMClient
 	stackName: string
 }): CommandDefinition => ({
-	command: 'show-accounts',
+	command: 'list-nrfcloud-accounts',
 	action: async () => {
 		const accounts = await getAllnRFCloudAccounts({
 			ssm,
@@ -21,5 +21,5 @@ export const showAccountsCommand = ({
 		const accountRows = accounts.map((account) => [chalk.green(account)])
 		console.log(table([['nRF Cloud Account'], ...accountRows]))
 	},
-	help: 'Show nRF Cloud accounts',
+	help: 'List all nRF Cloud accounts',
 })
