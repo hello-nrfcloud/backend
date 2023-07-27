@@ -30,22 +30,19 @@ export const getAllnRFCloudAccounts = async ({
 
 export const getAllAccountsSettings =
 	({ ssm, stackName }: { ssm: SSMClient; stackName: string }) =>
-	async (): Promise<
-		Record<string, AllNRFCloudSettings | Record<string, never>>
-	> => {
+	async (): Promise<Record<string, AllNRFCloudSettings>> => {
 		const allAccounts = await getAllnRFCloudAccounts({ ssm, stackName })
 		return allAccounts.reduce(async (resultPromise, account) => {
 			const result = await resultPromise
-			const scope = `thirdParty/${account}`
 			return {
 				...result,
 				[account]: {
 					healthCheckSettings: await healthCheckSettings({
 						ssm,
 						stackName,
-						scope,
+						account,
 					}),
-					nrfCloudSettings: await nRFCloudSettings({ ssm, stackName, scope }),
+					nrfCloudSettings: await nRFCloudSettings({ ssm, stackName, account }),
 				},
 			}
 		}, Promise.resolve({}))
@@ -54,31 +51,23 @@ export const getAllAccountsSettings =
 const healthCheckSettings = async ({
 	ssm,
 	stackName,
-	scope,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: string
-}): Promise<HealthCheckSettings | Record<string, never>> => {
-	try {
-		return await getHealthCheckSettings({ ssm, stackName, scope })()
-	} catch {
-		return {}
-	}
+	account: string
+}): Promise<HealthCheckSettings> => {
+	return await getHealthCheckSettings({ ssm, stackName, account })()
 }
 
 const nRFCloudSettings = async ({
 	ssm,
 	stackName,
-	scope,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: string
-}): Promise<Settings | Record<string, never>> => {
-	try {
-		return await getnRFCloudSettings({ ssm, stackName, scope })()
-	} catch {
-		return {}
-	}
+	account: string
+}): Promise<Settings> => {
+	return await getnRFCloudSettings({ ssm, stackName, account })()
 }

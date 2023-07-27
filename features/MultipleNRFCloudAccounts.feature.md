@@ -5,8 +5,8 @@
 
 ## Verify a ACME device sends shadow data to nRF Cloud and there is a shadow request with the associated API key
 
-Given I have the fingerprint under `acme` account for a `PCA20035+solar` in
-`fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in the `acme` account
+in `fingerprint`
 
 And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
@@ -285,8 +285,8 @@ requested
 
 ## Verify a Elite device sends shadow data to nRF Cloud and there is a shadow request with the associated API key
 
-Given I have the fingerprint under `elite` account for a `PCA20035+solar` in
-`fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in the `elite`
+account in `fingerprint`
 
 And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 

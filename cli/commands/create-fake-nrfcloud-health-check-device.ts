@@ -13,6 +13,7 @@ import {
 } from '../../nrfcloud/healthCheckSettings.js'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { generateCode } from '../devices/generateCode.js'
 
 export const createFakeNrfCloudHealthCheckDevice = ({
 	iot,
@@ -70,7 +71,7 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 			healthCheckPrivateKey: pk,
 			healthCheckClientId: deviceId,
 			healthCheckModel: 'PCA20035+solar',
-			healthCheckFingerPrint: `29a.ch3ckr.${account}`,
+			healthCheckFingerPrint: `29a.${generateCode()}`,
 		}
 		await updateSettings({ ssm, stackName: STACK_NAME, scope })(settings)
 

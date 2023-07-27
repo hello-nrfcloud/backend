@@ -46,7 +46,7 @@ export const initializeAccount =
 			settingsWithAccountDevice = await getNRFCloudSettings({
 				ssm,
 				stackName: STACK_NAME,
-				scope,
+				account,
 			})()
 			console.log(chalk.white('Stack settings'))
 			Object.entries(settingsWithAccountDevice).forEach(([k, v]) =>

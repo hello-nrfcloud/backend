@@ -21,6 +21,7 @@ import {
 	type Settings as nRFCloudSettings,
 } from '../../nrfcloud/settings.js'
 import { Scope, settingsPath } from '../../util/settings.js'
+import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -40,7 +41,7 @@ export class Integration extends Construct {
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
 			bridgeImageSettings: BridgeImageSettings
-			nRFCloudAccounts: string[]
+			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 		},
 	) {
 		super(parent, 'Integration')
@@ -217,8 +218,8 @@ export class Integration extends Construct {
 			),
 		}
 
-		const { environment, secrets } = nRFCloudAccounts.reduce(
-			(result, account, index) => {
+		const { environment, secrets } = Object.entries(nRFCloudAccounts).reduce(
+			(result, [account], index) => {
 				const bridgeNo = String(index + 2).padStart(2, '0')
 				const scope = `thirdParty/${account}`
 				const bridgePrefix = `MOSQUITTO__BRIDGE${bridgeNo}`

@@ -4,8 +4,7 @@
 
 ## Background
 
-Given I have the fingerprint under `acme` account for a `PCA20035+solar` in
-`fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 ## Verify a device sends a message to nRF Cloud, then I can query historical messages
 

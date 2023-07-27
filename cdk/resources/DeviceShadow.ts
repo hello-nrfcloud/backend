@@ -15,6 +15,7 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
+import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts'
 
 export class DeviceShadow extends Construct {
 	public constructor(
@@ -31,7 +32,7 @@ export class DeviceShadow extends Construct {
 				fetchDeviceShadow: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
-			nRFCloudAccounts: string[]
+			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 		},
 	) {
 		super(parent, 'DeviceShadow')
@@ -95,16 +96,8 @@ export class DeviceShadow extends Construct {
 		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
 		shadowQueue.grantSendMessages(prepareDeviceShadow)
 
-		const policies = nRFCloudAccounts
-			.map((account) => [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}/*`,
-					],
-				}),
+		const policies = Object.entries(nRFCloudAccounts).map(
+			([account]) =>
 				new IAM.PolicyStatement({
 					actions: ['ssm:GetParametersByPath'],
 					resources: [
@@ -113,8 +106,17 @@ export class DeviceShadow extends Construct {
 						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}`,
 					],
 				}),
-			])
-			.flat()
+		)
+		policies.push(
+			new IAM.PolicyStatement({
+				actions: ['ssm:GetParameter'],
+				resources: [
+					`arn:aws:ssm:${Stack.of(this).region}:${
+						Stack.of(this).account
+					}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+				],
+			}),
+		)
 		policies.push(
 			new IAM.PolicyStatement({
 				actions: ['ssm:GetParametersByPath'],

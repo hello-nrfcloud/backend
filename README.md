@@ -65,7 +65,7 @@ Messages will be converted using
 
 ## Device Simulator
 
-You can create a simulated device for particular nRF Cloud account using the
+You can create a simulated device for a particular nRF Cloud account using the
 CLI:
 
 ```bash

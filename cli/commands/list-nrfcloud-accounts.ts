@@ -21,5 +21,5 @@ export const listnRFCloudAccountsCommand = ({
 		const accountRows = accounts.map((account) => [chalk.green(account)])
 		console.log(table([['nRF Cloud Account'], ...accountRows]))
 	},
-	help: 'List all nRF Cloud accounts',
+	help: 'List configured nRF Cloud accounts',
 })

@@ -7,8 +7,7 @@
 
 ## Background
 
-Given I have the fingerprint under `acme` account for a `PCA20035+solar` in
-`fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 And I connect to the websocket using fingerprint `${fingerprint}`
 

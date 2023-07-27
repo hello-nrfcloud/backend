@@ -12,6 +12,7 @@ import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
+import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 
 /**
  * Handles device configuration requests
@@ -30,21 +31,13 @@ export class ConfigureDevice extends Construct {
 				configureDevice: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
-			nRFCloudAccounts: string[]
+			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 		},
 	) {
 		super(parent, 'configureDevice')
 
-		const policies = nRFCloudAccounts
-			.map((account) => [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}/*`,
-					],
-				}),
+		const policies = Object.entries(nRFCloudAccounts).map(
+			([account]) =>
 				new IAM.PolicyStatement({
 					actions: ['ssm:GetParametersByPath'],
 					resources: [
@@ -53,8 +46,17 @@ export class ConfigureDevice extends Construct {
 						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}`,
 					],
 				}),
-			])
-			.flat()
+		)
+		policies.push(
+			new IAM.PolicyStatement({
+				actions: ['ssm:GetParameter'],
+				resources: [
+					`arn:aws:ssm:${Stack.of(this).region}:${
+						Stack.of(this).account
+					}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+				],
+			}),
+		)
 		policies.push(
 			new IAM.PolicyStatement({
 				actions: ['ssm:GetParametersByPath'],

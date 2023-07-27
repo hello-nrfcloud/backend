@@ -20,12 +20,13 @@ export type Settings = {
 export const getSettings = ({
 	ssm,
 	stackName,
-	scope,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: string
+	account: string
 }): (() => Promise<Settings>) => {
+	const scope = `thirdParty/${account}`
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,

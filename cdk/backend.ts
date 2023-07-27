@@ -138,25 +138,10 @@ const { imageTag } = await getOrBuildDockerImage({
 		'bridge',
 	),
 })
-const allAccountSettings = await getAllAccountsSettings({
+const nRFCloudAccounts = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
 })()
-const nRFCloudAccounts = Object.entries(allAccountSettings).reduce(
-	(result, [account, settings]) => {
-		if (
-			'mqttEndpoint' in settings.nrfCloudSettings &&
-			'accountDeviceClientId' in settings.nrfCloudSettings &&
-			'mqttTopicPrefix' in settings.nrfCloudSettings &&
-			'accountDeviceClientCert' in settings.nrfCloudSettings &&
-			'accountDevicePrivateKey' in settings.nrfCloudSettings
-		) {
-			result.push(account)
-		}
-		return result
-	},
-	[] as string[],
-)
 
 new BackendApp({
 	lambdaSources: await packBackendLambdas(),

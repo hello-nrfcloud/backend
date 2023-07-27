@@ -13,6 +13,7 @@ import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from './LambdaSource.js'
+import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -32,7 +33,7 @@ export class HealthCheckMqttBridge extends Construct {
 			lambdaSources: {
 				healthCheck: PackedLambda
 			}
-			nRFCloudAccounts: string[]
+			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 		},
 	) {
 		super(parent, 'healthCheckMqttBridge')
@@ -43,8 +44,8 @@ export class HealthCheckMqttBridge extends Construct {
 		})
 
 		// Lambda functions
-		const policies = nRFCloudAccounts.map(
-			(account) =>
+		const policies = Object.entries(nRFCloudAccounts).map(
+			([account]) =>
 				new IAM.PolicyStatement({
 					actions: ['ssm:GetParametersByPath'],
 					resources: [

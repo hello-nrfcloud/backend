@@ -43,19 +43,22 @@ const createDeviceForModel =
 			Type.Object({
 				model: Type.String(),
 				storageName: Type.String(),
-				account: Type.String(),
+				account: Type.Optional(Type.String()),
 			}),
 		)(
-			/^I have the fingerprint under `(?<account>[^`]+)` account for a `(?<model>[^`]+)` in `(?<storageName>[^`]+)`$/,
+			/^I have the fingerprint for a `(?<model>[^`]+)` device(?<maybeaccount> in the `(?<account>[^`]+)` account)? in `(?<storageName>[^`]+)`$/,
 			step.title,
 		)
 		if (match === null) return noMatch
 
-		const { model, storageName, account } = match
+		const { model, storageName, account: maybeAccount } = match
+		const account = maybeAccount ?? 'acme'
 		const fingerprint = `92b.${generateCode()}`
 		const id = randomUUID()
 
-		progress(`Registering device ${id} into table ${devicesTable}`)
+		progress(
+			`Registering device ${id} of ${account} account into table ${devicesTable}`,
+		)
 		await registerDevice({ db, devicesTableName: devicesTable })({
 			id,
 			model,

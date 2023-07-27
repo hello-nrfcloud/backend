@@ -5,8 +5,7 @@
 
 ## Background
 
-Given I have the fingerprint under `acme` account for a `PCA20035+solar` in
-`fingerprint`
+Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 And device shadow fetching config for model `PCA20035+solar` is `5`
 

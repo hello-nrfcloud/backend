@@ -26,6 +26,7 @@ import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { KPIs } from '../resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
 import { ConfigureDevice } from '../resources/ConfigureDevice.js'
+import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -49,7 +50,7 @@ export class BackendStack extends Stack {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
-			nRFCloudAccounts: string[]
+			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 			bridgeImageSettings: BridgeImageSettings
 			gitHubOICDProviderArn: string
 			repository: {
