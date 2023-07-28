@@ -72,12 +72,12 @@ Soon I should receive a message on the websocket that matches
 
 ```json
 {
-  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/single-cell-geo-location",
-  "id": "${fingerprint_deviceId}",
+  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/location",
   "lat": 63.41999531,
   "lng": 10.42999506,
-  "accuracy": 2420,
-  "ts": "$number{ts}"
+  "acc": 2420,
+  "ts": "$number{ts}",
+  "src": "SCELL"
 }
 ```
 
