@@ -153,7 +153,6 @@ const h = async (event: {
 	const { lat, lon, uncertainty } = maybeLocation.value
 	const message: Static<typeof SingleCellGeoLocation> = {
 		'@context': Context.singleCellGeoLocation.toString(),
-		id: deviceId,
 		lat,
 		lng: lon,
 		accuracy: uncertainty,
