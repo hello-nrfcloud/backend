@@ -15,7 +15,6 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
-import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts'
 
 export class DeviceShadow extends Construct {
 	public constructor(
@@ -24,7 +23,6 @@ export class DeviceShadow extends Construct {
 			websocketAPI,
 			lambdaSources,
 			layers,
-			nRFCloudAccounts,
 		}: {
 			websocketAPI: WebsocketAPI
 			lambdaSources: {
@@ -32,7 +30,6 @@ export class DeviceShadow extends Construct {
 				fetchDeviceShadow: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
-			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 		},
 	) {
 		super(parent, 'DeviceShadow')
@@ -96,37 +93,6 @@ export class DeviceShadow extends Construct {
 		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
 		shadowQueue.grantSendMessages(prepareDeviceShadow)
 
-		const policies = Object.entries(nRFCloudAccounts).map(
-			([account]) =>
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}`,
-					],
-				}),
-		)
-		policies.push(
-			new IAM.PolicyStatement({
-				actions: ['ssm:GetParameter'],
-				resources: [
-					`arn:aws:ssm:${Stack.of(this).region}:${
-						Stack.of(this).account
-					}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
-				],
-			}),
-		)
-		policies.push(
-			new IAM.PolicyStatement({
-				actions: ['ssm:GetParametersByPath'],
-				resources: [
-					`arn:aws:ssm:${Stack.of(this).region}:${
-						Stack.of(this).account
-					}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
-				],
-			}),
-		)
 		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
 			handler: lambdaSources.fetchDeviceShadow.handler,
 			architecture: Lambda.Architecture.ARM_64,
@@ -148,7 +114,25 @@ export class DeviceShadow extends Construct {
 				PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
-			initialPolicy: policies,
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
+					],
+				}),
+			],
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})

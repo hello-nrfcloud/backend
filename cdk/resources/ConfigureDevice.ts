@@ -12,7 +12,6 @@ import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
-import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 
 /**
  * Handles device configuration requests
@@ -24,49 +23,16 @@ export class ConfigureDevice extends Construct {
 			lambdaSources,
 			layers,
 			websocketAPI,
-			nRFCloudAccounts,
 		}: {
 			websocketAPI: WebsocketAPI
 			lambdaSources: {
 				configureDevice: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
-			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 		},
 	) {
 		super(parent, 'configureDevice')
 
-		const policies = Object.entries(nRFCloudAccounts).map(
-			([account]) =>
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}`,
-					],
-				}),
-		)
-		policies.push(
-			new IAM.PolicyStatement({
-				actions: ['ssm:GetParameter'],
-				resources: [
-					`arn:aws:ssm:${Stack.of(this).region}:${
-						Stack.of(this).account
-					}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
-				],
-			}),
-		)
-		policies.push(
-			new IAM.PolicyStatement({
-				actions: ['ssm:GetParametersByPath'],
-				resources: [
-					`arn:aws:ssm:${Stack.of(this).region}:${
-						Stack.of(this).account
-					}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
-				],
-			}),
-		)
 		const configureDevice = new Lambda.Function(this, 'configureDevice', {
 			handler: lambdaSources.configureDevice.handler,
 			architecture: Lambda.Architecture.ARM_64,
@@ -84,7 +50,25 @@ export class ConfigureDevice extends Construct {
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
-			initialPolicy: policies,
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
+					],
+				}),
+			],
 		})
 		new Events.Rule(this, 'configureDeviceRule', {
 			eventPattern: {

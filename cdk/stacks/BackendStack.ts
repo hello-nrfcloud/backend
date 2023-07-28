@@ -121,7 +121,6 @@ export class BackendStack extends Stack {
 			websocketAPI,
 			layers: lambdaLayers,
 			lambdaSources,
-			nRFCloudAccounts,
 		})
 
 		new Integration(this, {
@@ -137,7 +136,6 @@ export class BackendStack extends Stack {
 			deviceStorage,
 			layers: [...lambdaLayers, healthCheckLayerVersion],
 			lambdaSources,
-			nRFCloudAccounts,
 		})
 
 		new ConvertDeviceMessages(this, {
@@ -169,7 +167,6 @@ export class BackendStack extends Stack {
 			lambdaSources,
 			layers: lambdaLayers,
 			websocketAPI,
-			nRFCloudAccounts,
 		})
 
 		// Outputs

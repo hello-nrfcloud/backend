@@ -13,7 +13,6 @@ import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from './LambdaSource.js'
-import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -25,7 +24,6 @@ export class HealthCheckMqttBridge extends Construct {
 			deviceStorage,
 			layers,
 			lambdaSources,
-			nRFCloudAccounts,
 		}: {
 			websocketAPI: WebsocketAPI
 			deviceStorage: DeviceStorage
@@ -33,7 +31,6 @@ export class HealthCheckMqttBridge extends Construct {
 			lambdaSources: {
 				healthCheck: PackedLambda
 			}
-			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 		},
 	) {
 		super(parent, 'healthCheckMqttBridge')
@@ -44,27 +41,6 @@ export class HealthCheckMqttBridge extends Construct {
 		})
 
 		// Lambda functions
-		const policies = Object.entries(nRFCloudAccounts).map(
-			([account]) =>
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/${account}`,
-					],
-				}),
-		)
-		policies.push(
-			new IAM.PolicyStatement({
-				actions: ['ssm:GetParametersByPath'],
-				resources: [
-					`arn:aws:ssm:${Stack.of(this).region}:${
-						Stack.of(this).account
-					}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
-				],
-			}),
-		)
 		const healthCheck = new Lambda.Function(this, 'healthCheck', {
 			handler: lambdaSources.healthCheck.handler,
 			architecture: Lambda.Architecture.ARM_64,
@@ -82,7 +58,25 @@ export class HealthCheckMqttBridge extends Construct {
 				WEBSOCKET_URL: websocketAPI.websocketURI,
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
-			initialPolicy: policies,
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
+					],
+				}),
+			],
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
