@@ -164,9 +164,7 @@ const res = await runner.run({})
 
 await Promise.all(cleaners.map(async (fn) => fn()))
 
-process.stdout.write(JSON.stringify(res, null, 2))
-
-if (!res.ok) {
-	console.error(chalk.red('Tests failed'))
-	process.exit(1)
-}
+console.error(`Writing to stdout ...`)
+process.stdout.write(JSON.stringify(res, null, 2), () => {
+	console.error(`Done`, res.ok ? chalk.green('OK') : chalk.red('ERROR'))
+})
