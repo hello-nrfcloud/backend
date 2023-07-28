@@ -1,13 +1,13 @@
 import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { proto } from '@hello.nrfcloud.com/proto/hello'
+import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { getModelForDevice } from '../devices/getModelForDevice.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
+import { getDeviceModelById } from './getDeviceModel.js'
 
 const { EventBusName, DevicesTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -18,8 +18,7 @@ const log = logger('deviceMessage')
 const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
-const modelFetcher = getModelForDevice({ db, DevicesTableName })
-const deviceModelCache: Record<string, string> = {}
+const modelFetcher = getDeviceModelById({ db, DevicesTableName })
 
 const { track, metrics } = metricsForComponent('onDeviceMessage')
 
@@ -33,20 +32,7 @@ const h = async (event: {
 	const { deviceId, message } = event
 
 	// Fetch model for device
-	if (deviceModelCache[deviceId] === undefined) {
-		const maybeModel = await modelFetcher(deviceId)
-		if ('error' in maybeModel) {
-			log.error(maybeModel.error.message)
-		} else {
-			deviceModelCache[deviceId] = maybeModel.model
-		}
-	}
-	const model = deviceModelCache[deviceId]
-	if (model === undefined) {
-		track('unknownDeviceModel', MetricUnits.Count, 1)
-		return
-	}
-	log.debug('model', { model })
+	const model = await modelFetcher(deviceId)
 
 	const converted = await proto({
 		onError: (message, model, error) => {
@@ -64,22 +50,24 @@ const h = async (event: {
 		track('convertedDeviceMessage', MetricUnits.Count, converted.length)
 	}
 
-	for (const message of converted) {
-		log.debug('websocket message', { payload: message })
-		await eventBus.putEvents({
-			Entries: [
-				{
-					EventBusName,
-					Source: 'thingy.ws',
-					DetailType: 'message',
-					Detail: JSON.stringify(<WebsocketPayload>{
-						deviceId,
-						message,
-					}),
-				},
-			],
-		})
-	}
+	await Promise.all(
+		converted.map(async (message) => {
+			log.debug('websocket message', { payload: message })
+			return eventBus.putEvents({
+				Entries: [
+					{
+						EventBusName,
+						Source: 'thingy.ws',
+						DetailType: 'message',
+						Detail: JSON.stringify(<WebsocketPayload>{
+							deviceId,
+							message,
+						}),
+					},
+				],
+			})
+		}),
+	)
 }
 
 export const handler = middy(h).use(logMetrics(metrics))

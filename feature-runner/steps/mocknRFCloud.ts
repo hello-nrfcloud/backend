@@ -2,6 +2,7 @@ import {
 	DynamoDBClient,
 	PutItemCommand,
 	QueryCommand,
+	ScanCommand,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import {
@@ -18,9 +19,16 @@ import { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 
 import { parseMockRequest } from './parseMockRequest.js'
-import { check, objectMatching } from 'tsmatchers'
+import {
+	arrayContaining,
+	check,
+	objectMatching,
+	stringContaining,
+	greaterThan,
+	lessThan,
+} from 'tsmatchers'
 import { parseMockResponse } from './parseMockResponse.js'
-let queryStartTime: Date | undefined
+import { toPairs } from './toPairs.js'
 
 export const steps = ({
 	db,
@@ -114,62 +122,78 @@ ${data}
 
 		if (match === null) return noMatch
 
-		if (queryStartTime === undefined) queryStartTime = new Date()
-		const params: { [K: string]: any } = {
-			includeState: true,
-			includeStateMeta: true,
-			pageLimit: 100,
-			deviceIds: match.deviceId,
-		}
-		const queryString = Object.entries(params)
-			.sort((a, b) => a[0].localeCompare(b[0]))
-			.map((kv) => kv.map(encodeURIComponent).join('='))
-			.join('&')
-
-		const methodPathQuery = `GET v1/devices?${queryString}`
-		progress(`Mock http url: ${methodPathQuery}`)
+		// We need to use scan here because the query string parameter deviceId may include more deviceIDs than just the one we are looking for.
 		const result = await db.send(
-			new QueryCommand({
+			new ScanCommand({
 				TableName: requestsTableName,
-				KeyConditionExpression:
-					'#methodPathQuery = :methodPathQuery AND #timestamp >= :timestamp',
+				FilterExpression: '#method = :method AND #resource = :resource',
 				ExpressionAttributeNames: {
-					'#methodPathQuery': 'methodPathQuery',
+					'#method': 'method',
+					'#resource': 'resource',
+					'#query': 'query',
 					'#timestamp': 'timestamp',
 				},
 				ExpressionAttributeValues: {
-					':methodPathQuery': { S: methodPathQuery },
-					':timestamp': { S: queryStartTime.toISOString() },
+					':method': { S: 'GET' },
+					':resource': { S: 'v1/devices' },
 				},
-				ProjectionExpression: '#timestamp',
-				ScanIndexForward: false,
-				Limit: 2,
+				ProjectionExpression: '#timestamp, #query',
 			}),
 		)
-		const resultObj = result?.Items?.map((item) => unmarshall(item))
-		progress(`Query mock requests from ${queryStartTime.toISOString()}`)
-		progress(
-			`Query mock requests result: ${JSON.stringify(resultObj, null, 2)}`,
+		const resultObj = (result?.Items ?? [])
+			.map(
+				(item) =>
+					unmarshall(item) as {
+						timestamp: string
+						query?: Record<string, any>
+					},
+			)
+			.filter(({ query }) => {
+				progress('query', JSON.stringify(query))
+				try {
+					check(query ?? {}).is(
+						objectMatching({
+							includeState: 'true',
+							includeStateMeta: 'true',
+							pageLimit: '100',
+							deviceIds: stringContaining(match.deviceId),
+						}),
+					)
+					return true
+				} catch {
+					return false
+				}
+			})
+		progress(`Query mock requests result:`, JSON.stringify(resultObj, null, 2))
+
+		if (resultObj.length < 2)
+			throw new Error(`Waiting for at least 2 mock requests`)
+
+		const timeDiffBetweenRequests = toPairs(
+			resultObj.sort(({ timestamp: t1 }, { timestamp: t2 }) =>
+				t1.localeCompare(t2),
+			),
+		).map(
+			([i1, i2]) =>
+				new Date(i2.timestamp).getTime() - new Date(i1.timestamp).getTime(),
 		)
 
-		if (resultObj?.length !== 2)
-			throw new Error(`Waiting for 2 consecutive mock requests`)
+		progress(`time diff`, JSON.stringify(timeDiffBetweenRequests))
 
-		const timeA = new Date(resultObj[0]?.timestamp).getTime()
-		const timeB = new Date(resultObj[1]?.timestamp).getTime()
-		const timeDiff = timeA - timeB
-		const allowedMarginInMS = 1000
-		const fitToSchedule =
-			timeDiff >= match.duration * 1000 - allowedMarginInMS &&
-			timeDiff <= match.duration * 1000 + allowedMarginInMS
-
-		if (fitToSchedule !== true)
-			throw new Error(
-				`2 consecutive mock requests does not match with the configured duration (${match.duration})`,
+		try {
+			const allowedMarginInMS = 1000
+			check(timeDiffBetweenRequests).is(
+				arrayContaining(
+					greaterThan(match.duration * 1000).and(
+						lessThan(match.duration * 1000 + allowedMarginInMS),
+					),
+				),
 			)
-
-		queryStartTime = undefined
-		assert.equal(fitToSchedule, true)
+		} catch {
+			throw new Error(
+				`mock requests did not happen within the configured duration (${match.duration})`,
+			)
+		}
 	}
 
 	const queueResponse = async ({
@@ -235,6 +259,15 @@ ${data}
 		const expectedRequest = codeBlockOrThrow(step).code
 
 		const request = parseMockRequest(expectedRequest)
+		let expectedBody = request.body
+		if (
+			Object.entries(request.headers)
+				.map(([k, v]) => [k.toLowerCase(), v])
+				.find(([k]) => k === 'content-type')?.[1]
+				?.includes('application/json') === true
+		) {
+			expectedBody = JSON.stringify(JSON.parse(expectedBody))
+		}
 
 		const methodPathQuery = `${request.method} ${request.resource.slice(1)}`
 		progress(`expected resource: ${methodPathQuery}`)
@@ -259,9 +292,12 @@ ${data}
 		const matchedRequest = (result.Items ?? [])
 			.map((item) => unmarshall(item))
 			.find(({ body, headers }) => {
+				progress(`body: ${body}`)
+				progress(`expected: ${expectedBody}`)
+				progress(`headers: ${headers}`)
 				try {
 					return (
-						body === request.body &&
+						body === expectedBody &&
 						check(JSON.parse(headers)).is(objectMatching(request.headers))
 					)
 				} catch (err) {

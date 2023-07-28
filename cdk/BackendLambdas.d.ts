@@ -14,4 +14,5 @@ type BackendLambdas = {
 	historicalDataRequest: PackedLambda
 	kpis: PackedLambda
 	configureDevice: PackedLambda
+	resolveSingleCellGeoLocation: PackedLambda
 }

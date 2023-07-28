@@ -5,7 +5,7 @@ import {
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { proto } from '@hello.nrfcloud.com/proto/hello'
+import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import { getShadowUpdateTime } from '@hello.nrfcloud.com/proto/nrfCloud'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'

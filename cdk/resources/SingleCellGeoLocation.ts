@@ -4,18 +4,19 @@ import {
 	aws_iot as IoT,
 	aws_lambda as Lambda,
 	aws_logs as Logs,
+	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
-import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { IoTActionRole } from './IoTActionRole.js'
+import type { DeviceStorage } from './DeviceStorage.js'
 
 /**
- * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
+ * Resolve device geo location based on network information
  */
-export class ConvertDeviceMessages extends Construct {
+export class SingleCellGeoLocation extends Construct {
 	public constructor(
 		parent: Construct,
 		{
@@ -24,42 +25,61 @@ export class ConvertDeviceMessages extends Construct {
 			websocketAPI,
 			deviceStorage,
 		}: {
-			deviceStorage: DeviceStorage
 			websocketAPI: WebsocketAPI
+			deviceStorage: DeviceStorage
 			lambdaSources: {
-				onDeviceMessage: PackedLambda
+				resolveSingleCellGeoLocation: PackedLambda
 			}
 			layers: Lambda.ILayerVersion[]
 		},
 	) {
-		super(parent, 'converter')
+		super(parent, 'SingleCellGeoLocation')
 
-		const onDeviceMessage = new Lambda.Function(this, 'onDeviceMessage', {
-			handler: lambdaSources.onDeviceMessage.handler,
+		const fn = new Lambda.Function(this, 'fn', {
+			handler: lambdaSources.resolveSingleCellGeoLocation.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: Duration.seconds(5),
+			timeout: Duration.seconds(60),
 			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.onDeviceMessage).code,
-			description: 'Convert device messages and publish them on the EventBus',
+			code: new LambdaSource(this, lambdaSources.resolveSingleCellGeoLocation)
+				.code,
+			description: 'Resolve device geo location based on network information',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
-				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				STACK_NAME: Stack.of(this).stackName,
+				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud/*`,
+					],
+				}),
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud`,
+					],
+				}),
+			],
 		})
-		websocketAPI.eventBus.grantPutEventsTo(onDeviceMessage)
-		deviceStorage.devicesTable.grantReadData(onDeviceMessage)
+		websocketAPI.eventBus.grantPutEventsTo(fn)
+		deviceStorage.devicesTable.grantReadData(fn)
 
 		const rule = new IoT.CfnTopicRule(this, 'topicRule', {
 			topicRulePayload: {
-				description: `Convert received message and publish to the EventBus`,
+				description: `Resolve device geo location based on network information`,
 				ruleDisabled: false,
 				awsIotSqlVersion: '2016-03-23',
 				sql: `
@@ -69,11 +89,12 @@ export class ConvertDeviceMessages extends Construct {
 						timestamp() as timestamp
 					from 'data/+/+/+/+'
 					where messageType = 'DATA'
+					and appId = 'DEVICE'
 				`,
 				actions: [
 					{
 						lambda: {
-							functionArn: onDeviceMessage.functionArn,
+							functionArn: fn.functionArn,
 						},
 					},
 				],
@@ -86,7 +107,7 @@ export class ConvertDeviceMessages extends Construct {
 			},
 		})
 
-		onDeviceMessage.addPermission('topicRule', {
+		fn.addPermission('topicRule', {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
 			sourceArn: rule.attrArn,
 		})

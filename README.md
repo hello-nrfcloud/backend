@@ -36,6 +36,13 @@ need to prepare nRF Cloud API key.
 ./cli.sh create-health-check-device <account>
 ```
 
+#### nRF Cloud Location Services Service Key
+
+The single-cell geo-location features uses the nRF Cloud
+[Ground Fix API](https://api.nrfcloud.com/v1#tag/Ground-Fix) which requires the
+service to be enabled in the account's plan. Manage the account at
+<https://nrfcloud.com/#/manage-plan>.
+
 ### Deploy
 
 ```bash

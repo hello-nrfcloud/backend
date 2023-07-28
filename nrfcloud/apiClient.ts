@@ -118,7 +118,6 @@ export const apiClient = ({
 				{
 					headers: {
 						...headers,
-						'If-Match': version.toString(),
 						'Content-Type': 'application/json',
 					},
 					method: 'PATCH',
