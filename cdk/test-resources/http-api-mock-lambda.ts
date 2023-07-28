@@ -4,7 +4,7 @@ import {
 	PutItemCommand,
 	QueryCommand,
 } from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import type {
 	APIGatewayEvent,
 	APIGatewayProxyResult,
@@ -22,14 +22,57 @@ export const handler = async (
 	event: APIGatewayEvent,
 	context: Context,
 ): Promise<APIGatewayProxyResult> => {
-	const pathWithQuery = `${event.path.replace(/^\//, '')}${
+	const query =
 		event.queryStringParameters !== null &&
 		event.queryStringParameters !== undefined
-			? `?${new URLSearchParams(
+			? new URLSearchParams(
 					event.queryStringParameters as Record<string, string>,
-			  ).toString()}`
-			: ''
+			  )
+			: undefined
+	const resource = event.path.replace(/^\//, '')
+	const pathWithQuery = `${resource}${
+		query !== undefined ? `?${query.toString()}` : ''
 	}`
+
+	console.log({
+		TableName: process.env.REQUESTS_TABLE_NAME,
+		Item: {
+			methodPathQuery: {
+				S: `${event.httpMethod} ${pathWithQuery}`,
+			},
+			timestamp: {
+				S: new Date().toISOString(),
+			},
+			requestId: {
+				S: context.awsRequestId,
+			},
+			method: {
+				S: event.httpMethod,
+			},
+			path: {
+				S: pathWithQuery,
+			},
+			resource: { S: resource },
+			query:
+				query === undefined
+					? { NULL: true }
+					: {
+							M: [...query.entries()].reduce(
+								(o, [k, v]) => ({ ...o, [k]: v }),
+								{},
+							),
+					  },
+			body: {
+				S: event.body ?? '{}',
+			},
+			headers: {
+				S: JSON.stringify(event.headers),
+			},
+			ttl: {
+				N: `${Math.round(Date.now() / 1000) + 5 * 60}`,
+			},
+		},
+	})
 
 	await db.send(
 		new PutItemCommand({
@@ -50,6 +93,18 @@ export const handler = async (
 				path: {
 					S: pathWithQuery,
 				},
+				resource: { S: resource },
+				query:
+					query === undefined
+						? { NULL: true }
+						: {
+								M: marshall(
+									[...query.entries()].reduce(
+										(o, [k, v]) => ({ ...o, [k]: v }),
+										{},
+									),
+								),
+						  },
 				body: {
 					S: event.body ?? '{}',
 				},
