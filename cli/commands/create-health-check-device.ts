@@ -27,11 +27,10 @@ export const createHealthCheckDevice = ({
 }): CommandDefinition => ({
 	command: 'create-health-check-device <account>',
 	action: async (account) => {
-		const scope = `thirdParty/${account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
-			scope,
+			account,
 		})()
 
 		const client = apiClient({
@@ -122,7 +121,7 @@ export const createHealthCheckDevice = ({
 			healthCheckModel: 'PCA20035+solar',
 			healthCheckFingerPrint: `29a.${generateCode()}`,
 		}
-		await updateSettings({ ssm, stackName, scope })(settings)
+		await updateSettings({ ssm, stackName, account })(settings)
 
 		console.debug(chalk.white(`nRF Cloud health check device settings:`))
 		Object.entries(settings).forEach(([k, v]) => {

@@ -24,7 +24,6 @@ export const importDevicesCommand = ({
 }): CommandDefinition => ({
 	command: 'import-devices <account> <model> <provisioningList>',
 	action: async (account, model, provisioningList) => {
-		const scope = `thirdParty/${account}`
 		const devicesList = (await readFile(provisioningList, 'utf-8'))
 			.trim()
 			.split('\r\n')
@@ -92,7 +91,7 @@ export const importDevicesCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
-			scope,
+			account,
 		})()
 
 		const client = apiClient({

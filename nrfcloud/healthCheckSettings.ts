@@ -12,16 +12,16 @@ export type Settings = {
 export const updateSettings = ({
 	ssm,
 	stackName,
-	scope,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: string
+	account: string
 }): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
 		stackName,
-		scope,
+		scope: `thirdParty/${account}`,
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(

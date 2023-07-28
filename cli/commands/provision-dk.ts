@@ -68,8 +68,6 @@ export const provisionDkCommand = ({
 		model,
 		{ port, dk, atHost, debug, deletePrivateKey },
 	) => {
-		const scope = `thirdParty/${account}`
-
 		const dir = ensureCertificateDir(env)
 		const {
 			privateKey: caPrivateKeyLocation,
@@ -157,7 +155,7 @@ export const provisionDkCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
-			scope,
+			account,
 		})()
 
 		const client = apiClient({

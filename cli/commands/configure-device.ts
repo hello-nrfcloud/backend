@@ -59,11 +59,10 @@ export const configureDeviceCommand = ({
 
 		console.log(chalk.yellow('ID'), chalk.blue(device.id))
 
-		const scope = `thirdParty/${device.account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
-			scope,
+			account: device.account,
 		})()
 
 		const client = apiClient({

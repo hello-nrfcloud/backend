@@ -14,11 +14,10 @@ export const showNRFCloudAccount = ({
 }): CommandDefinition => ({
 	command: 'show-nrfcloud-account <account>',
 	action: async (account) => {
-		const scope = `thirdParty/${account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
-			scope,
+			account,
 		})()
 
 		const client = apiClient({

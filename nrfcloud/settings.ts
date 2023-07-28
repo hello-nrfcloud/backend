@@ -72,16 +72,16 @@ export const getSettings = ({
 export const getAPISettings = ({
 	ssm,
 	stackName,
-	scope,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: string
+	account: string
 }): (() => Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope,
+		scope: `thirdParty/${account}`,
 	})
 	return async (): Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>> => {
 		const p = await settingsReader()

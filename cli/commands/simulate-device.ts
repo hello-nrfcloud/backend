@@ -46,11 +46,10 @@ export const simulateDeviceCommand = ({
 			chalk.blue(maybeFingerprint.fingerprint),
 		)
 
-		const scope = `thirdParty/${maybeFingerprint.account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
-			scope,
+			account: maybeFingerprint.account,
 		})()
 		const client = apiClient({
 			endpoint: apiEndpoint,

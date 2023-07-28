@@ -28,12 +28,10 @@ export const registerSimulatorDeviceCommand = ({
 }): CommandDefinition => ({
 	command: 'register-simulator-device <account>',
 	action: async (account) => {
-		const scope = `thirdParty/${account}`
-
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
-			scope,
+			account,
 		})()
 
 		const client = apiClient({

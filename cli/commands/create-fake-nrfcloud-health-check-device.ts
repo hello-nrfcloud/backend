@@ -24,7 +24,6 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 }): CommandDefinition => ({
 	command: 'create-fake-nrfcloud-health-check-device <account>',
 	action: async (account) => {
-		const scope = `thirdParty/${account}`
 		const deviceId = `health-check-${randomUUID()}`
 
 		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`
@@ -73,7 +72,7 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 			healthCheckModel: 'PCA20035+solar',
 			healthCheckFingerPrint: `29a.${generateCode()}`,
 		}
-		await updateSettings({ ssm, stackName: STACK_NAME, scope })(settings)
+		await updateSettings({ ssm, stackName: STACK_NAME, account })(settings)
 
 		console.debug(chalk.white(`Fake nRF Cloud health check device settings:`))
 		Object.entries(settings).forEach(([k, v]) => {

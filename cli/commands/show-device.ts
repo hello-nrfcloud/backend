@@ -37,11 +37,10 @@ export const showDeviceCommand = ({
 
 		const { device } = maybeDevice
 
-		const scope = `thirdParty/${device.account}`
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
-			scope,
+			account: device.account,
 		})()
 
 		const client = apiClient({
