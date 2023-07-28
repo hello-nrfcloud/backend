@@ -26,11 +26,12 @@ export const registerSimulatorDeviceCommand = ({
 	devicesTableName: string
 	env: Required<Environment>
 }): CommandDefinition => ({
-	command: 'register-simulator-device',
-	action: async () => {
+	command: 'register-simulator-device <account>',
+	action: async (account) => {
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			account,
 		})()
 
 		const client = apiClient({
@@ -102,6 +103,7 @@ export const registerSimulatorDeviceCommand = ({
 			id: deviceId,
 			model: 'PCA20035+solar',
 			fingerprint,
+			account,
 		})
 		if ('error' in res) {
 			console.error(chalk.red(`Failed to store device fingerprint!`))

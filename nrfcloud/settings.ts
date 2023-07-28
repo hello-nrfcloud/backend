@@ -1,6 +1,5 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import {
-	Scope,
 	getSettings as getSSMSettings,
 	putSettings,
 	settingsPath,
@@ -21,14 +20,17 @@ export type Settings = {
 export const getSettings = ({
 	ssm,
 	stackName,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
+	account: string
 }): (() => Promise<Settings>) => {
+	const scope = `thirdParty/${account}`
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 	})
 	return async (): Promise<Settings> => {
 		const p = await settingsReader()
@@ -70,14 +72,16 @@ export const getSettings = ({
 export const getAPISettings = ({
 	ssm,
 	stackName,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
+	account: string
 }): (() => Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>>) => {
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope: `thirdParty/${account}`,
 	})
 	return async (): Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>> => {
 		const p = await settingsReader()
@@ -96,14 +100,16 @@ export const getAPISettings = ({
 export const updateSettings = ({
 	ssm,
 	stackName,
+	scope,
 }: {
 	ssm: SSMClient
 	stackName: string
+	scope: string
 }): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(
@@ -119,10 +125,11 @@ export const updateSettings = ({
 
 export const parameterName = (
 	stackName: string,
+	scope: string,
 	parameterName: keyof Settings,
 ): string =>
 	settingsPath({
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 		property: parameterName,
 	})

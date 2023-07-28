@@ -49,6 +49,7 @@ export const simulateDeviceCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			account: maybeFingerprint.account,
 		})()
 		const client = apiClient({
 			endpoint: apiEndpoint,

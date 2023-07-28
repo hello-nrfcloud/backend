@@ -14,7 +14,7 @@ import {
 } from '../cdk/stacks/stackConfig.js'
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import { getSettings as nrfCloudSettings } from '../nrfcloud/settings.js'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import {
 	Scope,
 	deleteSettings,
@@ -44,8 +44,7 @@ const config = await stackOutput(
 const testConfig = await stackOutput(
 	new CloudFormationClient({}),
 )<TestStackOutputs>(TEST_RESOURCES_STACK_NAME)
-
-const accountDeviceSettings = await nrfCloudSettings({
+const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
 })()
@@ -138,7 +137,7 @@ cleaners.push(configCleanup)
 runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(
-		...deviceSteps(accountDeviceSettings, db, {
+		...deviceSteps(allAccountSettings, db, {
 			devicesTableFingerprintIndexName: config.devicesTableFingerprintIndexName,
 			devicesTable: config.devicesTableName,
 		}),
@@ -146,6 +145,8 @@ runner
 	.addStepRunners(
 		...mocknRFCloudSteps({
 			db,
+			ssm,
+			stackName: STACK_NAME,
 			responsesTableName: testConfig.responsesTableName,
 			requestsTableName: testConfig.requestsTableName,
 		}),

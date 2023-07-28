@@ -10,12 +10,13 @@ export const registerDeviceCommand = ({
 	db: DynamoDBClient
 	devicesTableName: string
 }): CommandDefinition => ({
-	command: 'register-device <fingerprint> <deviceId> <model>',
-	action: async (fingerprint, deviceId, model) => {
+	command: 'register-device <account> <fingerprint> <deviceId> <model>',
+	action: async (account, fingerprint, deviceId, model) => {
 		const res = await registerDevice({ db, devicesTableName })({
 			id: deviceId,
 			model,
 			fingerprint,
+			account,
 		})
 		if ('error' in res) {
 			throw new Error(`Failed to register device: ${res.error.message}!`)

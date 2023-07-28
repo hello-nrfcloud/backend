@@ -3,7 +3,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
-import { Scope, getSettings } from '../util/settings.js'
+import { Scope, getSettings, putSettings } from '../util/settings.js'
 import { createAccountDevice } from './createAccountDevice.js'
 import { deleteAccountDevice } from './deleteNrfcloudCredentials.js'
 import { getAccountInfo } from './getAccountInfo.js'
@@ -22,16 +22,19 @@ export const initializeAccount =
 		iot,
 		ssm,
 		stackName,
+		account,
 	}: {
 		iot: IoTClient
 		ssm: SSMClient
 		stackName: string
+		account: string
 	}) =>
 	async (reset = false): Promise<void> => {
+		const scope = `thirdParty/${account}`
 		const settingsReader = getSettings({
 			ssm,
 			stackName,
-			scope: Scope.NRFCLOUD_CONFIG,
+			scope,
 		})
 
 		const { apiKey, apiEndpoint } = await settingsReader()
@@ -43,6 +46,7 @@ export const initializeAccount =
 			settingsWithAccountDevice = await getNRFCloudSettings({
 				ssm,
 				stackName: STACK_NAME,
+				account,
 			})()
 			console.log(chalk.white('Stack settings'))
 			Object.entries(settingsWithAccountDevice).forEach(([k, v]) =>
@@ -94,7 +98,13 @@ export const initializeAccount =
 			}
 			console.log(chalk.green(`Account device created.`))
 
-			await updateSettings({ ssm, stackName: STACK_NAME })({
+			await putSettings({
+				ssm,
+				stackName: STACK_NAME,
+				scope: Scope.NRFCLOUD_ACCOUNT,
+			})({ property: account, value: account })
+
+			await updateSettings({ ssm, stackName: STACK_NAME, scope })({
 				accountDeviceClientCert: clientCert,
 				accountDevicePrivateKey: privateKey,
 				accountDeviceClientId: `account-${accountInfo.tenantId}`,

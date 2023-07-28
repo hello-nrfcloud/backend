@@ -58,20 +58,28 @@ export class HealthCheckMqttBridge extends Construct {
 				WEBSOCKET_URL: websocketAPI.websocketURI,
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
-			initialPolicy: [],
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
+					],
+				}),
+			],
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		const ssmReadPolicy = new IAM.PolicyStatement({
-			effect: IAM.Effect.ALLOW,
-			actions: ['ssm:GetParametersByPath'],
-			resources: [
-				`arn:aws:ssm:${Stack.of(this).region}:${
-					Stack.of(this).account
-				}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud`,
-			],
-		})
-		healthCheck.addToRolePolicy(ssmReadPolicy)
 		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheck))
 		deviceStorage.devicesTable.grantWriteData(healthCheck)
 	}

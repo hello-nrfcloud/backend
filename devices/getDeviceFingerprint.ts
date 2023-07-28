@@ -11,7 +11,7 @@ export const getDeviceFingerprint =
 	}) =>
 	async (
 		deviceId: string,
-	): Promise<{ error: Error } | { fingerprint: string }> => {
+	): Promise<{ error: Error } | { fingerprint: string; account: string }> => {
 		const { Items } = await db.send(
 			new QueryCommand({
 				TableName: devicesTableName,
@@ -19,20 +19,25 @@ export const getDeviceFingerprint =
 				ExpressionAttributeNames: {
 					'#deviceId': 'deviceId',
 					'#fingerprint': 'fingerprint',
+					'#account': 'account',
 				},
 				ExpressionAttributeValues: {
 					':deviceId': {
 						S: deviceId,
 					},
 				},
-				ProjectionExpression: '#fingerprint',
+				ProjectionExpression: '#fingerprint, #account',
 				Limit: 1,
 			}),
 		)
 
-		return Items?.[0] === undefined
-			? { error: new Error(`Unknown device ${deviceId}`) }
-			: {
-					fingerprint: unmarshall(Items[0]).fingerprint,
-			  }
+		if (Items?.[0] === undefined) {
+			return { error: new Error(`Unknown device ${deviceId}`) }
+		} else {
+			const data = unmarshall(Items[0])
+			return {
+				fingerprint: data.fingerprint,
+				account: data.account,
+			}
+		}
 	}

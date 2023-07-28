@@ -9,9 +9,9 @@ import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import { getShadowUpdateTime } from '@hello.nrfcloud.com/proto/nrfCloud'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { chunk, once, uniqBy } from 'lodash-es'
+import { chunk, groupBy, once, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
-import { getSettings, Scope } from '../util/settings.js'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
@@ -20,8 +20,9 @@ import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecke
 import { createLock } from '../websocket/lock.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { configureDeviceShadowFetcher } from './shadow/configureDeviceShadowFetcher.js'
 import { logger } from './util/logger.js'
+import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
+import { defaultApiEndpoint } from '../nrfcloud/settings.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
@@ -53,14 +54,20 @@ const connectionsRepo = connectionsRepository(
 )
 
 const ssm = new SSMClient({})
-const { healthCheckClientId } = await getSettings({
-	ssm,
-	stackName,
-	scope: Scope.NRFCLOUD_CONFIG,
-})()
 
 // Make sure to call it in the handler, so the AWS Parameters and Secrets Lambda Extension is ready.
-const getShadowFetcher = once(configureDeviceShadowFetcher({ stackName }))
+const getAllNRFCloudAccountSettings = once(
+	getAllAccountsSettings({
+		ssm,
+		stackName,
+	}),
+)
+const getAllHealthCheckClientIds = once(async () => {
+	const settings = await getAllNRFCloudAccountSettings()
+	return Object.values(settings)
+		.map((settings) => settings?.healthCheckSettings?.healthCheckClientId)
+		.filter((x) => x !== undefined)
+})
 
 const h = async (): Promise<void> => {
 	try {
@@ -70,7 +77,9 @@ const h = async (): Promise<void> => {
 			return
 		}
 
-		const deviceShadow = await getShadowFetcher()
+		const allNRFCloudSettings = await getAllNRFCloudAccountSettings()
+		const healthCheckClientIds = await getAllHealthCheckClientIds()
+
 		const executionTime = new Date()
 
 		const connections = await connectionsRepo.getAll()
@@ -85,10 +94,10 @@ const h = async (): Promise<void> => {
 		)
 		const devicesToCheckShadowUpdate = connections.filter((connection) => {
 			// The health check device does not publish a valid shadow, so do not fetch it
-			if (connection.deviceId === healthCheckClientId) {
+			if (healthCheckClientIds.includes(connection.deviceId)) {
 				console.debug(
 					`Ignoring shadow request for health check device`,
-					healthCheckClientId,
+					connection.deviceId,
 				)
 				return false
 			}
@@ -118,23 +127,44 @@ const h = async (): Promise<void> => {
 		// Bulk fetching device shadow to avoid rate limit
 		const deviceShadows = (
 			await Promise.all(
-				chunk(
-					uniqBy(devicesToCheckShadowUpdate, (device) => device.deviceId),
-					50,
-				).map(async (devices) =>
-					limit(async () => {
-						const start = Date.now()
-						const res = await deviceShadow(
-							devices.map((device) => device.deviceId),
+				Object.entries(
+					groupBy(devicesToCheckShadowUpdate, (device) => device.account),
+				).map(async ([account, devices]) => {
+					const { apiKey, apiEndpoint } =
+						allNRFCloudSettings[account]?.nrfCloudSettings ?? {}
+					if (apiKey === undefined) return []
+
+					const deviceShadow = deviceShadowFetcher({
+						endpoint:
+							apiEndpoint !== undefined
+								? new URL(apiEndpoint)
+								: defaultApiEndpoint,
+						apiKey,
+					})
+
+					return (
+						await Promise.all(
+							chunk(
+								uniqBy(devices, (device) => device.deviceId),
+								50,
+							).map(async (devices) =>
+								limit(async () => {
+									const start = Date.now()
+									log.debug(`Prepare fetching shadow under ${account} account`)
+									const res = await deviceShadow(
+										devices.map((device) => device.deviceId),
+									)
+									track(
+										'apiResponseTime',
+										MetricUnits.Milliseconds,
+										Date.now() - start,
+									)
+									return res
+								}),
+							),
 						)
-						track(
-							'apiResponseTime',
-							MetricUnits.Milliseconds,
-							Date.now() - start,
-						)
-						return res
-					}),
-				),
+					).flat()
+				}),
 			)
 		).flat()
 

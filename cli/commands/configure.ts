@@ -2,11 +2,8 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import fs from 'fs'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
-import { Scope, deleteSettings, putSettings } from '../../util/settings.js'
+import { deleteSettings, putSettings } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-
-const validScopes = [Scope.NRFCLOUD_CONFIG]
-const isScope = (s: string): s is Scope => validScopes.includes(s as Scope)
 
 export const configureCommand = ({
 	ssm,
@@ -33,9 +30,6 @@ export const configureCommand = ({
 		const property = parts.pop()
 
 		const scope = parts.join('/')
-
-		if (!isScope(scope))
-			throw new Error(`Scope must be one of ${validScopes.join(',')}`)
 
 		if (property === undefined || property.length === 0)
 			throw new Error(`Must specify a parameter.`)

@@ -14,6 +14,9 @@ import {
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
+import { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
+import type { SSMClient } from '@aws-sdk/client-ssm'
+
 import { parseMockRequest } from './parseMockRequest.js'
 import {
 	arrayContaining,
@@ -30,10 +33,14 @@ export const steps = ({
 	db,
 	responsesTableName,
 	requestsTableName,
+	ssm,
+	stackName,
 }: {
 	db: DynamoDBClient
 	responsesTableName: string
 	requestsTableName: string
+	ssm: SSMClient
+	stackName: string
 }): StepRunner<Record<string, any>>[] => {
 	const mockShadowData = async ({
 		step,
@@ -115,10 +122,12 @@ ${data}
 		if (match === null) return noMatch
 
 		// We need to use scan here because the query string parameter deviceId may include more deviceIDs than just the one we are looking for.
+		const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
 		const result = await db.send(
 			new ScanCommand({
 				TableName: requestsTableName,
-				FilterExpression: '#method = :method AND #resource = :resource',
+				FilterExpression:
+					'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
 				ExpressionAttributeNames: {
 					'#method': 'method',
 					'#resource': 'resource',
@@ -128,6 +137,7 @@ ${data}
 				ExpressionAttributeValues: {
 					':method': { S: 'GET' },
 					':resource': { S: 'v1/devices' },
+					':timestamp': { S: fiveMinutesAgo.toISOString() },
 				},
 				ProjectionExpression: '#timestamp, #query',
 			}),
@@ -306,5 +316,108 @@ ${data}
 		throw new Error(`No request matched.`)
 	}
 
-	return [mockShadowData, durationBetweenRequests, expectRequest, queueResponse]
+	const checkAPIKeyRequest = async ({
+		step,
+		log: {
+			step: { progress },
+		},
+	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
+		const match = matchGroups(
+			Type.Object({
+				deviceId: Type.String(),
+				account: Type.String(),
+			}),
+		)(
+			/^the shadow for `(?<deviceId>[^`]+)` in the `(?<account>[^`]+)` account has been requested$/,
+			step.title,
+		)
+
+		if (match === null) return noMatch
+
+		const allNRFCloudSettings = await getAllAccountsSettings({
+			ssm,
+			stackName,
+		})()
+		const allAccountsAPKeys = Object.entries(allNRFCloudSettings).reduce(
+			(result, [account, settings]) => {
+				if ('nrfCloudSettings' in settings) {
+					return {
+						...result,
+						[account]: settings['nrfCloudSettings'].apiKey,
+					}
+				}
+
+				return result
+			},
+			{} as Record<string, string>,
+		)
+		const expectedAPIKey = allAccountsAPKeys[match.account]
+		if (expectedAPIKey === undefined) throw new Error('Cannot find API key')
+
+		// We need to use scan here because the query string parameter deviceId may include more deviceIDs than just the one we are looking for.
+		const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+		const result = await db.send(
+			new ScanCommand({
+				TableName: requestsTableName,
+				FilterExpression:
+					'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
+				ExpressionAttributeNames: {
+					'#method': 'method',
+					'#resource': 'resource',
+					'#query': 'query',
+					'#headers': 'headers',
+					'#timestamp': 'timestamp',
+				},
+				ExpressionAttributeValues: {
+					':method': { S: 'GET' },
+					':resource': { S: 'v1/devices' },
+					':timestamp': { S: fiveMinutesAgo.toISOString() },
+				},
+				ProjectionExpression: '#timestamp, #query, #headers',
+			}),
+		)
+
+		const resultObj = (result?.Items ?? [])
+			.map(
+				(item) =>
+					unmarshall(item) as {
+						timestamp: string
+						query?: Record<string, any>
+						headers: string
+					},
+			)
+			.find(({ query, headers }) => {
+				try {
+					check(query ?? {}).is(
+						objectMatching({
+							includeState: 'true',
+							includeStateMeta: 'true',
+							pageLimit: '100',
+							deviceIds: stringContaining(match.deviceId),
+						}),
+					)
+					progress('headers', headers)
+					check(JSON.parse(headers)).is(
+						objectMatching({
+							Authorization: stringContaining(expectedAPIKey),
+						}),
+					)
+					return true
+				} catch {
+					return false
+				}
+			})
+
+		progress(`Query mock requests result:`, JSON.stringify(resultObj, null, 2))
+		if (resultObj === undefined)
+			throw new Error(`Waiting for request with ${expectedAPIKey} API key`)
+	}
+
+	return [
+		mockShadowData,
+		durationBetweenRequests,
+		expectRequest,
+		queueResponse,
+		checkAPIKeyRequest,
+	]
 }

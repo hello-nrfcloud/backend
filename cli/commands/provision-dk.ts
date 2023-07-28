@@ -39,7 +39,7 @@ export const provisionDkCommand = ({
 	stackName: string
 	env: Required<Environment>
 }): CommandDefinition => ({
-	command: 'provision-dk <productionRun> <model>',
+	command: 'provision-dk <account> <productionRun> <model>',
 	options: [
 		{
 			flags: '-p, --port <port>',
@@ -63,6 +63,7 @@ export const provisionDkCommand = ({
 		},
 	],
 	action: async (
+		account,
 		productionRun,
 		model,
 		{ port, dk, atHost, debug, deletePrivateKey },
@@ -154,6 +155,7 @@ export const provisionDkCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			account,
 		})()
 
 		const client = apiClient({
@@ -193,6 +195,7 @@ export const provisionDkCommand = ({
 			id: deviceId,
 			model,
 			fingerprint,
+			account,
 		})
 		if ('error' in res) {
 			console.error(chalk.red(`Failed to store device fingerprint!`))

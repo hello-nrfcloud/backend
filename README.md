@@ -31,9 +31,9 @@ certificate used by MQTT broker to connect nRF Cloud under your account. So, you
 need to prepare nRF Cloud API key.
 
 ```bash
-./cli.sh configure thirdParty/nrfcloud/apiKey <API key>
-./cli.sh initialize-nrfcloud-account
-./cli.sh create-health-check-device
+./cli.sh configure thirdParty/<account>/apiKey <API key>
+./cli.sh initialize-nrfcloud-account <account>
+./cli.sh create-health-check-device <account>
 ```
 
 #### nRF Cloud Location Services Service Key
@@ -72,10 +72,11 @@ Messages will be converted using
 
 ## Device Simulator
 
-You can create a simulated device using the CLI:
+You can create a simulated device for a particular nRF Cloud account using the
+CLI:
 
 ```bash
-./cli.sh register-simulator-device
+./cli.sh register-simulator-device <account>
 ```
 
 This will create a new device, register its public key with nRF Cloud and its

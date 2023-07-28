@@ -62,6 +62,7 @@ export const configureDeviceCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			account: device.account,
 		})()
 
 		const client = apiClient({

@@ -47,7 +47,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Show nRF Cloud Account
-        run: ./cli.sh show-nrfcloud-account
+        run: ./cli.sh show-nrfcloud-account nordic
 
       - run: npx cdk diff
 

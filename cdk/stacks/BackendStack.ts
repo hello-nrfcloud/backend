@@ -26,6 +26,7 @@ import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { KPIs } from '../resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
 import { ConfigureDevice } from '../resources/ConfigureDevice.js'
+import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 import { SingleCellGeoLocation } from '../resources/SingleCellGeoLocation.js'
 
 export class BackendStack extends Stack {
@@ -38,6 +39,7 @@ export class BackendStack extends Stack {
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
+			nRFCloudAccounts,
 			bridgeImageSettings,
 			repository,
 			gitHubOICDProviderArn,
@@ -49,6 +51,7 @@ export class BackendStack extends Stack {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
+			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 			bridgeImageSettings: BridgeImageSettings
 			gitHubOICDProviderArn: string
 			repository: {
@@ -126,6 +129,7 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			bridgeImageSettings,
+			nRFCloudAccounts,
 		})
 
 		new HealthCheckMqttBridge(this, {

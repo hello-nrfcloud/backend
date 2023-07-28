@@ -1,9 +1,5 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import {
-	Scope,
-	getSettings as getSSMSettings,
-	putSettings,
-} from '../util/settings.js'
+import { getSettings as getSSMSettings, putSettings } from '../util/settings.js'
 
 export type Settings = {
 	healthCheckClientCert: string
@@ -16,14 +12,16 @@ export type Settings = {
 export const updateSettings = ({
 	ssm,
 	stackName,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
+	account: string
 }): ((settings: Partial<Settings>) => Promise<void>) => {
 	const settingsWriter = putSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope: `thirdParty/${account}`,
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(
@@ -40,14 +38,17 @@ export const updateSettings = ({
 export const getSettings = ({
 	ssm,
 	stackName,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
+	account: string
 }): (() => Promise<Settings>) => {
+	const scope = `thirdParty/${account}`
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: Scope.NRFCLOUD_CONFIG,
+		scope,
 	})
 	return async (): Promise<Settings> => {
 		const p = await settingsReader()
