@@ -26,6 +26,7 @@ import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { KPIs } from '../resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
 import { ConfigureDevice } from '../resources/ConfigureDevice.js'
+import { SingleCellGeoLocation } from '../resources/SingleCellGeoLocation.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -163,6 +164,13 @@ export class BackendStack extends Stack {
 			lambdaSources,
 			layers: lambdaLayers,
 			websocketAPI,
+		})
+
+		new SingleCellGeoLocation(this, {
+			lambdaSources,
+			layers: lambdaLayers,
+			websocketAPI,
+			deviceStorage,
 		})
 
 		// Outputs

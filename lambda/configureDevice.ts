@@ -13,9 +13,8 @@ import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 import type { Static } from '@sinclair/typebox'
-import { getNRFCloudSSMParameters } from './util/getSSMParameter.js'
-import { once } from 'lodash-es'
 import { slashless } from '../util/slashless.js'
+import { getNrfCloudAPIConfig } from './getNrfCloudAPIConfig.js'
 
 type Request = Omit<WebsocketPayload, 'message'> & {
 	message: {
@@ -34,23 +33,6 @@ const eventBus = new EventBridge({})
 
 const { track, metrics } = metricsForComponent('configureDevice')
 
-const getNrfCloudAPIConfig: () => Promise<{
-	apiKey: string
-	apiEndpoint: URL
-}> = once(async () => {
-	const [apiKey, apiEndpoint] = await getNRFCloudSSMParameters(stackName, [
-		'apiKey',
-		'apiEndpoint',
-	])
-	if (apiKey === undefined)
-		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
-
-	return {
-		apiKey,
-		apiEndpoint: new URL(apiEndpoint ?? 'https://api.nrfcloud.com/'),
-	}
-})
-
 /**
  * Handle configure device request
  */
@@ -61,7 +43,7 @@ const h = async (
 	>,
 ): Promise<void> => {
 	log.info('event', { event })
-	const { apiEndpoint, apiKey } = await getNrfCloudAPIConfig()
+	const { apiEndpoint, apiKey } = await getNrfCloudAPIConfig(stackName)
 
 	const {
 		deviceId,
