@@ -14,7 +14,6 @@ import {
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
-import assert from 'assert/strict'
 import { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 
@@ -123,10 +122,12 @@ ${data}
 		if (match === null) return noMatch
 
 		// We need to use scan here because the query string parameter deviceId may include more deviceIDs than just the one we are looking for.
+		const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
 		const result = await db.send(
 			new ScanCommand({
 				TableName: requestsTableName,
-				FilterExpression: '#method = :method AND #resource = :resource',
+				FilterExpression:
+					'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
 				ExpressionAttributeNames: {
 					'#method': 'method',
 					'#resource': 'resource',
@@ -136,6 +137,7 @@ ${data}
 				ExpressionAttributeValues: {
 					':method': { S: 'GET' },
 					':resource': { S: 'v1/devices' },
+					':timestamp': { S: fiveMinutesAgo.toISOString() },
 				},
 				ProjectionExpression: '#timestamp, #query',
 			}),
@@ -349,54 +351,66 @@ ${data}
 			},
 			{} as Record<string, string>,
 		)
+		const expectedAPIKey = allAccountsAPKeys[match.account]
+		if (expectedAPIKey === undefined) throw new Error('Cannot find API key')
 
-		if (queryStartTime === undefined) queryStartTime = new Date()
-		const params: { [K: string]: any } = {
-			includeState: true,
-			includeStateMeta: true,
-			pageLimit: 100,
-			deviceIds: match.deviceId,
-		}
-		const queryString = Object.entries(params)
-			.sort((a, b) => a[0].localeCompare(b[0]))
-			.map((kv) => kv.map(encodeURIComponent).join('='))
-			.join('&')
-
-		const methodPathQuery = `GET v1/devices?${queryString}`
-		progress(`Mock http url: ${methodPathQuery}`)
+		// We need to use scan here because the query string parameter deviceId may include more deviceIDs than just the one we are looking for.
+		const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
 		const result = await db.send(
-			new QueryCommand({
+			new ScanCommand({
 				TableName: requestsTableName,
-				KeyConditionExpression:
-					'#methodPathQuery = :methodPathQuery AND #timestamp >= :timestamp',
+				FilterExpression:
+					'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
 				ExpressionAttributeNames: {
-					'#methodPathQuery': 'methodPathQuery',
+					'#method': 'method',
+					'#resource': 'resource',
+					'#query': 'query',
 					'#headers': 'headers',
 					'#timestamp': 'timestamp',
 				},
 				ExpressionAttributeValues: {
-					':methodPathQuery': { S: methodPathQuery },
-					':timestamp': { S: queryStartTime.toISOString() },
+					':method': { S: 'GET' },
+					':resource': { S: 'v1/devices' },
+					':timestamp': { S: fiveMinutesAgo.toISOString() },
 				},
-				ProjectionExpression: '#timestamp, #headers',
-				ScanIndexForward: false,
-				Limit: 1,
+				ProjectionExpression: '#timestamp, #query, #headers',
 			}),
 		)
-		const resultObj = result?.Items?.map((item) => unmarshall(item))
-		progress(`Query mock requests from ${queryStartTime.toISOString()}`)
-		progress(
-			`Query mock requests result: ${JSON.stringify(resultObj, null, 2)}`,
-		)
 
-		if (resultObj?.length === 1) {
-			const headers = JSON.parse(resultObj?.[0]?.headers ?? null)
-			const apiKey = headers['Authorization']?.replace(/^bearer\s+/i, '')
+		const resultObj = (result?.Items ?? [])
+			.map(
+				(item) =>
+					unmarshall(item) as {
+						timestamp: string
+						query?: Record<string, any>
+						headers: string
+					},
+			)
+			.find(({ query, headers }) => {
+				try {
+					check(query ?? {}).is(
+						objectMatching({
+							includeState: 'true',
+							includeStateMeta: 'true',
+							pageLimit: '100',
+							deviceIds: stringContaining(match.deviceId),
+						}),
+					)
+					progress('headers', headers)
+					check(JSON.parse(headers)).is(
+						objectMatching({
+							Authorization: stringContaining(expectedAPIKey),
+						}),
+					)
+					return true
+				} catch {
+					return false
+				}
+			})
 
-			assert.equal(allAccountsAPKeys[match.account], apiKey)
-		} else {
-			throw new Error('Mock request is not found')
-		}
+		progress(`Query mock requests result:`, JSON.stringify(resultObj, null, 2))
+		if (resultObj === undefined)
+			throw new Error(`Waiting for request with ${expectedAPIKey} API key`)
 	}
 
 	return [

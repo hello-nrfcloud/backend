@@ -15,11 +15,12 @@ import { logger } from './util/logger.js'
 import { Type, type Static } from '@sinclair/typebox'
 import { slashless } from '../util/slashless.js'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import { getNrfCloudAPIConfig } from './getNrfCloudAPIConfig.js'
 import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
-import { getDeviceModelById } from './getDeviceModel.js'
+import { getDeviceAttributesById } from './getDeviceAttributes.js'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { once } from 'lodash-es'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 
 const { EventBusName, stackName, DevicesTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -30,8 +31,9 @@ const { EventBusName, stackName, DevicesTableName } = fromEnv({
 const log = logger('singleCellGeo')
 const eventBus = new EventBridge({})
 const db = new DynamoDBClient({})
+const ssm = new SSMClient({})
 
-const modelFetcher = getDeviceModelById({ db, DevicesTableName })
+const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
 const serviceToken = once(
 	async ({ apiEndpoint, apiKey }: { apiEndpoint: URL; apiKey: string }) => {
@@ -58,6 +60,8 @@ const serviceToken = once(
 		return token
 	},
 )
+
+const allAccountsSettings = once(getAllAccountsSettings({ ssm, stackName }))
 
 const { track, metrics } = metricsForComponent('singleCellGeo')
 
@@ -87,8 +91,13 @@ const h = async (event: {
 }): Promise<void> => {
 	log.info('event', { event })
 	const { deviceId } = event
-	const { apiEndpoint, apiKey } = await getNrfCloudAPIConfig(stackName)
-	const model = await modelFetcher(deviceId)
+	const { model, account } = await deviceFetcher(deviceId)
+	const settings = (await allAccountsSettings())[account]
+	if (settings === undefined) {
+		throw new Error(`nRF Cloud settings(${account}) are not configured`)
+	}
+
+	const { apiEndpoint, apiKey } = settings.nrfCloudSettings
 	const locationServiceToken = await serviceToken({ apiEndpoint, apiKey })
 
 	const {
@@ -128,7 +137,7 @@ const h = async (event: {
 
 	if (!res.ok) {
 		track('single-cell:error', MetricUnits.Count, 1)
-		console.error('request failed', {
+		log.error('request failed', {
 			body: await res.text(),
 			status: res.status,
 		})
@@ -159,7 +168,7 @@ const h = async (event: {
 		accuracy: uncertainty,
 		ts,
 	}
-	console.log('result', message)
+	log.debug('result', { message })
 
 	const converted = await proto({
 		onError: (message, model, error) => {
@@ -171,7 +180,7 @@ const h = async (event: {
 		},
 	})(model, message)
 
-	console.log('converted', converted)
+	log.debug('converted', { converted })
 
 	await Promise.all(
 		converted.map(async (message) =>

@@ -7,7 +7,7 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
-import { getDeviceModelById } from './getDeviceModel.js'
+import { getDeviceAttributesById } from './getDeviceAttributes.js'
 
 const { EventBusName, DevicesTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -18,7 +18,7 @@ const log = logger('deviceMessage')
 const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
-const modelFetcher = getDeviceModelById({ db, DevicesTableName })
+const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
 const { track, metrics } = metricsForComponent('onDeviceMessage')
 
@@ -32,7 +32,7 @@ const h = async (event: {
 	const { deviceId, message } = event
 
 	// Fetch model for device
-	const model = await modelFetcher(deviceId)
+	const { model } = await deviceFetcher(deviceId)
 
 	const converted = await proto({
 		onError: (message, model, error) => {

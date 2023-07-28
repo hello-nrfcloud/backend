@@ -17,7 +17,7 @@ import path from 'node:path'
 import pRetry from 'p-retry'
 import { generateCode } from '../../cli/devices/generateCode.js'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
-import { getModelForDevice } from '../../devices/getModelForDevice.js'
+import { getAttributesForDevice } from '../../devices/getAttributesForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
 
@@ -85,7 +85,7 @@ const createDeviceForModel =
 
 		await pRetry(
 			async () => {
-				const res = await getModelForDevice({
+				const res = await getAttributesForDevice({
 					db,
 					DevicesTableName: devicesTable,
 				})(id)

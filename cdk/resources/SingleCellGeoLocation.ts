@@ -57,19 +57,20 @@ export class SingleCellGeoLocation extends Construct {
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 			initialPolicy: [
 				new IAM.PolicyStatement({
-					actions: ['ssm:GetParameter'],
+					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
 					resources: [
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud/*`,
-					],
-				}),
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath'],
-					resources: [
+						}:parameter/${Stack.of(this).stackName}/thirdParty`,
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/nrfcloud`,
+						}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
 					],
 				}),
 			],
