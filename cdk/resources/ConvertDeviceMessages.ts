@@ -4,13 +4,13 @@ import {
 	aws_iot as IoT,
 	aws_lambda as Lambda,
 	aws_logs as Logs,
-	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
+import { IoTActionRole } from './IoTActionRole.js'
 
 /**
  * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
@@ -57,26 +57,6 @@ export class ConvertDeviceMessages extends Construct {
 		websocketAPI.eventBus.grantPutEventsTo(onDeviceMessage)
 		deviceStorage.devicesTable.grantReadData(onDeviceMessage)
 
-		const iotActionRole = new IAM.Role(this, 'iot-action-role', {
-			assumedBy: new IAM.ServicePrincipal(
-				'iot.amazonaws.com',
-			) as IAM.IPrincipal,
-			inlinePolicies: {
-				rootPermissions: new IAM.PolicyDocument({
-					statements: [
-						new IAM.PolicyStatement({
-							actions: ['iot:Publish'],
-							resources: [
-								`arn:aws:iot:${Stack.of(this).region}:${
-									Stack.of(this).account
-								}:topic/errors`,
-							],
-						}),
-					],
-				}),
-			},
-		})
-
 		const rule = new IoT.CfnTopicRule(this, 'topicRule', {
 			topicRulePayload: {
 				description: `Convert received message and publish to the EventBus`,
@@ -99,7 +79,7 @@ export class ConvertDeviceMessages extends Construct {
 				],
 				errorAction: {
 					republish: {
-						roleArn: iotActionRole.roleArn,
+						roleArn: new IoTActionRole(this).roleArn,
 						topic: 'errors',
 					},
 				},
