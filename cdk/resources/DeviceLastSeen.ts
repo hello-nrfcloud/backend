@@ -1,11 +1,10 @@
 import {
 	aws_dynamodb as DynamoDB,
-	aws_iam as IAM,
 	aws_iot as IoT,
 	RemovalPolicy,
-	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
+import { IoTActionRole } from './IoTActionRole.js'
 
 /**
  * Record the timestamp when the device was last seen
@@ -46,25 +45,7 @@ export class DeviceLastSeen extends Construct {
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
 		})
 
-		const role = new IAM.Role(this, 'role', {
-			assumedBy: new IAM.ServicePrincipal(
-				'iot.amazonaws.com',
-			) as IAM.IPrincipal,
-			inlinePolicies: {
-				rootPermissions: new IAM.PolicyDocument({
-					statements: [
-						new IAM.PolicyStatement({
-							actions: ['iot:Publish'],
-							resources: [
-								`arn:aws:iot:${Stack.of(this).region}:${
-									Stack.of(this).account
-								}:topic/errors`,
-							],
-						}),
-					],
-				}),
-			},
-		})
+		const role = new IoTActionRole(this).role
 		this.table.grantWriteData(role)
 
 		new IoT.CfnTopicRule(this, 'rule', {
