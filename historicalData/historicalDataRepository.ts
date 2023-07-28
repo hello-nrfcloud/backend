@@ -4,11 +4,11 @@ import {
 	QueryCommand,
 	type TimestreamQueryClient,
 } from '@aws-sdk/client-timestream-query'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
 import {
-	Context,
 	HistoricalDataRequest,
 	HistoricalDataResponse,
-} from '@hello.nrfcloud.com/proto/hello'
+} from '@hello.nrfcloud.com/proto/hello/chart'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { type Static } from '@sinclair/typebox'
 import { groupBy } from 'lodash-es'

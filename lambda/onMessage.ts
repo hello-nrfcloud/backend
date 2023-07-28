@@ -10,9 +10,9 @@ import {
 	BadRequestError,
 	ConfigureDevice,
 	Context,
-	HistoricalDataRequest,
 	ProblemDetail,
 } from '@hello.nrfcloud.com/proto/hello'
+import { HistoricalDataRequest } from '@hello.nrfcloud.com/proto/hello/chart'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'

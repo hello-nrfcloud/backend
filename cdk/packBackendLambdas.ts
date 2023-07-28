@@ -39,4 +39,8 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'configureDevice',
 		'lambda/configureDevice.ts',
 	),
+	resolveSingleCellGeoLocation: await packLambdaFromPath(
+		'resolveSingleCellGeoLocation',
+		'lambda/resolveSingleCellGeoLocation.ts',
+	),
 })
