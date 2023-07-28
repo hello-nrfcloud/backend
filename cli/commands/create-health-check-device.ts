@@ -14,6 +14,7 @@ import { run } from '../../util/run.js'
 import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { generateCode } from '../devices/generateCode.js'
 
 export const createHealthCheckDevice = ({
 	ssm,
@@ -24,11 +25,12 @@ export const createHealthCheckDevice = ({
 	stackName: string
 	env: Required<Environment>
 }): CommandDefinition => ({
-	command: 'create-health-check-device',
-	action: async () => {
+	command: 'create-health-check-device <account>',
+	action: async (account) => {
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			account,
 		})()
 
 		const client = apiClient({
@@ -117,9 +119,9 @@ export const createHealthCheckDevice = ({
 			),
 			healthCheckClientId: deviceId,
 			healthCheckModel: 'PCA20035+solar',
-			healthCheckFingerPrint: '29a.ch3ckr',
+			healthCheckFingerPrint: `29a.${generateCode()}`,
 		}
-		await updateSettings({ ssm, stackName })(settings)
+		await updateSettings({ ssm, stackName, account })(settings)
 
 		console.debug(chalk.white(`nRF Cloud health check device settings:`))
 		Object.entries(settings).forEach(([k, v]) => {

@@ -17,9 +17,9 @@ import path from 'node:path'
 import pRetry from 'p-retry'
 import { generateCode } from '../../cli/devices/generateCode.js'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
-import { getModelForDevice } from '../../devices/getModelForDevice.js'
+import { getAttributesForDevice } from '../../devices/getAttributesForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
-import type { Settings } from '../../nrfcloud/settings.js'
+import type { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
 
 const createDeviceForModel =
 	({
@@ -43,22 +43,27 @@ const createDeviceForModel =
 			Type.Object({
 				model: Type.String(),
 				storageName: Type.String(),
+				account: Type.Optional(Type.String()),
 			}),
 		)(
-			/^I have the fingerprint for a `(?<model>[^`]+)` device in `(?<storageName>[^`]+)`$/,
+			/^I have the fingerprint for a `(?<model>[^`]+)` device(?<maybeaccount> in the `(?<account>[^`]+)` account)? in `(?<storageName>[^`]+)`$/,
 			step.title,
 		)
 		if (match === null) return noMatch
 
-		const { model, storageName } = match
+		const { model, storageName, account: maybeAccount } = match
+		const account = maybeAccount ?? 'acme'
 		const fingerprint = `92b.${generateCode()}`
 		const id = randomUUID()
 
-		progress(`Registering device ${id} into table ${devicesTable}`)
+		progress(
+			`Registering device ${id} of ${account} account into table ${devicesTable}`,
+		)
 		await registerDevice({ db, devicesTableName: devicesTable })({
 			id,
 			model,
 			fingerprint,
+			account,
 		})
 
 		await pRetry(
@@ -80,7 +85,7 @@ const createDeviceForModel =
 
 		await pRetry(
 			async () => {
-				const res = await getModelForDevice({
+				const res = await getAttributesForDevice({
 					db,
 					DevicesTableName: devicesTable,
 				})(id)
@@ -137,7 +142,11 @@ const getDevice =
 	}
 
 const publishDeviceMessage =
-	(nRFCloudSettings: Settings) =>
+	(
+		allAccountSettings: Awaited<
+			ReturnType<Awaited<ReturnType<typeof getAllAccountsSettings>>>
+		>,
+	) =>
 	async ({
 		step,
 		log: {
@@ -156,6 +165,11 @@ const publishDeviceMessage =
 		if (match === null) return noMatch
 
 		const message = JSON.parse(codeBlockOrThrow(step).code)
+
+		const nRFCloudSettings = allAccountSettings['acme']?.nrfCloudSettings
+		if (nRFCloudSettings === undefined) {
+			throw new Error('No default nRF Cloud settings (acme)')
+		}
 
 		progress(`Device id ${match.id} publishes to topic ${match.topic}`)
 		await new Promise((resolve, reject) => {
@@ -193,7 +207,9 @@ const publishDeviceMessage =
 	}
 
 export const steps = (
-	nRFCloudSettings: Settings,
+	allAccountSettings: Awaited<
+		ReturnType<Awaited<ReturnType<typeof getAllAccountsSettings>>>
+	>,
 	db: DynamoDBClient,
 	{
 		devicesTableFingerprintIndexName,
@@ -202,5 +218,5 @@ export const steps = (
 ): StepRunner<Record<string, string>>[] => [
 	createDeviceForModel({ db, devicesTableFingerprintIndexName, devicesTable }),
 	getDevice({ db, devicesTable }),
-	publishDeviceMessage(nRFCloudSettings),
+	publishDeviceMessage(allAccountSettings),
 ]

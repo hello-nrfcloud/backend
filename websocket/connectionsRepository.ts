@@ -12,6 +12,7 @@ export type WebsocketDeviceConnection = {
 	deviceId: string
 	connectionId: string
 	model: string
+	account: string
 	ttl: number
 }
 

@@ -13,6 +13,7 @@ import {
 } from '../../nrfcloud/healthCheckSettings.js'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { generateCode } from '../devices/generateCode.js'
 
 export const createFakeNrfCloudHealthCheckDevice = ({
 	iot,
@@ -21,11 +22,11 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 	iot: IoTClient
 	ssm: SSMClient
 }): CommandDefinition => ({
-	command: 'create-fake-nrfcloud-health-check-device',
-	action: async () => {
+	command: 'create-fake-nrfcloud-health-check-device <account>',
+	action: async (account) => {
 		const deviceId = `health-check-${randomUUID()}`
 
-		const fakeTenantParameter = `/${STACK_NAME}/fakeTenant`
+		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`
 		const tenantId = (
 			await ssm.send(
 				new GetParameterCommand({
@@ -34,7 +35,9 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 			)
 		).Parameter?.Value
 		if (tenantId === undefined) {
-			throw new Error(`${STACK_NAME} has no fake nRF Cloud Account device`)
+			throw new Error(
+				`${STACK_NAME}/${account} has no fake nRF Cloud Account device`,
+			)
 		}
 
 		const policyName = `fake-nrfcloud-account-device-policy-${tenantId}`
@@ -67,9 +70,9 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 			healthCheckPrivateKey: pk,
 			healthCheckClientId: deviceId,
 			healthCheckModel: 'PCA20035+solar',
-			healthCheckFingerPrint: '29a.ch3ckr',
+			healthCheckFingerPrint: `29a.${generateCode()}`,
 		}
-		await updateSettings({ ssm, stackName: STACK_NAME })(settings)
+		await updateSettings({ ssm, stackName: STACK_NAME, account })(settings)
 
 		console.debug(chalk.white(`Fake nRF Cloud health check device settings:`))
 		Object.entries(settings).forEach(([k, v]) => {

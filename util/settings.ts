@@ -10,9 +10,16 @@ import { paginate } from './paginate.js'
 export enum Scope {
 	STACK_CONFIG = 'stack/context',
 	STACK_MQTT_BRIDGE = 'stack/mqttBridge',
-	NRFCLOUD_CONFIG = 'thirdParty/nrfcloud',
 	NRFCLOUD_BRIDGE_CERTIFICATE_MQTT = 'nRFCloudBridgeCertificate/MQTT',
 	NRFCLOUD_BRIDGE_CERTIFICATE_CA = 'nRFCloudBridgeCertificate/CA',
+	NRFCLOUD_ACCOUNT = 'nRFCloud/accounts',
+}
+
+const validScope = (scope: string): boolean => {
+	return (
+		Object.values(Scope).map(String).includes(scope) ||
+		/^thirdParty\/[a-zA-Z0-9_.-]+$/.test(scope)
+	)
 }
 
 export const settingsPath = ({
@@ -21,9 +28,11 @@ export const settingsPath = ({
 	property,
 }: {
 	stackName: string
-	scope: Scope
+	scope: string
 	property?: string
 }): string => {
+	if (!validScope(scope)) throw new Error(`Invalid scope name`)
+
 	const base = `/${stackName}/${scope}`
 	return property === undefined ? base : `${base}/${property}`
 }
@@ -34,7 +43,7 @@ const settingsName = ({
 	property,
 }: {
 	stackName: string
-	scope: Scope
+	scope: string
 	property: string
 }): string => settingsPath({ stackName, scope, property })
 export const getSettings =
@@ -45,7 +54,7 @@ export const getSettings =
 	}: {
 		ssm: SSMClient
 		stackName: string
-		scope: Scope
+		scope: string
 	}) =>
 	async (): Promise<Settings> => {
 		const Path = settingsPath({ stackName, scope })
@@ -90,7 +99,7 @@ export const putSettings =
 	}: {
 		ssm: SSMClient
 		stackName: string
-		scope: Scope
+		scope: string
 	}) =>
 	async ({
 		property,
@@ -135,7 +144,7 @@ export const deleteSettings =
 	}: {
 		ssm: SSMClient
 		stackName: string
-		scope: Scope
+		scope: string
 	}) =>
 	async ({ property }: { property: string }): Promise<{ name: string }> => {
 		const Name = settingsName({ stackName, scope, property })

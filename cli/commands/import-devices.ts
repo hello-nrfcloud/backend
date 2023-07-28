@@ -22,8 +22,8 @@ export const importDevicesCommand = ({
 	devicesTableName: string
 	stackName: string
 }): CommandDefinition => ({
-	command: 'import-devices <model> <provisioningList>',
-	action: async (model, provisioningList) => {
+	command: 'import-devices <account> <model> <provisioningList>',
+	action: async (account, model, provisioningList) => {
 		const devicesList = (await readFile(provisioningList, 'utf-8'))
 			.trim()
 			.split('\r\n')
@@ -91,6 +91,7 @@ export const importDevicesCommand = ({
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
 			stackName,
+			account,
 		})()
 
 		const client = apiClient({
@@ -132,6 +133,7 @@ export const importDevicesCommand = ({
 				id: deviceId,
 				model,
 				fingerprint,
+				account,
 			})
 			if ('error' in res) {
 				console.error(

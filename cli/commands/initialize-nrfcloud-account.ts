@@ -12,15 +12,15 @@ export const initializeNRFCloudAccountCommand = ({
 	ssm: SSMClient
 	stackName: string
 }): CommandDefinition => ({
-	command: 'initialize-nrfcloud-account',
+	command: 'initialize-nrfcloud-account <account>',
 	options: [
 		{
 			flags: '-r, --reset',
 			description: `Regenerate all credentials. This will regenerate your nRF Cloud account device certificates`,
 		},
 	],
-	action: async ({ reset }) => {
-		await initializeAccount({ iot, ssm, stackName })(reset)
+	action: async (account, { reset }) => {
+		await initializeAccount({ iot, ssm, stackName, account })(reset)
 	},
 	help: 'Initialize certificates used in MQTT bridge',
 })

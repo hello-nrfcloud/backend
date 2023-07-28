@@ -24,7 +24,12 @@ import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
-import { Scope, settingsPath } from '../../util/settings.js'
+import {
+	Scope,
+	deleteSettings,
+	putSettings,
+	settingsPath,
+} from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
@@ -34,15 +39,16 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot: IoTClient
 	ssm: SSMClient
 }): CommandDefinition => ({
-	command: 'fake-nrfcloud-account-device',
+	command: 'fake-nrfcloud-account-device <account>',
 	options: [
 		{
 			flags: '-X, --remove',
 			description: `remove the fake device`,
 		},
 	],
-	action: async ({ remove }) => {
-		const fakeTenantParameter = `/${STACK_NAME}/fakeTenant`
+	action: async (account, { remove }) => {
+		const scope = `thirdParty/${account}`
+		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`
 		if (remove === true) {
 			// check if has fake device
 			const fakeTenant = (
@@ -53,7 +59,9 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				)
 			).Parameter?.Value
 			if (fakeTenant === undefined) {
-				throw new Error(`${STACK_NAME} has no fake nRF Cloud Account device`)
+				throw new Error(
+					`${STACK_NAME}/${account} has no fake nRF Cloud Account device`,
+				)
 			}
 			const policyName = `fake-nrfcloud-account-device-policy-${fakeTenant}`
 			const targets = await iot.send(
@@ -105,7 +113,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				new GetParametersByPathCommand({
 					Path: settingsPath({
 						stackName: STACK_NAME,
-						scope: Scope.NRFCLOUD_CONFIG,
+						scope,
 					}),
 				}),
 			)
@@ -122,8 +130,16 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 					}),
 				)
 			}
+
+			await deleteSettings({
+				ssm,
+				stackName: STACK_NAME,
+				scope: Scope.NRFCLOUD_ACCOUNT,
+			})({ property: account })
+
 			return
 		}
+
 		const tenantId = randomUUID()
 		const policyName = `fake-nrfcloud-account-device-policy-${tenantId}`
 		console.debug(chalk.magenta(`Creating policy`), chalk.blue(policyName))
@@ -161,6 +177,14 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			throw new Error(`Failed to create certificate!`)
 		}
 
+		await putSettings({
+			ssm,
+			stackName: STACK_NAME,
+			scope: Scope.NRFCLOUD_ACCOUNT,
+		})({
+			property: account,
+			value: account,
+		})
 		const settings: Partial<Settings> = {
 			accountDeviceClientCert: credentials.certificatePem,
 			accountDevicePrivateKey: pk,
@@ -168,7 +192,11 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			mqttEndpoint: await getIoTEndpoint({ iot })(),
 			mqttTopicPrefix: `prod/${tenantId}/`,
 		}
-		await updateSettings({ ssm, stackName: STACK_NAME })(settings)
+		await updateSettings({
+			ssm,
+			stackName: STACK_NAME,
+			scope,
+		})(settings)
 
 		console.debug(chalk.white(`nRF Cloud settings:`))
 		Object.entries(settings).forEach(([k, v]) => {

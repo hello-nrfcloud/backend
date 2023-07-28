@@ -23,6 +23,7 @@ import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLo
 import { caLocation } from '../bridge/caLocation.js'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'
 import { storeCertificateInSSM } from './helpers/certificates/storeCertificateInSSM.js'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -137,6 +138,10 @@ const { imageTag } = await getOrBuildDockerImage({
 		'bridge',
 	),
 })
+const nRFCloudAccounts = await getAllAccountsSettings({
+	ssm,
+	stackName: STACK_NAME,
+})()
 
 new BackendApp({
 	lambdaSources: await packBackendLambdas(),
@@ -151,6 +156,7 @@ new BackendApp({
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
 	caCertificate,
+	nRFCloudAccounts,
 	bridgeImageSettings: {
 		imageTag,
 		repositoryUri,

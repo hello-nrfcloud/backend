@@ -28,11 +28,12 @@ export const handler = async (
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.debug('event', { event })
 
-	const { deviceId, model } = event.requestContext.authorizer
+	const { deviceId, model, account } = event.requestContext.authorizer
 
 	await repo.add({
 		deviceId,
 		model,
+		account,
 		connectionId: event.requestContext.connectionId,
 		ttl: Math.round(Date.now() / 1000) + 5 * 60,
 	})

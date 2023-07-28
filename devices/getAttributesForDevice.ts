@@ -1,7 +1,7 @@
 import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 
-export const getModelForDevice =
+export const getAttributesForDevice =
 	({
 		db,
 		DevicesTableName,
@@ -9,7 +9,9 @@ export const getModelForDevice =
 		db: DynamoDBClient
 		DevicesTableName: string
 	}) =>
-	async (deviceId: string): Promise<{ model: string } | { error: Error }> => {
+	async (
+		deviceId: string,
+	): Promise<{ model: string; account: string } | { error: Error }> => {
 		const { Items } = await db.send(
 			new QueryCommand({
 				TableName: DevicesTableName,
@@ -17,23 +19,28 @@ export const getModelForDevice =
 				ExpressionAttributeNames: {
 					'#deviceId': 'deviceId',
 					'#model': 'model',
+					'#account': 'account',
 				},
 				ExpressionAttributeValues: {
 					':deviceId': {
 						S: deviceId,
 					},
 				},
-				ProjectionExpression: '#model',
+				ProjectionExpression: '#model, #account',
 			}),
 		)
 
-		const model =
-			Items?.[0] !== undefined ? unmarshall(Items[0]).model : undefined
+		const attributes = unmarshall(Items?.[0] ?? {})
+		const { model, account } = attributes
 
 		if (model === undefined)
 			return {
 				error: new Error(`No model defined for device ${deviceId}!`),
 			}
+		if (account === undefined)
+			return {
+				error: new Error(`No account defined for device ${deviceId}!`),
+			}
 
-		return { model }
+		return { model, account }
 	}
