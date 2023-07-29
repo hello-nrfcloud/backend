@@ -73,10 +73,10 @@ jobs:
         run: |
           npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never
           MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
-          ./cli.sh configure thirdParty/acme/apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
-          ./cli.sh configure thirdParty/acme/apiKey apiKey_Acme
-          ./cli.sh configure thirdParty/elite/apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
-          ./cli.sh configure thirdParty/elite/apiKey apiKey_Elite
+          ./cli.sh configure-nrfcloud-account acme apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          ./cli.sh configure-nrfcloud-account acme apiKey apiKey_Acme
+          ./cli.sh configure-nrfcloud-account elite apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          ./cli.sh configure-nrfcloud-account elite apiKey apiKey_Elite
 
       - name: Deploy solution stack
         env:
@@ -119,11 +119,11 @@ jobs:
           npx cdk destroy -f
           npx cdk --app 'npx tsx --no-warnings cdk/test-resources.ts' destroy -f
           ./cli.sh fake-nrfcloud-account-device acme --remove
-          ./cli.sh configure thirdParty/acme/apiEndpoint -X
-          ./cli.sh configure thirdParty/acme/apiKey -X
+          ./cli.sh configure-nrfcloud-account acme apiEndpoint -X
+          ./cli.sh configure-nrfcloud-account acme apiKey -X
           ./cli.sh fake-nrfcloud-account-device elite --remove
-          ./cli.sh configure thirdParty/elite/apiEndpoint -X
-          ./cli.sh configure thirdParty/elite/apiKey -X
+          ./cli.sh configure-nrfcloud-account elite apiEndpoint -X
+          ./cli.sh configure-nrfcloud-account elite apiKey -X
           ./cli.sh clean-backup-certificates
 
   release:

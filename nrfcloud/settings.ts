@@ -1,8 +1,10 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import {
 	getSettings as getSSMSettings,
-	putSettings,
+	putSettings as putSSMSettings,
 	settingsPath,
+	deleteSettings as deleteSSMSettings,
+	Scope,
 } from '../util/settings.js'
 
 export const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
@@ -26,7 +28,7 @@ export const getSettings = ({
 	stackName: string
 	account: string
 }): (() => Promise<Settings>) => {
-	const scope = `thirdParty/${account}`
+	const scope = `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
@@ -81,7 +83,7 @@ export const getAPISettings = ({
 	const settingsReader = getSSMSettings({
 		ssm,
 		stackName,
-		scope: `thirdParty/${account}`,
+		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
 	})
 	return async (): Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>> => {
 		const p = await settingsReader()
@@ -97,19 +99,19 @@ export const getAPISettings = ({
 	}
 }
 
-export const updateSettings = ({
+export const putSettings = ({
 	ssm,
 	stackName,
-	scope,
+	account,
 }: {
 	ssm: SSMClient
 	stackName: string
-	scope: string
+	account: string
 }): ((settings: Partial<Settings>) => Promise<void>) => {
-	const settingsWriter = putSettings({
+	const settingsWriter = putSSMSettings({
 		ssm,
 		stackName,
-		scope,
+		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(
@@ -123,6 +125,32 @@ export const updateSettings = ({
 	}
 }
 
+export const putSetting = ({
+	ssm,
+	stackName,
+	account,
+}: {
+	ssm: SSMClient
+	stackName: string
+	account: string
+}): ((
+	property: keyof Settings,
+	value: string,
+	deleteBeforeUpdate: boolean,
+) => ReturnType<typeof settingsWriter>) => {
+	const settingsWriter = putSSMSettings({
+		ssm,
+		stackName,
+		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
+	})
+	return async (property, value, deleteBeforeUpdate) =>
+		settingsWriter({
+			property,
+			value,
+			deleteBeforeUpdate,
+		})
+}
+
 export const parameterName = (
 	stackName: string,
 	scope: string,
@@ -133,3 +161,20 @@ export const parameterName = (
 		scope,
 		property: parameterName,
 	})
+
+export const deleteSettings = ({
+	ssm,
+	stackName,
+	account,
+}: {
+	ssm: SSMClient
+	stackName: string
+	account: string
+}): ((property: string) => ReturnType<typeof settingsDeleter>) => {
+	const settingsDeleter = deleteSSMSettings({
+		ssm,
+		stackName,
+		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
+	})
+	return async (property) => settingsDeleter({ property })
+}

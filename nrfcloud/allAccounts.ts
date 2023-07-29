@@ -19,14 +19,17 @@ export const getAllnRFCloudAccounts = async ({
 }: {
 	ssm: SSMClient
 	stackName: string
-}): Promise<string[]> =>
-	Object.keys(
-		await getSettings({
-			ssm,
-			stackName,
-			scope: Scope.NRFCLOUD_ACCOUNT,
-		})(),
-	)
+}): Promise<string[]> => [
+	...new Set(
+		Object.keys(
+			await getSettings({
+				ssm,
+				stackName,
+				scope: Scope.NRFCLOUD_ACCOUNT_PREFIX,
+			})(),
+		).map((key) => key.split('/')[0] as string),
+	),
+]
 
 export const getAllAccountsSettings =
 	({ ssm, stackName }: { ssm: SSMClient; stackName: string }) =>

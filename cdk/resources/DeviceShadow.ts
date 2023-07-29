@@ -15,6 +15,7 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
+import { Scope } from '../../util/settings.js'
 
 export class DeviceShadow extends Construct {
 	public constructor(
@@ -120,10 +121,14 @@ export class DeviceShadow extends Construct {
 					resources: [
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty`,
+						}:parameter/${Stack.of(this).stackName}/${
+							Scope.NRFCLOUD_ACCOUNT_PREFIX
+						}`,
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+						}:parameter/${Stack.of(this).stackName}/${
+							Scope.NRFCLOUD_ACCOUNT_PREFIX
+						}/*`,
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
 						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,

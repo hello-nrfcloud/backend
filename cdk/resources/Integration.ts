@@ -221,7 +221,7 @@ export class Integration extends Construct {
 		const { environment, secrets } = Object.entries(nRFCloudAccounts).reduce(
 			(result, [account], index) => {
 				const bridgeNo = String(index + 2).padStart(2, '0')
-				const scope = `thirdParty/${account}`
+				const scope = `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`
 				const bridgePrefix = `MOSQUITTO__BRIDGE${bridgeNo}`
 
 				result.environment[

@@ -31,7 +31,7 @@ certificate used by MQTT broker to connect nRF Cloud under your account. So, you
 need to prepare nRF Cloud API key.
 
 ```bash
-./cli.sh configure thirdParty/<account>/apiKey <API key>
+./cli.sh configure-nrfcloud-account <account> apiKey <API key>
 ./cli.sh initialize-nrfcloud-account <account>
 ./cli.sh create-health-check-device <account>
 ```
