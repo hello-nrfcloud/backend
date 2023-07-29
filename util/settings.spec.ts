@@ -37,11 +37,11 @@ describe('settingsPath()', () => {
 	it('should produce a fully qualified parameter name for valid string scope', () =>
 		expect(
 			settingsPath({
-				scope: 'thirdParty/exeger',
+				scope: 'thirdParty/elite',
 				stackName: 'hello-nrfcloud',
 				property: 'someProperty',
 			}),
-		).toEqual('/hello-nrfcloud/thirdParty/exeger/someProperty'))
+		).toEqual('/hello-nrfcloud/thirdParty/elite/someProperty'))
 
 	it('should error for invalid string scope', () => {
 		expect(() =>

@@ -7,7 +7,7 @@ export type AuthorizedEvent = APIGatewayProxyWebsocketEventV2 & {
 			model: string //e.g. "PCA20035+solar",
 			integrationLatency: 1043
 			deviceId: string // e.g. 'oob-352656108602296'
-			account: string // e.g. 'exeger'
+			account: string // e.g. 'elite'
 		}
 	}
 }

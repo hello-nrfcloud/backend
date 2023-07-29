@@ -12,13 +12,13 @@ export enum Scope {
 	STACK_MQTT_BRIDGE = 'stack/mqttBridge',
 	NRFCLOUD_BRIDGE_CERTIFICATE_MQTT = 'nRFCloudBridgeCertificate/MQTT',
 	NRFCLOUD_BRIDGE_CERTIFICATE_CA = 'nRFCloudBridgeCertificate/CA',
-	NRFCLOUD_ACCOUNT = 'nRFCloud/accounts',
+	NRFCLOUD_ACCOUNT_PREFIX = 'thirdParty',
 }
 
 const validScope = (scope: string): boolean => {
 	return (
 		Object.values(Scope).map(String).includes(scope) ||
-		/^thirdParty\/[a-zA-Z0-9_.-]+$/.test(scope)
+		new RegExp(`^${Scope.NRFCLOUD_ACCOUNT_PREFIX}/[a-zA-Z0-9_.-]+$`).test(scope)
 	)
 }
 

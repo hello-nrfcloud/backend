@@ -13,6 +13,7 @@ import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from './LambdaSource.js'
+import { Scope } from '../../util/settings.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -64,10 +65,14 @@ export class HealthCheckMqttBridge extends Construct {
 					resources: [
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty`,
+						}:parameter/${Stack.of(this).stackName}/${
+							Scope.NRFCLOUD_ACCOUNT_PREFIX
+						}`,
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/thirdParty/*`,
+						}:parameter/${Stack.of(this).stackName}/${
+							Scope.NRFCLOUD_ACCOUNT_PREFIX
+						}/*`,
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
 						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,

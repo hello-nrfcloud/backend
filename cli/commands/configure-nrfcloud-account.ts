@@ -2,15 +2,19 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import fs from 'fs'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
-import { deleteSettings, putSettings } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import {
+	deleteSettings,
+	putSetting,
+	type Settings,
+} from '../../nrfcloud/settings.js'
 
-export const configureCommand = ({
+export const configureRFCloudAccountCommand = ({
 	ssm,
 }: {
 	ssm: SSMClient
 }): CommandDefinition => ({
-	command: 'configure <path> [value]',
+	command: 'configure-nrfcloud-account <account> <property> [value]',
 	options: [
 		{
 			flags: '-d, --deleteBeforeUpdate',
@@ -22,27 +26,18 @@ export const configureCommand = ({
 		},
 	],
 	action: async (
-		path: string,
+		account: string,
+		property: string,
 		value: string | undefined,
 		{ deleteBeforeUpdate, deleteParameter },
 	) => {
-		const parts = path.split('/')
-		const property = parts.pop()
-
-		const scope = parts.join('/')
-
-		if (property === undefined || property.length === 0)
-			throw new Error(`Must specify a parameter.`)
-
 		if (deleteParameter !== undefined) {
 			// Delete
 			const { name } = await deleteSettings({
 				ssm,
 				stackName: STACK_NAME,
-				scope,
-			})({
-				property,
-			})
+				account,
+			})(property)
 			console.log()
 			console.log(
 				chalk.green('Deleted the parameters from'),
@@ -56,15 +51,11 @@ export const configureCommand = ({
 			throw new Error(`Must provide value either as argument or via stdin!`)
 		}
 
-		const { name } = await putSettings({
+		const { name } = await putSetting({
 			ssm,
 			stackName: STACK_NAME,
-			scope,
-		})({
-			property,
-			value: v,
-			deleteBeforeUpdate,
-		})
+			account,
+		})(property as keyof Settings, v, deleteBeforeUpdate)
 
 		console.log()
 		console.log(

@@ -22,14 +22,9 @@ import { chunk } from 'lodash-es'
 import { randomUUID } from 'node:crypto'
 import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
-import { updateSettings, type Settings } from '../../nrfcloud/settings.js'
+import { putSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
-import {
-	Scope,
-	deleteSettings,
-	putSettings,
-	settingsPath,
-} from '../../util/settings.js'
+import { Scope, settingsPath } from '../../util/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
@@ -47,7 +42,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 		},
 	],
 	action: async (account, { remove }) => {
-		const scope = `thirdParty/${account}`
+		const scope = `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`
 		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`
 		if (remove === true) {
 			// check if has fake device
@@ -131,12 +126,6 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				)
 			}
 
-			await deleteSettings({
-				ssm,
-				stackName: STACK_NAME,
-				scope: Scope.NRFCLOUD_ACCOUNT,
-			})({ property: account })
-
 			return
 		}
 
@@ -177,14 +166,6 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			throw new Error(`Failed to create certificate!`)
 		}
 
-		await putSettings({
-			ssm,
-			stackName: STACK_NAME,
-			scope: Scope.NRFCLOUD_ACCOUNT,
-		})({
-			property: account,
-			value: account,
-		})
 		const settings: Partial<Settings> = {
 			accountDeviceClientCert: credentials.certificatePem,
 			accountDevicePrivateKey: pk,
@@ -192,10 +173,10 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			mqttEndpoint: await getIoTEndpoint({ iot })(),
 			mqttTopicPrefix: `prod/${tenantId}/`,
 		}
-		await updateSettings({
+		await putSettings({
 			ssm,
 			stackName: STACK_NAME,
-			scope,
+			account,
 		})(settings)
 
 		console.debug(chalk.white(`nRF Cloud settings:`))

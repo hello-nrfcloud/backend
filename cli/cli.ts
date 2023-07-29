@@ -13,7 +13,6 @@ import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition'
 import { configureDeviceCommand } from './commands/configure-device.js'
-import { configureCommand } from './commands/configure.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/create-fake-nrfcloud-account-device-credentials.js'
 import { createFakeNrfCloudHealthCheckDevice } from './commands/create-fake-nrfcloud-health-check-device.js'
 import { createHealthCheckDevice } from './commands/create-health-check-device.js'
@@ -30,6 +29,7 @@ import { showNRFCloudAccount } from './commands/show-nrfcloud-account.js'
 import { simulateDeviceCommand } from './commands/simulate-device.js'
 import { cleanBackupCertificates } from './commands/clean-backup-certificates.js'
 import { listnRFCloudAccountsCommand } from './commands/list-nrfcloud-accounts.js'
+import { configureRFCloudAccountCommand } from './commands/configure-nrfcloud-account.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -60,7 +60,7 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 	program.version(psjon.version)
 
 	const commands: CommandDefinition[] = [
-		configureCommand({ ssm }),
+		configureRFCloudAccountCommand({ ssm }),
 		setShadowFetcherCommand({ ssm }),
 		logsCommand({ stackName: STACK_NAME, cf, logs }),
 		cleanBackupCertificates({ ssm }),
