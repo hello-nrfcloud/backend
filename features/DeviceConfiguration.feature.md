@@ -61,5 +61,5 @@ Soon the nRF Cloud API should have been called with
 PATCH /v1/devices/${fingerprint_deviceId}/state HTTP/1.1
 Content-Type: application/json
 
-{"desired":{"config":{"nod":null}}}
+{"desired":{"config":{"nod":[]}}}
 ```

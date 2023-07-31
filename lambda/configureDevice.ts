@@ -110,7 +110,7 @@ const h = async (
 	const body = {
 		desired: {
 			config: {
-				nod: gnss === false ? ['gnss'] : null,
+				nod: gnss === false ? ['gnss'] : [],
 			},
 		},
 	}

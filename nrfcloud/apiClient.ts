@@ -67,8 +67,7 @@ export const apiClient = ({
 	getDevice: (id: string) => Promise<{ error: Error } | { device: Device }>
 	updateConfig: (
 		id: string,
-		version: number,
-		config: Nullable<DeviceConfig>,
+		config: Nullable<Omit<DeviceConfig, 'nod'>> & Pick<DeviceConfig, 'nod'>,
 	) => Promise<{ error: Error } | { success: boolean }>
 	registerDevices: (
 		devices: {
@@ -112,7 +111,7 @@ export const apiClient = ({
 			})
 				.then<Device>(async (res) => res.json())
 				.then((device) => ({ device })),
-		updateConfig: async (id, version, config) =>
+		updateConfig: async (id, config) =>
 			fetch(
 				`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}/state`,
 				{

@@ -7,7 +7,6 @@ import { getDevice } from '../../devices/getDevice.js'
 import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import type { Nullable } from '../../util/types.js'
 
 const defaultActiveWaitTimeSeconds = 60
 const defaultLocationTimeoutSeconds = 30
@@ -132,7 +131,7 @@ export const configureDeviceCommand = ({
 			),
 		)
 
-		const newConfig: Nullable<DeviceConfig> = {
+		const newConfig: Parameters<(typeof client)['updateConfig']>[1] = {
 			activeMode: true,
 			activeWaitTime:
 				activeWaitTime !== undefined
@@ -142,7 +141,7 @@ export const configureDeviceCommand = ({
 				locationTimeout !== undefined
 					? parseInt(locationTimeout, 10)
 					: defaultLocationTimeoutSeconds,
-			nod: disableGNSS === true ? ['gnss'] : null,
+			nod: disableGNSS === true ? ['gnss'] : [],
 		}
 		console.log(
 			table(
@@ -159,11 +158,7 @@ export const configureDeviceCommand = ({
 				},
 			),
 		)
-		const res = await client.updateConfig(
-			device.id,
-			state?.version ?? 0,
-			newConfig,
-		)
+		const res = await client.updateConfig(device.id, newConfig)
 
 		if ('error' in res) {
 			console.error(chalk.red(`Updated failed: ${res.error}.`))
