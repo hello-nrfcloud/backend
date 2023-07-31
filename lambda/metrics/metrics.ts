@@ -1,6 +1,7 @@
 import { Metrics } from '@aws-lambda-powertools/metrics'
 
 const registry: Record<string, Metrics> = {}
+export type AddMetricsFn = (...args: Parameters<Metrics['addMetric']>) => void
 
 const metricsEnabled = process.env.DISABLE_METRICS !== '1'
 console.debug(`[Metrics]`, metricsEnabled ? `Enabled` : `Disabled`)
@@ -12,7 +13,7 @@ export const metricsForComponent = (
 	component: string,
 ): {
 	metrics: Metrics
-	track: (...args: Parameters<Metrics['addMetric']>) => void
+	track: AddMetricsFn
 } => {
 	if (registry[component] === undefined) {
 		registry[component] = new Metrics({

@@ -17,6 +17,7 @@ import { once } from 'lodash-es'
 import { slashless } from '../util/slashless.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { loggingFetch } from './loggingFetch.js'
 
 type Request = Omit<WebsocketPayload, 'message'> & {
 	message: {
@@ -70,6 +71,8 @@ const getAllNRFCloudAPIConfigs: () => Promise<
 	)
 })
 
+const trackFetch = loggingFetch({ track, log })
+
 /**
  * Handle configure device request
  */
@@ -104,27 +107,27 @@ const h = async (
 		track('gnss:off', MetricUnits.Count, 1)
 	}
 
-	const url = `${slashless(apiEndpoint)}/v1/devices/${encodeURIComponent(
-		deviceId,
-	)}/state`
-	const body = {
-		desired: {
-			config: {
-				nod: gnss === false ? ['gnss'] : [],
+	const res = await trackFetch(
+		new URL(
+			`${slashless(apiEndpoint)}/v1/devices/${encodeURIComponent(
+				deviceId,
+			)}/state`,
+		),
+		{
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${apiKey}`,
 			},
+			body: JSON.stringify({
+				desired: {
+					config: {
+						nod: gnss === false ? ['gnss'] : [],
+					},
+				},
+			}),
 		},
-	}
-	log.debug(`url`, url)
-	log.debug(`body`, body)
-
-	const res = await fetch(url, {
-		method: 'PATCH',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${apiKey}`,
-		},
-		body: JSON.stringify(body),
-	})
+	)
 
 	if (res.ok) {
 		log.debug(`Accepted`)

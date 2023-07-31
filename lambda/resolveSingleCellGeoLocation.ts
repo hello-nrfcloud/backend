@@ -21,6 +21,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { once } from 'lodash-es'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
+import { loggingFetch } from './loggingFetch.js'
 
 const { EventBusName, stackName, DevicesTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -35,16 +36,22 @@ const ssm = new SSMClient({})
 
 const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
+const { track, metrics } = metricsForComponent('singleCellGeo')
+
+const trackFetch = loggingFetch({ track, log })
+
 const serviceToken = once(
 	async ({ apiEndpoint, apiKey }: { apiEndpoint: URL; apiKey: string }) => {
-		const url = `${slashless(apiEndpoint)}/v1/account/service-token`
-		const res = await fetch(url, {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${apiKey}`,
+		const res = await trackFetch(
+			new URL(`${slashless(apiEndpoint)}/v1/account/service-token`),
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${apiKey}`,
+				},
 			},
-		})
+		)
 		if (!res.ok) {
 			const body = await res.text()
 			console.error('request failed', {
@@ -62,8 +69,6 @@ const serviceToken = once(
 )
 
 const allAccountsSettings = once(getAllAccountsSettings({ ssm, stackName }))
-
-const { track, metrics } = metricsForComponent('singleCellGeo')
 
 /**
  * Handle configure device request
@@ -117,23 +122,17 @@ const h = async (event: {
 			},
 		],
 	}
-	log.debug(`body`, body)
-
-	const url = `${slashless(apiEndpoint)}/v1/location/ground-fix`
-	log.debug(`url`, url)
-
-	const start = Date.now()
-
-	const res = await fetch(url, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${locationServiceToken}`,
+	const res = await trackFetch(
+		new URL(`${slashless(apiEndpoint)}/v1/location/ground-fix`),
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${locationServiceToken}`,
+			},
+			body: JSON.stringify(body),
 		},
-		body: JSON.stringify(body),
-	})
-
-	track('apiResponseTime', MetricUnits.Milliseconds, Date.now() - start)
+	)
 
 	if (!res.ok) {
 		track('single-cell:error', MetricUnits.Count, 1)
