@@ -113,9 +113,9 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 	}
 
 	// Handle broken JSON
-	let payload: Record<string, any>
+	let body: Record<string, any> | undefined = undefined
 	try {
-		payload = JSON.parse(event.body).payload
+		body = JSON.parse(event.body)
 	} catch (err) {
 		await onError(
 			BadRequestError({
@@ -125,6 +125,13 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 		)
 		return
 	}
+
+	// Handle PING
+	if (body?.data === 'PING') {
+		return
+	}
+
+	const payload: Record<string, any> = body?.payload ?? {}
 
 	// Extract the @context property of the request
 	const maybeValidRequestContext = validRequestContext(payload)
