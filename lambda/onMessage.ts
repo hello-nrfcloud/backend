@@ -187,4 +187,11 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 	await onSuccess(maybeValidRequest.request)
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy(h)
+	.use(logMetrics(metrics))
+	.use({
+		after: async (request) => {
+			const { response } = request
+			if (response === undefined) request.response = { statusCode: 200 }
+		},
+	})
