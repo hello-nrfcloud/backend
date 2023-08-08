@@ -15,7 +15,9 @@ export const createTrailOfCoordinates = (
 	listOfCoordinates: Coordinate[],
 ): TrailCoordinates[] => {
 	const result: TrailCoordinates[] = []
-	for (const coordinate of listOfCoordinates) {
+	for (const coordinate of listOfCoordinates.sort(
+		({ ts: t1 }, { ts: t2 }) => t1 - t2,
+	)) {
 		const prev = result[result.length - 1]
 		if (prev === undefined) {
 			result.push({
