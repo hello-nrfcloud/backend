@@ -8,11 +8,12 @@ import { Context } from '@hello.nrfcloud.com/proto/hello'
 import {
 	HistoricalDataRequest,
 	HistoricalDataResponse,
-} from '@hello.nrfcloud.com/proto/hello/chart'
+} from '@hello.nrfcloud.com/proto/hello/history'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { type Static } from '@sinclair/typebox'
 import { groupBy } from 'lodash-es'
 import { getQueryStatement } from './queryGenerator.js'
+import { createTrailOfCoordinates } from '../util/createTrailOfCoordinates.js'
 
 export const HistoricalChartTypes = {
 	lastHour: {
@@ -137,14 +138,31 @@ export const historicalDataRepository = ({
 
 		// Transform request
 		let attributes: Record<string, unknown[]> | Record<string, unknown>[]
-		if (request.message === 'location') {
+		if (request.message === 'location' || request.message === 'locationTrail') {
 			const parsedResult = normalizedData(parseResult(res))
-			const mapKeys = Object.entries(request.attributes).map(([k, v]) => ({
+			const requestedAttributes = request.attributes
+			if (request.message === 'locationTrail') {
+				// Make sure lat, lng, and ts are set
+				requestedAttributes['lat'] = { attribute: 'lat' }
+				requestedAttributes['lng'] = { attribute: 'lng' }
+				requestedAttributes['ts'] = { attribute: 'ts' }
+			}
+			const mapKeys = Object.entries(requestedAttributes).map(([k, v]) => ({
 				fromKey: v.attribute,
 				toKey: k,
 			}))
 
 			attributes = transformTimestreamData(parsedResult, mapKeys)
+
+			if (request.message === 'locationTrail')
+				attributes = createTrailOfCoordinates(
+					request.minDistanceKm,
+					attributes as {
+						lat: number
+						lng: number
+						ts: number
+					}[],
+				)
 		} else {
 			const parsedResult = parseResult(res)
 			attributes = {}

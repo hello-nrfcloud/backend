@@ -12,7 +12,7 @@ import {
 	Context,
 	ProblemDetail,
 } from '@hello.nrfcloud.com/proto/hello'
-import { HistoricalDataRequest } from '@hello.nrfcloud.com/proto/hello/chart'
+import { HistoricalDataRequest } from '@hello.nrfcloud.com/proto/hello/history'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'

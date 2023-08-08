@@ -12,7 +12,10 @@ export type TrailCoordinates = Coordinate & {
 }
 
 export const createTrailOfCoordinates = (
-	maxDistanceKm: number,
+	/**
+	 * The minimum distance in KM for a location to not be folded into the current position.
+	 */
+	minDistanceKm: number,
 	listOfCoordinates: Coordinate[],
 ): TrailCoordinates[] => {
 	const result: TrailCoordinates[] = []
@@ -31,7 +34,7 @@ export const createTrailOfCoordinates = (
 				pointA: prev,
 				pointB: coordinate,
 			})
-			if (distance > maxDistanceKm) {
+			if (distance > minDistanceKm) {
 				result.push({
 					...coordinate,
 					count: 1,
