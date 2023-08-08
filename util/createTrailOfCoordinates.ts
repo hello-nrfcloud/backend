@@ -10,11 +10,6 @@ export type TrailCoordinates = Coordinate & {
 	count: number
 }
 
-export type previousType = {
-	array: TrailCoordinates[]
-	counter: number
-}
-
 export const createTrailOfCoordinates = (
 	maxDistanceInKm: number,
 	listOfCoordinates: Coordinate[],
