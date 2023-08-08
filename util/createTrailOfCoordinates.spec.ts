@@ -1,0 +1,269 @@
+import { createTrailOfCoordinates } from './createTrailOfCoordinates.js'
+
+const coordinates = [
+	{
+		lat: 63.422214376965165,
+		lng: 10.43763831347703,
+		ts: 1691114567,
+	},
+	{
+		lat: 63.422214376965165,
+		lng: 10.43763831347703,
+		ts: 1691114667,
+	},
+	{
+		lat: 63.42161345025134,
+		lng: 10.436310829032905,
+		ts: 1691114687,
+	},
+	{
+		lat: 63.42161345025134,
+		lng: 10.436310829032905,
+		ts: 1691114807,
+	},
+	{
+		lat: 63.42161345025134,
+		lng: 10.436310829032905,
+		ts: 1691114987,
+	},
+	{
+		lat: 63.42161345025134,
+		lng: 10.436310829032905,
+		ts: 1691115087,
+	},
+	{
+		lat: 63.42154475460784,
+		lng: 10.43729416236437,
+		ts: 1691115187,
+	},
+	{
+		lat: 63.42135082023726,
+		lng: 10.436949061903944,
+		ts: 1691115287,
+	},
+
+	{
+		lat: 63.42130758628152,
+		lng: 10.436780652879253,
+		ts: 1691115387,
+	},
+	{
+		lat: 63.42130758628152,
+		lng: 10.436780652879253,
+		ts: 1691115487,
+	},
+	{
+		lat: 63.42130758628152,
+		lng: 10.436780652879253,
+		ts: 1691115587,
+	},
+	{
+		lat: 63.42130758628152,
+		lng: 10.436780652879253,
+		ts: 1691115687,
+	},
+	{
+		lat: 63.42130758628152,
+		lng: 10.436780652879253,
+		ts: 1691115787,
+	},
+	{
+		lat: 63.421482406605705,
+		lng: 10.437975967525364,
+		ts: 1691115887,
+	},
+	{
+		lat: 63.421482406605705,
+		lng: 10.437975967525364,
+		ts: 1691115987,
+	},
+]
+
+describe('createTrailOfCoordinates()', () => {
+	it('should return an empty list if no coordinate given', () => {
+		expect(createTrailOfCoordinates(1, [])).toHaveLength(0)
+	})
+	it('should return the coordinate if only one coordinate is given', () => {
+		expect(
+			createTrailOfCoordinates(1, [
+				{
+					lat: 63.422214376965165,
+					lng: 10.43763831347703,
+					ts: 1691114567,
+				},
+			]),
+		).toMatchObject([
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+				count: 1,
+			},
+		])
+	})
+	it('should return two coordinates if the distance between them is above 1km', () => {
+		expect(
+			createTrailOfCoordinates(1, [
+				{
+					lat: 63.422214376965165,
+					lng: 10.43763831347703,
+					ts: 1691114567,
+				},
+				{
+					lat: 63.36316007133849,
+					lng: 10.355729671057269,
+					ts: 1691114567,
+				},
+			]),
+		).toMatchObject([
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+				count: 1,
+			},
+			{
+				lat: 63.36316007133849,
+				lng: 10.355729671057269,
+				ts: 1691114567,
+				count: 1,
+			},
+		])
+	})
+	it('should only return one counted coordinate if the distance is less than 1km', () => {
+		expect(
+			createTrailOfCoordinates(1, [
+				{
+					lat: 63.422214376965165,
+					lng: 10.43763831347703,
+					ts: 1691114567,
+				},
+				{
+					lat: 63.422214376965165,
+					lng: 10.43763831347703,
+					ts: 1691114667,
+				},
+			]),
+		).toMatchObject([
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+				count: 2,
+			},
+		])
+	})
+	it('should return counted coordinates with a distance > 50 meters, and ignore coordinates with smaller distance. Every coordinate should be counted.', () => {
+		const expectedResults50m = [
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+				count: 2,
+			},
+			{
+				lat: 63.42161345025134,
+				lng: 10.436310829032905,
+				ts: 1691114687,
+				count: 11,
+			},
+			{
+				lat: 63.421482406605705,
+				lng: 10.437975967525364,
+				ts: 1691115887,
+				count: 2,
+			},
+		]
+
+		expect(createTrailOfCoordinates(0.05, coordinates)).toEqual(
+			expectedResults50m,
+		)
+	})
+
+	it('should return coordinates with a distance > 1 meter, and ignore coordinates with smaller distance. Every coordinate should be counted.', () => {
+		const expectedResults1m = [
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+				count: 2,
+			},
+			{
+				lat: 63.42161345025134,
+				lng: 10.436310829032905,
+				ts: 1691114687,
+				count: 4,
+			},
+			{
+				lat: 63.42154475460784,
+				lng: 10.43729416236437,
+				ts: 1691115187,
+				count: 1,
+			},
+			{
+				lat: 63.42135082023726,
+				lng: 10.436949061903944,
+				ts: 1691115287,
+				count: 1,
+			},
+			{
+				lat: 63.42130758628152,
+				lng: 10.436780652879253,
+				ts: 1691115387,
+				count: 5,
+			},
+
+			{
+				lat: 63.421482406605705,
+				lng: 10.437975967525364,
+				ts: 1691115887,
+				count: 2,
+			},
+		]
+		expect(createTrailOfCoordinates(0.0001, coordinates)).toEqual(
+			expectedResults1m,
+		)
+	})
+	it('should return coordinates with a distance > 1 km, and ignore coordinates with smaller distance. Every coordinates should be counted.', () => {
+		const expectedResults1Km = [
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+				count: 15,
+			},
+		]
+		expect(createTrailOfCoordinates(1, coordinates)).toEqual(expectedResults1Km)
+	})
+	it('should return coordinates with a distance > 1 km and count all positions even if the function only gets one coordinate', () => {
+		const oneCoordinate = [
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+			},
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+			},
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+			},
+		]
+
+		const expectedResults1coordinate = [
+			{
+				lat: 63.422214376965165,
+				lng: 10.43763831347703,
+				ts: 1691114567,
+				count: 3,
+			},
+		]
+		expect(createTrailOfCoordinates(1, oneCoordinate)).toEqual(
+			expectedResults1coordinate,
+		)
+	})
+})
