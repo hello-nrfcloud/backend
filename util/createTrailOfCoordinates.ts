@@ -8,10 +8,11 @@ export type Coordinate = {
 
 export type TrailCoordinates = Coordinate & {
 	count: number
+	radiusKm: number
 }
 
 export const createTrailOfCoordinates = (
-	maxDistanceInKm: number,
+	maxDistanceKm: number,
 	listOfCoordinates: Coordinate[],
 ): TrailCoordinates[] => {
 	const result: TrailCoordinates[] = []
@@ -23,18 +24,22 @@ export const createTrailOfCoordinates = (
 			result.push({
 				...coordinate,
 				count: 1,
+				radiusKm: 0,
 			})
 		} else {
-			if (
-				getDistanceFromLatLngInKm({ pointA: prev, pointB: coordinate }) >
-				maxDistanceInKm
-			) {
+			const distance = getDistanceFromLatLngInKm({
+				pointA: prev,
+				pointB: coordinate,
+			})
+			if (distance > maxDistanceKm) {
 				result.push({
 					...coordinate,
 					count: 1,
+					radiusKm: 0,
 				})
 			} else {
 				prev.count += 1
+				prev.radiusKm = Math.max(prev.radiusKm, distance)
 			}
 		}
 	}

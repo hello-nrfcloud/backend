@@ -98,6 +98,7 @@ describe('createTrailOfCoordinates()', () => {
 				lng: 10.43763831347703,
 				ts: 1691114567,
 				count: 1,
+				radiusKm: 0,
 			},
 		])
 	})
@@ -121,12 +122,14 @@ describe('createTrailOfCoordinates()', () => {
 				lng: 10.43763831347703,
 				ts: 1691114567,
 				count: 1,
+				radiusKm: 0,
 			},
 			{
 				lat: 63.36316007133849,
 				lng: 10.355729671057269,
 				ts: 1691114567,
 				count: 1,
+				radiusKm: 0,
 			},
 		])
 	})
@@ -150,6 +153,7 @@ describe('createTrailOfCoordinates()', () => {
 				lng: 10.43763831347703,
 				ts: 1691114567,
 				count: 2,
+				radiusKm: 0,
 			},
 		])
 	})
@@ -160,18 +164,21 @@ describe('createTrailOfCoordinates()', () => {
 				lng: 10.43763831347703,
 				ts: 1691114567,
 				count: 2,
+				radiusKm: 0,
 			},
 			{
 				lat: 63.42161345025134,
 				lng: 10.436310829032905,
 				ts: 1691114687,
 				count: 11,
+				radiusKm: 0.049514654728146604,
 			},
 			{
 				lat: 63.421482406605705,
 				lng: 10.437975967525364,
 				ts: 1691115887,
 				count: 2,
+				radiusKm: 0,
 			},
 		]
 
@@ -187,30 +194,35 @@ describe('createTrailOfCoordinates()', () => {
 				lng: 10.43763831347703,
 				ts: 1691114567,
 				count: 2,
+				radiusKm: 0,
 			},
 			{
 				lat: 63.42161345025134,
 				lng: 10.436310829032905,
 				ts: 1691114687,
 				count: 4,
+				radiusKm: 0,
 			},
 			{
 				lat: 63.42154475460784,
 				lng: 10.43729416236437,
 				ts: 1691115187,
 				count: 1,
+				radiusKm: 0,
 			},
 			{
 				lat: 63.42135082023726,
 				lng: 10.436949061903944,
 				ts: 1691115287,
 				count: 1,
+				radiusKm: 0,
 			},
 			{
 				lat: 63.42130758628152,
 				lng: 10.436780652879253,
 				ts: 1691115387,
 				count: 5,
+				radiusKm: 0,
 			},
 
 			{
@@ -218,6 +230,7 @@ describe('createTrailOfCoordinates()', () => {
 				lng: 10.437975967525364,
 				ts: 1691115887,
 				count: 2,
+				radiusKm: 0,
 			},
 		]
 		expect(createTrailOfCoordinates(0.0001, coordinates)).toEqual(
@@ -230,6 +243,7 @@ describe('createTrailOfCoordinates()', () => {
 				lat: 63.422214376965165,
 				lng: 10.43763831347703,
 				ts: 1691114567,
+				radiusKm: 0.10948726763782791,
 				count: 15,
 			},
 		]
@@ -260,6 +274,7 @@ describe('createTrailOfCoordinates()', () => {
 				lng: 10.43763831347703,
 				ts: 1691114567,
 				count: 3,
+				radiusKm: 0,
 			},
 		]
 		expect(createTrailOfCoordinates(1, oneCoordinate)).toEqual(
