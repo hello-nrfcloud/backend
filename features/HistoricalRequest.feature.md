@@ -59,7 +59,7 @@ And I send this message via the websocket
 
 <!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
-Soon I should receive a message on the websocket that is equal to
+Soon I should receive a message on the websocket that matches
 
 ```json
 {
@@ -136,7 +136,7 @@ And I send this message via the websocket
 
 <!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
-Soon I should receive a message on the websocket that is equal to
+Soon I should receive a message on the websocket that matches
 
 ```json
 {
@@ -204,7 +204,7 @@ Given I store
 `$toMillis($join([$substring($fromMillis(ts), 0, 13), ":00:00Z"]))` into
 `lastHour`
 
-Soon I should receive a message on the websocket that is equal to
+Soon I should receive a message on the websocket that matches
 
 ```json
 {
