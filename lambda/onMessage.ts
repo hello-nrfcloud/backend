@@ -12,7 +12,7 @@ import {
 	Context,
 	ProblemDetail,
 } from '@hello.nrfcloud.com/proto/hello'
-import { HistoricalDataRequest } from '@hello.nrfcloud.com/proto/hello/history'
+import { CommonRequest } from '@hello.nrfcloud.com/proto/hello/history'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
@@ -24,7 +24,7 @@ import { Type, type Static } from '@sinclair/typebox'
 import { toBadRequest } from './ws/toBadRequest.js'
 import { validateRequest } from './ws/validateRequest.js'
 
-const validateHistoricalDataRequest = validateWithTypeBox(HistoricalDataRequest)
+const validateHistoricalDataRequest = validateWithTypeBox(CommonRequest)
 const validateConfigureDeviceRequest = validateWithTypeBox(ConfigureDevice)
 
 const validRequestContext = validateWithTypeBox(
@@ -148,14 +148,12 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 				problem: Static<typeof ProblemDetail>
 		  }
 		| {
-				request:
-					| Static<typeof HistoricalDataRequest>
-					| Static<typeof ConfigureDevice>
+				request: Static<typeof CommonRequest> | Static<typeof ConfigureDevice>
 		  }
 
 	switch (context) {
 		case Context.historicalDataRequest.toString():
-			maybeValidRequest = validateRequest<typeof HistoricalDataRequest>(
+			maybeValidRequest = validateRequest<typeof CommonRequest>(
 				payload,
 				validateHistoricalDataRequest,
 			)

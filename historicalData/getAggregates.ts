@@ -1,7 +1,8 @@
-import { type HistoricalRequest } from './historicalDataRepository.js'
+import type { CommonRequest } from "@hello.nrfcloud.com/proto/hello/history"
+import type { Static } from "@sinclair/typebox"
 
 export const getAggregates = (
-	attributes: HistoricalRequest['attributes'],
+	attributes: Static<typeof CommonRequest>['attributes'],
 ): string[] => {
 	const aggs: string[] = []
 

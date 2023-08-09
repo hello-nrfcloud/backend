@@ -62,6 +62,7 @@ And I send this message via the websocket
     "@id": "46156b60-529d-473a-96d7-97cdc9d2cdbc",
     "type": "lastHour",
     "message": "locationTrail",
+    "minDistanceKm": 1,
     "attributes": {
       "lat": { "attribute": "lat" },
       "lng": { "attribute": "lng" },

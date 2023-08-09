@@ -6,13 +6,16 @@ import {
 } from '@aws-sdk/client-timestream-query'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import {
-	HistoricalDataRequest,
-	HistoricalDataResponse,
+	BatteryRequest,
+	BatteryResponse,
+	GainRequest,
+	GainResponse,
+	LocationRequest,
+	LocationResponse,
 } from '@hello.nrfcloud.com/proto/hello/history'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
-import { type Static } from '@sinclair/typebox'
+import { Type, type Static } from '@sinclair/typebox'
 import { getQueryStatement } from './getQueryStatement.js'
-import { createTrailOfCoordinates } from '../util/createTrailOfCoordinates.js'
 import { transformTimestreamData } from './transformTimestreamData.js'
 import { normalizedData } from './normalizedData.js'
 
@@ -39,14 +42,14 @@ export const HistoricalChartTypes = {
 		aggregateRequired: true,
 	},
 }
-
-export type HistoricalRequest = Static<typeof HistoricalDataRequest>
-export type HistoricalResponse = Static<typeof HistoricalDataResponse>
+export const SensorDataRequests = Type.Union([GainRequest, BatteryRequest])
+export const SensorDataResponses = Type.Union([GainResponse, BatteryResponse])
 
 export const historicalDataRepository = ({
 	timestream,
 	historicalDataDatabaseName,
 	historicalDataTableName,
+	log,
 }: {
 	timestream: TimestreamQueryClient
 	historicalDataDatabaseName: string
@@ -54,17 +57,26 @@ export const historicalDataRepository = ({
 	log?: Logger
 	track?: (...args: Parameters<Metrics['addMetric']>) => void
 }): {
-	getHistoricalData: ({
+	getHistoricalLocationData: ({
 		deviceId,
 		model,
 		request,
 	}: {
 		deviceId: string
 		model: string
-		request: HistoricalRequest
-	}) => Promise<HistoricalResponse>
+		request: Static<typeof LocationRequest>
+	}) => Promise<Static<typeof LocationResponse>>
+	getHistoricalSensorData: ({
+		deviceId,
+		model,
+		request,
+	}: {
+		deviceId: string
+		model: string
+		request: Static<typeof SensorDataRequests>
+	}) => Promise<Static<typeof SensorDataResponses>>
 } => ({
-	getHistoricalData: async ({ deviceId, model, request }) => {
+	getHistoricalLocationData: async ({ deviceId, model, request }) => {
 		const context = Context.model(model).transformed(request.message)
 
 		// Query data
@@ -75,6 +87,7 @@ export const historicalDataRepository = ({
 			historicalDataDatabaseName,
 			historicalDataTableName,
 		})
+		log?.debug(`[historicalDataRepository]`, { QueryString })
 		const res = await timestream.send(
 			new QueryCommand({
 				QueryString,
@@ -82,53 +95,60 @@ export const historicalDataRepository = ({
 		)
 
 		// Transform request
-		let attributes: Record<string, unknown[]> | Record<string, unknown>[]
-		if (request.message === 'location' || request.message === 'locationTrail') {
-			const parsedResult = normalizedData(parseResult(res))
-			const requestedAttributes = request.attributes
-			if (request.message === 'locationTrail') {
-				// Make sure lat, lng, and ts are set
-				requestedAttributes['lat'] = { attribute: 'lat' }
-				requestedAttributes['lng'] = { attribute: 'lng' }
-				requestedAttributes['ts'] = { attribute: 'ts' }
-			}
-			const mapKeys = Object.entries(requestedAttributes).map(([k, v]) => ({
-				fromKey: v.attribute,
-				toKey: k,
-			}))
+		const parsedResult = normalizedData(parseResult(res))
+		const requestedAttributes = request.attributes
+		const mapKeys = Object.entries(requestedAttributes).map(([k, v]) => ({
+			fromKey: v.attribute,
+			toKey: k,
+		}))
 
-			attributes = transformTimestreamData(parsedResult, mapKeys)
-
-			if (request.message === 'locationTrail')
-				attributes = createTrailOfCoordinates(
-					request.minDistanceKm,
-					attributes as {
-						lat: number
-						lng: number
-						ts: number
-					}[],
-				)
-		} else {
-			const parsedResult = parseResult(res)
-			attributes = {}
-			for (const attribute in request.attributes) {
-				attributes[attribute] = transformTimestreamData(parsedResult, [
-					{
-						fromKey: attribute,
-						toKey: request.attributes[attribute]?.attribute ?? 'unknown',
-					},
-				])
-			}
-		}
-
-		const response: HistoricalResponse = {
+		const attributes = transformTimestreamData(parsedResult, mapKeys)
+		return {
 			'@context': Context.historicalDataResponse.toString(),
 			'@id': request['@id'],
-			attributes: attributes as HistoricalResponse['attributes'],
+			attributes: attributes as Static<typeof LocationResponse>['attributes'],
 			type: request.type,
 			message: request.message,
 		}
+	},
+	getHistoricalSensorData: async ({ deviceId, model, request }) => {
+		const context = Context.model(model).transformed(request.message)
 
-		return response
+		// Query data
+		const QueryString = getQueryStatement({
+			request,
+			deviceId,
+			context,
+			historicalDataDatabaseName,
+			historicalDataTableName,
+		})
+		log?.debug(`[historicalDataRepository]`, { QueryString })
+		const res = await timestream.send(
+			new QueryCommand({
+				QueryString,
+			}),
+		)
+
+		// Transform request
+		const attributes: Record<string, unknown[]> = {}
+		const parsedResult = parseResult(res)
+		for (const attribute in request.attributes) {
+			attributes[attribute] = transformTimestreamData(parsedResult, [
+				{
+					fromKey: attribute,
+					toKey: request.attributes[attribute]?.attribute ?? 'unknown',
+				},
+			])
+		}
+
+		return {
+			'@context': Context.historicalDataResponse.toString(),
+			'@id': request['@id'],
+			attributes: attributes as Static<
+				typeof SensorDataResponses
+			>['attributes'],
+			type: request.type,
+			message: request.message,
+		} as Static<typeof SensorDataResponses>
 	},
 })

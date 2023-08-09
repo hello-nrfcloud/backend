@@ -1,6 +1,7 @@
+import type { Static } from '@sinclair/typebox'
 import { ulid } from '../util/ulid.js'
-import type { HistoricalRequest } from './historicalDataRepository.js'
-import { getQueryStatement } from './getQueryStatement.js'
+import type { GainRequest } from '@hello.nrfcloud.com/proto/hello/history/HistoricalDataRequest.js'
+import { getSensorQueryStatement } from './getQueryStatement.js'
 
 describe('getQueryStatement', () => {
 	beforeEach(() => {
@@ -13,7 +14,7 @@ describe('getQueryStatement', () => {
 	})
 
 	it('returns the correct query statement for gain request', () => {
-		const request: HistoricalRequest = {
+		const request: Static<typeof GainRequest> = {
 			'@context':
 				'https://github.com/hello-nrfcloud/proto/historical-data-request',
 			'@id': ulid(),
@@ -31,7 +32,7 @@ describe('getQueryStatement', () => {
 		const historicalDataDatabaseName = 'database1'
 		const historicalDataTableName = 'table1'
 
-		const result = getQueryStatement({
+		const result = getSensorQueryStatement({
 			request,
 			deviceId,
 			context,
