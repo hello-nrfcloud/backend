@@ -1,10 +1,11 @@
-import { HistoricalChartTypes } from './historicalDataRepository.js'
-import { type ChartType } from './getQueryStatement.js'
+import { HistoricalDataTimeSpans } from './HistoricalDataTimeSpans.js'
 
-export const getBinnedTime = (type: ChartType): string => {
-	const selectedType = HistoricalChartTypes[type]
+export const getBinnedTime = (
+	type: keyof typeof HistoricalDataTimeSpans,
+): string => {
+	const selectedType = HistoricalDataTimeSpans[type]
 	if (selectedType === undefined)
-		throw new Error(`${type} is not a valid chart type`)
+		throw new Error(`${type} is not a valid time span`)
 
 	return `bin(time, ${selectedType.bin.replace(/s$/, '')})`
 }

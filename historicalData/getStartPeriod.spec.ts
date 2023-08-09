@@ -1,23 +1,25 @@
 import { getStartPeriod } from './getStartPeriod.js'
-import type { ChartType } from './getQueryStatement.js'
+import { HistoricalDataTimeSpans } from './HistoricalDataTimeSpans.js'
 
 describe('getStartPeriod', () => {
 	it.each([
-		['lastHour', 1688104200000, 'from_milliseconds(1688104200000) - 1hour'],
-
-		['lastDay', 1688104200000, 'from_milliseconds(1688104200000) - 24hour'],
-		['lastWeek', 1688104200000, 'from_milliseconds(1688104200000) - 7day'],
-		['lastMonth', 1688104200000, 'from_milliseconds(1688104200000) - 30day'],
+		['lastHour', '1hour'],
+		['lastDay', '24hour'],
+		['lastWeek', '7day'],
+		['lastMonth', '30day'],
 	])(
-		'should return for the time span %s and the time %d the start period %s',
-		(timeSpan, time, expectedTimeString) =>
-			expect(getStartPeriod(timeSpan as ChartType, time)).toBe(
-				expectedTimeString,
-			),
+		'should return for the time span %s the period -%s from the given time',
+		(timeSpan, expectedTimeString) =>
+			expect(
+				getStartPeriod(
+					timeSpan as keyof typeof HistoricalDataTimeSpans,
+					1688104200000,
+				),
+			).toEqual(`from_milliseconds(1688104200000) - ${expectedTimeString}`),
 	)
 
-	it('throws an error for an invalid chart type', () =>
+	it('throws an error for an invalid time span', () =>
 		expect(() => {
 			getStartPeriod('InvalidType' as 'lastHour', 1688104200000)
-		}).toThrow('InvalidType is not a valid chart type'))
+		}).toThrow('InvalidType is not a valid time span'))
 })

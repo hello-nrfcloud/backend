@@ -1,5 +1,5 @@
 import { getBinnedTime } from './getBinnedTime.js'
-import { type ChartType } from './getQueryStatement.js'
+import type { HistoricalDataTimeSpans } from './HistoricalDataTimeSpans.js'
 
 describe('getBinnedTime', () => {
 	it.each([
@@ -9,14 +9,14 @@ describe('getBinnedTime', () => {
 		['lastWeek', 'bin(time, 1hour)'],
 
 		['lastMonth', 'bin(time, 1hour)'],
-	])(
+	] as [keyof typeof HistoricalDataTimeSpans, string][])(
 		'should return for the time span %s the binned time string %s',
 		(timeSpan, expectedTimeString) =>
-			expect(getBinnedTime(timeSpan as ChartType)).toEqual(expectedTimeString),
+			expect(getBinnedTime(timeSpan)).toEqual(expectedTimeString),
 	)
 
-	it('should throw an error for an invalid chart type', () =>
+	it('should throw an error for an invalid time span', () =>
 		expect(() => getBinnedTime('InvalidType' as 'lastHour')).toThrowError(
-			'InvalidType is not a valid chart type',
+			'InvalidType is not a valid time span',
 		))
 })

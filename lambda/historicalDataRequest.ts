@@ -5,22 +5,21 @@ import { InternalError } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
-import {
-	SensorDataRequests,
-	historicalDataRepository,
-} from '../historicalData/historicalDataRepository.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 import { createTrailOfCoordinates } from '../util/createTrailOfCoordinates.js'
 import type { Static } from '@sinclair/typebox'
 import type {
+	CommonAggregatedRequest,
 	CommonRequest,
 	CommonResponse,
 	LocationRequest,
 	LocationTrailRequest,
 	LocationTrailResponse,
 } from '@hello.nrfcloud.com/proto/hello/history'
+import { getHistoricalLocationData } from '../historicalData/locationDataHistory.js'
+import { getHistoricalSensorData } from '../historicalData/sensorDataHistory.js'
 
 type Request = Omit<WebsocketPayload, 'message'> & {
 	message: {
@@ -51,7 +50,15 @@ if (
 
 const { track, metrics } = metricsForComponent('historicalDataRequest')
 
-const repo = historicalDataRepository({
+const locationHistory = getHistoricalLocationData({
+	timestream,
+	historicalDataDatabaseName,
+	historicalDataTableName,
+	log,
+	track,
+})
+
+const sensorHistory = getHistoricalSensorData({
 	timestream,
 	historicalDataDatabaseName,
 	historicalDataTableName,
@@ -117,7 +124,7 @@ const h = async (
 
 		if (request.message === 'locationTrail') {
 			// Request the location history, but fold similar locations
-			const history = await repo.getHistoricalLocationData({
+			const history = await locationHistory({
 				deviceId,
 				model,
 				request: {
@@ -160,7 +167,7 @@ const h = async (
 			await send({
 				deviceId: event.detail.deviceId,
 				connectionId,
-				response: await repo.getHistoricalLocationData({
+				response: await locationHistory({
 					deviceId,
 					model,
 					request: request as Static<typeof LocationRequest>,
@@ -170,10 +177,10 @@ const h = async (
 			await send({
 				deviceId: event.detail.deviceId,
 				connectionId,
-				response: await repo.getHistoricalSensorData({
+				response: await sensorHistory({
 					deviceId,
 					model,
-					request: request as Static<typeof SensorDataRequests>,
+					request: request as Static<typeof CommonAggregatedRequest>,
 				}),
 			})
 		}
