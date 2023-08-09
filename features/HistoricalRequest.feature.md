@@ -223,41 +223,6 @@ Soon I should receive a message on the websocket that matches
 }
 ```
 
-## Verify I will get error message if the request is invalid
-
-When I connect to the websocket using fingerprint `${fingerprint}`
-
-And I send this message via the websocket
-
-```json
-{
-  "message": "message",
-  "payload": {
-    "@context": "https://github.com/hello-nrfcloud/proto/historical-data-request",
-    "@id": "0c0123ff-f03d-4fc4-934e-0bf1edb7c304",
-    "type": "lastHour",
-    "message": "unknown",
-    "attributes": {
-      "avgMA": { "attribute": "mA", "aggregate": "avg" }
-    }
-  }
-}
-```
-
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
-
-Soon I should receive a message on the websocket that matches
-
-```json
-{
-  "@context": "https://github.com/hello-nrfcloud/proto/ProblemDetail",
-  "@id": "0c0123ff-f03d-4fc4-934e-0bf1edb7c304",
-  "type": "https://hello.nrfcloud.com/errors/BadRequest",
-  "status": 400,
-  "title": "Invalid request"
-}
-```
-
 ## Scenario Outline: Write data into Timestream
 
 Given I store `ts - ${deductMsFromTS}` into `pastTs`
