@@ -26,29 +26,29 @@ export const getQueryStatement = ({
 		if (measureNames.length === 0)
 			throw new Error(`Request does not have any attribute`)
 
-		const query = `
-		SELECT deviceId, measure_name, measure_value::double, time
-		FROM "${historicalDataDatabaseName}"."${historicalDataTableName}"
-		WHERE deviceId = '${deviceId}'
-		AND "@context" = '${context.toString()}'
-		AND measure_name in (${measureNames.map((n) => `'${n}'`).join(',')})
-		AND time BETWEEN ${start} AND ${end}
-		ORDER BY time DESC
-		`
+		const query = [
+			`SELECT deviceId, measure_name, measure_value::double, time`,
+			`FROM "${historicalDataDatabaseName}"."${historicalDataTableName}"`,
+			`WHERE deviceId = '${deviceId}'`,
+			`AND "@context" = '${context.toString()}'`,
+			`AND measure_name in (${measureNames.map((n) => `'${n}'`).join(',')})`,
+			`AND time BETWEEN ${start} AND ${end}`,
+			`ORDER BY time DESC`,
+		].join(' ')
 		return query
 	} else {
 		const binnedTime = getBinnedTime(request)
 		const aggs = getAggregates(request)
 
-		const query = `
-			SELECT deviceId, ${binnedTime} as time, ${aggs.join(', ')}
-			FROM "${historicalDataDatabaseName}"."${historicalDataTableName}"
-			WHERE deviceId = '${deviceId}'
-			AND "@context" = '${context.toString()}'
-			AND time BETWEEN ${start} AND ${end}
-			GROUP BY deviceId, ${binnedTime}
-			ORDER BY ${binnedTime} DESC
-  	`
+		const query = [
+			`SELECT deviceId, ${binnedTime} as time, ${aggs.join(', ')}`,
+			`FROM "${historicalDataDatabaseName}"."${historicalDataTableName}"`,
+			`WHERE deviceId = '${deviceId}'`,
+			`AND "@context" = '${context.toString()}'`,
+			`AND time BETWEEN ${start} AND ${end}`,
+			`GROUP BY deviceId, ${binnedTime}`,
+			`ORDER BY ${binnedTime} DESC`,
+		].join(' ')
 		return query
 	}
 }

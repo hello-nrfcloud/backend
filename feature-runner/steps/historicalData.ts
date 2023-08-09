@@ -47,14 +47,14 @@ const queryTimestream =
 		const [historicaldataDatabaseName, historicaldataTableName] =
 			historicalDataTableInfo.split('|')
 
-		const QueryString = `
-	SELECT *
-	FROM "${historicaldataDatabaseName}"."${historicaldataTableName}"
-	WHERE deviceId='${match.deviceId}' AND "${match.dimension}"='${match.value}'
-	AND time >= from_iso8601_timestamp('${match.tsISO}')
-	ORDER BY time DESC
-	LIMIT 1
-	`
+		const QueryString = [
+			`SELECT *`,
+			`FROM "${historicaldataDatabaseName}"."${historicaldataTableName}"`,
+			`WHERE deviceId='${match.deviceId}' AND "${match.dimension}"='${match.value}'`,
+			`AND time >= from_iso8601_timestamp('${match.tsISO}')`,
+			`ORDER BY time DESC`,
+			`LIMIT 1`,
+		].join(' ')
 		progress(`Query timestream: ${QueryString}`)
 		const query = async () => {
 			const res = await timestream.send(

@@ -204,19 +204,17 @@ describe('queryGenerator', () => {
 				historicalDataTableName,
 			})
 
-			const expectedQuery = `
-				SELECT deviceId, bin(time, 5minute) as time, avg(measure_value::double) as "avgMA"
-				FROM "database1"."table1"
-				WHERE deviceId = 'device123'
-				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/gain'
-				AND time BETWEEN from_milliseconds(1688104200000) - 24hour AND from_milliseconds(1688104200000)
-				GROUP BY deviceId, bin(time, 5minute)
-				ORDER BY bin(time, 5minute) DESC
-			`
-				.replace(/\s+/g, ' ')
-				.trim()
+			const expectedQuery = [
+				`SELECT deviceId, bin(time, 5minute) as time, avg(measure_value::double) as "avgMA"`,
+				`FROM "database1"."table1"`,
+				`WHERE deviceId = 'device123'`,
+				`AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/gain'`,
+				`AND time BETWEEN from_milliseconds(1688104200000) - 24hour AND from_milliseconds(1688104200000)`,
+				`GROUP BY deviceId, bin(time, 5minute)`,
+				`ORDER BY bin(time, 5minute) DESC`,
+			].join(' ')
 
-			expect(result.replace(/\s+/g, ' ').trim()).toEqual(expectedQuery)
+			expect(result).toEqual(expectedQuery)
 		})
 
 		it('returns the correct query statement for battery request', () => {
@@ -242,19 +240,17 @@ describe('queryGenerator', () => {
 				historicalDataTableName,
 			})
 
-			const expectedQuery = `
-				SELECT deviceId, bin(time, 1minute) as time, min(measure_value::double) as "minV", max(measure_value::double) as "maxV"
-				FROM "database1"."table1"
-				WHERE deviceId = 'device123'
-				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/battery'
-				AND time BETWEEN from_milliseconds(1688104200000) - 1hour AND from_milliseconds(1688104200000)
-				GROUP BY deviceId, bin(time, 1minute)
-				ORDER BY bin(time, 1minute) DESC
-			`
-				.replace(/\s+/g, ' ')
-				.trim()
+			const expectedQuery = [
+				`SELECT deviceId, bin(time, 1minute) as time, min(measure_value::double) as "minV", max(measure_value::double) as "maxV"`,
+				`FROM "database1"."table1"`,
+				`WHERE deviceId = 'device123'`,
+				`AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/battery'`,
+				`AND time BETWEEN from_milliseconds(1688104200000) - 1hour AND from_milliseconds(1688104200000)`,
+				`GROUP BY deviceId, bin(time, 1minute)`,
+				`ORDER BY bin(time, 1minute) DESC`,
+			].join(' ')
 
-			expect(result.replace(/\s+/g, ' ').trim()).toEqual(expectedQuery)
+			expect(result).toEqual(expectedQuery)
 		})
 
 		it('returns the correct query statement for weekly battery request', () => {
@@ -279,19 +275,17 @@ describe('queryGenerator', () => {
 				historicalDataTableName,
 			})
 
-			const expectedQuery = `
-				SELECT deviceId, bin(time, 1hour) as time, min(measure_value::double) as "min"
-				FROM "database1"."table1"
-				WHERE deviceId = 'device123'
-				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/battery'
-				AND time BETWEEN from_milliseconds(1688104200000) - 7day AND from_milliseconds(1688104200000)
-				GROUP BY deviceId, bin(time, 1hour)
-				ORDER BY bin(time, 1hour) DESC
-			`
-				.replace(/\s+/g, ' ')
-				.trim()
+			const expectedQuery = [
+				`SELECT deviceId, bin(time, 1hour) as time, min(measure_value::double) as "min"`,
+				`FROM "database1"."table1"`,
+				`WHERE deviceId = 'device123'`,
+				`AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/battery'`,
+				`AND time BETWEEN from_milliseconds(1688104200000) - 7day AND from_milliseconds(1688104200000)`,
+				`GROUP BY deviceId, bin(time, 1hour)`,
+				`ORDER BY bin(time, 1hour) DESC`,
+			].join(' ')
 
-			expect(result.replace(/\s+/g, ' ').trim()).toEqual(expectedQuery)
+			expect(result).toEqual(expectedQuery)
 		})
 
 		it('returns the correct query statement for location request', () => {
@@ -319,19 +313,17 @@ describe('queryGenerator', () => {
 				historicalDataTableName,
 			})
 
-			const expectedQuery = `
-				SELECT deviceId, measure_name, measure_value::double, time
-				FROM "database1"."table1"
-				WHERE deviceId = 'device123'
-				AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/location'
-				AND measure_name in ('lat','lng','acc','ts')
-				AND time BETWEEN from_milliseconds(1688104200000) - 30day AND from_milliseconds(1688104200000)
-				ORDER BY time DESC
-			`
-				.replace(/\s+/g, ' ')
-				.trim()
+			const expectedQuery = [
+				`SELECT deviceId, measure_name, measure_value::double, time`,
+				`FROM "database1"."table1"`,
+				`WHERE deviceId = 'device123'`,
+				`AND "@context" = 'https://github.com/hello-nrfcloud/proto/transformed/model/location'`,
+				`AND measure_name in ('lat','lng','acc','ts')`,
+				`AND time BETWEEN from_milliseconds(1688104200000) - 30day AND from_milliseconds(1688104200000)`,
+				`ORDER BY time DESC`,
+			].join(' ')
 
-			expect(result.replace(/\s+/g, ' ').trim()).toEqual(expectedQuery)
+			expect(result).toEqual(expectedQuery)
 		})
 	})
 })
