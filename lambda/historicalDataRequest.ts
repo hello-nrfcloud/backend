@@ -5,18 +5,26 @@ import { InternalError } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
-import {
-	historicalDataRepository,
-	type HistoricalRequest,
-} from '../historicalData/historicalDataRepository.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
+import { createTrailOfCoordinates } from '../util/createTrailOfCoordinates.js'
+import type { Static } from '@sinclair/typebox'
+import type {
+	CommonAggregatedRequest,
+	CommonRequest,
+	CommonResponse,
+	LocationRequest,
+	LocationTrailRequest,
+	LocationTrailResponse,
+} from '@hello.nrfcloud.com/proto/hello/history'
+import { getHistoricalLocationData } from '../historicalData/locationDataHistory.js'
+import { getHistoricalSensorData } from '../historicalData/sensorDataHistory.js'
 
 type Request = Omit<WebsocketPayload, 'message'> & {
 	message: {
 		model: string
-		request: HistoricalRequest
+		request: Static<typeof CommonRequest>
 	}
 }
 
@@ -42,7 +50,7 @@ if (
 
 const { track, metrics } = metricsForComponent('historicalDataRequest')
 
-const repo = historicalDataRepository({
+const locationHistory = getHistoricalLocationData({
 	timestream,
 	historicalDataDatabaseName,
 	historicalDataTableName,
@@ -50,30 +58,31 @@ const repo = historicalDataRepository({
 	track,
 })
 
-/**
- * Handle historical data request
- */
-const h = async (
-	event: EventBridgeEvent<
-		'https://github.com/hello-nrfcloud/proto/historical-data-request', // Context.historicalDataRequest.toString()
-		Request
-	>,
-): Promise<void> => {
-	try {
-		log.info('event', { event })
+const sensorHistory = getHistoricalSensorData({
+	timestream,
+	historicalDataDatabaseName,
+	historicalDataTableName,
+	log,
+	track,
+})
 
-		const {
-			deviceId,
-			connectionId,
-			message: { request, model },
-		} = event.detail
-
-		const response = await repo.getHistoricalData({
-			deviceId,
-			model,
-			request,
-		})
-
+const onSuccess =
+	({
+		eventBus,
+		EventBusName,
+	}: {
+		eventBus: EventBridge
+		EventBusName: string
+	}) =>
+	async ({
+		deviceId,
+		connectionId,
+		response,
+	}: {
+		deviceId: string
+		connectionId?: string
+		response: Static<typeof CommonResponse>
+	}) => {
 		log.debug('Historical response', { payload: response })
 		await eventBus.putEvents({
 			Entries: [
@@ -89,6 +98,92 @@ const h = async (
 				},
 			],
 		})
+	}
+
+/**
+ * Handle historical data request
+ */
+const h = async (
+	event: EventBridgeEvent<
+		'https://github.com/hello-nrfcloud/proto/historical-data-request', // Context.historicalDataRequest.toString()
+		Request
+	>,
+): Promise<void> => {
+	const send = onSuccess({
+		eventBus,
+		EventBusName,
+	})
+	try {
+		log.info('event', { event })
+
+		const {
+			deviceId,
+			connectionId,
+			message: { request, model },
+		} = event.detail
+
+		if (request.message === 'locationTrail') {
+			// Request the location history, but fold similar locations
+			const history = await locationHistory({
+				deviceId,
+				model,
+				request: {
+					'@context': request['@context'],
+					'@id': request['@id'],
+					type: request.type,
+					message: 'location',
+					attributes: {
+						lat: {
+							attribute: 'lat',
+						},
+						lng: {
+							attribute: 'lng',
+						},
+						acc: {
+							attribute: 'acc',
+						},
+						ts: {
+							attribute: 'ts',
+						},
+					},
+				},
+			})
+
+			const response: Static<typeof LocationTrailResponse> = {
+				...history,
+				message: 'locationTrail',
+				attributes: createTrailOfCoordinates(
+					(request as Static<typeof LocationTrailRequest>).minDistanceKm,
+					history.attributes,
+				),
+			}
+
+			await send({
+				deviceId: event.detail.deviceId,
+				connectionId: event.detail.connectionId,
+				response,
+			})
+		} else if (request.message === 'location') {
+			await send({
+				deviceId: event.detail.deviceId,
+				connectionId,
+				response: await locationHistory({
+					deviceId,
+					model,
+					request: request as Static<typeof LocationRequest>,
+				}),
+			})
+		} else {
+			await send({
+				deviceId: event.detail.deviceId,
+				connectionId,
+				response: await sensorHistory({
+					deviceId,
+					model,
+					request: request as Static<typeof CommonAggregatedRequest>,
+				}),
+			})
+		}
 	} catch (error) {
 		log.error(`Historical request error`, { error })
 		const err = InternalError({

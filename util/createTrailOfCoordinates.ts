@@ -8,31 +8,41 @@ export type Coordinate = {
 
 export type TrailCoordinates = Coordinate & {
 	count: number
+	radiusKm: number
 }
 
 export const createTrailOfCoordinates = (
-	maxDistanceInKm: number,
+	/**
+	 * The minimum distance in KM for a location to not be folded into the current position.
+	 */
+	minDistanceKm: number,
 	listOfCoordinates: Coordinate[],
 ): TrailCoordinates[] => {
 	const result: TrailCoordinates[] = []
-	for (const coordinate of listOfCoordinates) {
+	for (const coordinate of listOfCoordinates.sort(
+		({ ts: t1 }, { ts: t2 }) => t1 - t2,
+	)) {
 		const prev = result[result.length - 1]
 		if (prev === undefined) {
 			result.push({
 				...coordinate,
 				count: 1,
+				radiusKm: 0,
 			})
 		} else {
-			if (
-				getDistanceFromLatLngInKm({ pointA: prev, pointB: coordinate }) >
-				maxDistanceInKm
-			) {
+			const distance = getDistanceFromLatLngInKm({
+				pointA: prev,
+				pointB: coordinate,
+			})
+			if (distance > minDistanceKm) {
 				result.push({
 					...coordinate,
 					count: 1,
+					radiusKm: 0,
 				})
 			} else {
 				prev.count += 1
+				prev.radiusKm = Math.max(prev.radiusKm, distance)
 			}
 		}
 	}
