@@ -1,32 +1,35 @@
 import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import {
 	Context,
 	SingleCellGeoLocation,
+	accuracy as TAccuracy,
 	lat as TLat,
 	lng as TLng,
-	accuracy as TAccuracy,
 } from '@hello.nrfcloud.com/proto/hello'
+import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { Type, type Static } from '@sinclair/typebox'
+import { once } from 'lodash-es'
+import { get, store } from '../cellGeoLocation/SingleCellGeoLocationCache.js'
+import { cellId } from '../cellGeoLocation/cellId.js'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
+import { slashless } from '../util/slashless.js'
+import { getDeviceAttributesById } from './getDeviceAttributes.js'
+import { loggingFetch } from './loggingFetch.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
-import { Type, type Static } from '@sinclair/typebox'
-import { slashless } from '../util/slashless.js'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
-import { getDeviceAttributesById } from './getDeviceAttributes.js'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { once } from 'lodash-es'
-import { SSMClient } from '@aws-sdk/client-ssm'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import { loggingFetch } from './loggingFetch.js'
 
-const { EventBusName, stackName, DevicesTableName } = fromEnv({
+const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
 	stackName: 'STACK_NAME',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
+	cacheTableName: 'CACHE_TABLE_NAME',
 })(process.env)
 
 const log = logger('singleCellGeo')
@@ -39,6 +42,15 @@ const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 const { track, metrics } = metricsForComponent('singleCellGeo')
 
 const trackFetch = loggingFetch({ track, log })
+
+const getCached = get({
+	db,
+	TableName: cacheTableName,
+})
+const cache = store({
+	db,
+	TableName: cacheTableName,
+})
 
 const serviceToken = once(
 	async ({ apiEndpoint, apiKey }: { apiEndpoint: URL; apiKey: string }) => {
@@ -111,61 +123,82 @@ const h = async (event: {
 			networkInfo: { rsrp, areaCode, mccmnc, cellID },
 		},
 	} = event.message
-	const body = {
-		lte: [
+	const cell: Parameters<typeof cellId>[0] = {
+		mccmnc,
+		area: areaCode,
+		cell: cellID,
+	}
+
+	let message: Static<typeof SingleCellGeoLocation>
+
+	const maybeCached = await getCached(cell)
+
+	if (maybeCached !== null) {
+		message = {
+			'@context': Context.singleCellGeoLocation.toString(),
+			...maybeCached,
+			ts,
+		}
+		track('single-cell:cached', MetricUnits.Count, 1)
+	} else {
+		const body = {
+			lte: [
+				{
+					mcc: parseInt(mccmnc.toString().slice(0, -2), 10),
+					mnc: mccmnc.toString().slice(-2),
+					eci: cellID,
+					tac: areaCode,
+					rsrp,
+				},
+			],
+		}
+		const res = await trackFetch(
+			new URL(`${slashless(apiEndpoint)}/v1/location/ground-fix`),
 			{
-				mcc: parseInt(mccmnc.toString().slice(0, -2), 10),
-				mnc: mccmnc.toString().slice(-2),
-				eci: cellID,
-				tac: areaCode,
-				rsrp,
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${locationServiceToken}`,
+				},
+				body: JSON.stringify(body),
 			},
-		],
-	}
-	const res = await trackFetch(
-		new URL(`${slashless(apiEndpoint)}/v1/location/ground-fix`),
-		{
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${locationServiceToken}`,
-			},
-			body: JSON.stringify(body),
-		},
-	)
-
-	if (!res.ok) {
-		track('single-cell:error', MetricUnits.Count, 1)
-		log.error('request failed', {
-			body: await res.text(),
-			status: res.status,
-		})
-		return
-	}
-
-	const response = await res.json()
-	const maybeLocation = validateWithTypeBox(
-		Type.Object({
-			lat: TLat, // 63.41999531
-			lon: TLng, // 10.42999506
-			uncertainty: TAccuracy, // 2420
-			fulfilledWith: Type.Literal('SCELL'),
-		}),
-	)(response)
-	if ('errors' in maybeLocation) {
-		throw new Error(
-			`Failed to resolve cell location: ${JSON.stringify(response)}`,
 		)
+
+		if (!res.ok) {
+			track('single-cell:error', MetricUnits.Count, 1)
+			log.error('request failed', {
+				body: await res.text(),
+				status: res.status,
+			})
+			return
+		}
+
+		const response = await res.json()
+		const maybeLocation = validateWithTypeBox(
+			Type.Object({
+				lat: TLat, // 63.41999531
+				lon: TLng, // 10.42999506
+				uncertainty: TAccuracy, // 2420
+				fulfilledWith: Type.Literal('SCELL'),
+			}),
+		)(response)
+		if ('errors' in maybeLocation) {
+			throw new Error(
+				`Failed to resolve cell location: ${JSON.stringify(response)}`,
+			)
+		}
+		track('single-cell:resolved', MetricUnits.Count, 1)
+		const { lat, lon, uncertainty } = maybeLocation.value
+		message = {
+			'@context': Context.singleCellGeoLocation.toString(),
+			lat,
+			lng: lon,
+			accuracy: uncertainty,
+			ts,
+		}
+		await cache(cell, message)
 	}
-	track('single-cell:resolved', MetricUnits.Count, 1)
-	const { lat, lon, uncertainty } = maybeLocation.value
-	const message: Static<typeof SingleCellGeoLocation> = {
-		'@context': Context.singleCellGeoLocation.toString(),
-		lat,
-		lng: lon,
-		accuracy: uncertainty,
-		ts,
-	}
+
 	log.debug('result', { message })
 
 	const converted = await proto({

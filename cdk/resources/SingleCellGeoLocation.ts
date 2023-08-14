@@ -5,6 +5,8 @@ import {
 	aws_lambda as Lambda,
 	aws_logs as Logs,
 	Stack,
+	aws_dynamodb as DynamoDB,
+	RemovalPolicy,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
@@ -36,6 +38,17 @@ export class SingleCellGeoLocation extends Construct {
 	) {
 		super(parent, 'SingleCellGeoLocation')
 
+		const table = new DynamoDB.Table(this, 'table', {
+			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+			partitionKey: {
+				name: 'cellId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			pointInTimeRecovery: false,
+			removalPolicy: RemovalPolicy.DESTROY,
+			timeToLiveAttribute: 'ttl',
+		})
+
 		const fn = new Lambda.Function(this, 'fn', {
 			handler: lambdaSources.resolveSingleCellGeoLocation.handler,
 			architecture: Lambda.Architecture.ARM_64,
@@ -53,6 +66,7 @@ export class SingleCellGeoLocation extends Construct {
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 				STACK_NAME: Stack.of(this).stackName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+				CACHE_TABLE_NAME: table.tableName,
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
@@ -82,6 +96,7 @@ export class SingleCellGeoLocation extends Construct {
 		})
 		websocketAPI.eventBus.grantPutEventsTo(fn)
 		deviceStorage.devicesTable.grantReadData(fn)
+		table.grantWriteData(fn)
 
 		const rule = new IoT.CfnTopicRule(this, 'topicRule', {
 			topicRulePayload: {

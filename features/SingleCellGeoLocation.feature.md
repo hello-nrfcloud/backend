@@ -102,3 +102,50 @@ Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzU0NDQ2N
   ]
 }
 ```
+
+<!-- @retry:delayExecution=5000 -->
+
+## Device publishes network information, which is then resolved
+
+> The next message will be resolved without an additional call to the nRF Cloud
+> API.
+
+Given I store `$millis()` into `ts`
+
+When the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c`
+
+```json
+{
+  "appId": "DEVICE",
+  "messageType": "DATA",
+  "ts": "$number{ts}",
+  "data": {
+    "networkInfo": {
+      "currentBand": 20,
+      "networkMode": "LTE-M",
+      "rsrp": -102,
+      "areaCode": 2305,
+      "mccmnc": 24202,
+      "cellID": 34237196,
+      "ipAddress": "100.74.127.55",
+      "eest": 7
+    }
+  }
+}
+```
+
+<!-- @retryScenario -->
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/location",
+  "lat": 63.41999531,
+  "lng": 10.42999506,
+  "acc": 2420,
+  "ts": "$number{ts}",
+  "src": "SCELL"
+}
+```
