@@ -1,7 +1,4 @@
-import {
-	QueryCommand,
-	type TimestreamQueryClient,
-} from '@aws-sdk/client-timestream-query'
+import { type TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
 import {
 	codeBlockOrThrow,
 	matchGroups,
@@ -18,14 +15,18 @@ import chaiSubset from 'chai-subset'
 import pRetry from 'p-retry'
 import { convertMessageToTimestreamRecords } from '../../historicalData/convertMessageToTimestreamRecords.js'
 import { storeRecordsInTimestream } from '../../historicalData/storeRecordsInTimestream.js'
+import { paginateTimestreamQuery } from '../../historicalData/paginateTimestreamQuery.js'
 
 chai.use(chaiSubset)
 
 let lastResult: Record<string, unknown>[] = []
 
-const queryTimestream =
-	(timestream: TimestreamQueryClient, historicalDataTableInfo: string) =>
-	async ({
+const queryTimestream = (
+	timestream: TimestreamQueryClient,
+	historicalDataTableInfo: string,
+) => {
+	const queryTimestream = paginateTimestreamQuery(timestream)
+	return async ({
 		step,
 		log: {
 			step: { progress },
@@ -57,11 +58,7 @@ const queryTimestream =
 		].join(' ')
 		progress(`Query timestream: ${QueryString}`)
 		const query = async () => {
-			const res = await timestream.send(
-				new QueryCommand({
-					QueryString,
-				}),
-			)
+			const res = await queryTimestream(QueryString)
 			if (res.Rows?.length === 0) throw new Error('No record')
 
 			return res
@@ -80,6 +77,7 @@ const queryTimestream =
 
 		progress(`Result: ${JSON.stringify(lastResult, null, 2)}`)
 	}
+}
 
 const dateParser = (key: string, value: any) => {
 	if (typeof value === 'string') {
