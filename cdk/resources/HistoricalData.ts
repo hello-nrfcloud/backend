@@ -101,7 +101,7 @@ export class HistoricalData extends Construct {
 				handler: lambdaSources.historicalDataRequest.handler,
 				architecture: Lambda.Architecture.ARM_64,
 				runtime: Lambda.Runtime.NODEJS_18_X,
-				timeout: Duration.seconds(5),
+				timeout: Duration.seconds(60),
 				memorySize: 1792,
 				code: new LambdaSource(this, lambdaSources.historicalDataRequest).code,
 				description: 'Handle historical data request',
