@@ -1,6 +1,5 @@
 import { type _Record } from '@aws-sdk/client-timestream-write'
 import { toRecord } from '@nordicsemiconductor/timestream-helpers'
-import { randomUUID } from 'node:crypto'
 import { isNotNullOrUndefined } from '../util/isNullOrUndefined.js'
 
 type Proto = {
@@ -18,8 +17,6 @@ export const convertMessageToTimestreamRecords = (
 	// Do not convert message if it is not proto message i.e. having '@context' and 'ts' properties
 	if (!('@context' in message && 'ts' in message)) return []
 
-	const measureGroup = randomUUID()
-
 	const Records: (_Record | undefined)[] = []
 	for (const prop in message) {
 		if (
@@ -33,7 +30,6 @@ export const convertMessageToTimestreamRecords = (
 					ts: message.ts,
 					v: message[prop],
 					dimensions: {
-						measureGroup,
 						'@context': message['@context'],
 					},
 				}),
