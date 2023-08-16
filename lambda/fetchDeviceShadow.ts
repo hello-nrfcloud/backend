@@ -89,9 +89,8 @@ const h = async (): Promise<void> => {
 		if (connections.length === 0) return
 
 		// Filter based on the configuration
-		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
-			executionTime,
-		)
+		const deviceShadowUpdateChecker =
+			await createDeviceUpdateChecker(executionTime)
 		const devicesToCheckShadowUpdate = connections.filter((connection) => {
 			// The health check device does not publish a valid shadow, so do not fetch it
 			if (healthCheckClientIds.includes(connection.deviceId)) {
