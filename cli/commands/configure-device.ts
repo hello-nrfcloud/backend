@@ -8,8 +8,8 @@ import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
-const defaultActiveWaitTimeSeconds = 60
-const defaultLocationTimeoutSeconds = 30
+const defaultActiveWaitTimeSeconds = 120
+const defaultLocationTimeoutSeconds = 60
 
 export const configureDeviceCommand = ({
 	ssm,
@@ -26,7 +26,6 @@ export const configureDeviceCommand = ({
 }): CommandDefinition => ({
 	command: 'configure-device <fingerprint>',
 	options: [
-		{ flags: '--passiveMode', description: `Set device in passive mode` },
 		{ flags: '--disableGNSS', description: `Whether to disable GNSS` },
 		{
 			flags: '--activeWaitTime <activeWaitTime>',
