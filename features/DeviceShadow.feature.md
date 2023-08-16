@@ -275,6 +275,8 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 }
 ```
 
+<!-- @retry:delayExecution=5000 -->
+
 ## Verify a device sends shadow data to nRF Cloud, then I can receive the message via websocket
 
 Given I connect to the websocket using fingerprint `${fingerprint}`
