@@ -222,6 +222,7 @@ export class Integration extends Construct {
 			(result, [account], index) => {
 				const bridgeNo = String(index + 2).padStart(2, '0')
 				const scope = `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`
+				const accountEnvironmentIdentifier = account.replace(/[^0-9a-z]/gi, '_')
 				const bridgePrefix = `MOSQUITTO__BRIDGE${bridgeNo}`
 
 				result.environment[
@@ -244,10 +245,10 @@ export class Integration extends Construct {
 				] = `/mosquitto/security/nrfcloud_ca.crt`
 				result.environment[
 					`${bridgePrefix}__BRIDGE_CERTFILE`
-				] = `/mosquitto/security/nrfcloud_${account}_client.crt`
+				] = `/mosquitto/security/nrfcloud_${accountEnvironmentIdentifier}_client.crt`
 				result.environment[
 					`${bridgePrefix}__BRIDGE_KEYFILE`
-				] = `/mosquitto/security/nrfcloud_${account}_client.key`
+				] = `/mosquitto/security/nrfcloud_${accountEnvironmentIdentifier}_client.key`
 				result.environment[
 					`${bridgePrefix}__LOCAL_CLIENTID`
 				] = `nrfcloud-${account}-bridge-local`
@@ -258,10 +259,10 @@ export class Integration extends Construct {
 				}`
 
 				result.secrets[
-					`ENV__FILE__NRFCLOUD_${account.toUpperCase()}_CLIENT_CRT`
+					`ENV__FILE__NRFCLOUD_${accountEnvironmentIdentifier.toUpperCase()}_CLIENT_CRT`
 				] = nrfCloudSettingSecret('accountDeviceClientCert', scope)
 				result.secrets[
-					`ENV__FILE__NRFCLOUD_${account.toUpperCase()}_CLIENT_KEY`
+					`ENV__FILE__NRFCLOUD_${accountEnvironmentIdentifier.toUpperCase()}_CLIENT_KEY`
 				] = nrfCloudSettingSecret('accountDevicePrivateKey', scope)
 
 				return result
