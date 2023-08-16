@@ -89,6 +89,21 @@ export const apiClient = ({
 				account: AccountInfo
 		  }
 	>
+	getBulkOpsStatus: (bulkOpsId: string) => Promise<
+		| { error: Error }
+		| {
+				status: {
+					bulkOpsRequestId: string // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
+					endpoint: string // e.g. 'PROVISION_DEVICES'
+					status: 'PENDING' | 'IN_PROGRESS' | 'FAILED' | 'SUCCEEDED' // e.g. 'PENDING'
+					requestedAt: string // e.g. '2020-06-25T21:05:12.830Z'
+					completedAt: string // e.g. '2020-06-25T21:05:12.830Z'
+					uploadedDataUrl: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
+					resultDataUrl?: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
+					errorSummaryUrl?: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
+				}
+		  }
+	>
 } => {
 	const headers = {
 		Authorization: `Bearer ${apiKey}`,
@@ -191,5 +206,23 @@ export const apiClient = ({
 				.then<AccountInfo>(async (res) => res.json())
 				.then((account) => ({ account }))
 				.catch((err) => ({ error: err as Error })),
+		getBulkOpsStatus: async (bulkOpsId) =>
+			fetch(
+				`${slashless(endpoint)}/v1/bulk-ops-requests/${encodeURIComponent(
+					bulkOpsId,
+				)}`,
+				{
+					headers: {
+						...headers,
+						'Content-Type': 'application/json',
+					},
+				},
+			)
+				.then(async (res) => {
+					if (res.status >= 400)
+						return { error: new Error(`Error fetching status: ${res.status}`) }
+					return { status: await res.json() }
+				})
+				.catch((error) => ({ error: error as Error })),
 	}
 }

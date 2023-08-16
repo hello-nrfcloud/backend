@@ -30,6 +30,7 @@ import { simulateDeviceCommand } from './commands/simulate-device.js'
 import { cleanBackupCertificates } from './commands/clean-backup-certificates.js'
 import { listnRFCloudAccountsCommand } from './commands/list-nrfcloud-accounts.js'
 import { configureRFCloudAccountCommand } from './commands/configure-nrfcloud-account.js'
+import { getNRFCloudBulkOpsStatus } from './commands/get-nrfcloud-bulkops-status.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -151,6 +152,10 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					devicesTableName: outputs.devicesTableName,
 				}),
 				showNRFCloudAccount({
+					ssm,
+					stackName: STACK_NAME,
+				}),
+				getNRFCloudBulkOpsStatus({
 					ssm,
 					stackName: STACK_NAME,
 				}),
