@@ -23,10 +23,16 @@ export const importDevicesCommand = ({
 	stackName: string
 }): CommandDefinition => ({
 	command: 'import-devices <account> <model> <provisioningList>',
-	action: async (account, model, provisioningList) => {
+	options: [
+		{
+			flags: '-w, --windows',
+			description: `Use Windows line ends`,
+		},
+	],
+	action: async (account, model, provisioningList, { windows }) => {
 		const devicesList = (await readFile(provisioningList, 'utf-8'))
 			.trim()
-			.split('\r\n')
+			.split(windows === true ? '\n' : '\r\n')
 			.map((s) =>
 				s.split(';').map((s) => s.replace(/^"/, '').replace(/"$/, '')),
 			)
@@ -34,7 +40,7 @@ export const importDevicesCommand = ({
 		const devices: [imei: string, fingerprint: string, publicKey: string][] =
 			devicesList
 				.map(
-					([imei, , fingerprint, publicKey]) =>
+					([imei, fingerprint, publicKey]) =>
 						[imei, fingerprint, (publicKey ?? '').replace(/\\n/g, os.EOL)] as [
 							string,
 							string,
