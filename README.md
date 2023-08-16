@@ -62,6 +62,23 @@ described
 **Note** Shadow data will **NOT** be forwarded to MQTT bridge since they are
 using topic as `$aws/things/${deviceId}/shadow/update`
 
+## Adding another nRF Cloud team
+
+The backend supports the integration with multiple nRF Cloud accounts.
+
+Follow the steps above to set up the MQTT bridge for another account, then
+trigger a deployment.
+
+```bash
+npx cdk deploy
+```
+
+List the configured accounts:
+
+```bash
+./cli.sh list-nrfcloud-accounts
+```
+
 ## Websocket Protocol
 
 Message received from MQTT bridge will be published to websocket connection that
