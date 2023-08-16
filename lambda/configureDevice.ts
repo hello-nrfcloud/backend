@@ -18,6 +18,7 @@ import { slashless } from '../util/slashless.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { loggingFetch } from './loggingFetch.js'
+import type { Configuration } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 
 type Request = Omit<WebsocketPayload, 'message'> & {
 	message: {
@@ -96,15 +97,25 @@ const h = async (
 		deviceId,
 		message: {
 			request: {
-				configuration: { gnss },
+				configuration: { gnss, updateIntervalSeconds },
 			},
 		},
 	} = event.detail
 
-	if (gnss === true) {
-		track('gnss:on', MetricUnits.Count, 1)
-	} else {
-		track('gnss:off', MetricUnits.Count, 1)
+	const config: Static<typeof Configuration> = {}
+
+	if (gnss !== undefined) {
+		config.nod = gnss === false ? ['gnss'] : []
+		if (gnss === true) {
+			track('gnss:on', MetricUnits.Count, 1)
+		} else {
+			track('gnss:off', MetricUnits.Count, 1)
+		}
+	}
+
+	if (updateIntervalSeconds !== undefined) {
+		track('updateInterval', MetricUnits.Seconds, updateIntervalSeconds)
+		config.activeWaitTime = updateIntervalSeconds
 	}
 
 	const res = await trackFetch(
@@ -121,9 +132,7 @@ const h = async (
 			},
 			body: JSON.stringify({
 				desired: {
-					config: {
-						nod: gnss === false ? ['gnss'] : [],
-					},
+					config,
 				},
 			}),
 		},

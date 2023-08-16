@@ -11,13 +11,6 @@ Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 And I connect to the websocket using fingerprint `${fingerprint}`
 
-And this nRF Cloud API is queued for a
-`PATCH /v1/devices/${fingerprint_deviceId}/state` request
-
-```
-HTTP/1.1 202 Accepted
-```
-
 <!-- @retry:delayExecution=5000 -->
 
 ## Enable GNSS
@@ -25,6 +18,13 @@ HTTP/1.1 202 Accepted
 > GNSS location is disabled by default to allow other data to be acquired faster
 > on the device (because waiting for GNSS) takes quite a long time. Users are
 > allowed to enable it.
+
+Given this nRF Cloud API is queued for a
+`PATCH /v1/devices/${fingerprint_deviceId}/state` request
+
+```
+HTTP/1.1 202 Accepted
+```
 
 When I send this message via the websocket
 
@@ -62,4 +62,57 @@ PATCH /v1/devices/${fingerprint_deviceId}/state HTTP/1.1
 Content-Type: application/json
 
 {"desired":{"config":{"nod":[]}}}
+```
+
+<!-- @retry:delayExecution=5000 -->
+
+## Configure update interval
+
+> The default updated interval is optimized for interactivity. Users can change
+> that interval to something that suits their needs in order to extend battery
+> life and reduce data consumption.
+
+Given this nRF Cloud API is queued for a
+`PATCH /v1/devices/${fingerprint_deviceId}/state` request
+
+```
+HTTP/1.1 202 Accepted
+```
+
+When I send this message via the websocket
+
+```json
+{
+  "message": "message",
+  "payload": {
+    "@context": "https://github.com/hello-nrfcloud/proto/configure-device",
+    "id": "${fingerprint_deviceId}",
+    "configuration": {
+      "updateIntervalSeconds": 600
+    }
+  }
+}
+```
+
+<!-- @retryScenario -->
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/device-configured",
+  "id": "${fingerprint_deviceId}",
+  "configuration": { "updateIntervalSeconds": 600 }
+}
+```
+
+<!-- @retryScenario -->
+
+Soon the nRF Cloud API should have been called with
+
+```
+PATCH /v1/devices/${fingerprint_deviceId}/state HTTP/1.1
+Content-Type: application/json
+
+{"desired":{"config":{"activeWaitTime":600}}}
 ```
