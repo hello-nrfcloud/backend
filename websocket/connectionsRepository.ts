@@ -83,12 +83,21 @@ export const connectionsRepository: (
 					FilterExpression: '#ttl > :now',
 					ExpressionAttributeNames: {
 						'#ttl': 'ttl',
+						'#deviceId': 'deviceId',
+						'#connectionId': 'connectionId',
+						'#model': 'model',
+						'#account': 'account',
+						'#version': 'version',
+						'#count': 'count',
+						'#updatedAt': 'updatedAt',
 					},
 					ExpressionAttributeValues: {
 						':now': {
 							N: Math.floor(Date.now() / 1000).toString(),
 						},
 					},
+					ProjectionExpression:
+						'#ttl, #deviceId, #connectionId, #model, #account, #version, #count, #updatedAt',
 				}),
 			)
 
