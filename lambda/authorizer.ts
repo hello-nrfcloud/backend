@@ -83,6 +83,17 @@ const h = async (event: {
 
 	const { model, deviceId, account } = device
 
+	if (model === undefined || deviceId === undefined || account === undefined) {
+		log.error(`Required information is missing`, {
+			fingerprint,
+			model,
+			deviceId,
+			account,
+		})
+		track('authorizer:badInfo', MetricUnits.Count, 1)
+		return deny
+	}
+
 	// Track usage of fingerprint
 	const now = new Date()
 	void db.send(
