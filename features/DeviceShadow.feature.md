@@ -331,3 +331,27 @@ Soon I should receive a message on the websocket that matches
   "ts": 1682072423000
 }
 ```
+
+<!-- @retry:delayExecution=5000 -->
+
+## Sent last known shadow
+
+> On connect, send the last known shadow of a device. This is needed for devices
+> which are in low-power mode and may not send data for another hour. Without
+> the shadow the UI does not know what the real device configuration is and
+> cannot accurately predict when the device will send in data next.
+
+Given I reconnect to the websocket using fingerprint `${fingerprint}`
+
+<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/reported",
+  "connected": true,
+  "version": 8835,
+  "ts": 1682072423000
+}
+```

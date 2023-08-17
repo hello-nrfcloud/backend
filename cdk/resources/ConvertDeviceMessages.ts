@@ -8,9 +8,9 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { LambdaSource } from './LambdaSource.js'
-import type { WebsocketAPI } from './WebsocketAPI.js'
 import { IoTActionRole } from './IoTActionRole.js'
+import { LambdaSource } from './LambdaSource.js'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
  * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
@@ -21,11 +21,11 @@ export class ConvertDeviceMessages extends Construct {
 		{
 			lambdaSources,
 			layers,
-			websocketAPI,
+			websocketEventBus,
 			deviceStorage,
 		}: {
 			deviceStorage: DeviceStorage
-			websocketAPI: WebsocketAPI
+			websocketEventBus: WebsocketEventBus
 			lambdaSources: {
 				onDeviceMessage: PackedLambda
 			}
@@ -45,7 +45,7 @@ export class ConvertDeviceMessages extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
-				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
+				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				NODE_NO_WARNINGS: '1',
@@ -54,7 +54,7 @@ export class ConvertDeviceMessages extends Construct {
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		websocketAPI.eventBus.grantPutEventsTo(onDeviceMessage)
+		websocketEventBus.eventBus.grantPutEventsTo(onDeviceMessage)
 		deviceStorage.devicesTable.grantReadData(onDeviceMessage)
 
 		const rule = new IoT.CfnTopicRule(this, 'topicRule', {

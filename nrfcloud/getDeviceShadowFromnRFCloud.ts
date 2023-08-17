@@ -1,14 +1,6 @@
 import { logger } from '../lambda/util/logger.js'
 import { slashless } from '../util/slashless.js'
-
-export type DeviceShadow = {
-	id: string
-	state: {
-		reported: Record<string, any>
-		version: number
-		metadata: Record<string, any>
-	}
-}
+import { type DeviceShadow } from './DeviceShadow.js'
 
 const log = logger('deviceShadowFetcher')
 
