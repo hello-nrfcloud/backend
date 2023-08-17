@@ -46,7 +46,7 @@ const wsConnect =
 
 		const wsURL = `${websocketUri}?fingerprint=${match.fingerprint}`
 
-		if (match.reconnect !== undefined && wsClients[wsURL] === undefined) {
+		if (match.reconnect !== undefined && wsClients[wsURL] !== undefined) {
 			wsClients[wsURL]?.close()
 			delete wsClients[wsURL]
 		}
