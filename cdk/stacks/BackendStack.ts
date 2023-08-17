@@ -28,6 +28,8 @@ import { STACK_NAME } from './stackConfig.js'
 import { ConfigureDevice } from '../resources/ConfigureDevice.js'
 import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 import { SingleCellGeoLocation } from '../resources/SingleCellGeoLocation.js'
+import { WebsocketConnectionsTable } from '../resources/WebsocketConnectionsTable.js'
+import { WebsocketEventBus } from '../resources/WebsocketEventBus.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -111,17 +113,24 @@ export class BackendStack extends Stack {
 
 		const lastSeen = new DeviceLastSeen(this)
 
+		const websocketConnectionsTable = new WebsocketConnectionsTable(this)
+		const websocketEventBus = new WebsocketEventBus(this)
+
+		const deviceShadow = new DeviceShadow(this, {
+			websocketEventBus,
+			websocketConnectionsTable,
+			layers: lambdaLayers,
+			lambdaSources,
+		})
+
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			deviceStorage,
 			layers: lambdaLayers,
 			lastSeen,
-		})
-
-		new DeviceShadow(this, {
-			websocketAPI,
-			layers: lambdaLayers,
-			lambdaSources,
+			deviceShadow,
+			connectionsTable: websocketConnectionsTable,
+			eventBus: websocketEventBus,
 		})
 
 		new Integration(this, {
@@ -141,14 +150,14 @@ export class BackendStack extends Stack {
 
 		new ConvertDeviceMessages(this, {
 			deviceStorage,
-			websocketAPI,
+			websocketEventBus,
 			lambdaSources,
 			layers: lambdaLayers,
 		})
 
 		const historicalData = new HistoricalData(this, {
 			lambdaSources,
-			websocketAPI,
+			websocketEventBus,
 			layers: lambdaLayers,
 		})
 
@@ -167,13 +176,13 @@ export class BackendStack extends Stack {
 		new ConfigureDevice(this, {
 			lambdaSources,
 			layers: lambdaLayers,
-			websocketAPI,
+			websocketEventBus,
 		})
 
 		new SingleCellGeoLocation(this, {
 			lambdaSources,
 			layers: lambdaLayers,
-			websocketAPI,
+			websocketEventBus,
 			deviceStorage,
 		})
 

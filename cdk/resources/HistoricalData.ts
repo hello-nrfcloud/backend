@@ -1,3 +1,4 @@
+import { Context } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
 	aws_events_targets as EventTargets,
@@ -11,8 +12,7 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
-import type { WebsocketAPI } from './WebsocketAPI.js'
-import { Context } from '@hello.nrfcloud.com/proto/hello'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
  * Store devices messages in their converted format
@@ -24,9 +24,9 @@ export class HistoricalData extends Construct {
 		{
 			lambdaSources,
 			layers,
-			websocketAPI,
+			websocketEventBus,
 		}: {
-			websocketAPI: WebsocketAPI
+			websocketEventBus: WebsocketEventBus
 			lambdaSources: {
 				storeMessagesInTimestream: PackedLambda
 				historicalDataRequest: PackedLambda
@@ -91,7 +91,7 @@ export class HistoricalData extends Construct {
 				detailType: ['message'],
 			},
 			targets: [new EventTargets.LambdaFunction(storeMessagesInTimestream)],
-			eventBus: websocketAPI.eventBus,
+			eventBus: websocketEventBus.eventBus,
 		})
 
 		const historicalDataRequest = new Lambda.Function(
@@ -109,7 +109,7 @@ export class HistoricalData extends Construct {
 					VERSION: this.node.tryGetContext('version'),
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
-					EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
+					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 					NODE_NO_WARNINGS: '1',
 				},
 				layers,
@@ -140,8 +140,8 @@ export class HistoricalData extends Construct {
 				detailType: [Context.historicalDataRequest.toString()],
 			},
 			targets: [new EventTargets.LambdaFunction(historicalDataRequest)],
-			eventBus: websocketAPI.eventBus,
+			eventBus: websocketEventBus.eventBus,
 		})
-		websocketAPI.eventBus.grantPutEventsTo(historicalDataRequest)
+		websocketEventBus.eventBus.grantPutEventsTo(historicalDataRequest)
 	}
 }

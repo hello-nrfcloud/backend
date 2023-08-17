@@ -1,18 +1,18 @@
+import { Context } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
+	aws_iam as IAM,
 	aws_lambda as Lambda,
 	aws_logs as Logs,
-	aws_iam as IAM,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
+import { Scope } from '../../util/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
-import type { WebsocketAPI } from './WebsocketAPI.js'
-import { Context } from '@hello.nrfcloud.com/proto/hello'
-import { Scope } from '../../util/settings.js'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
  * Handles device configuration requests
@@ -23,9 +23,9 @@ export class ConfigureDevice extends Construct {
 		{
 			lambdaSources,
 			layers,
-			websocketAPI,
+			websocketEventBus,
 		}: {
-			websocketAPI: WebsocketAPI
+			websocketEventBus: WebsocketEventBus
 			lambdaSources: {
 				configureDevice: PackedLambda
 			}
@@ -45,7 +45,7 @@ export class ConfigureDevice extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
-				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
+				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				NODE_NO_WARNINGS: '1',
 				STACK_NAME: Stack.of(this).stackName,
 			},
@@ -81,8 +81,8 @@ export class ConfigureDevice extends Construct {
 				detailType: [Context.configureDevice.toString()],
 			},
 			targets: [new EventTargets.LambdaFunction(configureDevice)],
-			eventBus: websocketAPI.eventBus,
+			eventBus: websocketEventBus.eventBus,
 		})
-		websocketAPI.eventBus.grantPutEventsTo(configureDevice)
+		websocketEventBus.eventBus.grantPutEventsTo(configureDevice)
 	}
 }

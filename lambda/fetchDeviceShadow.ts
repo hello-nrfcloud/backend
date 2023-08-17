@@ -1,17 +1,16 @@
 import { logMetrics, MetricUnits } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import {
-	EventBridgeClient,
-	PutEventsCommand,
-} from '@aws-sdk/client-eventbridge'
+import { EventBridgeClient } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import { getShadowUpdateTime } from '@hello.nrfcloud.com/proto/nrfCloud'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, groupBy, once, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
+import { store } from '../nrfcloud/deviceShadowRepo.js'
+import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
+import { defaultApiEndpoint } from '../nrfcloud/settings.js'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
@@ -19,10 +18,8 @@ import {
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
 import { metricsForComponent } from './metrics/metrics.js'
-import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
-import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
-import { defaultApiEndpoint } from '../nrfcloud/settings.js'
+import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
@@ -31,11 +28,13 @@ const {
 	lockTableName,
 	eventBusName,
 	stackName,
+	deviceShadowTableName,
 } = fromEnv({
 	stackName: 'STACK_NAME',
 	websocketDeviceConnectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
 	lockTableName: 'LOCK_TABLE_NAME',
 	eventBusName: 'EVENTBUS_NAME',
+	deviceShadowTableName: 'DEVICE_SHADOW_TABLE_NAME',
 })(process.env)
 
 const limit = pLimit(3)
@@ -68,6 +67,15 @@ const getAllHealthCheckClientIds = once(async () => {
 		.map((settings) => settings?.healthCheckSettings?.healthCheckClientId)
 		.filter((x) => x !== undefined)
 })
+
+const send = sendShadowToConnection({
+	eventBus,
+	eventBusName,
+	track,
+	log,
+})
+
+const cacheShadow = store({ db, TableName: deviceShadowTableName })
 
 const h = async (): Promise<void> => {
 	try {
@@ -204,58 +212,24 @@ const h = async (): Promise<void> => {
 						getShadowUpdateTime(deviceShadow.state.metadata),
 				)
 
-				const model = d.model ?? 'default'
-				const converted = await proto({
-					onError: (message, model, error) => {
-						log.error(
-							`Failed to convert message ${JSON.stringify(
-								message,
-							)} from model ${model}: ${error}`,
-						)
-						track('shadowConversionFailed', MetricUnits.Count, 1)
-					},
-				})(model, deviceShadow.state)
-
-				if (converted.length === 0) {
-					log.debug('shadow was not converted to any message for device', {
-						model,
-						device: d,
-					})
-					continue
-				}
-
 				log.info(
 					`Sending device shadow of ${d.deviceId}(v.${
 						d?.version ?? 0
 					}) with shadow data version ${deviceShadow.state.version}`,
 				)
-				await Promise.all(
-					converted.map(async (message) => {
-						log.debug('Publish websocket message', {
-							deviceId: d.deviceId,
-							connectionId: d.connectionId,
-							message,
-						})
-						return eventBus.send(
-							new PutEventsCommand({
-								Entries: [
-									{
-										EventBusName: eventBusName,
-										Source: 'thingy.ws',
-										DetailType: 'message',
-										Detail: JSON.stringify(<WebsocketPayload>{
-											deviceId: d.deviceId,
-											connectionId: d.connectionId,
-											message,
-										}),
-									},
-								],
-							}),
-						)
-					}),
-				)
+
+				await send({ ...d, shadow: deviceShadow })
 			}
 		}
+
+		await Promise.all(
+			deviceShadows.map(async (deviceShadow) => {
+				log.debug(`Caching shadow`, {
+					deviceId: deviceShadow.id,
+				})
+				return cacheShadow(deviceShadow)
+			}),
+		)
 	} catch (error) {
 		log.error(`fetch device shadow error`, { error })
 	} finally {

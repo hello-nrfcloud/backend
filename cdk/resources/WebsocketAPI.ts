@@ -1,21 +1,22 @@
 import {
 	aws_apigatewayv2 as ApiGatewayV2,
 	Duration,
-	aws_dynamodb as DynamoDB,
 	aws_events as Events,
 	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
 	aws_logs as Logs,
-	RemovalPolicy,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { ApiLogging } from './ApiLogging.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
+import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaSource } from './LambdaSource.js'
+import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable'
+import type { WebsocketEventBus } from './WebsocketEventBus'
 
 export const integrationUri = (
 	parent: Construct,
@@ -29,10 +30,8 @@ export const integrationUri = (
 
 export class WebsocketAPI extends Construct {
 	public readonly websocketURI: string
-	public readonly eventBus: Events.IEventBus
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
-	public readonly connectionsTable: DynamoDB.ITable
 	public constructor(
 		parent: Construct,
 		{
@@ -40,8 +39,12 @@ export class WebsocketAPI extends Construct {
 			lambdaSources,
 			layers,
 			lastSeen,
+			deviceShadow,
+			eventBus,
+			connectionsTable,
 		}: {
 			deviceStorage: DeviceStorage
+			deviceShadow: DeviceShadow
 			lambdaSources: {
 				authorizer: PackedLambda
 				onConnect: PackedLambda
@@ -51,27 +54,11 @@ export class WebsocketAPI extends Construct {
 			}
 			layers: Lambda.ILayerVersion[]
 			lastSeen: DeviceLastSeen
+			eventBus: WebsocketEventBus
+			connectionsTable: WebsocketConnectionsTable
 		},
 	) {
 		super(parent, 'WebsocketAPI')
-
-		// Event bridge for publishing message though websocket
-		this.eventBus = new Events.EventBus(this, 'eventBus', {})
-
-		// Databases
-		this.connectionsTable = new DynamoDB.Table(
-			this,
-			'websocketConnectionsTable',
-			{
-				billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
-				partitionKey: {
-					name: 'connectionId',
-					type: DynamoDB.AttributeType.STRING,
-				},
-				timeToLiveAttribute: 'ttl',
-				removalPolicy: RemovalPolicy.DESTROY,
-			},
-		)
 
 		// OnConnect
 		const onConnect = new Lambda.Function(this, 'onConnect', {
@@ -84,19 +71,21 @@ export class WebsocketAPI extends Construct {
 			description: 'Registers new clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-				EVENTBUS_NAME: this.eventBus.eventBusName,
+				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
+				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 				LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
+				DEVICE_SHADOW_TABLE_NAME: deviceShadow.deviceShadowTable.tableName,
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		this.eventBus.grantPutEventsTo(onConnect)
-		this.connectionsTable.grantWriteData(onConnect)
+		eventBus.eventBus.grantPutEventsTo(onConnect)
+		connectionsTable.table.grantWriteData(onConnect)
 		lastSeen.table.grantReadData(onConnect)
+		deviceShadow.deviceShadowTable.grantReadData(onConnect)
 
 		// onMessage
 		const onMessage = new Lambda.Function(this, 'onMessage', {
@@ -109,8 +98,8 @@ export class WebsocketAPI extends Construct {
 			description: 'Handles messages sent by clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-				EVENTBUS_NAME: this.eventBus.eventBusName,
+				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
+				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
@@ -118,8 +107,8 @@ export class WebsocketAPI extends Construct {
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		this.eventBus.grantPutEventsTo(onMessage)
-		this.connectionsTable.grantWriteData(onMessage)
+		eventBus.eventBus.grantPutEventsTo(onMessage)
+		connectionsTable.table.grantWriteData(onMessage)
 
 		// OnDisconnect
 		const onDisconnect = new Lambda.Function(this, 'onDisconnect', {
@@ -132,8 +121,8 @@ export class WebsocketAPI extends Construct {
 			description: 'De-registers clients',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
-				EVENTBUS_NAME: this.eventBus.eventBusName,
+				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
+				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
@@ -141,8 +130,8 @@ export class WebsocketAPI extends Construct {
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		this.connectionsTable.grantWriteData(onDisconnect)
-		this.eventBus.grantPutEventsTo(onDisconnect)
+		connectionsTable.table.grantWriteData(onDisconnect)
+		eventBus.eventBus.grantPutEventsTo(onDisconnect)
 
 		// Request authorizer
 		const authorizerLambda = new Lambda.Function(this, 'authorizerLambda', {
@@ -306,9 +295,9 @@ export class WebsocketAPI extends Construct {
 				description: 'Publish event to web socket clients',
 				environment: {
 					VERSION: this.node.tryGetContext('version'),
-					WEBSOCKET_CONNECTIONS_TABLE_NAME: this.connectionsTable.tableName,
+					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 					WEBSOCKET_MANAGEMENT_API_URL: this.websocketManagementAPIURL,
-					EVENTBUS_NAME: this.eventBus.eventBusName,
+					EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					NODE_NO_WARNINGS: '1',
 					DISABLE_METRICS:
@@ -321,7 +310,7 @@ export class WebsocketAPI extends Construct {
 					}),
 					new IAM.PolicyStatement({
 						effect: IAM.Effect.ALLOW,
-						resources: [this.connectionsTable.tableArn],
+						resources: [connectionsTable.table.tableArn],
 						actions: ['dynamodb:PartiQLSelect'],
 					}),
 				],
@@ -329,14 +318,14 @@ export class WebsocketAPI extends Construct {
 				logRetention: Logs.RetentionDays.ONE_WEEK,
 			},
 		)
-		this.connectionsTable.grantReadWriteData(publishToWebsocketClients)
+		connectionsTable.table.grantReadWriteData(publishToWebsocketClients)
 		new Events.Rule(this, 'publishToWebsocketClientsRule', {
 			eventPattern: {
 				source: ['thingy.ws'],
 				detailType: ['message', 'connect', 'error'],
 			},
 			targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
-			eventBus: this.eventBus,
+			eventBus: eventBus.eventBus,
 		})
 	}
 }

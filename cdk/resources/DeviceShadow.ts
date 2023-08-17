@@ -14,18 +14,22 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { LambdaSource } from './LambdaSource.js'
-import type { WebsocketAPI } from './WebsocketAPI.js'
 import { Scope } from '../../util/settings.js'
+import type { WebsocketEventBus } from './WebsocketEventBus'
+import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable'
 
 export class DeviceShadow extends Construct {
+	public readonly deviceShadowTable: DynamoDB.ITable
 	public constructor(
 		parent: Construct,
 		{
-			websocketAPI,
+			websocketEventBus,
+			websocketConnectionsTable,
 			lambdaSources,
 			layers,
 		}: {
-			websocketAPI: WebsocketAPI
+			websocketEventBus: WebsocketEventBus
+			websocketConnectionsTable: WebsocketConnectionsTable
 			lambdaSources: {
 				prepareDeviceShadow: PackedLambda
 				fetchDeviceShadow: PackedLambda
@@ -62,6 +66,18 @@ export class DeviceShadow extends Construct {
 				name: 'lockName',
 				type: DynamoDB.AttributeType.STRING,
 			},
+			removalPolicy: RemovalPolicy.DESTROY,
+			timeToLiveAttribute: 'ttl',
+		})
+
+		// Table to store the last known shadow of a device
+		this.deviceShadowTable = new DynamoDB.Table(this, 'deviceShadow', {
+			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+			partitionKey: {
+				name: 'deviceId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			pointInTimeRecovery: false,
 			removalPolicy: RemovalPolicy.DESTROY,
 			timeToLiveAttribute: 'ttl',
 		})
@@ -104,9 +120,9 @@ export class DeviceShadow extends Construct {
 			description: `Fetch devices' shadow from nRF Cloud`,
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				EVENTBUS_NAME: websocketAPI.eventBus.eventBusName,
+				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				WEBSOCKET_CONNECTIONS_TABLE_NAME:
-					websocketAPI.connectionsTable.tableName,
+					websocketConnectionsTable.table.tableName,
 				LOCK_TABLE_NAME: lockTable.tableName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
@@ -114,6 +130,7 @@ export class DeviceShadow extends Construct {
 				PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED: 'FALSE',
 				PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DEVICE_SHADOW_TABLE_NAME: this.deviceShadowTable.tableName,
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
@@ -151,8 +168,8 @@ export class DeviceShadow extends Construct {
 			],
 		})
 		fetchDeviceShadow.addToRolePolicy(ssmReadPolicy)
-		websocketAPI.eventBus.grantPutEventsTo(fetchDeviceShadow)
-		websocketAPI.connectionsTable.grantReadWriteData(fetchDeviceShadow)
+		websocketEventBus.eventBus.grantPutEventsTo(fetchDeviceShadow)
+		websocketConnectionsTable.table.grantReadWriteData(fetchDeviceShadow)
 		lockTable.grantReadWriteData(fetchDeviceShadow)
 		fetchDeviceShadow.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {
@@ -160,5 +177,6 @@ export class DeviceShadow extends Construct {
 				maxConcurrency: 2,
 			}),
 		)
+		this.deviceShadowTable.grantWriteData(fetchDeviceShadow)
 	}
 }
