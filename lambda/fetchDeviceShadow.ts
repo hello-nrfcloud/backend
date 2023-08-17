@@ -147,6 +147,9 @@ const h = async (): Promise<void> => {
 								? new URL(apiEndpoint)
 								: defaultApiEndpoint,
 						apiKey,
+						onError: () => {
+							track('error', MetricUnits.Count, 1)
+						},
 					})
 
 					return (

@@ -5,7 +5,15 @@ import { type DeviceShadow } from './DeviceShadow.js'
 const log = logger('deviceShadowFetcher')
 
 export const deviceShadowFetcher =
-	({ endpoint, apiKey }: { endpoint: URL; apiKey: string }) =>
+	({
+		endpoint,
+		apiKey,
+		onError,
+	}: {
+		endpoint: URL
+		apiKey: string
+		onError?: (res: Response) => void
+	}) =>
 	async (devices: string[]): Promise<DeviceShadow[]> => {
 		const params = {
 			includeState: true,
@@ -32,6 +40,7 @@ export const deviceShadowFetcher =
 			const data = await res.json()
 			return data.items as DeviceShadow[]
 		} else {
+			onError?.(res)
 			log.error(`Fetching shadow error`, {
 				status: res.status,
 				statusText: res.statusText,
