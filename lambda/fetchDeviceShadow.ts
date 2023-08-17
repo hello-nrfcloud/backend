@@ -232,6 +232,7 @@ const h = async (): Promise<void> => {
 		)
 	} catch (error) {
 		log.error(`fetch device shadow error`, { error })
+		track('error', MetricUnits.Count, 1)
 	} finally {
 		await lock.releaseLock(lockName)
 	}
