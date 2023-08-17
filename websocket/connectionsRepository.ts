@@ -56,8 +56,10 @@ export const connectionsRepository: (
 					},
 				},
 				UpdateExpression: 'SET #ttl = :ttl',
+				ConditionExpression: 'attribute_exists(#connectionId)',
 				ExpressionAttributeNames: {
 					'#ttl': 'ttl',
+					'#connectionId': 'connectionId',
 				},
 				ExpressionAttributeValues: {
 					':ttl': { N: `${Math.round(Date.now() / 1000) + 5 * 60}` },
