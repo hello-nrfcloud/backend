@@ -319,6 +319,7 @@ export class WebsocketAPI extends Construct {
 			},
 		)
 		connectionsTable.table.grantReadWriteData(publishToWebsocketClients)
+		eventBus.eventBus.grantPutEventsTo(publishToWebsocketClients)
 		new Events.Rule(this, 'publishToWebsocketClientsRule', {
 			eventPattern: {
 				source: ['thingy.ws'],
