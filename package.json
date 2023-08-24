@@ -118,7 +118,7 @@
   "prettier": "@nordicsemiconductor/asset-tracker-cloud-code-style/.prettierrc",
   "dependencies": {
     "@aws-lambda-powertools/metrics": "1.12.1",
-    "@hello.nrfcloud.com/proto": "5.5.0",
+    "@hello.nrfcloud.com/proto": "5.5.1",
     "@middy/core": "4.6.0",
     "@nordicsemiconductor/from-env": "2.0.0",
     "@nordicsemiconductor/timestream-helpers": "5.0.0",
