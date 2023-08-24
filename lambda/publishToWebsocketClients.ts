@@ -13,12 +13,10 @@ export type WebsocketPayload = {
 	message: Record<string, unknown>
 }
 
-const { connectionsTableName, websocketManagementAPIURL, eventBusName } =
-	fromEnv({
-		connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
-		websocketManagementAPIURL: 'WEBSOCKET_MANAGEMENT_API_URL',
-		eventBusName: 'EVENTBUS_NAME',
-	})(process.env)
+const { connectionsTableName, websocketManagementAPIURL } = fromEnv({
+	connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
+	websocketManagementAPIURL: 'WEBSOCKET_MANAGEMENT_API_URL',
+})(process.env)
 
 const log = logger('publishToWebsockets')
 const db = new DynamoDBClient({})
@@ -30,19 +28,12 @@ const notifier = notifyClients({
 	db,
 	connectionsTableName,
 	apiGwManagementClient,
-	eventBusName,
 })
 
 export const handler = async (
-	event: EventBridgeEvent<
-		'message' | 'connect' | 'disconnect' | 'error',
-		WebsocketPayload
-	>,
+	event: EventBridgeEvent<'message' | 'connect' | 'error', WebsocketPayload>,
 ): Promise<void> => {
 	log.info('publishToWebSocketClients event', { event })
-
-	// Do not publish websocket for disconnect type
-	if (event['detail-type'] === 'disconnect') return
 
 	await notifier(event.detail)
 }
