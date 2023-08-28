@@ -177,6 +177,8 @@ Soon I should receive a message on the websocket that matches
 }
 ```
 
+<!-- @retry:delayExecution=5000 -->
+
 ## Request historical data for a week
 
 When I connect to the websocket using fingerprint `${fingerprint}`
