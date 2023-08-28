@@ -8,6 +8,8 @@ needs:
 > Device messages published on nRF Cloud should be delivered to the websocket
 > API
 
+<!-- @retry:delayExecution=5000 -->
+
 ## Verify a device sends a message to nRF Cloud, then I can receive the message via website
 
 Given I store `$millis()` into `ts`
