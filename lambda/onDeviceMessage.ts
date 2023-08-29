@@ -8,19 +8,37 @@ import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { once } from 'lodash-es'
 
-const { EventBusName, DevicesTableName } = fromEnv({
+const { EventBusName, DevicesTableName, stackName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
+	stackName: 'STACK_NAME',
 })(process.env)
 
 const log = logger('deviceMessage')
 const db = new DynamoDBClient({})
+const ssm = new SSMClient({})
 const eventBus = new EventBridge({})
 
 const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
 const { track, metrics } = metricsForComponent('onDeviceMessage')
+
+const getAllNRFCloudAccountSettings = once(
+	getAllAccountsSettings({
+		ssm,
+		stackName,
+	}),
+)
+const getAllHealthCheckClientIds = once(async () => {
+	const settings = await getAllNRFCloudAccountSettings()
+	return Object.values(settings)
+		.map((settings) => settings?.healthCheckSettings?.healthCheckClientId)
+		.filter((x) => x !== undefined)
+})
 
 const h = async (event: {
 	message: unknown
@@ -30,6 +48,12 @@ const h = async (event: {
 	log.debug('event', { event })
 	track('deviceMessage', MetricUnits.Count, 1)
 	const { deviceId, message } = event
+
+	const healthCheckClientIds = await getAllHealthCheckClientIds()
+	if (healthCheckClientIds.includes(deviceId)) {
+		log.debug(`Ignoring health check device`, { deviceId })
+		return
+	}
 
 	// Fetch model for device
 	const { model } = await deviceFetcher(deviceId)
