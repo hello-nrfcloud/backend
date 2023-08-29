@@ -48,6 +48,8 @@ And the device `${trailDevice_deviceId}` publishes this message to the topic
 | Ranheim Papirfabrikk               | 63.42215444775618  | 10.535387671151794 | 2000          |
 | Leistadkrysset                     | 63.42254450323275  | 10.630926224360818 | 1000          |
 
+<!-- @retry:delayExecution=5000 -->
+
 ## Retrieve location trail
 
 When I connect to the websocket using fingerprint `${trailDevice}`

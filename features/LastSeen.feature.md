@@ -23,6 +23,8 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 }
 ```
 
+<!-- @retry:delayExecution=5000 -->
+
 ## Retrieve last seen timestamp on connect
 
 Given I store `$fromMillis(${ts})` into `tsISO`
