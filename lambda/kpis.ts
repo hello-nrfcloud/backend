@@ -25,9 +25,11 @@ const h = async () => {
 			getDailyActiveDevices(previousHour),
 			getDailyActiveFingerprints(previousHour),
 		])
+	//const costsPerAccount = calculateCostsPerAccount()
 	console.log({
 		dailyActiveDevicesCount,
 		dailyActiveFingerprintCount,
+		//costsPerAccount
 	})
 	track('dailyActive:devices', MetricUnits.Count, dailyActiveDevicesCount)
 	track(
@@ -35,6 +37,7 @@ const h = async () => {
 		MetricUnits.Count,
 		dailyActiveFingerprintCount,
 	)
+	//track
 }
 
 export const handler = middy(h).use(logMetrics(metrics))

@@ -1,3 +1,4 @@
+import type { UsageSummary } from '../calculateCosts.js'
 import { slashless } from '../util/slashless.js'
 import type { Nullable } from '../util/types.js'
 
@@ -87,6 +88,12 @@ export const apiClient = ({
 		| { error: Error }
 		| {
 				account: AccountInfo
+		  }
+	>
+	accountSummary: () => Promise<
+		| { error: Error }
+		| {
+				summary: UsageSummary
 		  }
 	>
 	getBulkOpsStatus: (bulkOpsId: string) => Promise<
@@ -205,6 +212,16 @@ export const apiClient = ({
 			})
 				.then<AccountInfo>(async (res) => res.json())
 				.then((account) => ({ account }))
+				.catch((err) => ({ error: err as Error })),
+		accountSummary: async () =>
+			fetch(`${slashless(endpoint)}/v1/account/usage/summary`, {
+				headers: {
+					Authorization: `Bearer ${apiKey}`,
+					'Content-Type': 'application/octet-stream',
+				},
+			})
+				.then<UsageSummary>(async (res) => res.json())
+				.then((summary) => ({ summary }))
 				.catch((err) => ({ error: err as Error })),
 		getBulkOpsStatus: async (bulkOpsId) =>
 			fetch(
