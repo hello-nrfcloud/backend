@@ -90,7 +90,7 @@ export const apiClient = ({
 				account: AccountInfo
 		  }
 	>
-	accountSummary: () => Promise<
+	accountSummary: (acc: string) => Promise<
 		| { error: Error }
 		| {
 				summary: UsageSummary
@@ -213,8 +213,8 @@ export const apiClient = ({
 				.then<AccountInfo>(async (res) => res.json())
 				.then((account) => ({ account }))
 				.catch((err) => ({ error: err as Error })),
-		accountSummary: async () =>
-			fetch(`${slashless(endpoint)}/v1/account/usage/summary`, {
+		accountSummary: async (acc: string) =>
+			fetch(`${slashless(endpoint)}/v1/${acc}/usage/summary`, {
 				headers: {
 					Authorization: `Bearer ${apiKey}`,
 					'Content-Type': 'application/octet-stream',
