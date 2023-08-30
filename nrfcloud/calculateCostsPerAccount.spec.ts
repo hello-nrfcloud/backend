@@ -1,14 +1,19 @@
-import { calculateCosts } from '../calculateCosts'
+import { calculateCosts } from '../calculateCosts.js'
 import data from '.././api.json'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { getAllnRFCloudAccounts } from '.././nrfcloud/allAccounts.js'
+import { getAllnRFCloudAccounts } from './allAccounts.js'
+jest.mock('.././nrfcloud/allAccounts.js', () => ({
+	getAllnRFCloudAccounts: async () => {
+		return ['account1', 'account2']
+	},
+}))
 
 const ssm = new SSMClient({})
 
 describe('calculateCostsPerAccount()', () => {
 	it('should calculate costs per Account', async () => {
-		const expected = { acc1: 0, acc2: 0 }
+		const expected = { account1: 40.15, account2: 40.15 }
 		expect(
 			await calculateCostsPerAccount({ ssm, stackName: STACK_NAME }),
 		).toEqual(expected)
@@ -22,20 +27,15 @@ export const calculateCostsPerAccount = async ({
 }: {
 	ssm: SSMClient
 	stackName: string
-}) => {
+}): Promise<AccountObject> => {
 	const accounts = await getAllnRFCloudAccounts({
 		ssm,
 		stackName,
 	})
-	//const accounts = ['acc1', 'acc2']
-	console.log(accounts)
-	//get accounts using allAccounts ??
-	let returnObject: AccountObject = {}
+	const returnObject: AccountObject = {}
 	for (const account of accounts) {
 		//make api call to https://api.nrfcloud.com/v1/account/usage/summary for that user
-
 		//const summary = fetch(https://api.nrfcloud.com/v1/account/usage/summary)
-		console.log(account)
 		const summary = data
 		returnObject[account] = calculateCosts(summary)
 	}
