@@ -63,20 +63,18 @@ export const nRFCloudPrices: Prices = {
 }
 
 export const calculateCosts = (data: UsageSummary): number => {
-	//check if empty object, return 0?
+	//return 0 if empty object
 	if (Object.keys(data).length === 0) {
 		return 0
 	}
 	let monthlyCosts = 0
 	for (const services of data.services) {
 		if (services.date === getCurrentDate()) {
-			//add devices, fota and message prices to monthlyCosts
 			monthlyCosts +=
 				data.currentDevices.total * nRFCloudPrices.currentDevices +
 				services.fotaJobExecutions * nRFCloudPrices.fotaJobExecutions +
 				services.storedDeviceMessages * nRFCloudPrices.storedDeviceMessages
 
-			//add locationservices prices to monthlyCosts
 			const locationServices = services.locationServices
 			for (const key in locationServices) {
 				monthlyCosts +=
