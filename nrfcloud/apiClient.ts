@@ -1,4 +1,4 @@
-import type { UsageSummary } from '../calculateCosts.js'
+import type { UsageSummary } from './calculateCosts.js'
 import { slashless } from '../util/slashless.js'
 import type { Nullable } from '../util/types.js'
 
