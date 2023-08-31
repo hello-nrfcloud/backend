@@ -1,4 +1,4 @@
-import { calculateCosts } from '../calculateCosts.js'
+import { calculateCosts } from './calculateCosts.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { getAllnRFCloudAccounts } from './allAccounts.js'
 import { getCostSummaryFromAPI } from './getCostSummaryFromAPI.js'
