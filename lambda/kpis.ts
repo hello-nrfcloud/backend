@@ -47,6 +47,8 @@ const h = async () => {
 		MetricUnits.Count,
 		dailyActiveFingerprintCount,
 	)
+	track('nrfCloudPrices:account1', MetricUnits.Count, 50)
+	track('nrfCloudPrices:account2', MetricUnits.Count, 20)
 }
 
 export const handler = middy(h).use(logMetrics(metrics))
