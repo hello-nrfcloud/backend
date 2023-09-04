@@ -217,7 +217,7 @@ export const apiClient = ({
 			fetch(`${slashless(endpoint)}/v1/${acc}/usage/summary`, {
 				headers: {
 					Authorization: `Bearer ${apiKey}`,
-					'Content-Type': 'application/octet-stream',
+					'Content-Type': 'application/json',
 				},
 			})
 				.then<UsageSummary>(async (res) => res.json())
