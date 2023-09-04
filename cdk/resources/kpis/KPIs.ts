@@ -35,7 +35,7 @@ export class KPIs extends Construct {
 			handler: lambdaSources.kpis.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: Duration.seconds(5),
+			timeout: Duration.seconds(10),
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.kpis).code,
 			description: 'Collect KPIs and publish them as metrics',
