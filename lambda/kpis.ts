@@ -34,6 +34,7 @@ const h = async () => {
 		calculateCostsPerAccount({
 			ssm,
 			stackName,
+			date: Date.now(),
 		}),
 	])
 	console.log({
