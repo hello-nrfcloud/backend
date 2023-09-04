@@ -1,12 +1,16 @@
 import { calculateCosts, type UsageSummary } from './calculateCosts.js'
 
+export const testDateAugust = 1691145383000
+
 describe('CalculateCosts()', () => {
-	it('should not calculate costs if given input is invalid.', () => {
+	it('should not calculate costs if given input is invalid.', async () => {
 		const expected = 0
-		expect(calculateCosts({} as UsageSummary)).toBe(expected)
+		expect(await calculateCosts({} as UsageSummary, testDateAugust)).toBe(
+			expected,
+		)
 	})
 
-	it('should return the minimum fee if no usage', () => {
+	it('should return the minimum fee if no usage', async () => {
 		const expected = 1.99
 
 		const dataNoCost = {
@@ -46,10 +50,10 @@ describe('CalculateCosts()', () => {
 				},
 			],
 		}
-		expect(calculateCosts(dataNoCost)).toBe(expected)
+		expect(await calculateCosts(dataNoCost, testDateAugust)).toBe(expected)
 	})
 
-	it('should calculate the costs per month for nRF Cloud', () => {
+	it('should calculate the costs per month for nRF Cloud', async () => {
 		const expected = 40.15
 		const data = {
 			currentDevices: {
@@ -116,10 +120,10 @@ describe('CalculateCosts()', () => {
 			],
 		}
 
-		expect(calculateCosts(data)).toBe(expected)
+		expect(await calculateCosts(data, testDateAugust)).toBe(expected)
 	})
 
-	it('should return minimum costs if monthly usage is below 1.99 ', () => {
+	it('should return minimum costs if monthly usage is below 1.99 ', async () => {
 		const expected = 1.99
 		const dataLowCost = {
 			currentDevices: {
@@ -159,6 +163,6 @@ describe('CalculateCosts()', () => {
 			],
 		}
 
-		expect(calculateCosts(dataLowCost)).toBe(expected)
+		expect(await calculateCosts(dataLowCost, testDateAugust)).toBe(expected)
 	})
 })

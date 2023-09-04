@@ -1,6 +1,7 @@
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { calculateCostsPerAccount } from './calculateCostsPerAccount.js'
+import { testDateAugust } from './calculateCosts.spec.js'
 
 jest.mock('.././nrfcloud/allAccounts.js', () => ({
 	getAllnRFCloudAccounts: async () => {
@@ -82,7 +83,11 @@ describe('calculateCostsPerAccount()', () => {
 	it('should calculate costs per Account', async () => {
 		const expected = { account1: 40.15, account2: 40.15 }
 		expect(
-			await calculateCostsPerAccount({ ssm, stackName: STACK_NAME }),
+			await calculateCostsPerAccount({
+				ssm,
+				stackName: STACK_NAME,
+				date: testDateAugust,
+			}),
 		).toEqual(expected)
 	})
 })

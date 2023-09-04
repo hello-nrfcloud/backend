@@ -8,9 +8,11 @@ export type AccountObject = { [key: string]: number }
 export const calculateCostsPerAccount = async ({
 	ssm,
 	stackName,
+	date,
 }: {
 	ssm: SSMClient
 	stackName: string
+	date: number
 }): Promise<AccountObject> => {
 	const accounts = await getAllnRFCloudAccounts({
 		ssm,
@@ -19,7 +21,7 @@ export const calculateCostsPerAccount = async ({
 	const returnObject: AccountObject = {}
 	for (const account of accounts) {
 		const summary = await getCostSummaryFromAPI(account, stackName, ssm)
-		returnObject[account] = calculateCosts(summary)
+		returnObject[account] = await calculateCosts(summary, date)
 	}
 	return returnObject
 }

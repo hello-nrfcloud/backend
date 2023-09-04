@@ -1,3 +1,5 @@
+import { getCurrentMonth } from '../util/getCurrentMonth.js'
+
 export type LocationService = keyof LocationServices
 
 export type LocationServices = {
@@ -62,19 +64,21 @@ export const nRFCloudPrices: Prices = {
 	WIFI: 0.002,
 }
 
-export const calculateCosts = (data: UsageSummary): number => {
+export const calculateCosts = async (
+	data: UsageSummary,
+	date: number,
+): Promise<number> => {
 	//return 0 if empty object
 	if (Object.keys(data).length === 0) {
 		return 0
 	}
 	let monthlyCosts = 0
 	for (const services of data.services) {
-		if (services.date === getCurrentDate()) {
+		if (services.date === getCurrentMonth(new Date(date))) {
 			monthlyCosts +=
 				data.currentDevices.total * nRFCloudPrices.currentDevices +
 				services.fotaJobExecutions * nRFCloudPrices.fotaJobExecutions +
 				services.storedDeviceMessages * nRFCloudPrices.storedDeviceMessages
-
 			const locationServices = services.locationServices
 			for (const key in locationServices) {
 				monthlyCosts +=
@@ -85,12 +89,4 @@ export const calculateCosts = (data: UsageSummary): number => {
 	}
 	monthlyCosts = Number((monthlyCosts > 1.99 ? monthlyCosts : 1.99).toFixed(2))
 	return monthlyCosts
-}
-
-export const getCurrentDate = (): string => {
-	const date = new Date()
-	const currentDate = `${date.getFullYear()}-${(date.getMonth() + 1)
-		.toString()
-		.padStart(2, '0')}`
-	return currentDate
 }
