@@ -7,11 +7,11 @@ import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import { calculateCostsPerAccount } from '../nrfcloud/calculateCostsPerAccount.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 
-const { lastSeenTableName, devicesTableName } = fromEnv({
+const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',
 	devicesTableName: 'DEVICES_TABLE_NAME',
+	stackName: 'STACK_NAME',
 })(process.env)
 
 const ssm = new SSMClient({})
@@ -33,7 +33,7 @@ const h = async () => {
 		getDailyActiveFingerprints(previousHour),
 		calculateCostsPerAccount({
 			ssm,
-			stackName: STACK_NAME,
+			stackName,
 		}),
 	])
 	console.log({
@@ -41,14 +41,15 @@ const h = async () => {
 		dailyActiveFingerprintCount,
 		costsPerAccount,
 	})
+	for (const acc in costsPerAccount) {
+		track(`nrfCloudPrices:${acc}`, MetricUnits.Count, costsPerAccount[acc] ?? 0)
+	}
 	track('dailyActive:devices', MetricUnits.Count, dailyActiveDevicesCount)
 	track(
 		'dailyActive:fingerprints',
 		MetricUnits.Count,
 		dailyActiveFingerprintCount,
 	)
-	track('nrfCloudPrices:account1', MetricUnits.Count, 50)
-	track('nrfCloudPrices:account2', MetricUnits.Count, 20)
 }
 
 export const handler = middy(h).use(logMetrics(metrics))
