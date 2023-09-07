@@ -4,12 +4,15 @@ import {
 	aws_events as Events,
 	aws_lambda as Lambda,
 	aws_logs as Logs,
+	aws_iam as IAM,
+	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../../BackendLambdas.js'
 import type { DeviceLastSeen } from '../DeviceLastSeen.js'
 import type { DeviceStorage } from '../DeviceStorage.js'
 import { LambdaSource } from '../LambdaSource.js'
+import { Scope } from '../../../util/settings.js'
 
 export class KPIs extends Construct {
 	constructor(
@@ -32,7 +35,7 @@ export class KPIs extends Construct {
 			handler: lambdaSources.kpis.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: Duration.seconds(5),
+			timeout: Duration.seconds(10),
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.kpis).code,
 			description: 'Collect KPIs and publish them as metrics',
@@ -43,7 +46,31 @@ export class KPIs extends Construct {
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 				LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+				STACK_NAME: Stack.of(this).stackName,
 			},
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
+					resources: [
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/${
+							Scope.NRFCLOUD_ACCOUNT_PREFIX
+						}`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/${
+							Scope.NRFCLOUD_ACCOUNT_PREFIX
+						}/*`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
+						`arn:aws:ssm:${Stack.of(this).region}:${
+							Stack.of(this).account
+						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
+					],
+				}),
+			],
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
