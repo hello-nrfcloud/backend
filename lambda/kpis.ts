@@ -43,7 +43,7 @@ const h = async () => {
 		costsPerAccount,
 	})
 	for (const acc in costsPerAccount) {
-		track(`nrfCloudPrices:${acc}`, MetricUnits.Count, costsPerAccount[acc] ?? 0)
+		track(`nrfCloudMonthlyCosts:${acc}`, MetricUnits.Count, costsPerAccount[acc] ?? 0)
 	}
 	track('dailyActive:devices', MetricUnits.Count, dailyActiveDevicesCount)
 	track(
