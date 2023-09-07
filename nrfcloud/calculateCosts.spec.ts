@@ -1,6 +1,6 @@
 import { calculateCosts } from './calculateCosts.js'
 
-export const testDateAugust = 1691145383000
+const testDateAugust = 1691145383000
 
 describe('CalculateCosts()', () => {
 	it('should return the minimum fee if no usage', () => {
