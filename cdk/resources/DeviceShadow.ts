@@ -174,7 +174,7 @@ export class DeviceShadow extends Construct {
 		fetchDeviceShadow.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {
 				batchSize: 10,
-				maxConcurrency: 2,
+				maxConcurrency: 15,
 			}),
 		)
 		this.deviceShadowTable.grantWriteData(fetchDeviceShadow)
