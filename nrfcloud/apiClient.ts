@@ -1,4 +1,3 @@
-import type { UsageSummary } from './calculateCosts.js'
 import { slashless } from '../util/slashless.js'
 import type { Nullable } from '../util/types.js'
 
@@ -48,6 +47,24 @@ type AccountInfo = {
 		tenantId: string // e.g. 'bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce',
 		name: string // e.g. 'hello.nrfcloud.com'
 	}
+	plan: {
+		currentMonthCosts: {
+			price: number // e.g. 0.1
+			quantity: number // e.g. 9
+			serviceDescription: string // e.g. 'Devices in your account'
+			serviceId: 'Devices' | 'Messages' | 'SCELL' | 'MCELL'
+			total: number // e.g. 0.9
+		}[]
+		currentMonthTotalCost: number // e.g. 2.73
+		name: 'PRO' | 'DEVELOPER'
+		proxyUsageDeclarations: {
+			AGPS: number // e.g. 0
+			GROUND_FIX: number // e.g. 200
+			PGPS: number // e.g. 0
+		}
+	}
+	role: 'owner' | 'admin' | 'editor' | 'viewer'
+	tags: string[]
 }
 type FwType =
 	| 'APP'
@@ -88,12 +105,6 @@ export const apiClient = ({
 		| { error: Error }
 		| {
 				account: AccountInfo
-		  }
-	>
-	accountSummary: (acc: string) => Promise<
-		| { error: Error }
-		| {
-				summary: UsageSummary
 		  }
 	>
 	getBulkOpsStatus: (bulkOpsId: string) => Promise<
@@ -212,16 +223,6 @@ export const apiClient = ({
 			})
 				.then<AccountInfo>(async (res) => res.json())
 				.then((account) => ({ account }))
-				.catch((err) => ({ error: err as Error })),
-		accountSummary: async (acc: string) =>
-			fetch(`${slashless(endpoint)}/v1/${acc}/usage/summary`, {
-				headers: {
-					Authorization: `Bearer ${apiKey}`,
-					'Content-Type': 'application/json',
-				},
-			})
-				.then<UsageSummary>(async (res) => res.json())
-				.then((summary) => ({ summary }))
 				.catch((err) => ({ error: err as Error })),
 		getBulkOpsStatus: async (bulkOpsId) =>
 			fetch(
