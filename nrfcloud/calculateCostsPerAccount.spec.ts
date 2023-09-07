@@ -101,7 +101,7 @@ describe('calculateCostsPerAccount()', () => {
 		})
 	})
 
-	it('should use SSM and stackName to get cost summary from API', async () => {
+	it('should use accountname, SSM and stackName to get cost summary from API', async () => {
 		const getCostSummaryFromAPI = jest.fn().mockImplementation(() => {
 			return testSummary
 		})
