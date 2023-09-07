@@ -53,6 +53,7 @@ export type Prices = {
 
 export type ServicePrice = keyof Prices
 
+//Prices from https://nrfcloud.com/#/pricing
 export const nRFCloudPrices: Prices = {
 	currentDevices: 0.1,
 	storedDeviceMessages: 0.0001,
@@ -64,14 +65,7 @@ export const nRFCloudPrices: Prices = {
 	WIFI: 0.002,
 }
 
-export const calculateCosts = async (
-	data: UsageSummary,
-	date: number,
-): Promise<number> => {
-	//return 0 if empty object
-	if (Object.keys(data).length === 0) {
-		return 0
-	}
+export const calculateCosts = (data: UsageSummary, date: number): number => {
 	let monthlyCosts = 0
 	for (const services of data.services) {
 		if (services.date === getCurrentMonth(new Date(date))) {
