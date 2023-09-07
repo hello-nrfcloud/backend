@@ -5,10 +5,10 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { dailyActiveDevices } from '../kpis/dailyActiveDevices.js'
 import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
 import { metricsForComponent } from './metrics/metrics.js'
-import { calculateCostsPerAccount } from '../nrfcloud/calculateCostsPerAccount.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { getAllnRFCloudAccounts } from '../nrfcloud/allAccounts.js'
-import { getCostSummaryFromAPI } from '../nrfcloud/getCostSummaryFromAPI.js'
+import { calculateCosts } from '../nrfcloud/calculateCosts.js'
+import { accountApiClient } from '../nrfcloud/accountApiClient.js'
 
 const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',
@@ -26,39 +26,36 @@ const { track, metrics } = metricsForComponent('KPIs')
 const h = async () => {
 	// Make sure we are getting all data from yesterday,
 	const previousHour = new Date(Date.now() - 60 * 60 * 1000)
-	const [
-		dailyActiveDevicesCount,
-		dailyActiveFingerprintCount,
-		costsPerAccount,
-	] = await Promise.all([
-		getDailyActiveDevices(previousHour),
-		getDailyActiveFingerprints(previousHour),
-		calculateCostsPerAccount({
-			ssm,
-			stackName,
-			date: Date.now(),
-			getAllnRFCloudAccounts,
-			getCostSummaryFromAPI,
+	await Promise.all([
+		getDailyActiveDevices(previousHour).then((dailyActiveDevicesCount) => {
+			console.log({ dailyActiveDevicesCount })
+			track('dailyActive:devices', MetricUnits.Count, dailyActiveDevicesCount)
 		}),
+		getDailyActiveFingerprints(previousHour).then(
+			(dailyActiveFingerprintCount) => {
+				console.log({ dailyActiveFingerprintCount })
+				track(
+					'dailyActive:fingerprints',
+					MetricUnits.Count,
+					dailyActiveFingerprintCount,
+				)
+			},
+		),
+		// Current month's nRF Cloud costs
+		...(await getAllnRFCloudAccounts({ ssm, stackName })).map(
+			async (account) => {
+				const apiClient = await accountApiClient(account, stackName, ssm)
+				const maybeSummary = await apiClient.accountSummary(account)
+				if ('error' in maybeSummary) {
+					console.error(maybeSummary.error)
+				} else {
+					const costs = calculateCosts(maybeSummary.summary)
+					console.log({ [`${account}:costs`]: costs })
+					track(`nrfCloudMonthlyCosts:${account}`, MetricUnits.Count, costs)
+				}
+			},
+		),
 	])
-	console.log({
-		dailyActiveDevicesCount,
-		dailyActiveFingerprintCount,
-		costsPerAccount,
-	})
-	for (const acc in costsPerAccount) {
-		track(
-			`nrfCloudMonthlyCosts:${acc}`,
-			MetricUnits.Count,
-			costsPerAccount[acc] ?? 0,
-		)
-	}
-	track('dailyActive:devices', MetricUnits.Count, dailyActiveDevicesCount)
-	track(
-		'dailyActive:fingerprints',
-		MetricUnits.Count,
-		dailyActiveFingerprintCount,
-	)
 }
 
 export const handler = middy(h).use(logMetrics(metrics))

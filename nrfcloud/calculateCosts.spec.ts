@@ -1,6 +1,6 @@
 import { calculateCosts } from './calculateCosts.js'
 
-const testDateAugust = 1691145383000
+const testDateAugust = new Date('2023-08-04T10:36:23.000Z')
 
 describe('CalculateCosts()', () => {
 	it('should return the minimum fee if no usage', () => {
@@ -113,7 +113,9 @@ describe('CalculateCosts()', () => {
 			],
 		}
 
-		expect(calculateCosts(data, testDateAugust)).toBe(expected)
+		expect(Math.round(calculateCosts(data, testDateAugust) * 100) / 100).toBe(
+			expected,
+		)
 	})
 
 	it('should return minimum costs if monthly usage is below 1.99 ', () => {

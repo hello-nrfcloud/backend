@@ -65,10 +65,13 @@ export const nRFCloudPrices: Prices = {
 	WIFI: 0.002,
 }
 
-export const calculateCosts = (data: UsageSummary, date: number): number => {
+export const calculateCosts = (
+	data: UsageSummary,
+	date: Date = new Date(),
+): number => {
 	let monthlyCosts = 0
 	for (const services of data.services) {
-		if (services.date === getCurrentMonth(new Date(date))) {
+		if (services.date === getCurrentMonth(date)) {
 			monthlyCosts +=
 				data.currentDevices.total * nRFCloudPrices.currentDevices +
 				services.fotaJobExecutions * nRFCloudPrices.fotaJobExecutions +
@@ -81,6 +84,6 @@ export const calculateCosts = (data: UsageSummary, date: number): number => {
 			}
 		}
 	}
-	monthlyCosts = Number((monthlyCosts > 1.99 ? monthlyCosts : 1.99).toFixed(2))
+	monthlyCosts = monthlyCosts > 1.99 ? monthlyCosts : 1.99
 	return monthlyCosts
 }
