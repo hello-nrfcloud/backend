@@ -132,6 +132,7 @@ export const connectionsRepository: (
 						'#version': 'version',
 						'#updatedAt': 'updatedAt',
 						'#count': 'count',
+						'#connectionId': 'connectionId',
 					},
 					ExpressionAttributeValues: {
 						':version': { N: version.toString() },
@@ -139,7 +140,7 @@ export const connectionsRepository: (
 						':increase': { N: '1' },
 					},
 					ConditionExpression:
-						'attribute_not_exists(#version) OR #version <= :version',
+						'attribute_exists(#connectionId) AND (attribute_not_exists(#version) OR #version <= :version)',
 					ReturnValues: 'ALL_OLD',
 				}),
 			)

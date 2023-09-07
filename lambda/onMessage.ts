@@ -3,7 +3,10 @@
  */
 
 import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import {
+	ConditionalCheckFailedException,
+	DynamoDBClient,
+} from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import {
@@ -95,7 +98,16 @@ const success =
 
 const h = async (event: AuthorizedEvent): Promise<void> => {
 	log.info('event', { event })
-	await repo.extendTTL(event.requestContext.connectionId)
+	try {
+		await repo.extendTTL(event.requestContext.connectionId)
+	} catch (error) {
+		if (error instanceof ConditionalCheckFailedException) {
+			log.debug(`WebConnection is not found`, {
+				context: event.requestContext.authorizer,
+			})
+			track('ConnectionIdMissing', MetricUnits.Count, 1)
+		}
+	}
 
 	const { deviceId, model } = event.requestContext.authorizer
 	const onError = error(deviceId, event)
