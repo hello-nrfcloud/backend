@@ -1,5 +1,6 @@
-import { testDateAugust } from '../nrfcloud/calculateCosts.spec'
 import { getCurrentMonth } from './getCurrentMonth.js'
+
+const testDateAugust = 1691145383000
 
 describe('getCurrentDate', () => {
 	it('should get the current month in a YYYY-MM format', () => {
