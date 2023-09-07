@@ -81,6 +81,7 @@ const h = async (): Promise<void> => {
 	try {
 		const lockAcquired = await lock.acquiredLock(lockName, lockTTLSeconds)
 		if (lockAcquired === false) {
+			track('locked', MetricUnits.Count, 1)
 			log.info(`Other process is still running, then ignore`)
 			return
 		}
@@ -160,7 +161,9 @@ const h = async (): Promise<void> => {
 							).map(async (devices) =>
 								limit(async () => {
 									const start = Date.now()
-									log.debug(`Prepare fetching shadow under ${account} account`)
+									log.debug(
+										`Prepare fetching shadow under ${account} account: ${devices.length} devices`,
+									)
 									const res = await deviceShadow(
 										devices.map((device) => device.deviceId),
 									)
