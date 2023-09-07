@@ -1,7 +1,5 @@
-import { calculateCosts } from './calculateCosts.js'
+import { calculateCosts, type UsageSummary } from './calculateCosts.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { getAllnRFCloudAccounts } from './allAccounts.js'
-import { getCostSummaryFromAPI } from './getCostSummaryFromAPI.js'
 
 export type AccountObject = { [key: string]: number }
 
@@ -9,10 +7,24 @@ export const calculateCostsPerAccount = async ({
 	ssm,
 	stackName,
 	date,
+	getAllnRFCloudAccounts,
+	getCostSummaryFromAPI,
 }: {
 	ssm: SSMClient
 	stackName: string
 	date: number
+	getAllnRFCloudAccounts: ({
+		ssm,
+		stackName,
+	}: {
+		ssm: SSMClient
+		stackName: string
+	}) => Promise<string[]>
+	getCostSummaryFromAPI: (
+		account: string,
+		stackName: string,
+		ssm: SSMClient,
+	) => Promise<UsageSummary>
 }): Promise<AccountObject> => {
 	const accounts = await getAllnRFCloudAccounts({
 		ssm,
@@ -21,7 +33,7 @@ export const calculateCostsPerAccount = async ({
 	const returnObject: AccountObject = {}
 	for (const account of accounts) {
 		const summary = await getCostSummaryFromAPI(account, stackName, ssm)
-		returnObject[account] = await calculateCosts(summary, date)
+		returnObject[account] = calculateCosts(summary, date)
 	}
 	return returnObject
 }

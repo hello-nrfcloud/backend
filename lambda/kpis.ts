@@ -7,6 +7,8 @@ import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import { calculateCostsPerAccount } from '../nrfcloud/calculateCostsPerAccount.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { getAllnRFCloudAccounts } from '../nrfcloud/allAccounts.js'
+import { getCostSummaryFromAPI } from '../nrfcloud/getCostSummaryFromAPI.js'
 
 const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',
@@ -35,6 +37,8 @@ const h = async () => {
 			ssm,
 			stackName,
 			date: Date.now(),
+			getAllnRFCloudAccounts,
+			getCostSummaryFromAPI,
 		}),
 	])
 	console.log({
@@ -43,7 +47,11 @@ const h = async () => {
 		costsPerAccount,
 	})
 	for (const acc in costsPerAccount) {
-		track(`nrfCloudMonthlyCosts:${acc}`, MetricUnits.Count, costsPerAccount[acc] ?? 0)
+		track(
+			`nrfCloudMonthlyCosts:${acc}`,
+			MetricUnits.Count,
+			costsPerAccount[acc] ?? 0,
+		)
 	}
 	track('dailyActive:devices', MetricUnits.Count, dailyActiveDevicesCount)
 	track(
