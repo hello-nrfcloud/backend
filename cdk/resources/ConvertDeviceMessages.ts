@@ -4,7 +4,6 @@ import {
 	aws_iot as IoT,
 	aws_lambda as Lambda,
 	aws_logs as Logs,
-	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
@@ -12,7 +11,6 @@ import type { DeviceStorage } from './DeviceStorage.js'
 import { IoTActionRole } from './IoTActionRole.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { Scope } from '../../util/settings.js'
 
 /**
  * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
@@ -52,27 +50,9 @@ export class ConvertDeviceMessages extends Construct {
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
-				STACK_NAME: Stack.of(this).stackName,
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}/*`,
-					],
-				}),
-			],
 		})
 		websocketEventBus.eventBus.grantPutEventsTo(onDeviceMessage)
 		deviceStorage.devicesTable.grantReadData(onDeviceMessage)
