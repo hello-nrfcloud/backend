@@ -23,8 +23,8 @@ import {
 } from '../util/settings.js'
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
-import { steps as historicalDataSteps } from './steps/historicalData.js'
-import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
+// import { steps as historicalDataSteps } from './steps/historicalData.js'
+// import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from './steps/storage.js'
 import { websocketStepRunners } from './steps/websocket.js'
 
@@ -89,33 +89,13 @@ const runner = await runFolder({
 	name: 'hello.nrfcloud.com backend',
 	logObserver: {
 		onDebug: (info, ...args) =>
-			console.error(
-				ts(),
-				chalk.magenta.dim(info.context.keyword),
-				chalk.magenta(info.context.title),
-				...args.map((arg) => chalk.cyan(print(arg))),
-			),
+			console.error(ts(), ...args.map((arg) => chalk.cyan(print(arg)))),
 		onError: (info, ...args) =>
-			console.error(
-				ts(),
-				chalk.magenta.dim(info.context.keyword),
-				chalk.magenta(info.context.title),
-				...args.map((arg) => chalk.red(print(arg))),
-			),
+			console.error(ts(), ...args.map((arg) => chalk.red(print(arg)))),
 		onInfo: (info, ...args) =>
-			console.error(
-				ts(),
-				chalk.magenta.dim(info.context.keyword),
-				chalk.magenta(info.context.title),
-				...args.map((arg) => chalk.green(print(arg))),
-			),
+			console.error(ts(), ...args.map((arg) => chalk.green(print(arg)))),
 		onProgress: (info, ...args) =>
-			console.error(
-				ts(),
-				chalk.magenta.dim(info.context.keyword),
-				chalk.magenta(info.context.title),
-				...args.map((arg) => chalk.yellow(print(arg))),
-			),
+			console.error(ts(), ...args.map((arg) => chalk.yellow(print(arg)))),
 	},
 })
 
@@ -142,24 +122,24 @@ runner
 			devicesTable: config.devicesTableName,
 		}),
 	)
-	.addStepRunners(
-		...mocknRFCloudSteps({
-			db,
-			ssm,
-			stackName: STACK_NAME,
-			responsesTableName: testConfig.responsesTableName,
-			requestsTableName: testConfig.requestsTableName,
-		}),
-	)
-	.addStepRunners(
-		...historicalDataSteps({
-			timestream,
-			storeTimestream,
-			historicalDataTableInfo: config.historicalDataTableInfo,
-		}),
-	)
+	// .addStepRunners(
+	// 	...mocknRFCloudSteps({
+	// 		db,
+	// 		ssm,
+	// 		stackName: STACK_NAME,
+	// 		responsesTableName: testConfig.responsesTableName,
+	// 		requestsTableName: testConfig.requestsTableName,
+	// 	}),
+	// )
+	// .addStepRunners(
+	// 	...historicalDataSteps({
+	// 		timestream,
+	// 		storeTimestream,
+	// 		historicalDataTableInfo: config.historicalDataTableInfo,
+	// 	}),
+	// )
 	.addStepRunners(...storageSteps())
-	.addStepRunners(...configSteps)
+// .addStepRunners(...configSteps)
 
 const res = await runner.run({})
 
