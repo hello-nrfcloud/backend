@@ -13,6 +13,7 @@ import {
 	type WebSocketClient,
 } from '../lib/websocket.js'
 import pRetry from 'p-retry'
+import { setTimeout } from 'timers/promises'
 
 chai.use(chaiSubset)
 
@@ -21,14 +22,18 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 	regExpMatchedStep(
 		{
 			regExp:
-				/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/,
+				/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`(?<maybedelay> in `(?<delay>[^`]+)` seconds?)?$/,
 			schema: Type.Object({
 				reconnect: Type.Optional(Type.Literal('re')),
 				fingerprint: Type.String(),
+				delay: Type.Optional(Type.Integer()),
 			}),
+			converters: {
+				delay: (s) => (s !== undefined ? parseInt(s, 10) : undefined),
+			},
 		},
 		async ({
-			match: { reconnect, fingerprint },
+			match: { reconnect, fingerprint, delay },
 			log: { progress },
 			context,
 		}) => {
@@ -40,7 +45,14 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 			}
 
 			if (wsClients[wsURL] === undefined) {
-				progress(`Connect websocket to ${websocketUri}`)
+				progress(
+					`Connect websocket to ${websocketUri} ${
+						delay !== undefined ? `in ${delay} sec` : ''
+					}`,
+				)
+				if (delay !== undefined) {
+					await setTimeout(delay * 1000)
+				}
 				wsClients[wsURL] = createWebsocketClient({
 					id: fingerprint,
 					url: wsURL,
@@ -110,6 +122,7 @@ const wsSend = <StepRunner>{
 	run: async ({ log: { progress }, context, step }) => {
 		const { wsClient } = context
 		const message = JSON.parse(codeBlockOrThrow(step).code)
+		await setTimeout(1000)
 		await wsClient?.send(message)
 		progress(`Sent ws message`, JSON.stringify(message, null, 2))
 	},
