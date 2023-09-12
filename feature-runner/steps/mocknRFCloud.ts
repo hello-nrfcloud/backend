@@ -192,8 +192,8 @@ ${data}
 
 			await pRetry(scanRequests, {
 				retries: 5,
-				minTimeout: 1000,
-				maxTimeout: 5000,
+				minTimeout: duration * 1000,
+				maxTimeout: duration * 1000 * 2,
 			})
 		},
 	)
