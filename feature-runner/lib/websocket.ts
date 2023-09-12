@@ -44,9 +44,10 @@ export const createWebsocketClient = ({
 			messages,
 			send: async (message) =>
 				new Promise<void>((resolve, reject) => {
-					client.send(JSON.stringify(message), (error) => {
+					const strMessage = JSON.stringify(message)
+					client.send(strMessage, (error) => {
 						if (error) return reject(error)
-						debug?.('>> ' + message.toString())
+						debug?.('>> ' + strMessage)
 						resolve()
 					})
 				}),
