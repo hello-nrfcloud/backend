@@ -1,3 +1,11 @@
+---
+exampleContext:
+  fingerprint: secret
+  fingerprint_deviceId: 1234
+  ts: 1694503339523
+  tsISO: 2023-09-12T00:00:00.000Z
+---
+
 # Last seen
 
 > I should receive a timestamp when the device last sent in data to the cloud so
