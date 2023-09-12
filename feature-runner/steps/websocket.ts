@@ -72,7 +72,7 @@ const receive = groupMatcher(
 			const found = Object.entries(wsClient?.messages ?? {}).find(
 				([id, message]) => {
 					debug(
-						`(Attempt: ${attempt}) Checking if message`,
+						`(Attempt: ${attempt - 1}) Checking if message`,
 						JSON.stringify(message),
 						equalOrMatch,
 						JSON.stringify(expected),
@@ -98,8 +98,8 @@ const receive = groupMatcher(
 
 		await pRetry(findMessages, {
 			retries: 5,
-			minTimeout: 500,
-			maxTimeout: 1000,
+			minTimeout: 1000,
+			maxTimeout: 5000,
 		})
 	},
 )

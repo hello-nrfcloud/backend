@@ -33,7 +33,7 @@ export const createWebsocketClient = ({
 						})
 						.on('message', async (msg) => {
 							const message = JSON.parse(msg.toString())
-							debug?.(msg.toString())
+							debug?.('<< ' + msg.toString())
 							messages[ulid()] = message
 						}),
 				),
@@ -46,6 +46,7 @@ export const createWebsocketClient = ({
 				new Promise<void>((resolve, reject) => {
 					client.send(JSON.stringify(message), (error) => {
 						if (error) return reject(error)
+						debug?.('>> ' + message.toString())
 						resolve()
 					})
 				}),

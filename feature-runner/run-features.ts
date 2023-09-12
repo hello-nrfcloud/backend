@@ -24,7 +24,7 @@ import {
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 // import { steps as historicalDataSteps } from './steps/historicalData.js'
-// import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
+import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from './steps/storage.js'
 import { websocketStepRunners } from './steps/websocket.js'
 
@@ -122,15 +122,15 @@ runner
 			devicesTable: config.devicesTableName,
 		}),
 	)
-	// .addStepRunners(
-	// 	...mocknRFCloudSteps({
-	// 		db,
-	// 		ssm,
-	// 		stackName: STACK_NAME,
-	// 		responsesTableName: testConfig.responsesTableName,
-	// 		requestsTableName: testConfig.requestsTableName,
-	// 	}),
-	// )
+	.addStepRunners(
+		...mocknRFCloudSteps({
+			db,
+			ssm,
+			stackName: STACK_NAME,
+			responsesTableName: testConfig.responsesTableName,
+			requestsTableName: testConfig.requestsTableName,
+		}),
+	)
 	// .addStepRunners(
 	// 	...historicalDataSteps({
 	// 		timestream,
