@@ -1,3 +1,9 @@
+---
+exampleContext:
+  trailDevice: 92b.y7i24q
+  trailDevice_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+---
+
 # Location trail
 
 > In order to show a trail of coordinates the backend can provide the location
