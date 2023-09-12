@@ -25,6 +25,7 @@ import {
 } from 'tsmatchers'
 import { parseMockResponse } from './parseMockResponse.js'
 import { toPairs } from './toPairs.js'
+import pRetry from 'p-retry'
 
 export const steps = ({
 	db,
@@ -601,64 +602,72 @@ ${data}
 
 			// We need to use scan here because the query string parameter deviceId may include more deviceIDs than just the one we are looking for.
 			const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-			const result = await db.send(
-				new ScanCommand({
-					TableName: requestsTableName,
-					FilterExpression:
-						'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
-					ExpressionAttributeNames: {
-						'#method': 'method',
-						'#resource': 'resource',
-						'#query': 'query',
-						'#headers': 'headers',
-						'#timestamp': 'timestamp',
-					},
-					ExpressionAttributeValues: {
-						':method': { S: 'GET' },
-						':resource': { S: 'v1/devices' },
-						':timestamp': { S: fiveMinutesAgo.toISOString() },
-					},
-					ProjectionExpression: '#timestamp, #query, #headers',
-				}),
-			)
-
-			const resultObj = (result?.Items ?? [])
-				.map(
-					(item) =>
-						unmarshall(item) as {
-							timestamp: string
-							query?: Record<string, any>
-							headers: string
+			const scanRequests = async (attempt: number) => {
+				const result = await db.send(
+					new ScanCommand({
+						TableName: requestsTableName,
+						FilterExpression:
+							'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
+						ExpressionAttributeNames: {
+							'#method': 'method',
+							'#resource': 'resource',
+							'#query': 'query',
+							'#headers': 'headers',
+							'#timestamp': 'timestamp',
 						},
+						ExpressionAttributeValues: {
+							':method': { S: 'GET' },
+							':resource': { S: 'v1/devices' },
+							':timestamp': { S: fiveMinutesAgo.toISOString() },
+						},
+						ProjectionExpression: '#timestamp, #query, #headers',
+					}),
 				)
-				.find(({ query, headers }) => {
-					try {
-						check(query ?? {}).is(
-							objectMatching({
-								includeState: 'true',
-								includeStateMeta: 'true',
-								pageLimit: '100',
-								deviceIds: stringContaining(deviceId),
-							}),
-						)
-						progress('headers', headers)
-						check(JSON.parse(headers)).is(
-							objectMatching({
-								Authorization: stringContaining(expectedAPIKey),
-							}),
-						)
-						return true
-					} catch {
-						return false
-					}
-				})
 
-			progress(
-				`Query mock requests result:`,
-				JSON.stringify(resultObj, null, 2),
-			)
-			if (resultObj === undefined)
-				throw new Error(`Waiting for request with ${expectedAPIKey} API key`)
+				const resultObj = (result?.Items ?? [])
+					.map(
+						(item) =>
+							unmarshall(item) as {
+								timestamp: string
+								query?: Record<string, any>
+								headers: string
+							},
+					)
+					.find(({ query, headers }) => {
+						try {
+							check(query ?? {}).is(
+								objectMatching({
+									includeState: 'true',
+									includeStateMeta: 'true',
+									pageLimit: '100',
+									deviceIds: stringContaining(deviceId),
+								}),
+							)
+							progress('headers', headers)
+							check(JSON.parse(headers)).is(
+								objectMatching({
+									Authorization: stringContaining(expectedAPIKey),
+								}),
+							)
+							return true
+						} catch {
+							return false
+						}
+					})
+
+				progress(
+					`(Attempt: ${attempt}): Query mock requests result:`,
+					JSON.stringify(resultObj, null, 2),
+				)
+				if (resultObj === undefined)
+					throw new Error(`Waiting for request with ${expectedAPIKey} API key`)
+			}
+
+			await pRetry(scanRequests, {
+				retries: 5,
+				minTimeout: 1000,
+				maxTimeout: 2000,
+			})
 		},
 	)
 

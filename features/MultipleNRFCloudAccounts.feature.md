@@ -1,3 +1,9 @@
+---
+exampleContext:
+  fingerprint: secret
+  fingerprint_deviceId: 1234
+---
+
 # Multiple nRF Cloud accounts
 
 > After connecting to the websocket with a device fingerprint under specific
