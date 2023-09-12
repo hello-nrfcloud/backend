@@ -1,6 +1,6 @@
 import {
 	type StepRunner,
-	groupMatcher,
+	regExpMatchedStep,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import { hashSHA1 } from '../../util/hashSHA1.js'
@@ -15,7 +15,7 @@ const createConfigStepRunners = ({
 }: {
 	configWriter: ReturnType<typeof putSettings>
 }): StepRunner<Record<string, any>>[] => {
-	const setupDeviceShadowFetchingConfiguration2 = groupMatcher(
+	const setupDeviceShadowFetchingConfiguration2 = regExpMatchedStep(
 		{
 			regExp:
 				/^device shadow fetching config for model `(?<model>[^`]+)` is `(?<interval>[^`]+)`$/,

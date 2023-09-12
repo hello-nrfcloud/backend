@@ -1,7 +1,7 @@
 import { type TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
 import {
 	codeBlockOrThrow,
-	groupMatcher,
+	regExpMatchedStep,
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
@@ -23,7 +23,7 @@ const queryTimestream = (
 	historicalDataTableInfo: string,
 ) => {
 	const queryTimestream = paginateTimestreamQuery(timestream)
-	return groupMatcher(
+	return regExpMatchedStep(
 		{
 			regExp:
 				/^I query Timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` starting at `(?<tsISO>[^`]+)`$/,
@@ -95,7 +95,7 @@ const assertResult = <StepRunner>{
 }
 
 const writeTimestream = (store: ReturnType<typeof storeRecordsInTimestream>) =>
-	groupMatcher(
+	regExpMatchedStep(
 		{
 			regExp:
 				/^I write Timestream for the device `(?<deviceId>[^`]+)` with this message$/,

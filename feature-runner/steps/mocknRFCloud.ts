@@ -7,7 +7,7 @@ import {
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import {
 	codeBlockOrThrow,
-	groupMatcher,
+	regExpMatchedStep,
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
@@ -40,7 +40,7 @@ export const steps = ({
 	ssm: SSMClient
 	stackName: string
 }): StepRunner<Record<string, any>>[] => {
-	const mockShadowData = groupMatcher(
+	const mockShadowData = regExpMatchedStep(
 		{
 			regExp:
 				/^there is this device shadow data for `(?<deviceId>[^`]+)` in nRF Cloud$/,
@@ -92,7 +92,7 @@ ${data}
 		},
 	)
 
-	const durationBetweenRequests = groupMatcher(
+	const durationBetweenRequests = regExpMatchedStep(
 		{
 			regExp:
 				/^the duration between 2 consecutive device shadow requests for `(?<deviceId>[^`]+)` should be `(?<duration>[^`]+)` seconds?$/,
@@ -198,7 +198,7 @@ ${data}
 		},
 	)
 
-	const queueResponse = groupMatcher(
+	const queueResponse = regExpMatchedStep(
 		{
 			regExp:
 				/^this nRF Cloud API is queued for a `(?<methodPathQuery>[^`]+)` request$/,
@@ -308,7 +308,7 @@ ${data}
 		},
 	}
 
-	const checkAPIKeyRequest = groupMatcher(
+	const checkAPIKeyRequest = regExpMatchedStep(
 		{
 			regExp:
 				/^the shadow for `(?<deviceId>[^`]+)` in the `(?<account>[^`]+)` account has been requested$/,
@@ -317,7 +317,7 @@ ${data}
 				account: Type.String(),
 			}),
 		},
-		async ({ match: { deviceId, account }, log: { progress }, step }) => {
+		async ({ match: { deviceId, account }, log: { progress } }) => {
 			const allNRFCloudSettings = await getAllAccountsSettings({
 				ssm,
 				stackName,

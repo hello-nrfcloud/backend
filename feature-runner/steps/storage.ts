@@ -1,12 +1,12 @@
 import {
-	groupMatcher,
+	regExpMatchedStep,
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'node:assert/strict'
 import jsonata from 'jsonata'
 
-export const store = groupMatcher(
+export const store = regExpMatchedStep(
 	{
 		regExp: /^I store `(?<exp>[^`]+)` into `(?<storeName>[^`]+)`$/,
 		schema: Type.Object({

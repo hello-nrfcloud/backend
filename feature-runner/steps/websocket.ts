@@ -1,6 +1,6 @@
 import {
 	codeBlockOrThrow,
-	groupMatcher,
+	regExpMatchedStep,
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
@@ -18,7 +18,7 @@ chai.use(chaiSubset)
 
 const wsClients: Record<string, WebSocketClient> = {}
 const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
-	groupMatcher(
+	regExpMatchedStep(
 		{
 			regExp:
 				/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/,
@@ -53,7 +53,7 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 		},
 	)
 
-const receive = groupMatcher(
+const receive = regExpMatchedStep(
 	{
 		regExp:
 			/^I should receive a message on the websocket that (?<equalOrMatch>is equal to|matches)$/,

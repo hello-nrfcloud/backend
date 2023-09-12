@@ -2,7 +2,7 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import {
 	codeBlockOrThrow,
-	groupMatcher,
+	regExpMatchedStep,
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
@@ -28,7 +28,7 @@ const createDeviceForModel = ({
 	devicesTable: string
 	devicesTableFingerprintIndexName: string
 }) =>
-	groupMatcher(
+	regExpMatchedStep(
 		{
 			regExp:
 				/^I have the fingerprint for a `(?<model>[^`]+)` device(?<maybeaccount> in the `(?<account>[^`]+)` account)? in `(?<storageName>[^`]+)`$/,
@@ -104,7 +104,7 @@ const getDevice = ({
 	db: DynamoDBClient
 	devicesTable: string
 }) =>
-	groupMatcher(
+	regExpMatchedStep(
 		{
 			regExp: /^The device id `(?<key>[^`]+)` should equal$/,
 			schema: Type.Object({
@@ -138,7 +138,7 @@ const publishDeviceMessage = (
 		ReturnType<Awaited<ReturnType<typeof getAllAccountsSettings>>>
 	>,
 ) =>
-	groupMatcher(
+	regExpMatchedStep(
 		{
 			regExp:
 				/^the device `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/,
