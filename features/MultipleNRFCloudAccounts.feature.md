@@ -1,7 +1,7 @@
 ---
 exampleContext:
-  fingerprint: secret
-  fingerprint_deviceId: 1234
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
 ---
 
 # Multiple nRF Cloud accounts
@@ -284,8 +284,6 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
-<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
-
 Soon the shadow for `${fingerprint_deviceId}` in the `acme` account has been
 requested
 
@@ -563,8 +561,6 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 ```
 
 When I connect to the websocket using fingerprint `${fingerprint}`
-
-<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
 Soon the shadow for `${fingerprint_deviceId}` in the `elite` account has been
 requested

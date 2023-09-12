@@ -42,8 +42,6 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 | SOLAR | 3.58041 | 90000          |
 | SOLAR | 3.24925 | 120000         |
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Verify I can query gain historical device data
 
 When I connect to the websocket using fingerprint `${fingerprint}`
@@ -64,8 +62,6 @@ And I send this message via the websocket
   }
 }
 ```
-
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
 Soon I should receive a message on the websocket that matches
 
@@ -120,8 +116,6 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 | BATTERY | 21   | 90000          |
 | BATTERY | 22   | 120000         |
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Verify I can query battery historical device data
 
 When I connect to the websocket using fingerprint `${fingerprint}`
@@ -143,8 +137,6 @@ And I send this message via the websocket
   }
 }
 ```
-
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
 Soon I should receive a message on the websocket that matches
 
@@ -187,8 +179,6 @@ Soon I should receive a message on the websocket that matches
 }
 ```
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Request historical data for a week
 
 When I connect to the websocket using fingerprint `${fingerprint}`
@@ -209,8 +199,6 @@ And I send this message via the websocket
   }
 }
 ```
-
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
 Given I store
 `$toMillis($join([$substring($fromMillis(ts), 0, 13), ":00:00Z"]))` into
@@ -262,8 +250,6 @@ message
 | 63.42006573 | 10.44087654 | 528 | 90000          |
 | 63.42129386 | 10.44011945 | 524 | 120000         |
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Verify I can query location historical device data
 
 When I connect to the websocket using fingerprint `${fingerprint}`
@@ -287,8 +273,6 @@ And I send this message via the websocket
   }
 }
 ```
-
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
 Soon I should receive a message on the websocket that matches
 

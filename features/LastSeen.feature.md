@@ -1,7 +1,7 @@
 ---
 exampleContext:
-  fingerprint: secret
-  fingerprint_deviceId: 1234
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
   ts: 1694503339523
   tsISO: 2023-09-12T00:00:00.000Z
 ---
@@ -31,15 +31,11 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 }
 ```
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Retrieve last seen timestamp on connect
 
 Given I store `$fromMillis(${ts})` into `tsISO`
 
 When I connect to the websocket using fingerprint `${fingerprint}`
-
-<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
 Soon I should receive a message on the websocket that matches
 

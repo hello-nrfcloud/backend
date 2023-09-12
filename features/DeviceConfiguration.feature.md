@@ -17,8 +17,6 @@ Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 And I connect to the websocket using fingerprint `${fingerprint}`
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Enable GNSS
 
 > GNSS location is disabled by default to allow other data to be acquired faster
@@ -47,8 +45,6 @@ When I send this message via the websocket
 }
 ```
 
-<!-- @retryScenario -->
-
 Soon I should receive a message on the websocket that matches
 
 ```json
@@ -59,8 +55,6 @@ Soon I should receive a message on the websocket that matches
 }
 ```
 
-<!-- @retryScenario -->
-
 Soon the nRF Cloud API should have been called with
 
 ```
@@ -69,8 +63,6 @@ Content-Type: application/json
 
 {"desired":{"config":{"nod":[]}}}
 ```
-
-<!-- @retry:delayExecution=5000 -->
 
 ## Configure update interval
 
@@ -100,8 +92,6 @@ When I send this message via the websocket
 }
 ```
 
-<!-- @retryScenario -->
-
 Soon I should receive a message on the websocket that matches
 
 ```json
@@ -111,8 +101,6 @@ Soon I should receive a message on the websocket that matches
   "configuration": { "updateIntervalSeconds": 600 }
 }
 ```
-
-<!-- @retryScenario -->
 
 Soon the nRF Cloud API should have been called with
 

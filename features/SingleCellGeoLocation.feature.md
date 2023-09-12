@@ -44,8 +44,6 @@ Content-Type: application/json
 }
 ```
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Device publishes network information, which is then resolved
 
 Given I store `$millis()` into `ts`
@@ -73,8 +71,6 @@ When the device `${fingerprint_deviceId}` publishes this message to the topic
 }
 ```
 
-<!-- @retryScenario -->
-
 Soon I should receive a message on the websocket that matches
 
 ```json
@@ -87,8 +83,6 @@ Soon I should receive a message on the websocket that matches
   "src": "SCELL"
 }
 ```
-
-<!-- @retryScenario -->
 
 Soon the nRF Cloud API should have been called with
 
@@ -109,8 +103,6 @@ Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzU0NDQ2N
   ]
 }
 ```
-
-<!-- @retry:delayExecution=5000 -->
 
 ## Device publishes network information, which is then resolved
 
@@ -141,8 +133,6 @@ When the device `${fingerprint_deviceId}` publishes this message to the topic
   }
 }
 ```
-
-<!-- @retryScenario -->
 
 Soon I should receive a message on the websocket that matches
 

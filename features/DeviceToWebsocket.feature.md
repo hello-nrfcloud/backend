@@ -2,7 +2,7 @@
 needs:
   - Device Info
 exampleContext:
-  fingerprint_deviceId: 1234
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
 ---
 
 # Device to websocket

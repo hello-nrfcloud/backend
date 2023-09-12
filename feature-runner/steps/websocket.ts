@@ -72,7 +72,7 @@ const receive = groupMatcher(
 			const found = Object.entries(wsClient?.messages ?? {}).find(
 				([id, message]) => {
 					debug(
-						`(Attempt: ${attempt - 1}) Checking if message`,
+						`(Attempt: ${attempt - 1}) [${wsClient?.id}] Checking if message`,
 						JSON.stringify(message),
 						equalOrMatch,
 						JSON.stringify(expected),

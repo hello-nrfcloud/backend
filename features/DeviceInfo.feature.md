@@ -1,7 +1,7 @@
 ---
 exampleContext:
-  fingerprint: secret
-  fingerprint_deviceId: 1234
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
 ---
 
 # Device Info

@@ -15,35 +15,6 @@ const createConfigStepRunners = ({
 }: {
 	configWriter: ReturnType<typeof putSettings>
 }): StepRunner<Record<string, any>>[] => {
-	// const setupDeviceShadowFetchingConfiguration = async ({
-	// 	step,
-	// 	log: {
-	// 		progress,
-	// 	},
-	// }: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
-	// 	const match = matchGroups(
-	// 		Type.Object({
-	// 			model: Type.String(),
-	// 			interval: Type.Integer(),
-	// 		}),
-	// 		{
-	// 			interval: (s) => parseInt(s, 10),
-	// 		},
-	// 	)(
-	// 		/^device shadow fetching config for model `(?<model>[^`]+)` is `(?<interval>[^`]+)`$/,
-	// 		step.title,
-	// 	)
-
-	// 	if (match === null) return noMatch
-
-	// 	// ssm path must be letter, number, .(dot), -(dash), or _(underscore)
-	// 	const model = hashSHA1(match.model)
-	// 	const interval = match.interval
-
-	// 	progress(`Set fetching interval for ${model} as ${interval} seconds`)
-	// 	await configWriter({ property: model, value: `${interval}` })
-	// }
-
 	const setupDeviceShadowFetchingConfiguration2 = groupMatcher(
 		{
 			regExp:
