@@ -1,3 +1,9 @@
+---
+exampleContext:
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+---
+
 # Update configuration on runtime
 
 > After updating device shadow fetching configuration, it should take effect

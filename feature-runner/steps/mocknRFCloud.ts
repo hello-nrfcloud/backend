@@ -162,85 +162,97 @@ ${data}
 				duration: (s) => parseInt(s, 10),
 			},
 		},
-		async ({ match: { duration, deviceId }, log: { progress }, step }) => {
+		async ({ match: { duration, deviceId }, log: { progress } }) => {
 			// We need to use scan here because the query string parameter deviceId may include more deviceIDs than just the one we are looking for.
 			const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-			const result = await db.send(
-				new ScanCommand({
-					TableName: requestsTableName,
-					FilterExpression:
-						'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
-					ExpressionAttributeNames: {
-						'#method': 'method',
-						'#resource': 'resource',
-						'#query': 'query',
-						'#timestamp': 'timestamp',
-					},
-					ExpressionAttributeValues: {
-						':method': { S: 'GET' },
-						':resource': { S: 'v1/devices' },
-						':timestamp': { S: fiveMinutesAgo.toISOString() },
-					},
-					ProjectionExpression: '#timestamp, #query',
-				}),
-			)
-			const resultObj = (result?.Items ?? [])
-				.map(
-					(item) =>
-						unmarshall(item) as {
-							timestamp: string
-							query?: Record<string, any>
+
+			const scanRequests = async (attempt: number) => {
+				const result = await db.send(
+					new ScanCommand({
+						TableName: requestsTableName,
+						FilterExpression:
+							'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
+						ExpressionAttributeNames: {
+							'#method': 'method',
+							'#resource': 'resource',
+							'#query': 'query',
+							'#timestamp': 'timestamp',
 						},
+						ExpressionAttributeValues: {
+							':method': { S: 'GET' },
+							':resource': { S: 'v1/devices' },
+							':timestamp': { S: fiveMinutesAgo.toISOString() },
+						},
+						ProjectionExpression: '#timestamp, #query',
+					}),
 				)
-				.filter(({ query }) => {
-					progress('query', JSON.stringify(query))
-					try {
-						check(query ?? {}).is(
-							objectMatching({
-								includeState: 'true',
-								includeStateMeta: 'true',
-								pageLimit: '100',
-								deviceIds: stringContaining(deviceId),
-							}),
-						)
-						return true
-					} catch {
-						return false
-					}
-				})
-			progress(
-				`Query mock requests result:`,
-				JSON.stringify(resultObj, null, 2),
-			)
+				const resultObj = (result?.Items ?? [])
+					.map(
+						(item) =>
+							unmarshall(item) as {
+								timestamp: string
+								query?: Record<string, any>
+							},
+					)
+					.filter(({ query }) => {
+						progress('query', JSON.stringify(query))
+						try {
+							check(query ?? {}).is(
+								objectMatching({
+									includeState: 'true',
+									includeStateMeta: 'true',
+									pageLimit: '100',
+									deviceIds: stringContaining(deviceId),
+								}),
+							)
+							return true
+						} catch {
+							return false
+						}
+					})
+				progress(
+					`Query mock requests result:`,
+					JSON.stringify(resultObj, null, 2),
+				)
 
-			if (resultObj.length < 2)
-				throw new Error(`Waiting for at least 2 mock requests`)
+				if (resultObj.length < 2)
+					throw new Error(`Waiting for at least 2 mock requests`)
 
-			const timeDiffBetweenRequests = toPairs(
-				resultObj.sort(({ timestamp: t1 }, { timestamp: t2 }) =>
-					t1.localeCompare(t2),
-				),
-			).map(
-				([i1, i2]) =>
-					new Date(i2.timestamp).getTime() - new Date(i1.timestamp).getTime(),
-			)
-
-			progress(`time diff`, JSON.stringify(timeDiffBetweenRequests))
-
-			try {
-				const allowedMarginInMS = 1000
-				check(timeDiffBetweenRequests).is(
-					arrayContaining(
-						greaterThan(duration * 1000).and(
-							lessThan(duration * 1000 + allowedMarginInMS),
-						),
+				const timeDiffBetweenRequests = toPairs(
+					resultObj.sort(({ timestamp: t1 }, { timestamp: t2 }) =>
+						t1.localeCompare(t2),
 					),
+				).map(
+					([i1, i2]) =>
+						new Date(i2.timestamp).getTime() - new Date(i1.timestamp).getTime(),
 				)
-			} catch {
-				throw new Error(
-					`mock requests did not happen within the configured duration (${duration})`,
+
+				progress(
+					`(Attempt: ${attempt}): time diff`,
+					JSON.stringify(timeDiffBetweenRequests),
 				)
+
+				try {
+					const allowedMarginInMS = 1000
+					check(timeDiffBetweenRequests).is(
+						arrayContaining(
+							greaterThan(duration * 1000).and(
+								lessThan(duration * 1000 + allowedMarginInMS),
+							),
+						),
+					)
+				} catch {
+					throw new Error(
+						`mock requests did not happen within the configured duration (${duration})`,
+					)
+				}
 			}
+
+			await pRetry(scanRequests, {
+				retries: 5,
+				minTimeout: 1000,
+				maxTimeout: 5000,
+			})
 		},
 	)
 
