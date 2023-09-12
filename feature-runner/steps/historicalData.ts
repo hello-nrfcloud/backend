@@ -2,8 +2,7 @@ import { type TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
 import {
 	codeBlockOrThrow,
 	matchGroups,
-	noMatch,
-	type StepRunResult,
+	groupMatcher,
 	type StepRunner,
 	type StepRunnerArgs,
 } from '@nordicsemiconductor/bdd-markdown'
@@ -26,58 +25,109 @@ const queryTimestream = (
 	historicalDataTableInfo: string,
 ) => {
 	const queryTimestream = paginateTimestreamQuery(timestream)
-	return async ({
-		step,
-		log: {
-			step: { progress },
-		},
-	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
-		const match = matchGroups(
-			Type.Object({
+	return groupMatcher(
+		{
+			regExp:
+				/^I query Timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` starting at `(?<tsISO>[^`]+)`$/,
+			schema: Type.Object({
 				deviceId: Type.String(),
 				dimension: Type.String(),
 				value: Type.String(),
 				tsISO: Type.String(),
 			}),
-		)(
-			/^I query Timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` starting at `(?<tsISO>[^`]+)`$/,
-			step.title,
-		)
-		if (match === null) return noMatch
+		},
+		async ({
+			match: { deviceId, dimension, value, tsISO },
+			log: { progress },
+			step,
+		}) => {
+			const [historicaldataDatabaseName, historicaldataTableName] =
+				historicalDataTableInfo.split('|')
 
-		const [historicaldataDatabaseName, historicaldataTableName] =
-			historicalDataTableInfo.split('|')
+			const QueryString = [
+				`SELECT *`,
+				`FROM "${historicaldataDatabaseName}"."${historicaldataTableName}"`,
+				`WHERE deviceId='${deviceId}' AND "${dimension}"='${value}'`,
+				`AND time >= from_iso8601_timestamp('${tsISO}')`,
+				`ORDER BY time DESC`,
+				`LIMIT 1`,
+			].join(' ')
+			progress(`Query timestream: ${QueryString}`)
+			const query = async () => {
+				const res = await queryTimestream(QueryString)
+				if (res.Rows?.length === 0) throw new Error('No record')
 
-		const QueryString = [
-			`SELECT *`,
-			`FROM "${historicaldataDatabaseName}"."${historicaldataTableName}"`,
-			`WHERE deviceId='${match.deviceId}' AND "${match.dimension}"='${match.value}'`,
-			`AND time >= from_iso8601_timestamp('${match.tsISO}')`,
-			`ORDER BY time DESC`,
-			`LIMIT 1`,
-		].join(' ')
-		progress(`Query timestream: ${QueryString}`)
-		const query = async () => {
-			const res = await queryTimestream(QueryString)
-			if (res.Rows?.length === 0) throw new Error('No record')
+				return res
+			}
+			const res = await pRetry(query, {
+				retries: 5,
+				minTimeout: 1000,
+				maxTimeout: 2000,
+				onFailedAttempt: (error) => {
+					progress(`attempt #${error.attemptNumber}`)
+				},
+			})
 
-			return res
-		}
-		const res = await pRetry(query, {
-			retries: 5,
-			minTimeout: 1000,
-			maxTimeout: 2000,
-			onFailedAttempt: (error) => {
-				progress(`attempt #${error.attemptNumber}`)
-			},
-		})
+			// parseResult will parse date to date object not date string
+			lastResult = parseResult<Record<string, unknown>>(res)
 
-		// parseResult will parse date to date object not date string
-		lastResult = parseResult<Record<string, unknown>>(res)
-
-		progress(`Result: ${JSON.stringify(lastResult, null, 2)}`)
-	}
+			progress(`Result: ${JSON.stringify(lastResult, null, 2)}`)
+		},
+	)
 }
+
+// 	async ({
+// 		step,
+// 		log: {
+// 			step: { progress },
+// 		},
+// 	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
+// 		const match = matchGroups(
+// 			Type.Object({
+// 				deviceId: Type.String(),
+// 				dimension: Type.String(),
+// 				value: Type.String(),
+// 				tsISO: Type.String(),
+// 			}),
+// 		)(
+// 			/^I query Timestream for the device `(?<deviceId>[^`]+)` and the dimension `(?<dimension>[^`]+)` with the value `(?<value>[^`]+)` starting at `(?<tsISO>[^`]+)`$/,
+// 			step.title,
+// 		)
+// 		if (match === null) return noMatch
+
+// 		const [historicaldataDatabaseName, historicaldataTableName] =
+// 			historicalDataTableInfo.split('|')
+
+// 		const QueryString = [
+// 			`SELECT *`,
+// 			`FROM "${historicaldataDatabaseName}"."${historicaldataTableName}"`,
+// 			`WHERE deviceId='${match.deviceId}' AND "${match.dimension}"='${match.value}'`,
+// 			`AND time >= from_iso8601_timestamp('${match.tsISO}')`,
+// 			`ORDER BY time DESC`,
+// 			`LIMIT 1`,
+// 		].join(' ')
+// 		progress(`Query timestream: ${QueryString}`)
+// 		const query = async () => {
+// 			const res = await queryTimestream(QueryString)
+// 			if (res.Rows?.length === 0) throw new Error('No record')
+
+// 			return res
+// 		}
+// 		const res = await pRetry(query, {
+// 			retries: 5,
+// 			minTimeout: 1000,
+// 			maxTimeout: 2000,
+// 			onFailedAttempt: (error) => {
+// 				progress(`attempt #${error.attemptNumber}`)
+// 			},
+// 		})
+
+// 		// parseResult will parse date to date object not date string
+// 		lastResult = parseResult<Record<string, unknown>>(res)
+
+// 		progress(`Result: ${JSON.stringify(lastResult, null, 2)}`)
+// 	}
+// }
 
 const dateParser = (key: string, value: any) => {
 	if (typeof value === 'string') {
@@ -91,47 +141,78 @@ const dateParser = (key: string, value: any) => {
 	return value
 }
 
-const assertResult = async ({
-	step,
-}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
-	const match = /^the Timestream result should match$/.exec(step.title)
-	if (match === null) return noMatch
-
-	expect(lastResult).to.containSubset(
-		JSON.parse(codeBlockOrThrow(step).code, dateParser),
-	)
+const assertResult = <StepRunner>{
+	match: (title) => /^the Timestream result should match$/.test(title),
+	run: async ({ step }) => {
+		expect(lastResult).to.containSubset(
+			JSON.parse(codeBlockOrThrow(step).code, dateParser),
+		)
+	},
 }
 
-const writeTimestream =
-	(store: ReturnType<typeof storeRecordsInTimestream>) =>
-	async ({
-		step,
-		log: {
-			step: { progress },
-		},
-	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
-		const match = matchGroups(
-			Type.Object({
+// async ({
+// 	step,
+// }: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
+// 	const match = /^the Timestream result should match$/.exec(step.title)
+// 	if (match === null) return noMatch
+
+// 	expect(lastResult).to.containSubset(
+// 		JSON.parse(codeBlockOrThrow(step).code, dateParser),
+// 	)
+// }
+
+const writeTimestream = (store: ReturnType<typeof storeRecordsInTimestream>) =>
+	groupMatcher(
+		{
+			regExp:
+				/^I write Timestream for the device `(?<deviceId>[^`]+)` with this message$/,
+			schema: Type.Object({
 				deviceId: Type.String(),
 			}),
-		)(
-			/^I write Timestream for the device `(?<deviceId>[^`]+)` with this message$/,
-			step.title,
-		)
-		if (match === null) return noMatch
+		},
+		async ({ match: { deviceId }, step, log: { progress } }) => {
+			const message = JSON.parse(codeBlockOrThrow(step).code)
+			await store(convertMessageToTimestreamRecords(message), {
+				Dimensions: [
+					{
+						Name: 'deviceId',
+						Value: deviceId,
+					},
+				],
+			})
 
-		const message = JSON.parse(codeBlockOrThrow(step).code)
-		await store(convertMessageToTimestreamRecords(message), {
-			Dimensions: [
-				{
-					Name: 'deviceId',
-					Value: match.deviceId,
-				},
-			],
-		})
+			progress(`Write to timestream: ${JSON.stringify(message, null, 2)}`)
+		},
+	)
 
-		progress(`Write to timestream: ${JSON.stringify(message, null, 2)}`)
-	}
+// async ({
+// 	step,
+// 	log: {
+// 		step: { progress },
+// 	},
+// }: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
+// 	const match = matchGroups(
+// 		Type.Object({
+// 			deviceId: Type.String(),
+// 		}),
+// 	)(
+// 		/^I write Timestream for the device `(?<deviceId>[^`]+)` with this message$/,
+// 		step.title,
+// 	)
+// 	if (match === null) return noMatch
+
+// 	const message = JSON.parse(codeBlockOrThrow(step).code)
+// 	await store(convertMessageToTimestreamRecords(message), {
+// 		Dimensions: [
+// 			{
+// 				Name: 'deviceId',
+// 				Value: match.deviceId,
+// 			},
+// 		],
+// 	})
+
+// 	progress(`Write to timestream: ${JSON.stringify(message, null, 2)}`)
+// }
 
 export const steps = ({
 	timestream,

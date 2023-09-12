@@ -23,7 +23,7 @@ import {
 } from '../util/settings.js'
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
-// import { steps as historicalDataSteps } from './steps/historicalData.js'
+import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from './steps/storage.js'
 import { websocketStepRunners } from './steps/websocket.js'
@@ -131,15 +131,15 @@ runner
 			requestsTableName: testConfig.requestsTableName,
 		}),
 	)
-	// .addStepRunners(
-	// 	...historicalDataSteps({
-	// 		timestream,
-	// 		storeTimestream,
-	// 		historicalDataTableInfo: config.historicalDataTableInfo,
-	// 	}),
-	// )
+	.addStepRunners(
+		...historicalDataSteps({
+			timestream,
+			storeTimestream,
+			historicalDataTableInfo: config.historicalDataTableInfo,
+		}),
+	)
 	.addStepRunners(...storageSteps())
-// .addStepRunners(...configSteps)
+	.addStepRunners(...configSteps)
 
 const res = await runner.run({})
 
