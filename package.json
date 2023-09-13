@@ -80,7 +80,7 @@
     "prettier": "3.0.3",
     "semver": "7.5.4",
     "tsmatchers": "4.0.12",
-    "tsx": "3.12.9",
+    "tsx": "3.12.8",
     "typescript": "5.2.2",
     "ws": "8.14.1",
     "yazl": "2.5.1"
@@ -118,7 +118,7 @@
   "prettier": "@nordicsemiconductor/asset-tracker-cloud-code-style/.prettierrc",
   "dependencies": {
     "@aws-lambda-powertools/metrics": "1.12.1",
-    "@hello.nrfcloud.com/proto": "5.5.10",
+    "@hello.nrfcloud.com/proto": "5.5.9",
     "@middy/core": "4.6.1",
     "@nordicsemiconductor/from-env": "2.0.0",
     "@nordicsemiconductor/timestream-helpers": "5.0.0",
