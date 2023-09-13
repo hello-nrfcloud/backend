@@ -2,7 +2,6 @@
 exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
-  requestId: acde070d-8c4c-4f0d-9d8a-162843c10333
 ---
 
 # Historical data request
@@ -45,8 +44,6 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 
 ## Verify I can query gain historical device data
 
-Given I store `$base64encode($now())` into `requestId`
-
 When I connect to the websocket using fingerprint `${fingerprint}`
 
 And I send this message via the websocket
@@ -56,7 +53,7 @@ And I send this message via the websocket
   "message": "message",
   "payload": {
     "@context": "https://github.com/hello-nrfcloud/proto/historical-data-request",
-    "@id": "${requestId}",
+    "@id": "420eac59-5ce8-4751-b7d1-217811382095",
     "type": "lastHour",
     "message": "gain",
     "attributes": {
@@ -71,7 +68,7 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
-  "@id": "${requestId}",
+  "@id": "420eac59-5ce8-4751-b7d1-217811382095",
   "type": "lastHour",
   "message": "gain",
   "attributes": {
@@ -121,8 +118,6 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 
 ## Verify I can query battery historical device data
 
-Given I store `$base64encode($now())` into `requestId`
-
 When I connect to the websocket using fingerprint `${fingerprint}`
 
 And I send this message via the websocket
@@ -132,7 +127,7 @@ And I send this message via the websocket
   "message": "message",
   "payload": {
     "@context": "https://github.com/hello-nrfcloud/proto/historical-data-request",
-    "@id": "${requestId}",
+    "@id": "b42b7880-0217-484f-8e72-380950ffae46",
     "type": "lastHour",
     "message": "battery",
     "attributes": {
@@ -148,7 +143,7 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
-  "@id": "${requestId}",
+  "@id": "b42b7880-0217-484f-8e72-380950ffae46",
   "type": "lastHour",
   "message": "battery",
   "attributes": {
@@ -186,8 +181,6 @@ Soon I should receive a message on the websocket that matches
 
 ## Request historical data for a week
 
-Given I store `$base64encode($now())` into `requestId`
-
 When I connect to the websocket using fingerprint `${fingerprint}`
 
 And I send this message via the websocket
@@ -197,7 +190,7 @@ And I send this message via the websocket
   "message": "message",
   "payload": {
     "@context": "https://github.com/hello-nrfcloud/proto/historical-data-request",
-    "@id": "${requestId}",
+    "@id": "cc270d6b-725c-4033-ac64-c5dae903f73d",
     "type": "lastWeek",
     "message": "battery",
     "attributes": {
@@ -216,7 +209,7 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
-  "@id": "${requestId}",
+  "@id": "cc270d6b-725c-4033-ac64-c5dae903f73d",
   "type": "lastWeek",
   "message": "battery",
   "attributes": {
@@ -259,8 +252,6 @@ message
 
 ## Verify I can query location historical device data
 
-Given I store `$base64encode($now())` into `requestId`
-
 When I connect to the websocket using fingerprint `${fingerprint}`
 
 And I send this message via the websocket
@@ -270,7 +261,7 @@ And I send this message via the websocket
   "message": "message",
   "payload": {
     "@context": "https://github.com/hello-nrfcloud/proto/historical-data-request",
-    "@id": "${requestId}",
+    "@id": "ce324e8e-2aac-4525-b763-5c036148c167",
     "type": "lastHour",
     "message": "location",
     "attributes": {
@@ -288,7 +279,7 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/historical-data-response",
-  "@id": "${requestId}",
+  "@id": "ce324e8e-2aac-4525-b763-5c036148c167",
   "type": "lastHour",
   "message": "location",
   "attributes": [
