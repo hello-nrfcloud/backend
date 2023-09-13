@@ -22,18 +22,14 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 	regExpMatchedStep(
 		{
 			regExp:
-				/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`(?<maybedelay> in `(?<delay>[^`]+)` seconds?)?$/,
+				/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/,
 			schema: Type.Object({
 				reconnect: Type.Optional(Type.Literal('re')),
 				fingerprint: Type.String(),
-				delay: Type.Optional(Type.Integer()),
 			}),
-			converters: {
-				delay: (s) => (s !== undefined ? parseInt(s, 10) : undefined),
-			},
 		},
 		async ({
-			match: { reconnect, fingerprint, delay },
+			match: { reconnect, fingerprint },
 			log: { progress },
 			context,
 		}) => {
@@ -45,14 +41,7 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 			}
 
 			if (wsClients[wsURL] === undefined) {
-				progress(
-					`Connect websocket to ${websocketUri} ${
-						delay !== undefined ? `in ${delay} sec` : ''
-					}`,
-				)
-				if (delay !== undefined) {
-					await setTimeout(delay * 1000)
-				}
+				progress(`Connect websocket to ${websocketUri}`)
 				wsClients[wsURL] = createWebsocketClient({
 					id: fingerprint,
 					url: wsURL,

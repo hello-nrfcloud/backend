@@ -27,6 +27,7 @@ import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from './steps/storage.js'
 import { websocketStepRunners } from './steps/websocket.js'
+import { steps as utilsSteps } from './steps/utils.js'
 
 const ssm = new SSMClient({})
 
@@ -140,6 +141,7 @@ runner
 	)
 	.addStepRunners(...storageSteps())
 	.addStepRunners(...configSteps)
+	.addStepRunners(...utilsSteps())
 
 const res = await runner.run({})
 

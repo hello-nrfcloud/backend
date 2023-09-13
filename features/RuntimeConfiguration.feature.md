@@ -294,8 +294,9 @@ Soon the duration between 2 consecutive device shadow requests for
 
 Given device shadow fetching config for model `PCA20035+solar` is `10`
 
-When I connect to the websocket using fingerprint `${fingerprint}` in `5`
-seconds
+When I wait for `5` seconds
+
+And I connect to the websocket using fingerprint `${fingerprint}`
 
 Soon the duration between 2 consecutive device shadow requests for
 `${fingerprint_deviceId}` should be `10` seconds

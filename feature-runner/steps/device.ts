@@ -1,12 +1,10 @@
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	codeBlockOrThrow,
 	regExpMatchedStep,
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
-import assert from 'assert/strict'
 import mqtt from 'mqtt'
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -97,42 +95,6 @@ const createDeviceForModel = ({
 		},
 	)
 
-const getDevice = ({
-	db,
-	devicesTable,
-}: {
-	db: DynamoDBClient
-	devicesTable: string
-}) =>
-	regExpMatchedStep(
-		{
-			regExp: /^The device id `(?<key>[^`]+)` should equal$/,
-			schema: Type.Object({
-				key: Type.String(),
-			}),
-		},
-		async ({ match: { key }, log: { progress }, step }) => {
-			progress(`Get data with id ${key} from ${devicesTable}`)
-			const res = await db.send(
-				new GetItemCommand({
-					TableName: devicesTable,
-					Key: {
-						deviceId: { S: key ?? '' },
-					},
-				}),
-			)
-
-			progress(
-				`Data returned from query: `,
-				JSON.stringify(res.Item ?? {}, null, 2),
-			)
-			assert.deepEqual(
-				unmarshall(res.Item ?? {}),
-				JSON.parse(codeBlockOrThrow(step).code),
-			)
-		},
-	)
-
 const publishDeviceMessage = (
 	allAccountSettings: Awaited<
 		ReturnType<Awaited<ReturnType<typeof getAllAccountsSettings>>>
@@ -202,6 +164,5 @@ export const steps = (
 	}: { devicesTableFingerprintIndexName: string; devicesTable: string },
 ): StepRunner<Record<string, string>>[] => [
 	createDeviceForModel({ db, devicesTableFingerprintIndexName, devicesTable }),
-	getDevice({ db, devicesTable }),
 	publishDeviceMessage(allAccountSettings),
 ]

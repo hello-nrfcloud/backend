@@ -15,7 +15,7 @@ const createConfigStepRunners = ({
 }: {
 	configWriter: ReturnType<typeof putSettings>
 }): StepRunner<Record<string, any>>[] => {
-	const setupDeviceShadowFetchingConfiguration2 = regExpMatchedStep(
+	const setupDeviceShadowFetchingConfiguration = regExpMatchedStep(
 		{
 			regExp:
 				/^device shadow fetching config for model `(?<model>[^`]+)` is `(?<interval>[^`]+)`$/,
@@ -34,7 +34,7 @@ const createConfigStepRunners = ({
 		},
 	)
 
-	return [setupDeviceShadowFetchingConfiguration2]
+	return [setupDeviceShadowFetchingConfiguration]
 }
 
 export const configStepRunners = ({
