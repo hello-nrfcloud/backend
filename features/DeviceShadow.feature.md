@@ -1,3 +1,9 @@
+---
+exampleContext:
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+---
+
 # Device Shadow
 
 > After connecting to the websocket with a device fingerprint, the device shadow
@@ -275,13 +281,9 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 }
 ```
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Verify a device sends shadow data to nRF Cloud, then I can receive the message via websocket
 
 Given I connect to the websocket using fingerprint `${fingerprint}`
-
-<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
 Soon I should receive a message on the websocket that matches
 
@@ -332,8 +334,6 @@ Soon I should receive a message on the websocket that matches
 }
 ```
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Sent last known shadow
 
 > On connect, send the last known shadow of a device. This is needed for devices
@@ -342,8 +342,6 @@ Soon I should receive a message on the websocket that matches
 > cannot accurately predict when the device will send in data next.
 
 Given I reconnect to the websocket using fingerprint `${fingerprint}`
-
-<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
 Soon I should receive a message on the websocket that matches
 

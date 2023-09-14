@@ -1,10 +1,7 @@
 import {
 	codeBlockOrThrow,
-	matchGroups,
-	noMatch,
+	regExpMatchedStep,
 	type StepRunner,
-	type StepRunnerArgs,
-	type StepRunResult,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
@@ -15,119 +12,110 @@ import {
 	createWebsocketClient,
 	type WebSocketClient,
 } from '../lib/websocket.js'
+import pRetry from 'p-retry'
+import { setTimeout } from 'timers/promises'
 
 chai.use(chaiSubset)
 
-type WSWorld = {
-	wsClient?: WebSocketClient
-}
-
 const wsClients: Record<string, WebSocketClient> = {}
-const wsConnect =
-	({ websocketUri }: { websocketUri: string }) =>
-	async ({
-		step,
-		log: {
-			step: { progress },
-			feature: { progress: featureProgress },
-		},
-		context,
-	}: StepRunnerArgs<WSWorld>): Promise<StepRunResult> => {
-		const match = matchGroups(
-			Type.Object({
+const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
+	regExpMatchedStep(
+		{
+			regExp:
+				/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/,
+			schema: Type.Object({
 				reconnect: Type.Optional(Type.Literal('re')),
 				fingerprint: Type.String(),
 			}),
-		)(
-			/^I (?<reconnect>re)?connect to the websocket using fingerprint `(?<fingerprint>[^`]+)`$/,
-			step.title,
-		)
-		if (match === null) return noMatch
+		},
+		async ({
+			match: { reconnect, fingerprint },
+			log: { progress },
+			context,
+		}) => {
+			const wsURL = `${websocketUri}?fingerprint=${fingerprint}`
 
-		const wsURL = `${websocketUri}?fingerprint=${match.fingerprint}`
+			if (reconnect !== undefined && wsClients[wsURL] !== undefined) {
+				wsClients[wsURL]?.close()
+				delete wsClients[wsURL]
+				await setTimeout(2000)
+			}
 
-		if (match.reconnect !== undefined && wsClients[wsURL] !== undefined) {
-			wsClients[wsURL]?.close()
-			delete wsClients[wsURL]
-		}
+			if (wsClients[wsURL] === undefined) {
+				progress(`Connect websocket to ${websocketUri}`)
+				wsClients[wsURL] = createWebsocketClient({
+					id: fingerprint,
+					url: wsURL,
+					debug: (...args) => progress('[ws]', ...args),
+				})
+				await wsClients[wsURL]?.connect()
+			}
 
-		if (wsClients[wsURL] === undefined) {
-			progress(`Connect websocket to ${websocketUri}`)
-			wsClients[wsURL] = createWebsocketClient({
-				id: match.fingerprint,
-				url: wsURL,
-				debug: (...args) => featureProgress('[ws]', ...args),
-			})
-			await wsClients[wsURL]?.connect()
-		}
+			context.wsClient = wsClients[wsURL] as WebSocketClient
+		},
+	)
 
-		context.wsClient = wsClients[wsURL] as WebSocketClient
-	}
-
-const receive = async ({
-	step,
-	log: {
-		step: { debug },
-	},
-	context,
-}: StepRunnerArgs<WSWorld>): Promise<StepRunResult> => {
-	const match = matchGroups(
-		Type.Object({
+const receive = regExpMatchedStep(
+	{
+		regExp:
+			/^I should receive a message on the websocket that (?<equalOrMatch>is equal to|matches)$/,
+		schema: Type.Object({
 			equalOrMatch: Type.Union([
 				Type.Literal('is equal to'),
 				Type.Literal('matches'),
 			]),
 		}),
-	)(
-		/^I should receive a message on the websocket that (?<equalOrMatch>is equal to|matches)$/,
-		step.title,
-	)
-	if (match === null) return noMatch
-	const { equalOrMatch } = match
-
-	const { wsClient } = context
-	const expected = JSON.parse(codeBlockOrThrow(step).code)
-	const found = Object.entries(wsClient?.messages ?? {}).find(
-		([id, message]) => {
-			debug(
-				`Checking if message`,
-				JSON.stringify(message),
-				equalOrMatch,
-				JSON.stringify(expected),
-			)
-			try {
-				if (equalOrMatch === 'matches') {
-					expect(message).to.containSubset(expected)
-				} else {
-					assert.deepEqual(message, expected)
-				}
-				debug('match', JSON.stringify(message))
-				delete wsClient?.messages[id]
-				return true
-			} catch {
-				debug('no match', JSON.stringify(message))
-				return false
-			}
-		},
-	)
-	if (found === undefined)
-		throw new Error(`No message found for ${JSON.stringify(expected)}`)
-}
-
-const wsSend = async ({
-	step,
-	log: {
-		step: { progress },
 	},
-	context,
-}: StepRunnerArgs<WSWorld>): Promise<StepRunResult> => {
-	const match = /^I send this message via the websocket$/.exec(step.title)
-	if (match === null) return noMatch
+	async ({ match: { equalOrMatch }, log: { debug }, step, context }) => {
+		const { wsClient } = context
+		const expected = JSON.parse(codeBlockOrThrow(step).code)
 
-	const { wsClient } = context
-	const message = JSON.parse(codeBlockOrThrow(step).code)
-	await wsClient?.send(message)
-	progress(`Sent ws message`, JSON.stringify(message, null, 2))
+		const findMessages = async (attempt: number) => {
+			const found = Object.entries(wsClient?.messages ?? {}).find(
+				([id, message]) => {
+					debug(
+						`(Attempt: ${attempt - 1}) [${wsClient?.id}] Checking if message`,
+						JSON.stringify(message),
+						equalOrMatch,
+						JSON.stringify(expected),
+					)
+					try {
+						if (equalOrMatch === 'matches') {
+							expect(message).to.containSubset(expected)
+						} else {
+							assert.deepEqual(message, expected)
+						}
+						debug('match', JSON.stringify(message))
+						delete wsClient?.messages[id]
+						return true
+					} catch {
+						debug('no match', JSON.stringify(message))
+						return false
+					}
+				},
+			)
+			if (found === undefined)
+				throw new Error(`No message found for ${JSON.stringify(expected)}`)
+		}
+
+		await pRetry(findMessages, {
+			retries: 5,
+			minTimeout: 1000,
+			maxTimeout: 5000,
+		})
+	},
+)
+
+const wsSend = <StepRunner>{
+	match: (title: string) =>
+		/^I send this message via the websocket$/.test(title),
+	run: async ({ log: { progress }, context, step }) => {
+		const { wsClient } = context
+		const message = JSON.parse(codeBlockOrThrow(step).code)
+		await setTimeout(1000)
+		await wsClient?.send(message)
+		progress(`Sent ws message`, JSON.stringify(message, null, 2))
+	},
 }
 
 export const websocketStepRunners = ({

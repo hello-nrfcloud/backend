@@ -1,3 +1,9 @@
+---
+exampleContext:
+  trailDevice: 92b.y7i24q
+  trailDevice_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+---
+
 # Location trail
 
 > In order to show a trail of coordinates the backend can provide the location
@@ -48,8 +54,6 @@ And the device `${trailDevice_deviceId}` publishes this message to the topic
 | Ranheim Papirfabrikk               | 63.42215444775618  | 10.535387671151794 | 2000          |
 | Leistadkrysset                     | 63.42254450323275  | 10.630926224360818 | 1000          |
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Retrieve location trail
 
 When I connect to the websocket using fingerprint `${trailDevice}`
@@ -75,8 +79,6 @@ And I send this message via the websocket
   }
 }
 ```
-
-<!-- @retry:tries=5,initialDelay=1000,delayFactor=2 -->
 
 Soon I should receive a message on the websocket that matches
 

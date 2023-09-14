@@ -1,3 +1,11 @@
+---
+exampleContext:
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+  ts: 1694503339523
+  tsISO: 2023-09-12T00:00:00.000Z
+---
+
 # Historical messages
 
 > Device messages should be stored in database

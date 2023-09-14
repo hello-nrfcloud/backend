@@ -1,3 +1,10 @@
+---
+exampleContext:
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+  now: 2023-09-12T00:00:00.000Z
+---
+
 # Single-cell geo location
 
 > The network information sent by the device as part of the `DEVICE` message
@@ -37,8 +44,6 @@ Content-Type: application/json
 }
 ```
 
-<!-- @retry:delayExecution=5000 -->
-
 ## Device publishes network information, which is then resolved
 
 Given I store `$millis()` into `ts`
@@ -66,8 +71,6 @@ When the device `${fingerprint_deviceId}` publishes this message to the topic
 }
 ```
 
-<!-- @retryScenario -->
-
 Soon I should receive a message on the websocket that matches
 
 ```json
@@ -80,8 +83,6 @@ Soon I should receive a message on the websocket that matches
   "src": "SCELL"
 }
 ```
-
-<!-- @retryScenario -->
 
 Soon the nRF Cloud API should have been called with
 
@@ -102,8 +103,6 @@ Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzU0NDQ2N
   ]
 }
 ```
-
-<!-- @retry:delayExecution=5000 -->
 
 ## Device publishes network information, which is then resolved
 
@@ -134,8 +133,6 @@ When the device `${fingerprint_deviceId}` publishes this message to the topic
   }
 }
 ```
-
-<!-- @retryScenario -->
 
 Soon I should receive a message on the websocket that matches
 
