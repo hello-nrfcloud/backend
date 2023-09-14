@@ -48,7 +48,17 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 					url: wsURL,
 					debug: (...args) => progress('[ws]', ...args),
 				})
-				await wsClients[wsURL]?.connect()
+				await pRetry(
+					async (attempt: number) => {
+						progress(`(Attempt: ${attempt}) Connecting websocket`)
+						await wsClients[wsURL]?.connect()
+					},
+					{
+						retries: 5,
+						minTimeout: 500,
+						maxTimeout: 1000,
+					},
+				)
 			}
 
 			context.wsClient = wsClients[wsURL] as WebSocketClient
