@@ -89,13 +89,33 @@ const runner = await runFolder({
 	name: 'hello.nrfcloud.com backend',
 	logObserver: {
 		onDebug: (info, ...args) =>
-			console.error(ts(), ...args.map((arg) => chalk.cyan(print(arg)))),
+			console.error(
+				ts(),
+				chalk.magenta.dim(info.step.keyword),
+				chalk.magenta(info.step.title),
+				...args.map((arg) => chalk.cyan(print(arg))),
+			),
 		onError: (info, ...args) =>
-			console.error(ts(), ...args.map((arg) => chalk.red(print(arg)))),
+			console.error(
+				ts(),
+				chalk.magenta.dim(info.step.keyword),
+				chalk.magenta(info.step.title),
+				...args.map((arg) => chalk.cyan(print(arg))),
+			),
 		onInfo: (info, ...args) =>
-			console.error(ts(), ...args.map((arg) => chalk.green(print(arg)))),
+			console.error(
+				ts(),
+				chalk.magenta.dim(info.step.keyword),
+				chalk.magenta(info.step.title),
+				...args.map((arg) => chalk.cyan(print(arg))),
+			),
 		onProgress: (info, ...args) =>
-			console.error(ts(), ...args.map((arg) => chalk.yellow(print(arg)))),
+			console.error(
+				ts(),
+				chalk.magenta.dim(info.step.keyword),
+				chalk.magenta(info.step.title),
+				...args.map((arg) => chalk.cyan(print(arg))),
+			),
 	},
 })
 
