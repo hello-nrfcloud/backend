@@ -1,9 +1,6 @@
 import {
-	matchGroups,
-	noMatch,
-	type StepRunResult,
 	type StepRunner,
-	type StepRunnerArgs,
+	regExpMatchedStep,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import { hashSHA1 } from '../../util/hashSHA1.js'
@@ -18,34 +15,24 @@ const createConfigStepRunners = ({
 }: {
 	configWriter: ReturnType<typeof putSettings>
 }): StepRunner<Record<string, any>>[] => {
-	const setupDeviceShadowFetchingConfiguration = async ({
-		step,
-		log: {
-			step: { progress },
-		},
-	}: StepRunnerArgs<Record<string, any>>): Promise<StepRunResult> => {
-		const match = matchGroups(
-			Type.Object({
+	const setupDeviceShadowFetchingConfiguration = regExpMatchedStep(
+		{
+			regExp:
+				/^device shadow fetching config for model `(?<model>[^`]+)` is `(?<interval>[^`]+)`$/,
+			schema: Type.Object({
 				model: Type.String(),
 				interval: Type.Integer(),
 			}),
-			{
+			converters: {
 				interval: (s) => parseInt(s, 10),
 			},
-		)(
-			/^device shadow fetching config for model `(?<model>[^`]+)` is `(?<interval>[^`]+)`$/,
-			step.title,
-		)
-
-		if (match === null) return noMatch
-
-		// ssm path must be letter, number, .(dot), -(dash), or _(underscore)
-		const model = hashSHA1(match.model)
-		const interval = match.interval
-
-		progress(`Set fetching interval for ${model} as ${interval} seconds`)
-		await configWriter({ property: model, value: `${interval}` })
-	}
+		},
+		async ({ match: { model, interval }, log: { progress } }) => {
+			const modelHash = hashSHA1(model)
+			progress(`Set fetching interval for ${modelHash} as ${interval} seconds`)
+			await configWriter({ property: modelHash, value: `${interval}` })
+		},
+	)
 
 	return [setupDeviceShadowFetchingConfiguration]
 }

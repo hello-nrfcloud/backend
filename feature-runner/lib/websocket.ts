@@ -2,6 +2,7 @@ import WebSocket from 'ws'
 import { ulid } from '../../util/ulid.js'
 
 export type WebSocketClient = {
+	id: string
 	connect: () => Promise<any>
 	close: () => void
 	send: (message: Record<string, unknown>) => Promise<void>
@@ -20,8 +21,9 @@ export const createWebsocketClient = ({
 }): WebSocketClient => {
 	if (clients[id] === undefined) {
 		const client = new WebSocket(url)
-		const messages: Record<string, unknown> = {}
+		const messages: Record<string, unknown> = {} as const
 		clients[id] = {
+			id,
 			connect: async () =>
 				new Promise<void>((resolve, reject) =>
 					client
@@ -33,7 +35,7 @@ export const createWebsocketClient = ({
 						})
 						.on('message', async (msg) => {
 							const message = JSON.parse(msg.toString())
-							debug?.(msg.toString())
+							debug?.('<< ' + msg.toString())
 							messages[ulid()] = message
 						}),
 				),
@@ -44,8 +46,10 @@ export const createWebsocketClient = ({
 			messages,
 			send: async (message) =>
 				new Promise<void>((resolve, reject) => {
-					client.send(JSON.stringify(message), (error) => {
+					const strMessage = JSON.stringify(message)
+					client.send(strMessage, (error) => {
 						if (error) return reject(error)
+						debug?.('>> ' + strMessage)
 						resolve()
 					})
 				}),

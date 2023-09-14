@@ -91,30 +91,30 @@ const runner = await runFolder({
 		onDebug: (info, ...args) =>
 			console.error(
 				ts(),
-				chalk.magenta.dim(info.context.keyword),
-				chalk.magenta(info.context.title),
+				chalk.magenta.dim(info.step.keyword),
+				chalk.magenta(info.step.title),
 				...args.map((arg) => chalk.cyan(print(arg))),
 			),
 		onError: (info, ...args) =>
 			console.error(
 				ts(),
-				chalk.magenta.dim(info.context.keyword),
-				chalk.magenta(info.context.title),
-				...args.map((arg) => chalk.red(print(arg))),
+				chalk.magenta.dim(info.step.keyword),
+				chalk.magenta(info.step.title),
+				...args.map((arg) => chalk.cyan(print(arg))),
 			),
 		onInfo: (info, ...args) =>
 			console.error(
 				ts(),
-				chalk.magenta.dim(info.context.keyword),
-				chalk.magenta(info.context.title),
-				...args.map((arg) => chalk.green(print(arg))),
+				chalk.magenta.dim(info.step.keyword),
+				chalk.magenta(info.step.title),
+				...args.map((arg) => chalk.cyan(print(arg))),
 			),
 		onProgress: (info, ...args) =>
 			console.error(
 				ts(),
-				chalk.magenta.dim(info.context.keyword),
-				chalk.magenta(info.context.title),
-				...args.map((arg) => chalk.yellow(print(arg))),
+				chalk.magenta.dim(info.step.keyword),
+				chalk.magenta(info.step.title),
+				...args.map((arg) => chalk.cyan(print(arg))),
 			),
 	},
 })

@@ -1,3 +1,9 @@
+---
+exampleContext:
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+---
+
 # Device Info
 
 > After connecting to the websocket with a device fingerprint, the device info
@@ -10,8 +16,6 @@ Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 ## Connect with a valid fingerprint
 
 When I connect to the websocket using fingerprint `${fingerprint}`
-
-<!-- @retry:tries=5,initialDelay=5000,delayFactor=1 -->
 
 Soon I should receive a message on the websocket that matches
 
