@@ -30,7 +30,8 @@ export const createWebsocketClient = ({
 						.on('open', () => {
 							resolve()
 						})
-						.on('error', () => {
+						.on('error', (error) => {
+							debug?.(`Connection error: ${error.message}`)
 							reject(new Error(`Connection to ${url} failed.`))
 						})
 						.on('message', async (msg) => {
