@@ -38,6 +38,7 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 			if (reconnect !== undefined && wsClients[wsURL] !== undefined) {
 				wsClients[wsURL]?.close()
 				delete wsClients[wsURL]
+				await setTimeout(2000)
 			}
 
 			if (wsClients[wsURL] === undefined) {

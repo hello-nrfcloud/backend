@@ -35,9 +35,7 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 
 Given I store `$fromMillis(${ts})` into `tsISO`
 
-When I wait for `5` seconds
-
-And I reconnect to the websocket using fingerprint `${fingerprint}`
+When I reconnect to the websocket using fingerprint `${fingerprint}`
 
 Soon I should receive a message on the websocket that matches
 
