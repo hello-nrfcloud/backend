@@ -1,7 +1,13 @@
-import { Type, type TSchema, type Static } from '@sinclair/typebox'
+import {
+	Type,
+	type TSchema,
+	type Static,
+	type TObject,
+} from '@sinclair/typebox'
 import { slashless } from '../util/slashless.js'
 import type { Nullable } from '../util/types.js'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
+import type { ErrorObject } from 'ajv'
 
 export const DeviceConfig = Type.Partial(
 	Type.Object({
@@ -121,6 +127,27 @@ type FwType =
 	| 'BOOTLOADER'
 	| 'MDM_FULL'
 
+class ValidationError extends Error {
+	public errors: ErrorObject[]
+	constructor(errors: ErrorObject[]) {
+		super(`Validation errors`)
+		this.name = 'ValidationError'
+		this.errors = errors
+	}
+}
+
+const validate = <T extends TObject>(
+	SchemaObject: T,
+	data: unknown,
+): Static<T> => {
+	const maybeResponse = validateWithTypeBox(SchemaObject)(data)
+	if ('errors' in maybeResponse) {
+		throw new ValidationError(maybeResponse.errors)
+	}
+
+	return maybeResponse.value
+}
+
 export const apiClient = ({
 	endpoint,
 	apiKey,
@@ -129,11 +156,11 @@ export const apiClient = ({
 	apiKey: string
 }): {
 	listDevices: () => Promise<
-		{ error: Error } | { devices: Static<typeof Devices> }
+		{ error: ValidationError } | { devices: Static<typeof Devices> }
 	>
 	getDevice: (
 		id: string,
-	) => Promise<{ error: Error } | { device: Static<typeof Device> }>
+	) => Promise<{ error: ValidationError } | { device: Static<typeof Device> }>
 	updateConfig: (
 		id: string,
 		config: Nullable<Omit<Static<typeof DeviceConfig>, 'nod'>> &
@@ -154,7 +181,7 @@ export const apiClient = ({
 		}[],
 	) => Promise<{ error: Error } | { bulkOpsRequestId: string }>
 	account: () => Promise<
-		| { error: Error }
+		| { error: ValidationError }
 		| {
 				account: Static<typeof AccountInfo>
 		  }
@@ -190,26 +217,18 @@ export const apiClient = ({
 			)
 				.then<Static<typeof Devices>>(async (res) => res.json())
 				.then((devices) => {
-					const maybeDevices = validateWithTypeBox(Devices)(devices)
-					if ('errors' in maybeDevices) {
-						throw new Error(`Failed to validate response of 'listDevices' API`)
-					}
-
-					return { devices: maybeDevices.value }
-				}),
+					return { devices: validate(Devices, devices) }
+				})
+				.catch((error) => ({ error: error as ValidationError })),
 		getDevice: async (id) =>
 			fetch(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
 				headers,
 			})
 				.then<Static<typeof Device>>(async (res) => res.json())
 				.then((device) => {
-					const maybeDevice = validateWithTypeBox(Device)(device)
-					if ('errors' in maybeDevice) {
-						throw new Error(`Failed to validate response of 'getDevice' API`)
-					}
-
-					return { device: maybeDevice.value }
-				}),
+					return { device: validate(Device, device) }
+				})
+				.catch((error) => ({ error: error as ValidationError })),
 		updateConfig: async (id, config) =>
 			fetch(
 				`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}/state`,
@@ -289,14 +308,9 @@ export const apiClient = ({
 			})
 				.then<Static<typeof AccountInfo>>(async (res) => res.json())
 				.then((account) => {
-					const maybeAccount = validateWithTypeBox(AccountInfo)(account)
-					if ('errors' in maybeAccount) {
-						throw new Error(`Failed to validate response of 'account' API`)
-					}
-
-					return { account: maybeAccount.value }
+					return { account: validate(AccountInfo, account) }
 				})
-				.catch((err) => ({ error: err as Error })),
+				.catch((error) => ({ error: error as ValidationError })),
 		getBulkOpsStatus: async (bulkOpsId) =>
 			fetch(
 				`${slashless(endpoint)}/v1/bulk-ops-requests/${encodeURIComponent(
