@@ -121,15 +121,29 @@ const AccountInfo = Type.Object({
 
 const BulkOpsRequest = Type.Object({
 	bulkOpsRequestId: Type.String(), // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
-	endpoint: Type.String(), // e.g. 'PROVISION_DEVICES'
+	endpoint: Type.Union([
+		Type.Literal('PROVISION_DEVICES'),
+		Type.Literal('REGISTER_PUBLIC_KEYS'),
+		Type.Literal('VERIFY_ATTESTATION_TOKENS'),
+		Type.Literal('VERIFY_JWTS'),
+		Type.Literal('CLAIM_DEVICE_OWNERSHIP'),
+	]), // e.g. 'PROVISION_DEVICES'
 	status: Type.Union([
 		Type.Literal('PENDING'),
 		Type.Literal('IN_PROGRESS'),
 		Type.Literal('FAILED'),
 		Type.Literal('SUCCEEDED'),
 	]), // e.g. 'PENDING'
-	requestedAt: Type.String(), // e.g. '2020-06-25T21:05:12.830Z'
-	completedAt: Type.String(), // e.g. '2020-06-25T21:05:12.830Z'
+	requestedAt: Type.String({
+		pattern:
+			'^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d.\\d+([+-][0-2]\\d:[0-5]\\d|Z)$',
+	}), // e.g. '2020-06-25T21:05:12.830Z'
+	completedAt: Type.Optional(
+		Type.String({
+			pattern:
+				'^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d.\\d+([+-][0-2]\\d:[0-5]\\d|Z)$',
+		}),
+	), // e.g. '2020-06-25T21:05:12.830Z'
 	uploadedDataUrl: Type.String(), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
 	resultDataUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
 	errorSummaryUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
