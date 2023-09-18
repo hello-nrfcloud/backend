@@ -119,6 +119,22 @@ const AccountInfo = Type.Object({
 	tags: Type.Array(Type.String()),
 })
 
+const BulkOpsRequest = Type.Object({
+	bulkOpsRequestId: Type.String(), // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
+	endpoint: Type.String(), // e.g. 'PROVISION_DEVICES'
+	status: Type.Union([
+		Type.Literal('PENDING'),
+		Type.Literal('IN_PROGRESS'),
+		Type.Literal('FAILED'),
+		Type.Literal('SUCCEEDED'),
+	]), // e.g. 'PENDING'
+	requestedAt: Type.String(), // e.g. '2020-06-25T21:05:12.830Z'
+	completedAt: Type.String(), // e.g. '2020-06-25T21:05:12.830Z'
+	uploadedDataUrl: Type.String(), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
+	resultDataUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
+	errorSummaryUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
+})
+
 type FwType =
 	| 'APP'
 	| 'MODEM'
@@ -129,6 +145,7 @@ type FwType =
 
 class ValidationError extends Error {
 	public errors: ErrorObject[]
+	public readonly isValidationError = true
 	constructor(errors: ErrorObject[]) {
 		super(`Validation errors`)
 		this.name = 'ValidationError'
@@ -136,17 +153,27 @@ class ValidationError extends Error {
 	}
 }
 
-const validate = <T extends TObject>(
+const validate = async <T extends TObject>(
 	SchemaObject: T,
-	data: unknown,
-): Static<T> => {
-	const maybeResponse = validateWithTypeBox(SchemaObject)(data)
-	if ('errors' in maybeResponse) {
-		throw new ValidationError(maybeResponse.errors)
-	}
+	response: Response,
+): Promise<Static<T>> => {
+	if (response.ok) {
+		const maybeResponse = validateWithTypeBox(SchemaObject)(
+			await response.json(),
+		)
+		if ('errors' in maybeResponse) {
+			throw new ValidationError(maybeResponse.errors)
+		}
 
-	return maybeResponse.value
+		return maybeResponse.value
+	} else {
+		throw new Error(`Error fetching status: ${response.status}`)
+	}
 }
+
+const onError = (error: Error): { error: Error | ValidationError } => ({
+	error,
+})
 
 export const apiClient = ({
 	endpoint,
@@ -156,11 +183,13 @@ export const apiClient = ({
 	apiKey: string
 }): {
 	listDevices: () => Promise<
-		{ error: ValidationError } | { devices: Static<typeof Devices> }
+		{ error: Error | ValidationError } | { devices: Static<typeof Devices> }
 	>
 	getDevice: (
 		id: string,
-	) => Promise<{ error: ValidationError } | { device: Static<typeof Device> }>
+	) => Promise<
+		{ error: Error | ValidationError } | { device: Static<typeof Device> }
+	>
 	updateConfig: (
 		id: string,
 		config: Nullable<Omit<Static<typeof DeviceConfig>, 'nod'>> &
@@ -181,24 +210,15 @@ export const apiClient = ({
 		}[],
 	) => Promise<{ error: Error } | { bulkOpsRequestId: string }>
 	account: () => Promise<
-		| { error: ValidationError }
+		| { error: Error | ValidationError }
 		| {
 				account: Static<typeof AccountInfo>
 		  }
 	>
 	getBulkOpsStatus: (bulkOpsId: string) => Promise<
-		| { error: Error }
+		| { error: Error | ValidationError }
 		| {
-				status: {
-					bulkOpsRequestId: string // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
-					endpoint: string // e.g. 'PROVISION_DEVICES'
-					status: 'PENDING' | 'IN_PROGRESS' | 'FAILED' | 'SUCCEEDED' // e.g. 'PENDING'
-					requestedAt: string // e.g. '2020-06-25T21:05:12.830Z'
-					completedAt: string // e.g. '2020-06-25T21:05:12.830Z'
-					uploadedDataUrl: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
-					resultDataUrl?: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
-					errorSummaryUrl?: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
-				}
+				status: Static<typeof BulkOpsRequest>
 		  }
 	>
 } => {
@@ -215,20 +235,14 @@ export const apiClient = ({
 				}).toString()}`,
 				{ headers },
 			)
-				.then<Static<typeof Devices>>(async (res) => res.json())
-				.then((devices) => {
-					return { devices: validate(Devices, devices) }
-				})
-				.catch((error) => ({ error: error as ValidationError })),
+				.then(async (res) => ({ devices: await validate(Devices, res) }))
+				.catch(onError),
 		getDevice: async (id) =>
 			fetch(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
 				headers,
 			})
-				.then<Static<typeof Device>>(async (res) => res.json())
-				.then((device) => {
-					return { device: validate(Device, device) }
-				})
-				.catch((error) => ({ error: error as ValidationError })),
+				.then(async (res) => ({ device: await validate(Device, res) }))
+				.catch(onError),
 		updateConfig: async (id, config) =>
 			fetch(
 				`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}/state`,
@@ -246,11 +260,10 @@ export const apiClient = ({
 				},
 			)
 				.then((res) => {
-					if (res.status >= 400)
-						return { error: new Error(`Update failed: ${res.status}`) }
+					if (res.status >= 400) throw new Error(`Update failed: ${res.status}`)
 					return { success: true }
 				})
-				.catch((error) => ({ error: error as Error })),
+				.catch(onError),
 		registerDevices: async (devices) => {
 			const bulkRegistrationPayload = devices
 				.map(({ deviceId, subType, tags, fwTypes, certPem }) => [
@@ -306,11 +319,10 @@ export const apiClient = ({
 					'Content-Type': 'application/octet-stream',
 				},
 			})
-				.then<Static<typeof AccountInfo>>(async (res) => res.json())
-				.then((account) => {
-					return { account: validate(AccountInfo, account) }
-				})
-				.catch((error) => ({ error: error as ValidationError })),
+				.then(async (account) => ({
+					account: await validate(AccountInfo, account),
+				}))
+				.catch(onError),
 		getBulkOpsStatus: async (bulkOpsId) =>
 			fetch(
 				`${slashless(endpoint)}/v1/bulk-ops-requests/${encodeURIComponent(
@@ -323,11 +335,7 @@ export const apiClient = ({
 					},
 				},
 			)
-				.then(async (res) => {
-					if (res.status >= 400)
-						return { error: new Error(`Error fetching status: ${res.status}`) }
-					return { status: await res.json() }
-				})
-				.catch((error) => ({ error: error as Error })),
+				.then(async (res) => ({ status: await validate(BulkOpsRequest, res) }))
+				.catch(onError),
 	}
 }
