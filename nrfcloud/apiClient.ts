@@ -9,6 +9,12 @@ import type { Nullable } from '../util/types.js'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import type { ErrorObject } from 'ajv'
 
+const DateString = Type.String({
+	pattern:
+		'^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d.\\d+([+-][0-2]\\d:[0-5]\\d|Z)$',
+	title: 'ISO Date string',
+})
+
 export const DeviceConfig = Type.Partial(
 	Type.Object({
 		activeMode: Type.Boolean(), // e.g. false
@@ -134,16 +140,8 @@ const BulkOpsRequest = Type.Object({
 		Type.Literal('FAILED'),
 		Type.Literal('SUCCEEDED'),
 	]), // e.g. 'PENDING'
-	requestedAt: Type.String({
-		pattern:
-			'^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d.\\d+([+-][0-2]\\d:[0-5]\\d|Z)$',
-	}), // e.g. '2020-06-25T21:05:12.830Z'
-	completedAt: Type.Optional(
-		Type.String({
-			pattern:
-				'^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d.\\d+([+-][0-2]\\d:[0-5]\\d|Z)$',
-		}),
-	), // e.g. '2020-06-25T21:05:12.830Z'
+	requestedAt: DateString, // e.g. '2020-06-25T21:05:12.830Z'
+	completedAt: Type.Optional(DateString), // e.g. '2020-06-25T21:05:12.830Z'
 	uploadedDataUrl: Type.String(), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
 	resultDataUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
 	errorSummaryUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
@@ -167,22 +165,26 @@ class ValidationError extends Error {
 	}
 }
 
-const validate = async <T extends TObject>(
+const validate = <T extends TObject>(
 	SchemaObject: T,
-	response: Response,
-): Promise<Static<T>> => {
-	if (response.ok) {
-		const maybeResponse = validateWithTypeBox(SchemaObject)(
-			await response.json(),
-		)
-		if ('errors' in maybeResponse) {
-			throw new ValidationError(maybeResponse.errors)
-		}
+	data: unknown,
+): Static<T> => {
+	const maybeData = validateWithTypeBox(SchemaObject)(data)
 
-		return maybeResponse.value
-	} else {
-		throw new Error(`Error fetching status: ${response.status}`)
+	if ('errors' in maybeData) {
+		throw new ValidationError(maybeData.errors)
 	}
+
+	return maybeData.value
+}
+
+const fetchData = async (
+	...args: Parameters<typeof fetch>
+): ReturnType<typeof fetch> => {
+	const response = await fetch(...args)
+	if (!response.ok) throw new Error(`Error fetching status: ${response.status}`)
+
+	return response.json()
 }
 
 const onError = (error: Error): { error: Error | ValidationError } => ({
@@ -242,20 +244,20 @@ export const apiClient = ({
 	}
 	return {
 		listDevices: async () =>
-			fetch(
+			fetchData(
 				`${slashless(endpoint)}/v1/devices?${new URLSearchParams({
 					pageLimit: '100',
 					deviceNameFuzzy: 'oob-',
 				}).toString()}`,
 				{ headers },
 			)
-				.then(async (res) => ({ devices: await validate(Devices, res) }))
+				.then((res) => ({ devices: validate(Devices, res) }))
 				.catch(onError),
 		getDevice: async (id) =>
-			fetch(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
+			fetchData(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
 				headers,
 			})
-				.then(async (res) => ({ device: await validate(Device, res) }))
+				.then((res) => ({ device: validate(Device, res) }))
 				.catch(onError),
 		updateConfig: async (id, config) =>
 			fetch(
@@ -327,18 +329,16 @@ export const apiClient = ({
 			return { error: new Error(`Import failed: ${JSON.stringify(res)}`) }
 		},
 		account: async () =>
-			fetch(`${slashless(endpoint)}/v1/account`, {
+			fetchData(`${slashless(endpoint)}/v1/account`, {
 				headers: {
 					Authorization: `Bearer ${apiKey}`,
 					'Content-Type': 'application/octet-stream',
 				},
 			})
-				.then(async (account) => ({
-					account: await validate(AccountInfo, account),
-				}))
+				.then((res) => ({ account: validate(AccountInfo, res) }))
 				.catch(onError),
 		getBulkOpsStatus: async (bulkOpsId) =>
-			fetch(
+			fetchData(
 				`${slashless(endpoint)}/v1/bulk-ops-requests/${encodeURIComponent(
 					bulkOpsId,
 				)}`,
@@ -349,7 +349,7 @@ export const apiClient = ({
 					},
 				},
 			)
-				.then(async (res) => ({ status: await validate(BulkOpsRequest, res) }))
+				.then((res) => ({ status: validate(BulkOpsRequest, res) }))
 				.catch(onError),
 	}
 }
