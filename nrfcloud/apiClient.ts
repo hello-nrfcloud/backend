@@ -1,71 +1,152 @@
+import {
+	Type,
+	type TSchema,
+	type Static,
+	type TObject,
+} from '@sinclair/typebox'
 import { slashless } from '../util/slashless.js'
 import type { Nullable } from '../util/types.js'
+import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
+import type { ErrorObject } from 'ajv'
 
-export type DeviceConfig = Partial<{
-	activeMode: boolean // e.g. false
-	locationTimeout: number // e.g. 300
-	activeWaitTime: number // e.g. 120
-	movementResolution: number // e.g. 120
-	movementTimeout: number // e.g. 3600
-	accThreshAct: number // e.g. 4
-	accThreshInact: number // e.g. 4
-	accTimeoutInact: number // e.g. 60
-	nod: ('gnss' | 'ncell' | 'wifi')[] // e.g. ['nod']
-}>
-export type Device = {
-	id: string // e.g. 'oob-352656108602296'
-	state?: {
-		reported?: {
-			config?: DeviceConfig
-			connection?: {
-				status?: 'connected' | 'disconnected'
-			}
-			device?: {
-				deviceInfo?: Partial<{
-					appVersion: string // e.g. '1.1.0'
-					modemFirmware: string // e.g. 'mfw_nrf9160_1.3.4'
-					imei: string // e.g. '352656108602296'
-					board: string // e.g. 'thingy91_nrf9160'
-					hwVer: string // e.g. 'nRF9160 SICA B1A'
-				}>
-			}
-		}
-		desired?: {
-			config?: DeviceConfig
-		}
-		version: number
-	}
-}
-type Page<Item> = {
-	total: number
-	items: Item[]
-}
-type AccountInfo = {
-	mqttEndpoint: string // e.g. 'mqtt.nrfcloud.com'
-	mqttTopicPrefix: string // e.g. 'prod/a0673464-e4e1-4b87-bffd-6941a012067b/',
-	team: {
-		tenantId: string // e.g. 'bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce',
-		name: string // e.g. 'hello.nrfcloud.com'
-	}
-	plan: {
-		currentMonthCosts: {
-			price: number // e.g. 0.1
-			quantity: number // e.g. 9
-			serviceDescription: string // e.g. 'Devices in your account'
-			serviceId: 'Devices' | 'Messages' | 'SCELL' | 'MCELL'
-			total: number // e.g. 0.9
-		}[]
-		currentMonthTotalCost: number // e.g. 2.73
-		name: 'PRO' | 'DEVELOPER'
-		proxyUsageDeclarations: {
-			AGPS: number // e.g. 0
-			GROUND_FIX: number // e.g. 200
-			PGPS: number // e.g. 0
-		}
-	}
-	role: 'owner' | 'admin' | 'editor' | 'viewer'
-	tags: string[]
-}
+const DateString = Type.String({
+	pattern:
+		'^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d.\\d+([+-][0-2]\\d:[0-5]\\d|Z)$',
+	title: 'ISO Date string',
+})
+
+export const DeviceConfig = Type.Partial(
+	Type.Object({
+		activeMode: Type.Boolean(), // e.g. false
+		locationTimeout: Type.Number(), // e.g. 300
+		activeWaitTime: Type.Number(), // e.g. 120
+		movementResolution: Type.Number(), // e.g. 120
+		movementTimeout: Type.Number(), // e.g. 3600
+		accThreshAct: Type.Number(), // e.g. 4
+		accThreshInact: Type.Number(), // e.g. 4
+		accTimeoutInact: Type.Number(), // e.g. 60
+		nod: Type.Array(
+			Type.Union([
+				Type.Literal('gnss'),
+				Type.Literal('ncell'),
+				Type.Literal('wifi'),
+			]),
+		), // e.g. ['nod']
+	}),
+)
+
+const Device = Type.Object({
+	id: Type.String(),
+	state: Type.Optional(
+		Type.Object({
+			reported: Type.Optional(
+				Type.Object({
+					config: Type.Optional(DeviceConfig),
+					connection: Type.Optional(
+						Type.Object({
+							status: Type.Optional(
+								Type.Union([
+									Type.Literal('connected'),
+									Type.Literal('disconnected'),
+								]),
+							),
+						}),
+					),
+					device: Type.Optional(
+						Type.Object({
+							deviceInfo: Type.Optional(
+								Type.Partial(
+									Type.Object({
+										appVersion: Type.String(), // e.g. '1.1.0'
+										modemFirmware: Type.String(), // e.g. 'mfw_nrf9160_1.3.4'
+										imei: Type.String(), // e.g. '352656108602296'
+										board: Type.String(), // e.g. 'thingy91_nrf9160'
+										hwVer: Type.String(), // e.g. 'nRF9160 SICA B1A'
+									}),
+								),
+							),
+						}),
+					),
+				}),
+			),
+			desired: Type.Optional(
+				Type.Object({
+					config: Type.Optional(DeviceConfig),
+				}),
+			),
+			version: Type.Number(),
+		}),
+	),
+})
+
+const Page = <T extends TSchema>(Item: T) =>
+	Type.Object({
+		total: Type.Integer(),
+		items: Type.Array(Item),
+	})
+const Devices = Page(Device)
+
+const AccountInfo = Type.Object({
+	mqttEndpoint: Type.String(), // e.g. 'mqtt.nrfcloud.com'
+	mqttTopicPrefix: Type.String(), // e.g. 'prod/a0673464-e4e1-4b87-bffd-6941a012067b/',
+	team: Type.Object({
+		tenantId: Type.String(), // e.g. 'bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce',
+		name: Type.String(), // e.g. 'hello.nrfcloud.com'
+	}),
+	plan: Type.Object({
+		currentMonthCosts: Type.Array(
+			Type.Object({
+				price: Type.Number(), // e.g. 0.1
+				quantity: Type.Number(), // e.g. 9
+				serviceDescription: Type.String(), // e.g. 'Devices in your account'
+				serviceId: Type.Union([
+					Type.Literal('Devices'),
+					Type.Literal('Messages'),
+					Type.Literal('SCELL'),
+					Type.Literal('MCELL'),
+				]),
+				total: Type.Number(), // e.g. 0.9
+			}),
+		),
+		currentMonthTotalCost: Type.Number(), // e.g. 2.73
+		name: Type.Union([Type.Literal('PRO'), Type.Literal('DEVELOPER')]),
+		proxyUsageDeclarations: Type.Object({
+			AGPS: Type.Number(), // e.g. 0
+			GROUND_FIX: Type.Number(), // e.g. 200
+			PGPS: Type.Number(), // e.g. 0
+		}),
+	}),
+	role: Type.Union([
+		Type.Literal('owner'),
+		Type.Literal('admin'),
+		Type.Literal('editor'),
+		Type.Literal('viewer'),
+	]),
+	tags: Type.Array(Type.String()),
+})
+
+const BulkOpsRequest = Type.Object({
+	bulkOpsRequestId: Type.String(), // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
+	endpoint: Type.Union([
+		Type.Literal('PROVISION_DEVICES'),
+		Type.Literal('REGISTER_PUBLIC_KEYS'),
+		Type.Literal('VERIFY_ATTESTATION_TOKENS'),
+		Type.Literal('VERIFY_JWTS'),
+		Type.Literal('CLAIM_DEVICE_OWNERSHIP'),
+	]), // e.g. 'PROVISION_DEVICES'
+	status: Type.Union([
+		Type.Literal('PENDING'),
+		Type.Literal('IN_PROGRESS'),
+		Type.Literal('FAILED'),
+		Type.Literal('SUCCEEDED'),
+	]), // e.g. 'PENDING'
+	requestedAt: DateString, // e.g. '2020-06-25T21:05:12.830Z'
+	completedAt: Type.Optional(DateString), // e.g. '2020-06-25T21:05:12.830Z'
+	uploadedDataUrl: Type.String(), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
+	resultDataUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
+	errorSummaryUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
+})
+
 type FwType =
 	| 'APP'
 	| 'MODEM'
@@ -74,6 +155,42 @@ type FwType =
 	| 'BOOTLOADER'
 	| 'MDM_FULL'
 
+class ValidationError extends Error {
+	public errors: ErrorObject[]
+	public readonly isValidationError = true
+	constructor(errors: ErrorObject[]) {
+		super(`Validation errors`)
+		this.name = 'ValidationError'
+		this.errors = errors
+	}
+}
+
+const validate = <T extends TObject>(
+	SchemaObject: T,
+	data: unknown,
+): Static<T> => {
+	const maybeData = validateWithTypeBox(SchemaObject)(data)
+
+	if ('errors' in maybeData) {
+		throw new ValidationError(maybeData.errors)
+	}
+
+	return maybeData.value
+}
+
+const fetchData = async (
+	...args: Parameters<typeof fetch>
+): ReturnType<typeof fetch> => {
+	const response = await fetch(...args)
+	if (!response.ok) throw new Error(`Error fetching status: ${response.status}`)
+
+	return response.json()
+}
+
+const onError = (error: Error): { error: Error | ValidationError } => ({
+	error,
+})
+
 export const apiClient = ({
 	endpoint,
 	apiKey,
@@ -81,11 +198,18 @@ export const apiClient = ({
 	endpoint: URL
 	apiKey: string
 }): {
-	listDevices: () => Promise<{ error: Error } | { devices: Page<Device> }>
-	getDevice: (id: string) => Promise<{ error: Error } | { device: Device }>
+	listDevices: () => Promise<
+		{ error: Error | ValidationError } | { devices: Static<typeof Devices> }
+	>
+	getDevice: (
+		id: string,
+	) => Promise<
+		{ error: Error | ValidationError } | { device: Static<typeof Device> }
+	>
 	updateConfig: (
 		id: string,
-		config: Nullable<Omit<DeviceConfig, 'nod'>> & Pick<DeviceConfig, 'nod'>,
+		config: Nullable<Omit<Static<typeof DeviceConfig>, 'nod'>> &
+			Pick<Static<typeof DeviceConfig>, 'nod'>,
 	) => Promise<{ error: Error } | { success: boolean }>
 	registerDevices: (
 		devices: {
@@ -102,24 +226,15 @@ export const apiClient = ({
 		}[],
 	) => Promise<{ error: Error } | { bulkOpsRequestId: string }>
 	account: () => Promise<
-		| { error: Error }
+		| { error: Error | ValidationError }
 		| {
-				account: AccountInfo
+				account: Static<typeof AccountInfo>
 		  }
 	>
 	getBulkOpsStatus: (bulkOpsId: string) => Promise<
-		| { error: Error }
+		| { error: Error | ValidationError }
 		| {
-				status: {
-					bulkOpsRequestId: string // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
-					endpoint: string // e.g. 'PROVISION_DEVICES'
-					status: 'PENDING' | 'IN_PROGRESS' | 'FAILED' | 'SUCCEEDED' // e.g. 'PENDING'
-					requestedAt: string // e.g. '2020-06-25T21:05:12.830Z'
-					completedAt: string // e.g. '2020-06-25T21:05:12.830Z'
-					uploadedDataUrl: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
-					resultDataUrl?: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
-					errorSummaryUrl?: string // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
-				}
+				status: Static<typeof BulkOpsRequest>
 		  }
 	>
 } => {
@@ -129,21 +244,21 @@ export const apiClient = ({
 	}
 	return {
 		listDevices: async () =>
-			fetch(
+			fetchData(
 				`${slashless(endpoint)}/v1/devices?${new URLSearchParams({
 					pageLimit: '100',
 					deviceNameFuzzy: 'oob-',
 				}).toString()}`,
 				{ headers },
 			)
-				.then<Page<Device>>(async (res) => res.json())
-				.then((devices) => ({ devices })),
+				.then((res) => ({ devices: validate(Devices, res) }))
+				.catch(onError),
 		getDevice: async (id) =>
-			fetch(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
+			fetchData(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
 				headers,
 			})
-				.then<Device>(async (res) => res.json())
-				.then((device) => ({ device })),
+				.then((res) => ({ device: validate(Device, res) }))
+				.catch(onError),
 		updateConfig: async (id, config) =>
 			fetch(
 				`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}/state`,
@@ -161,11 +276,10 @@ export const apiClient = ({
 				},
 			)
 				.then((res) => {
-					if (res.status >= 400)
-						return { error: new Error(`Update failed: ${res.status}`) }
+					if (res.status >= 400) throw new Error(`Update failed: ${res.status}`)
 					return { success: true }
 				})
-				.catch((error) => ({ error: error as Error })),
+				.catch(onError),
 		registerDevices: async (devices) => {
 			const bulkRegistrationPayload = devices
 				.map(({ deviceId, subType, tags, fwTypes, certPem }) => [
@@ -215,17 +329,16 @@ export const apiClient = ({
 			return { error: new Error(`Import failed: ${JSON.stringify(res)}`) }
 		},
 		account: async () =>
-			fetch(`${slashless(endpoint)}/v1/account`, {
+			fetchData(`${slashless(endpoint)}/v1/account`, {
 				headers: {
 					Authorization: `Bearer ${apiKey}`,
 					'Content-Type': 'application/octet-stream',
 				},
 			})
-				.then<AccountInfo>(async (res) => res.json())
-				.then((account) => ({ account }))
-				.catch((err) => ({ error: err as Error })),
+				.then((res) => ({ account: validate(AccountInfo, res) }))
+				.catch(onError),
 		getBulkOpsStatus: async (bulkOpsId) =>
-			fetch(
+			fetchData(
 				`${slashless(endpoint)}/v1/bulk-ops-requests/${encodeURIComponent(
 					bulkOpsId,
 				)}`,
@@ -236,11 +349,7 @@ export const apiClient = ({
 					},
 				},
 			)
-				.then(async (res) => {
-					if (res.status >= 400)
-						return { error: new Error(`Error fetching status: ${res.status}`) }
-					return { status: await res.json() }
-				})
-				.catch((error) => ({ error: error as Error })),
+				.then((res) => ({ status: validate(BulkOpsRequest, res) }))
+				.catch(onError),
 	}
 }

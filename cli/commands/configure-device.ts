@@ -4,9 +4,10 @@ import chalk from 'chalk'
 import { isEqual } from 'lodash-es'
 import { table } from 'table'
 import { getDevice } from '../../devices/getDevice.js'
-import { apiClient, type DeviceConfig } from '../../nrfcloud/apiClient.js'
+import { apiClient, DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import type { Static } from '@sinclair/typebox'
 
 const defaultActiveWaitTimeSeconds = 120
 const defaultLocationTimeoutSeconds = 60
@@ -94,7 +95,7 @@ export const configureDeviceCommand = ({
 				...Object.keys(state?.reported?.config ?? {}),
 				...Object.keys(state?.desired?.config ?? {}),
 			]),
-		] as (keyof DeviceConfig)[]
+		] as (keyof Static<typeof DeviceConfig>)[]
 
 		console.log(
 			table(
