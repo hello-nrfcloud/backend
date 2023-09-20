@@ -41,17 +41,19 @@ export const handler = async (
 	event: AuthorizedEvent,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.debug('event', { event })
-
-	const { deviceId, model, account } = event.requestContext.authorizer
+	const context = event.requestContext.authorizer
 	const { connectionId } = event.requestContext
-
-	await repo.add({
-		deviceId,
-		model,
-		account,
-		connectionId,
-		ttl: Math.round(Date.now() / 1000) + 5 * 60,
-	})
+	const { deviceId, model } = context
+	if ('account' in context) {
+		const { account } = context
+		await repo.add({
+			deviceId,
+			model,
+			account,
+			connectionId,
+			ttl: Math.round(Date.now() / 1000) + 5 * 60,
+		})
+	}
 
 	const message: Static<typeof DeviceIdentity> = {
 		'@context': Context.deviceIdentity.toString(),
@@ -76,22 +78,29 @@ export const handler = async (
 		],
 	})
 
-	const { shadow } = await getShadow(deviceId)
-	if (shadow !== null) {
-		log.debug(`sending shadow`, {
+	if (context.model === 'unsupported') {
+		log.debug(`Unsupported device, not fetching shadow.`, {
 			deviceId,
-			connectionId,
-		})
-		await sendShadow({
-			model,
-			shadow,
 			connectionId,
 		})
 	} else {
-		log.debug('no shadow found', {
-			deviceId,
-			connectionId,
-		})
+		const { shadow } = await getShadow(deviceId)
+		if (shadow !== null) {
+			log.debug(`sending shadow`, {
+				deviceId,
+				connectionId,
+			})
+			await sendShadow({
+				model,
+				shadow,
+				connectionId,
+			})
+		} else {
+			log.debug('no shadow found', {
+				deviceId,
+				connectionId,
+			})
+		}
 	}
 
 	return {

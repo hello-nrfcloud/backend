@@ -8,6 +8,7 @@ import { apiClient, DeviceConfig } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import type { Static } from '@sinclair/typebox'
+import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
 
 const defaultActiveWaitTimeSeconds = 120
 const defaultLocationTimeoutSeconds = 60
@@ -57,6 +58,24 @@ export const configureDeviceCommand = ({
 		const { device } = maybeDevice
 
 		console.log(chalk.yellow('ID'), chalk.blue(device.id))
+
+		if (device.model === UNSUPPORTED_MODEL) {
+			console.error(
+				chalk.red(chalk.red('⚠️'), '', `Device is marked as unsupported.`),
+			)
+			process.exit(1)
+		}
+
+		if (device.account === undefined) {
+			console.error(
+				chalk.red(
+					chalk.red('⚠️'),
+					'',
+					`Device is not associated with an account.`,
+				),
+			)
+			process.exit(1)
+		}
 
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,

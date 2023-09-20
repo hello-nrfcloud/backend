@@ -1,7 +1,7 @@
 import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { isFingerprint } from '@hello.nrfcloud.com/proto/fingerprint'
 import chalk from 'chalk'
-import { markFingerprintAsUnsupported } from '../../devices/markFingerprintAsUnsupported.js'
+import { registerUnsupportedDevice } from '../../devices/registerUnsupportedDevice.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { isIMEI } from './import-devices.js'
 import { readFile } from 'node:fs/promises'
@@ -43,12 +43,12 @@ export const importUnsupportedDevice = ({
 				process.exit(1)
 			}
 
-			const res = await markFingerprintAsUnsupported({
+			const res = await registerUnsupportedDevice({
 				db,
 				devicesTableName,
 			})({
 				fingerprint,
-				deviceId,
+				id: deviceId,
 			})
 			if ('error' in res) {
 				console.error(chalk.red(`Failed to store fingerprint!`))

@@ -4,16 +4,18 @@ export type AuthorizedEvent = APIGatewayProxyWebsocketEventV2 & {
 	requestContext: APIGatewayProxyWebsocketEventV2['requestContext'] & {
 		authorizer: {
 			principalId: 'me'
-			model: string //e.g. "PCA20035+solar",
-			integrationLatency: 1043
-			deviceId: string // e.g. 'oob-352656108602296'
-			account: string // e.g. 'elite'
-		}
+		} & WebsocketConnectionContext
 	}
 }
 
-export type WebsocketConnectionContext = {
-	model: string
-	deviceId: string
-	account: string
-}
+export type WebsocketConnectionContext =
+	| {
+			deviceId: string // e.g. 'oob-352656108602296'
+			model: string //e.g. "PCA20035+solar",
+			account: string // e.g. 'elite'
+	  }
+	// Unsupported devices have no associated account
+	| {
+			deviceId: string // e.g. 'oob-352656108602296'
+			model: 'unsupported'
+	  }

@@ -21,7 +21,7 @@ export const getDevice =
 					id: string
 					fingerprint: string
 					model: string
-					account: string
+					account?: string
 				}
 		  }
 		| { error: Error }

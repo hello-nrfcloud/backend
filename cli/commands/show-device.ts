@@ -6,6 +6,7 @@ import { getDevice } from '../../devices/getDevice.js'
 import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
 
 export const showDeviceCommand = ({
 	ssm,
@@ -36,6 +37,20 @@ export const showDeviceCommand = ({
 		}
 
 		const { device } = maybeDevice
+
+		if (device.model === UNSUPPORTED_MODEL || device.account === undefined) {
+			console.log(
+				table([
+					['Fingerprint', 'Device ID', 'Model'],
+					[
+						chalk.green(device.fingerprint),
+						chalk.blue(device.id),
+						chalk.magenta(device.model),
+					],
+				]),
+			)
+			return
+		}
 
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,

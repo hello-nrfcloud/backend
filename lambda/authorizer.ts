@@ -11,6 +11,7 @@ import type { PolicyDocument } from 'aws-lambda'
 import { metricsForComponent } from './metrics/metrics.js'
 import { logger } from './util/logger.js'
 import type { WebsocketConnectionContext } from './ws/AuthorizedEvent.js'
+import { UNSUPPORTED_MODEL } from '../devices/registerUnsupportedDevice.js'
 
 const { DevicesTableName, DevicesIndexName } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -83,8 +84,19 @@ const h = async (event: {
 
 	const { model, deviceId, account } = device
 
-	if (model === undefined || deviceId === undefined || account === undefined) {
+	if (model === undefined || deviceId === undefined) {
 		log.error(`Required information is missing`, {
+			fingerprint,
+			model,
+			deviceId,
+			account,
+		})
+		track('authorizer:badInfo', MetricUnits.Count, 1)
+		return deny
+	}
+
+	if (model !== UNSUPPORTED_MODEL && account === undefined) {
+		log.error(`Account is missing`, {
 			fingerprint,
 			model,
 			deviceId,

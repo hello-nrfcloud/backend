@@ -26,6 +26,7 @@ import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 import { Type, type Static } from '@sinclair/typebox'
 import { toBadRequest } from './ws/toBadRequest.js'
 import { validateRequest } from './ws/validateRequest.js'
+import { UNSUPPORTED_MODEL } from '../devices/registerUnsupportedDevice.js'
 
 const validateHistoricalDataRequest = validateWithTypeBox(CommonRequest)
 const validateConfigureDeviceRequest = validateWithTypeBox(ConfigureDevice)
@@ -74,7 +75,17 @@ const error =
 	}
 
 const success =
-	(deviceId: string, model: string, event: AuthorizedEvent) =>
+	({
+		deviceId,
+		model,
+		connectionId,
+		account,
+	}: {
+		deviceId: string
+		model: string
+		connectionId: string
+		account: string
+	}) =>
 	async (request: { '@context': string; [key: string]: any }) => {
 		await eventBus.putEvents({
 			Entries: [
@@ -84,8 +95,8 @@ const success =
 					DetailType: request['@context'],
 					Detail: JSON.stringify(<WebsocketPayload>{
 						deviceId,
-						connectionId: event.requestContext.connectionId,
-						nRFCloudAccount: event.requestContext.authorizer.account,
+						connectionId,
+						nRFCloudAccount: account,
 						message: {
 							request,
 							model,
@@ -98,8 +109,19 @@ const success =
 
 const h = async (event: AuthorizedEvent): Promise<void> => {
 	log.info('event', { event })
+	const wsContext = event.requestContext.authorizer
+	const { deviceId, model } = wsContext
+	const { connectionId } = event.requestContext
+	if (model === UNSUPPORTED_MODEL || !('account' in wsContext)) {
+		log.debug(`Unsupported device, ignoring message`, {
+			deviceId,
+			connectionId,
+		})
+		return
+	}
+
 	try {
-		await repo.extendTTL(event.requestContext.connectionId)
+		await repo.extendTTL(connectionId)
 	} catch (error) {
 		if (error instanceof ConditionalCheckFailedException) {
 			log.debug(`WebConnection is not found`, {
@@ -109,9 +131,13 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 		}
 	}
 
-	const { deviceId, model } = event.requestContext.authorizer
 	const onError = error(deviceId, event)
-	const onSuccess = success(deviceId, model, event)
+	const onSuccess = success({
+		deviceId,
+		model,
+		connectionId,
+		account: wsContext.account,
+	})
 
 	// Handle blank messages
 	if (event.body === undefined) {
