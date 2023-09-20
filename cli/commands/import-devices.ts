@@ -32,7 +32,7 @@ export const importDevicesCommand = ({
 	action: async (account, model, provisioningList, { windows }) => {
 		const devicesList = (await readFile(provisioningList, 'utf-8'))
 			.trim()
-			.split(windows === true ? '\n' : '\r\n')
+			.split(windows === true ? '\r\n' : '\n')
 			.map((s) =>
 				s.split(';').map((s) => s.replace(/^"/, '').replace(/"$/, '')),
 			)
@@ -52,7 +52,7 @@ export const importDevicesCommand = ({
 						console.error(
 							chalk.yellow('⚠️'),
 							chalk.yellow(`Not an IMEI:`),
-							chalk.red(imei),
+							chalk.red(JSON.stringify(imei)),
 						)
 						return false
 					}
@@ -60,7 +60,7 @@ export const importDevicesCommand = ({
 						console.error(
 							chalk.yellow('⚠️'),
 							chalk.yellow(`Not a fingerprint:`),
-							chalk.red(fingerprint),
+							chalk.red(JSON.stringify(fingerprint)),
 						)
 						return false
 					}
