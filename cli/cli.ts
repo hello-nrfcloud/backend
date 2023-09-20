@@ -32,6 +32,7 @@ import { listnRFCloudAccountsCommand } from './commands/list-nrfcloud-accounts.j
 import { configureRFCloudAccountCommand } from './commands/configure-nrfcloud-account.js'
 import { getNRFCloudBulkOpsStatus } from './commands/get-nrfcloud-bulkops-status.js'
 import { importUnsupportedDevice } from './commands/import-unsupported-device.js'
+import { listDevicesCommand } from './commands/list-devices.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -163,6 +164,10 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				importUnsupportedDevice({
 					db,
 					devicesTableName: outputs.devicesTableName,
+				}),
+				listDevicesCommand({
+					ssm,
+					stackName: STACK_NAME,
 				}),
 			)
 		} catch (error) {

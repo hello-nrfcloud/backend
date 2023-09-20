@@ -77,6 +77,16 @@ const Device = Type.Object({
 			version: Type.Number(),
 		}),
 	),
+	firmware: Type.Optional(
+		Type.Object({
+			app: Type.Optional(
+				Type.Object({
+					name: Type.String({ minLength: 1 }),
+					version: Type.String({ minLength: 1 }),
+				}),
+			),
+		}),
+	),
 })
 
 const Page = <T extends TSchema>(Item: T) =>
