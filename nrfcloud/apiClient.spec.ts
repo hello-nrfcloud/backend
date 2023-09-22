@@ -2,7 +2,7 @@ import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { AccountInfo } from './apiClient.js'
 
 describe('apiClient()', () => {
-	it('should validate enterprice plan API Client response', () => {
+	it('should validate enterprise plan API Client response', () => {
 		const APIresponse = {
 			mqttEndpoint: 'mqtt.nrfcloud.com',
 			mqttTopicPrefix: 'prod/b8b26bc5-2814-4063-b4fa-83ecddb2fec7/',
