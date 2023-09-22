@@ -104,39 +104,12 @@ export const AccountInfo = Type.Object({
 		name: Type.String(), // e.g. 'hello.nrfcloud.com'
 	}),
 	plan: Type.Object({
-		currentMonthCosts: Type.Array(
-			Type.Object({
-				price: Type.Number(), // e.g. 0.1
-				quantity: Type.Number(), // e.g. 9
-				serviceDescription: Type.String(), // e.g. 'Devices in your account'
-				serviceId: Type.Union([
-					Type.Literal('Devices'),
-					Type.Literal('Messages'),
-					Type.Literal('SCELL'),
-					Type.Literal('MCELL'),
-					Type.Literal('AGPS'),
-				]),
-				total: Type.Number(), // e.g. 0.9
-			}),
-		),
 		currentMonthTotalCost: Type.Number(), // e.g. 2.73
-		name: Type.Union([
-			Type.Literal('PRO'),
-			Type.Literal('DEVELOPER'),
-			Type.Literal('ENTERPRISE'),
-		]),
 		proxyUsageDeclarations: Type.Object({
 			AGPS: Type.Number(), // e.g. 0
 			GROUND_FIX: Type.Number(), // e.g. 200
 			PGPS: Type.Number(), // e.g. 0
 		}),
-		serviceKeys: Type.Array(
-			Type.Object({
-				createdAt: Type.String(),
-				enabled: Type.Boolean(),
-				service: Type.String(),
-			}),
-		),
 	}),
 	role: Type.Union([
 		Type.Literal('owner'),
