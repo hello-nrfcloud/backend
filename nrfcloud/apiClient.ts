@@ -96,7 +96,7 @@ const Page = <T extends TSchema>(Item: T) =>
 	})
 const Devices = Page(Device)
 
-export const AccountInfo = Type.Object({
+const AccountInfo = Type.Object({
 	mqttEndpoint: Type.String(), // e.g. 'mqtt.nrfcloud.com'
 	mqttTopicPrefix: Type.String(), // e.g. 'prod/a0673464-e4e1-4b87-bffd-6941a012067b/',
 	team: Type.Object({
@@ -173,26 +173,30 @@ const validate = <T extends TObject>(
 	return maybeData.value
 }
 
-const fetchData = async (
-	...args: Parameters<typeof fetch>
-): ReturnType<typeof fetch> => {
-	const response = await fetch(...args)
-	if (!response.ok) throw new Error(`Error fetching status: ${response.status}`)
+const fetchData =
+	(fetchImplementation?: typeof fetch) =>
+	async (...args: Parameters<typeof fetch>): ReturnType<typeof fetch> => {
+		const response = await (fetchImplementation ?? fetch)(...args)
+		if (!response.ok)
+			throw new Error(`Error fetching status: ${response.status}`)
 
-	return response.json()
-}
+		return response.json()
+	}
 
 const onError = (error: Error): { error: Error | ValidationError } => ({
 	error,
 })
 
-export const apiClient = ({
-	endpoint,
-	apiKey,
-}: {
-	endpoint: URL
-	apiKey: string
-}): {
+export const apiClient = (
+	{
+		endpoint,
+		apiKey,
+	}: {
+		endpoint: URL
+		apiKey: string
+	},
+	fetchImplementation?: typeof fetch,
+): {
 	listDevices: () => Promise<
 		{ error: Error | ValidationError } | { devices: Static<typeof Devices> }
 	>
@@ -237,9 +241,10 @@ export const apiClient = ({
 		Authorization: `Bearer ${apiKey}`,
 		Accept: 'application/json; charset=utf-8',
 	}
+	const fd = fetchData(fetchImplementation)
 	return {
 		listDevices: async () =>
-			fetchData(
+			fd(
 				`${slashless(endpoint)}/v1/devices?${new URLSearchParams({
 					pageLimit: '100',
 					deviceNameFuzzy: 'oob-',
@@ -249,7 +254,7 @@ export const apiClient = ({
 				.then((res) => ({ devices: validate(Devices, res) }))
 				.catch(onError),
 		getDevice: async (id) =>
-			fetchData(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
+			fd(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
 				headers,
 			})
 				.then((res) => ({ device: validate(Device, res) }))
@@ -324,7 +329,7 @@ export const apiClient = ({
 			return { error: new Error(`Import failed: ${JSON.stringify(res)}`) }
 		},
 		account: async () =>
-			fetchData(`${slashless(endpoint)}/v1/account`, {
+			fd(`${slashless(endpoint)}/v1/account`, {
 				headers: {
 					Authorization: `Bearer ${apiKey}`,
 					'Content-Type': 'application/octet-stream',
@@ -333,7 +338,7 @@ export const apiClient = ({
 				.then((res) => ({ account: validate(AccountInfo, res) }))
 				.catch(onError),
 		getBulkOpsStatus: async (bulkOpsId) =>
-			fetchData(
+			fd(
 				`${slashless(endpoint)}/v1/bulk-ops-requests/${encodeURIComponent(
 					bulkOpsId,
 				)}`,

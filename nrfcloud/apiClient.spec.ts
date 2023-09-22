@@ -1,8 +1,7 @@
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import { AccountInfo } from './apiClient.js'
+import { apiClient } from './apiClient.js'
 
 describe('apiClient()', () => {
-	it('should validate enterprise plan API Client response', () => {
+	it('should validate enterprise plan API Client response', async () => {
 		const APIresponse = {
 			mqttEndpoint: 'mqtt.nrfcloud.com',
 			mqttTopicPrefix: 'prod/b8b26bc5-2814-4063-b4fa-83ecddb2fec7/',
@@ -67,8 +66,20 @@ describe('apiClient()', () => {
 			},
 		}
 
-		const maybeData = validateWithTypeBox(AccountInfo)(APIresponse)
+		const client = apiClient(
+			{
+				endpoint: new URL('https://example.com/'),
+				apiKey: 'some-key',
+			},
+			jest.fn(() => ({
+				ok: true,
+				json: async () => Promise.resolve(APIresponse),
+			})) as any,
+		)
 
-		expect('errors' in maybeData).toBe(false)
+		const res = await client.account()
+
+		expect('error' in res).toBe(false)
+		expect('account' in res && res.account).toMatchObject(APIresponse)
 	})
 })
