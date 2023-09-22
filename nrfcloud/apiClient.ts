@@ -96,7 +96,7 @@ const Page = <T extends TSchema>(Item: T) =>
 	})
 const Devices = Page(Device)
 
-const AccountInfo = Type.Object({
+export const AccountInfo = Type.Object({
 	mqttEndpoint: Type.String(), // e.g. 'mqtt.nrfcloud.com'
 	mqttTopicPrefix: Type.String(), // e.g. 'prod/a0673464-e4e1-4b87-bffd-6941a012067b/',
 	team: Type.Object({
@@ -114,17 +114,29 @@ const AccountInfo = Type.Object({
 					Type.Literal('Messages'),
 					Type.Literal('SCELL'),
 					Type.Literal('MCELL'),
+					Type.Literal('AGPS'),
 				]),
 				total: Type.Number(), // e.g. 0.9
 			}),
 		),
 		currentMonthTotalCost: Type.Number(), // e.g. 2.73
-		name: Type.Union([Type.Literal('PRO'), Type.Literal('DEVELOPER')]),
+		name: Type.Union([
+			Type.Literal('PRO'),
+			Type.Literal('DEVELOPER'),
+			Type.Literal('ENTERPRISE'),
+		]),
 		proxyUsageDeclarations: Type.Object({
 			AGPS: Type.Number(), // e.g. 0
 			GROUND_FIX: Type.Number(), // e.g. 200
 			PGPS: Type.Number(), // e.g. 0
 		}),
+		serviceKeys: Type.Array(
+			Type.Object({
+				createdAt: Type.String(),
+				enabled: Type.Boolean(),
+				service: Type.String(),
+			}),
+		),
 	}),
 	role: Type.Union([
 		Type.Literal('owner'),
