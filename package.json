@@ -59,7 +59,7 @@
     "@types/lodash-es": "4.17.9",
     "@types/ws": "8.5.5",
     "@types/yazl": "2.4.3",
-    "@typescript-eslint/eslint-plugin": "6.7.2",
+    "@typescript-eslint/eslint-plugin": "6.7.3",
     "aws-cdk": "2.97.1",
     "aws-cdk-lib": "2.97.1",
     "cdk": "2.97.1",
