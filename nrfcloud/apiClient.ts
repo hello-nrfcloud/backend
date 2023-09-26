@@ -105,19 +105,7 @@ const AccountInfo = Type.Object({
 	}),
 	plan: Type.Object({
 		currentMonthTotalCost: Type.Number(), // e.g. 2.73
-		proxyUsageDeclarations: Type.Object({
-			AGPS: Type.Number(), // e.g. 0
-			GROUND_FIX: Type.Number(), // e.g. 200
-			PGPS: Type.Number(), // e.g. 0
-		}),
 	}),
-	role: Type.Union([
-		Type.Literal('owner'),
-		Type.Literal('admin'),
-		Type.Literal('editor'),
-		Type.Literal('viewer'),
-	]),
-	tags: Type.Array(Type.String()),
 })
 
 const BulkOpsRequest = Type.Object({
