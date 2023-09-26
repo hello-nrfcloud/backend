@@ -33,4 +33,21 @@ describe('validatedFetch()', () => {
 			},
 		})
 	})
+
+	it('should return the fetch exception', async () => {
+		const err = new Error(`Some error`)
+		const mockFetch = jest.fn(() => {
+			throw err
+		})
+		const vf = validatedFetch(
+			{
+				endpoint: new URL('https://example.com/'),
+				apiKey: 'some-key',
+			},
+			mockFetch as any,
+		)
+		expect(
+			await vf({ resource: 'some-resource' }, mockFetch as any),
+		).toMatchObject({ error: err })
+	})
 })

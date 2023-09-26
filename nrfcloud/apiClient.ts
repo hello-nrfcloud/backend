@@ -1,13 +1,7 @@
-import {
-	Type,
-	type TSchema,
-	type Static,
-	type TObject,
-} from '@sinclair/typebox'
+import { Type, type TSchema, type Static } from '@sinclair/typebox'
 import { slashless } from '../util/slashless.js'
 import type { Nullable } from '../util/types.js'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import type { ErrorObject } from 'ajv'
+import { ValidationError, validatedFetch } from './validatedFetch.js'
 
 export const DeviceConfig = Type.Partial(
 	Type.Object({
@@ -98,43 +92,6 @@ type FwType =
 	| 'BOOTLOADER'
 	| 'MDM_FULL'
 
-export class ValidationError extends Error {
-	public errors: ErrorObject[]
-	public readonly isValidationError = true
-	constructor(errors: ErrorObject[]) {
-		super(`Validation errors`)
-		this.name = 'ValidationError'
-		this.errors = errors
-	}
-}
-
-export const validate = <T extends TObject>(
-	SchemaObject: T,
-	data: unknown,
-): Static<T> => {
-	const maybeData = validateWithTypeBox(SchemaObject)(data)
-
-	if ('errors' in maybeData) {
-		throw new ValidationError(maybeData.errors)
-	}
-
-	return maybeData.value
-}
-
-export const fetchData =
-	(fetchImplementation?: typeof fetch) =>
-	async (...args: Parameters<typeof fetch>): ReturnType<typeof fetch> => {
-		const response = await (fetchImplementation ?? fetch)(...args)
-		if (!response.ok)
-			throw new Error(`Error fetching status: ${response.status}`)
-
-		return response.json()
-	}
-
-export const onError = (error: Error): { error: Error | ValidationError } => ({
-	error,
-})
-
 export const apiClient = (
 	{
 		endpoint,
@@ -146,12 +103,12 @@ export const apiClient = (
 	fetchImplementation?: typeof fetch,
 ): {
 	listDevices: () => Promise<
-		{ error: Error | ValidationError } | { devices: Static<typeof Devices> }
+		{ error: Error | ValidationError } | { result: Static<typeof Devices> }
 	>
 	getDevice: (
 		id: string,
 	) => Promise<
-		{ error: Error | ValidationError } | { device: Static<typeof Device> }
+		{ error: Error | ValidationError } | { result: Static<typeof Device> }
 	>
 	updateConfig: (
 		id: string,
@@ -177,24 +134,20 @@ export const apiClient = (
 		Authorization: `Bearer ${apiKey}`,
 		Accept: 'application/json; charset=utf-8',
 	}
-	const fd = fetchData(fetchImplementation)
+	const vf = validatedFetch({ endpoint, apiKey }, fetchImplementation)
 	return {
 		listDevices: async () =>
-			fd(
-				`${slashless(endpoint)}/v1/devices?${new URLSearchParams({
-					pageLimit: '100',
-					deviceNameFuzzy: 'oob-',
-				}).toString()}`,
-				{ headers },
-			)
-				.then((res) => ({ devices: validate(Devices, res) }))
-				.catch(onError),
+			vf(
+				{
+					resource: `devices?${new URLSearchParams({
+						pageLimit: '100',
+						deviceNameFuzzy: 'oob-',
+					}).toString()}`,
+				},
+				Devices,
+			),
 		getDevice: async (id) =>
-			fd(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
-				headers,
-			})
-				.then((res) => ({ device: validate(Device, res) }))
-				.catch(onError),
+			vf({ resource: `devices/${encodeURIComponent(id)}` }, Device),
 		updateConfig: async (id, config) =>
 			fetch(
 				`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}/state`,
@@ -210,12 +163,11 @@ export const apiClient = (
 						},
 					}),
 				},
-			)
-				.then((res) => {
-					if (res.status >= 400) throw new Error(`Update failed: ${res.status}`)
-					return { success: true }
-				})
-				.catch(onError),
+			).then((res) => {
+				if (res.status >= 400)
+					return { error: new Error(`Update failed: ${res.status}`) }
+				return { success: true }
+			}),
 		registerDevices: async (devices) => {
 			const bulkRegistrationPayload = devices
 				.map(({ deviceId, subType, tags, fwTypes, certPem }) => [

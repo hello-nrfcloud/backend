@@ -100,7 +100,7 @@ export const configureDeviceCommand = ({
 		}
 
 		const {
-			device: { state },
+			result: { state },
 		} = maybeNrfCloudDevice
 
 		console.log(

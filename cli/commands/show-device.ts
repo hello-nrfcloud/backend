@@ -65,6 +65,7 @@ export const showDeviceCommand = ({
 		})
 
 		const maybeNrfCloudDevice = await client.getDevice(device.id)
+
 		const account = await getAccountInfo({ endpoint: apiEndpoint, apiKey })
 		if ('error' in account) {
 			console.error(chalk.red('⚠️'), '', chalk.red(account.error.message))
@@ -85,9 +86,9 @@ export const showDeviceCommand = ({
 					chalk.green(device.fingerprint),
 					chalk.blue(device.id),
 					chalk.magenta(device.model),
-					'device' in maybeNrfCloudDevice ? chalk.green('✅') : chalk.red('⚠️'),
-					'device' in maybeNrfCloudDevice &&
-					maybeNrfCloudDevice.device?.state?.reported?.connection?.status ===
+					'result' in maybeNrfCloudDevice ? chalk.green('✅') : chalk.red('⚠️'),
+					'result' in maybeNrfCloudDevice &&
+					maybeNrfCloudDevice.result?.state?.reported?.connection?.status ===
 						'connected'
 						? chalk.green('Yes')
 						: chalk.red('No'),

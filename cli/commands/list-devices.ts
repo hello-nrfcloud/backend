@@ -31,12 +31,14 @@ export const listDevicesCommand = ({
 			process.exit(1)
 		}
 
-		console.log(maybeDevices.devices.total, 'devices')
+		const devices = maybeDevices.result
+
+		console.log(devices.total, 'devices')
 
 		let i = 0
 		const data = [
 			['#', 'ID', 'Firmware version'],
-			...maybeDevices.devices.items.map(({ id, firmware }) => [
+			...devices.items.map(({ id, firmware }) => [
 				++i,
 				id,
 				firmware?.app?.version ?? '-',
