@@ -1,0 +1,63 @@
+{
+  "mqttEndpoint": "mqtt.nrfcloud.com",
+  "mqttTopicPrefix": "prod/b8b26bc5-2814-4063-b4fa-83ecddb2fec7/",
+  "team": {
+    "tenantId": "b8b26bc5-2814-4063-b4fa-83ecddb2fec7",
+    "name": "XXX"
+  },
+  "role": "owner",
+  "tags": [],
+  "plan": {
+    "name": "ENTERPRISE",
+    "proxyUsageDeclarations": {
+      "AGPS": 0,
+      "PGPS": 0,
+      "GROUND_FIX": 0
+    },
+    "serviceKeys": [
+      {
+        "service": "ALL",
+        "enabled": true,
+        "createdAt": "2023-09-14T10:24:31.663Z"
+      }
+    ],
+    "currentMonthCosts": [
+      {
+        "serviceId": "Devices",
+        "serviceDescription": "Devices in your account",
+        "quantity": 53,
+        "price": 0.1,
+        "total": 5.3
+      },
+      {
+        "serviceId": "Messages",
+        "serviceDescription": "Device messages stored",
+        "quantity": 70281,
+        "price": 0.0001,
+        "total": 7.03
+      },
+      {
+        "serviceId": "AGPS",
+        "serviceDescription": "Assisted GPS Service: total requests",
+        "quantity": 8,
+        "price": 0.001,
+        "total": 0.01
+      },
+      {
+        "serviceId": "SCELL",
+        "serviceDescription": "Single-Cell Location Service: total requests",
+        "quantity": 2684,
+        "price": 0.001,
+        "total": 2.68
+      },
+      {
+        "serviceId": "MCELL",
+        "serviceDescription": "Multi-Cell Location Service: total requests",
+        "quantity": 4505,
+        "price": 0.002,
+        "total": 9.01
+      }
+    ],
+    "currentMonthTotalCost": 24.03
+  }
+}

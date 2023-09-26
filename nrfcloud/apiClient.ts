@@ -9,12 +9,6 @@ import type { Nullable } from '../util/types.js'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import type { ErrorObject } from 'ajv'
 
-const DateString = Type.String({
-	pattern:
-		'^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d.\\d+([+-][0-2]\\d:[0-5]\\d|Z)$',
-	title: 'ISO Date string',
-})
-
 export const DeviceConfig = Type.Partial(
 	Type.Object({
 		activeMode: Type.Boolean(), // e.g. false
@@ -95,37 +89,6 @@ const Page = <T extends TSchema>(Item: T) =>
 		items: Type.Array(Item),
 	})
 const Devices = Page(Device)
-
-const AccountInfo = Type.Object({
-	mqttEndpoint: Type.String(), // e.g. 'mqtt.nrfcloud.com'
-	mqttTopicPrefix: Type.String(), // e.g. 'prod/a0673464-e4e1-4b87-bffd-6941a012067b/',
-	team: Type.Object({
-		tenantId: Type.String(), // e.g. 'bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce',
-		name: Type.String(), // e.g. 'hello.nrfcloud.com'
-	}),
-})
-
-const BulkOpsRequest = Type.Object({
-	bulkOpsRequestId: Type.String(), // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
-	endpoint: Type.Union([
-		Type.Literal('PROVISION_DEVICES'),
-		Type.Literal('REGISTER_PUBLIC_KEYS'),
-		Type.Literal('VERIFY_ATTESTATION_TOKENS'),
-		Type.Literal('VERIFY_JWTS'),
-		Type.Literal('CLAIM_DEVICE_OWNERSHIP'),
-	]), // e.g. 'PROVISION_DEVICES'
-	status: Type.Union([
-		Type.Literal('PENDING'),
-		Type.Literal('IN_PROGRESS'),
-		Type.Literal('FAILED'),
-		Type.Literal('SUCCEEDED'),
-	]), // e.g. 'PENDING'
-	requestedAt: DateString, // e.g. '2020-06-25T21:05:12.830Z'
-	completedAt: Type.Optional(DateString), // e.g. '2020-06-25T21:05:12.830Z'
-	uploadedDataUrl: Type.String(), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
-	resultDataUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
-	errorSummaryUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
-})
 
 type FwType =
 	| 'APP'
@@ -209,18 +172,6 @@ export const apiClient = (
 			certPem: string
 		}[],
 	) => Promise<{ error: Error } | { bulkOpsRequestId: string }>
-	account: () => Promise<
-		| { error: Error | ValidationError }
-		| {
-				account: Static<typeof AccountInfo>
-		  }
-	>
-	getBulkOpsStatus: (bulkOpsId: string) => Promise<
-		| { error: Error | ValidationError }
-		| {
-				status: Static<typeof BulkOpsRequest>
-		  }
-	>
 } => {
 	const headers = {
 		Authorization: `Bearer ${apiKey}`,
@@ -313,28 +264,5 @@ export const apiClient = (
 
 			return { error: new Error(`Import failed: ${JSON.stringify(res)}`) }
 		},
-		account: async () =>
-			fd(`${slashless(endpoint)}/v1/account`, {
-				headers: {
-					Authorization: `Bearer ${apiKey}`,
-					'Content-Type': 'application/octet-stream',
-				},
-			})
-				.then((res) => ({ account: validate(AccountInfo, res) }))
-				.catch(onError),
-		getBulkOpsStatus: async (bulkOpsId) =>
-			fd(
-				`${slashless(endpoint)}/v1/bulk-ops-requests/${encodeURIComponent(
-					bulkOpsId,
-				)}`,
-				{
-					headers: {
-						...headers,
-						'Content-Type': 'application/json',
-					},
-				},
-			)
-				.then((res) => ({ status: validate(BulkOpsRequest, res) }))
-				.catch(onError),
 	}
 }

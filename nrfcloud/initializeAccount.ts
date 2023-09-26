@@ -64,6 +64,10 @@ export const initializeAccount =
 			endpoint: effectiveEndpoint,
 			apiKey,
 		})
+		if ('error' in accountInfo) {
+			console.error(chalk.red('⚠️'), '', chalk.red(accountInfo.error.message))
+			process.exit(1)
+		}
 
 		const iotEndpoint = await getIoTEndpoint({ iot })()
 
@@ -93,7 +97,7 @@ export const initializeAccount =
 			if (privateKey === undefined) {
 				console.error(chalk.red('⚠️'), chalk.red('Account device exists'))
 				throw new Error(
-					`Account device exists in account ${accountInfo.tenantId}`,
+					`Account device exists in account ${accountInfo.team.tenantId}`,
 				)
 			}
 			console.log(chalk.green(`Account device created.`))
@@ -101,7 +105,7 @@ export const initializeAccount =
 			await putNRFCloudSettings({ ssm, stackName: STACK_NAME, account })({
 				accountDeviceClientCert: clientCert,
 				accountDevicePrivateKey: privateKey,
-				accountDeviceClientId: `account-${accountInfo.tenantId}`,
+				accountDeviceClientId: `account-${accountInfo.team.tenantId}`,
 				mqttEndpoint: accountInfo.mqttEndpoint,
 				mqttTopicPrefix: accountInfo.mqttTopicPrefix,
 			})

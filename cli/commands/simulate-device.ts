@@ -9,7 +9,6 @@ import { EventEmitter } from 'node:events'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.js'
-import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { version } from '../../package.json'
 import {
@@ -17,6 +16,7 @@ import {
 	ensureCertificateDir,
 } from '../certificates.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
 
 export const simulateDeviceCommand = ({
 	ssm,
@@ -51,11 +51,10 @@ export const simulateDeviceCommand = ({
 			stackName,
 			account: maybeFingerprint.account,
 		})()
-		const client = apiClient({
-			endpoint: apiEndpoint,
+		const accountInfo = await getAccountInfo({
 			apiKey,
+			endpoint: apiEndpoint,
 		})
-		const accountInfo = await client.account()
 		if ('error' in accountInfo) {
 			console.error(accountInfo.error.message)
 			console.error(`Failed to fetch nRF Cloud account information.`)
@@ -63,7 +62,7 @@ export const simulateDeviceCommand = ({
 		}
 		console.log(
 			chalk.yellow('MQTT endpoint:'),
-			chalk.blue(accountInfo.account.mqttEndpoint),
+			chalk.blue(accountInfo.mqttEndpoint),
 		)
 
 		const dir = ensureCertificateDir(env)
@@ -98,7 +97,7 @@ export const simulateDeviceCommand = ({
 			onDelta: (handler: (message: Record<string, any>) => void) => void
 		}>((resolve, reject) => {
 			const mqttClient = mqtt.connect({
-				host: accountInfo.account.mqttEndpoint,
+				host: accountInfo.mqttEndpoint,
 				port: 8883,
 				protocol: 'mqtts',
 				protocolVersion: 4,
@@ -247,52 +246,49 @@ export const simulateDeviceCommand = ({
 		}, 60 * 1000)
 
 		// Publish location
-		connection.publish(
-			`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
-			{
-				appId: 'GROUND_FIX',
-				messageType: 'DATA',
-				data: {
-					lte: [
-						{
-							eci: 84561173,
-							mcc: 240,
-							mnc: 7,
-							tac: 34209,
-							earfcn: 6400,
-							rsrp: -91,
-							rsrq: -10.5,
-							nmr: [
-								{
-									earfcn: 6400,
-									pci: 98,
-									rsrp: -93,
-									rsrq: -11.5,
-								},
-								{
-									earfcn: 6400,
-									pci: 177,
-									rsrp: -98,
-									rsrq: -14,
-								},
-								{
-									earfcn: 6400,
-									pci: 62,
-									rsrp: -99,
-									rsrq: -14,
-								},
-								{
-									earfcn: 6400,
-									pci: 72,
-									rsrp: -103,
-									rsrq: -20,
-								},
-							],
-						},
-					],
-				},
+		connection.publish(`${accountInfo.mqttTopicPrefix}m/d/${deviceId}/d2c`, {
+			appId: 'GROUND_FIX',
+			messageType: 'DATA',
+			data: {
+				lte: [
+					{
+						eci: 84561173,
+						mcc: 240,
+						mnc: 7,
+						tac: 34209,
+						earfcn: 6400,
+						rsrp: -91,
+						rsrq: -10.5,
+						nmr: [
+							{
+								earfcn: 6400,
+								pci: 98,
+								rsrp: -93,
+								rsrq: -11.5,
+							},
+							{
+								earfcn: 6400,
+								pci: 177,
+								rsrp: -98,
+								rsrq: -14,
+							},
+							{
+								earfcn: 6400,
+								pci: 62,
+								rsrp: -99,
+								rsrq: -14,
+							},
+							{
+								earfcn: 6400,
+								pci: 72,
+								rsrp: -103,
+								rsrq: -20,
+							},
+						],
+					},
+				],
 			},
-		)
+		})
 
 		// Publish sensor readings
 
@@ -303,15 +299,12 @@ export const simulateDeviceCommand = ({
 		})
 
 		const publishBattery = () => {
-			connection.publish(
-				`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
-				{
-					appId: 'BATTERY',
-					messageType: 'DATA',
-					ts: Date.now(),
-					data: batteryReadings.next().value.toFixed(0),
-				},
-			)
+			connection.publish(`${accountInfo.mqttTopicPrefix}m/d/${deviceId}/d2c`, {
+				appId: 'BATTERY',
+				messageType: 'DATA',
+				ts: Date.now(),
+				data: batteryReadings.next().value.toFixed(0),
+			})
 		}
 
 		const gainReadings = dataGenerator({
@@ -321,15 +314,12 @@ export const simulateDeviceCommand = ({
 		})
 
 		const publishGain = () => {
-			connection.publish(
-				`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
-				{
-					appId: 'SOLAR',
-					messageType: 'DATA',
-					ts: Date.now(),
-					data: gainReadings.next().value.toString(),
-				},
-			)
+			connection.publish(`${accountInfo.mqttTopicPrefix}m/d/${deviceId}/d2c`, {
+				appId: 'SOLAR',
+				messageType: 'DATA',
+				ts: Date.now(),
+				data: gainReadings.next().value.toString(),
+			})
 		}
 
 		publishBattery()
@@ -339,15 +329,12 @@ export const simulateDeviceCommand = ({
 
 		// Simulate button presses
 		const pressButton = () => {
-			connection.publish(
-				`${accountInfo.account.mqttTopicPrefix}m/d/${deviceId}/d2c`,
-				{
-					data: '1',
-					appId: 'BUTTON',
-					messageType: 'DATA',
-					ts: Date.now(),
-				},
-			)
+			connection.publish(`${accountInfo.mqttTopicPrefix}m/d/${deviceId}/d2c`, {
+				data: '1',
+				appId: 'BUTTON',
+				messageType: 'DATA',
+				ts: Date.now(),
+			})
 		}
 		console.log(``)
 		console.log(chalk.yellow.dim(`Press <1> to simulate a button press.`))

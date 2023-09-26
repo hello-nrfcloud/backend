@@ -7,6 +7,7 @@ import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
+import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
 
 export const showDeviceCommand = ({
 	ssm,
@@ -64,7 +65,7 @@ export const showDeviceCommand = ({
 		})
 
 		const maybeNrfCloudDevice = await client.getDevice(device.id)
-		const account = await client.account()
+		const account = await getAccountInfo({ endpoint: apiEndpoint, apiKey })
 		if ('error' in account) {
 			console.error(chalk.red('⚠️'), '', chalk.red(account.error.message))
 			process.exit(1)
@@ -90,8 +91,8 @@ export const showDeviceCommand = ({
 						'connected'
 						? chalk.green('Yes')
 						: chalk.red('No'),
-					`${chalk.cyanBright(account.account.team.name)} ${chalk.cyan.dim(
-						account.account.team.tenantId,
+					`${chalk.cyanBright(account.team.name)} ${chalk.cyan.dim(
+						account.team.tenantId,
 					)}`,
 				],
 			]),
