@@ -1,5 +1,5 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { apiClient } from '../../nrfcloud/apiClient.js'
+import { devices as devicesApi } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { table } from 'table'
@@ -19,13 +19,13 @@ export const listDevicesCommand = ({
 			account,
 		})()
 
-		const client = apiClient({
+		const client = devicesApi({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
 
 		// FIXME: client needs to implement pagination
-		const maybeDevices = await client.listDevices()
+		const maybeDevices = await client.list()
 		if ('error' in maybeDevices) {
 			console.error(maybeDevices.error)
 			process.exit(1)

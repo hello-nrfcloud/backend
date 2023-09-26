@@ -5,7 +5,7 @@ import chalk from 'chalk'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { registerDevice } from '../../devices/registerDevice.js'
-import { apiClient } from '../../nrfcloud/apiClient.js'
+import { devices } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { ulid } from '../../util/ulid.js'
 import { ensureCertificateDir } from '../certificates.js'
@@ -34,7 +34,7 @@ export const registerSimulatorDeviceCommand = ({
 			account,
 		})()
 
-		const client = apiClient({
+		const client = devices({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
@@ -69,7 +69,7 @@ export const registerSimulatorDeviceCommand = ({
 			),
 		)
 
-		const registration = await client.registerDevices([
+		const registration = await client.register([
 			{
 				deviceId,
 				subType: 'PCA20035-solar',

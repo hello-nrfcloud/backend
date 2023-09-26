@@ -1,8 +1,8 @@
 import { getAPISettings } from './settings.js'
-import { apiClient } from './apiClient.js'
+import { devices } from './devices.js'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 
-const clients: Record<string, Promise<ReturnType<typeof apiClient>>> = {}
+const clients: Record<string, Promise<ReturnType<typeof devices>>> = {}
 
 /**
  * Returns a nRF Cloud API client for the given account
@@ -11,7 +11,7 @@ export const accountApiClient = async (
 	account: string,
 	stackName: string,
 	ssm: SSMClient,
-): Promise<ReturnType<typeof apiClient>> => {
+): Promise<ReturnType<typeof devices>> => {
 	const client =
 		clients[account] ??
 		getAPISettings({
@@ -19,7 +19,7 @@ export const accountApiClient = async (
 			stackName,
 			account,
 		})().then(({ apiKey, apiEndpoint }) =>
-			apiClient({
+			devices({
 				endpoint: apiEndpoint,
 				apiKey,
 			}),

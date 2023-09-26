@@ -92,7 +92,7 @@ type FwType =
 	| 'BOOTLOADER'
 	| 'MDM_FULL'
 
-export const apiClient = (
+export const devices = (
 	{
 		endpoint,
 		apiKey,
@@ -102,10 +102,10 @@ export const apiClient = (
 	},
 	fetchImplementation?: typeof fetch,
 ): {
-	listDevices: () => Promise<
+	list: () => Promise<
 		{ error: Error | ValidationError } | { result: Static<typeof Devices> }
 	>
-	getDevice: (
+	get: (
 		id: string,
 	) => Promise<
 		{ error: Error | ValidationError } | { result: Static<typeof Device> }
@@ -115,7 +115,7 @@ export const apiClient = (
 		config: Nullable<Omit<Static<typeof DeviceConfig>, 'nod'>> &
 			Pick<Static<typeof DeviceConfig>, 'nod'>,
 	) => Promise<{ error: Error } | { success: boolean }>
-	registerDevices: (
+	register: (
 		devices: {
 			// A globally unique device id (UUIDs are highly recommended)	/^[a-z0-9:_-]{1,128}$/i
 			deviceId: string
@@ -136,7 +136,7 @@ export const apiClient = (
 	}
 	const vf = validatedFetch({ endpoint, apiKey }, fetchImplementation)
 	return {
-		listDevices: async () =>
+		list: async () =>
 			vf(
 				{
 					resource: `devices?${new URLSearchParams({
@@ -146,7 +146,7 @@ export const apiClient = (
 				},
 				Devices,
 			),
-		getDevice: async (id) =>
+		get: async (id) =>
 			vf({ resource: `devices/${encodeURIComponent(id)}` }, Device),
 		updateConfig: async (id, config) =>
 			fetch(
@@ -168,7 +168,7 @@ export const apiClient = (
 					return { error: new Error(`Update failed: ${res.status}`) }
 				return { success: true }
 			}),
-		registerDevices: async (devices) => {
+		register: async (devices) => {
 			const bulkRegistrationPayload = devices
 				.map(({ deviceId, subType, tags, fwTypes, certPem }) => [
 					[

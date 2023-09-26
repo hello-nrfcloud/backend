@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises'
 import os from 'node:os'
 import { table } from 'table'
 import { registerDevice } from '../../devices/registerDevice.js'
-import { apiClient } from '../../nrfcloud/apiClient.js'
+import { devices as devicesApi } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
@@ -100,12 +100,12 @@ export const importDevicesCommand = ({
 			account,
 		})()
 
-		const client = apiClient({
+		const client = devicesApi({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
 
-		const registration = await client.registerDevices(
+		const registration = await client.register(
 			devices.map(([imei, , publicKey]) => {
 				const deviceId = `oob-${imei}`
 				const certPem = publicKey

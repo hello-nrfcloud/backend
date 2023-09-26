@@ -3,7 +3,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { table } from 'table'
 import { getDevice } from '../../devices/getDevice.js'
-import { apiClient } from '../../nrfcloud/apiClient.js'
+import { devices } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
@@ -59,12 +59,12 @@ export const showDeviceCommand = ({
 			account: device.account,
 		})()
 
-		const client = apiClient({
+		const client = devices({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
 
-		const maybeNrfCloudDevice = await client.getDevice(device.id)
+		const maybeNrfCloudDevice = await client.get(device.id)
 
 		const account = await getAccountInfo({ endpoint: apiEndpoint, apiKey })
 		if ('error' in account) {

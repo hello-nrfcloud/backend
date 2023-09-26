@@ -12,7 +12,7 @@ import chalk from 'chalk'
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { registerDevice } from '../../devices/registerDevice.js'
-import { apiClient } from '../../nrfcloud/apiClient.js'
+import { devices } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { run } from '../../util/run.js'
 import {
@@ -158,12 +158,12 @@ export const provisionDkCommand = ({
 			account,
 		})()
 
-		const client = apiClient({
+		const client = devices({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
 
-		const registration = await client.registerDevices([
+		const registration = await client.register([
 			{
 				deviceId,
 				subType: model.replace(/[^0-9a-z-]/gi, '-'),
