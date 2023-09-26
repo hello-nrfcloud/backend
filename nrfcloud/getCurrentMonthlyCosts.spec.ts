@@ -1,7 +1,7 @@
-import { apiClient } from './apiClient.js'
+import { getCurrentMonthlyCosts } from './getCurrentMonthlyCosts.js'
 
-describe('apiClient()', () => {
-	it('should validate enterprise plan API Client response', async () => {
+describe('getCurrentMonthlyCosts()', () => {
+	it("return the current month's total cost for an account", async () => {
 		const APIresponse = {
 			mqttEndpoint: 'mqtt.nrfcloud.com',
 			mqttTopicPrefix: 'prod/b8b26bc5-2814-4063-b4fa-83ecddb2fec7/',
@@ -66,7 +66,7 @@ describe('apiClient()', () => {
 			},
 		}
 
-		const client = apiClient(
+		const res = await getCurrentMonthlyCosts(
 			{
 				endpoint: new URL('https://example.com/'),
 				apiKey: 'some-key',
@@ -75,11 +75,10 @@ describe('apiClient()', () => {
 				ok: true,
 				json: async () => Promise.resolve(APIresponse),
 			})) as any,
-		)
-
-		const res = await client.account()
-
+		)()
 		expect('error' in res).toBe(false)
-		expect('account' in res && res.account).toMatchObject(APIresponse)
+		expect('currentMonthTotalCost' in res && res.currentMonthTotalCost).toEqual(
+			24.03,
+		)
 	})
 })

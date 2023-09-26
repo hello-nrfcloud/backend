@@ -8,6 +8,7 @@ import { metricsForComponent } from './metrics/metrics.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { getAllnRFCloudAccounts } from '../nrfcloud/allAccounts.js'
 import { getCurrentMonthlyCosts } from '../nrfcloud/getCurrentMonthlyCosts.js'
+import { getAPISettings, type Settings } from '../nrfcloud/settings.js'
 
 const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',
@@ -21,6 +22,11 @@ const getDailyActiveDevices = dailyActiveDevices(db, lastSeenTableName)
 const getDailyActiveFingerprints = dailyActiveFingerprints(db, devicesTableName)
 
 const { track, metrics } = metricsForComponent('KPIs')
+
+const accountSettings: Record<
+	string,
+	Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>>
+> = {}
 
 const h = async () => {
 	// Make sure we are getting all data from yesterday,
@@ -43,10 +49,18 @@ const h = async () => {
 		// Current month's nRF Cloud costs
 		...(await getAllnRFCloudAccounts({ ssm, stackName })).map(
 			async (account) => {
+				const settingsPromise =
+					accountSettings[account] ??
+					getAPISettings({
+						ssm,
+						stackName,
+						account,
+					})()
+				accountSettings[account] = settingsPromise
+				const { apiKey, apiEndpoint } = await settingsPromise
 				const maybeCosts = await getCurrentMonthlyCosts({
-					ssm,
-					stackName,
-					account,
+					apiKey,
+					endpoint: apiEndpoint,
 				})()
 				if ('error' in maybeCosts) {
 					console.error(maybeCosts.error)

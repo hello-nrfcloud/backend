@@ -1,30 +1,37 @@
-import { SSMClient } from '@aws-sdk/client-ssm'
-import { accountApiClient } from './accountApiClient.js'
 import type { ValidationError } from 'ajv'
+import { validatedFetch } from './validatedFetch.js'
+import { Type } from '@sinclair/typebox'
 
 export const getCurrentMonthlyCosts =
-	({
-		account,
-		stackName,
-		ssm,
-	}: {
-		account: string
-		stackName: string
-		ssm: SSMClient
-	}) =>
+	(
+		{
+			apiKey,
+			endpoint,
+		}: {
+			apiKey: string
+			endpoint: URL
+		},
+		fetchImplementation?: typeof fetch,
+	) =>
 	async (): Promise<
 		| {
 				error: Error | ValidationError
 		  }
 		| { currentMonthTotalCost: number }
 	> => {
-		const apiClient = await accountApiClient(account, stackName, ssm)
-		const maybeAccount = await apiClient.account()
-		if ('error' in maybeAccount) {
-			return maybeAccount
+		const vf = validatedFetch({ endpoint, apiKey }, fetchImplementation)
+		const maybeResult = await vf(
+			{ resource: 'account' },
+			Type.Object({
+				plan: Type.Object({
+					currentMonthTotalCost: Type.Number(), // e.g. 2.73
+				}),
+			}),
+		)
+		if ('error' in maybeResult) {
+			return maybeResult
 		}
-		const currentMonthTotalCost =
-			maybeAccount.account.plan.currentMonthTotalCost
+		const currentMonthTotalCost = maybeResult.result.plan.currentMonthTotalCost
 
 		return { currentMonthTotalCost }
 	}

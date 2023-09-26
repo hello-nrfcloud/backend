@@ -103,9 +103,6 @@ const AccountInfo = Type.Object({
 		tenantId: Type.String(), // e.g. 'bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce',
 		name: Type.String(), // e.g. 'hello.nrfcloud.com'
 	}),
-	plan: Type.Object({
-		currentMonthTotalCost: Type.Number(), // e.g. 2.73
-	}),
 })
 
 const BulkOpsRequest = Type.Object({
@@ -148,7 +145,7 @@ export class ValidationError extends Error {
 	}
 }
 
-const validate = <T extends TObject>(
+export const validate = <T extends TObject>(
 	SchemaObject: T,
 	data: unknown,
 ): Static<T> => {
@@ -161,7 +158,7 @@ const validate = <T extends TObject>(
 	return maybeData.value
 }
 
-const fetchData =
+export const fetchData =
 	(fetchImplementation?: typeof fetch) =>
 	async (...args: Parameters<typeof fetch>): ReturnType<typeof fetch> => {
 		const response = await (fetchImplementation ?? fetch)(...args)
@@ -171,7 +168,7 @@ const fetchData =
 		return response.json()
 	}
 
-const onError = (error: Error): { error: Error | ValidationError } => ({
+export const onError = (error: Error): { error: Error | ValidationError } => ({
 	error,
 })
 
