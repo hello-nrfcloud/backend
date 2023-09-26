@@ -54,6 +54,7 @@ const cache = store({
 
 const serviceToken = once(
 	async ({ apiEndpoint, apiKey }: { apiEndpoint: URL; apiKey: string }) => {
+		// FIXME: validate response
 		const res = await trackFetch(
 			new URL(`${slashless(apiEndpoint)}/v1/account/service-token`),
 			{
@@ -152,6 +153,7 @@ const h = async (event: {
 				},
 			],
 		}
+		// FIXME: validate response
 		const res = await trackFetch(
 			new URL(`${slashless(apiEndpoint)}/v1/location/ground-fix`),
 			{

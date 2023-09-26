@@ -29,6 +29,7 @@ export const deviceShadowFetcher =
 
 		log.info(`Fetching device shadow`, { url })
 		// Change to bulk fetching device shadow otherwise it might hit rate limit
+		// FIXME: validate response
 		const res = await fetch(url, {
 			method: 'get',
 			headers: {

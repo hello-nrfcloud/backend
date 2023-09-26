@@ -12,7 +12,8 @@ export const createAccountDevice = async ({
 	apiKey: string
 	endpoint: URL
 }): Promise<CertificateCredentials> => {
-	const accountDevice = await (
+	const accountDevice = await // FIXME: validate response
+	(
 		await fetch(`${slashless(endpoint)}/v1/devices/account`, {
 			method: 'POST',
 			headers: {

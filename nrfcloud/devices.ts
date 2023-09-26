@@ -182,6 +182,7 @@ export const devices = (
 				.map((cols) => cols.join(','))
 				.join('\n')
 
+			// FIXME: validate response
 			const registrationResult = await fetch(
 				`${slashless(endpoint)}/v1/devices`,
 				{
