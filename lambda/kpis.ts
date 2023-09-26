@@ -7,7 +7,7 @@ import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { getAllnRFCloudAccounts } from '../nrfcloud/allAccounts.js'
-import { accountApiClient } from '../nrfcloud/accountApiClient.js'
+import { getCurrentMonthlyCosts } from '../nrfcloud/getCurrentMonthlyCosts.js'
 
 const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',
@@ -43,12 +43,15 @@ const h = async () => {
 		// Current month's nRF Cloud costs
 		...(await getAllnRFCloudAccounts({ ssm, stackName })).map(
 			async (account) => {
-				const apiClient = await accountApiClient(account, stackName, ssm)
-				const maybeAccount = await apiClient.account()
-				if ('error' in maybeAccount) {
-					console.error(maybeAccount.error)
+				const maybeCosts = await getCurrentMonthlyCosts({
+					ssm,
+					stackName,
+					account,
+				})()
+				if ('error' in maybeCosts) {
+					console.error(maybeCosts.error)
 				} else {
-					const costs = maybeAccount.account.plan.currentMonthTotalCost
+					const costs = maybeCosts.currentMonthTotalCost
 					console.log({ [`${account}:costs`]: costs })
 					track(`nrfCloudMonthlyCosts:${account}`, MetricUnits.Count, costs)
 				}

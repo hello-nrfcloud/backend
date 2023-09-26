@@ -138,7 +138,7 @@ type FwType =
 	| 'BOOTLOADER'
 	| 'MDM_FULL'
 
-class ValidationError extends Error {
+export class ValidationError extends Error {
 	public errors: ErrorObject[]
 	public readonly isValidationError = true
 	constructor(errors: ErrorObject[]) {
