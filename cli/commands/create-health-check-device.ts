@@ -4,7 +4,7 @@ import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { apiClient } from '../../nrfcloud/apiClient.js'
+import { devices } from '../../nrfcloud/devices.js'
 import {
 	updateSettings,
 	type Settings,
@@ -33,7 +33,7 @@ export const createHealthCheckDevice = ({
 			account,
 		})()
 
-		const client = apiClient({
+		const client = devices({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
@@ -81,7 +81,7 @@ export const createHealthCheckDevice = ({
 			}),
 		)
 
-		const registration = await client.registerDevices([
+		const registration = await client.register([
 			{
 				deviceId,
 				subType: 'PCA20035-solar',

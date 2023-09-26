@@ -3,10 +3,11 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { table } from 'table'
 import { getDevice } from '../../devices/getDevice.js'
-import { apiClient } from '../../nrfcloud/apiClient.js'
+import { devices } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
+import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
 
 export const showDeviceCommand = ({
 	ssm,
@@ -58,13 +59,14 @@ export const showDeviceCommand = ({
 			account: device.account,
 		})()
 
-		const client = apiClient({
+		const client = devices({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
 
-		const maybeNrfCloudDevice = await client.getDevice(device.id)
-		const account = await client.account()
+		const maybeNrfCloudDevice = await client.get(device.id)
+
+		const account = await getAccountInfo({ endpoint: apiEndpoint, apiKey })
 		if ('error' in account) {
 			console.error(chalk.red('⚠️'), '', chalk.red(account.error.message))
 			process.exit(1)
@@ -84,14 +86,14 @@ export const showDeviceCommand = ({
 					chalk.green(device.fingerprint),
 					chalk.blue(device.id),
 					chalk.magenta(device.model),
-					'device' in maybeNrfCloudDevice ? chalk.green('✅') : chalk.red('⚠️'),
-					'device' in maybeNrfCloudDevice &&
-					maybeNrfCloudDevice.device?.state?.reported?.connection?.status ===
+					'result' in maybeNrfCloudDevice ? chalk.green('✅') : chalk.red('⚠️'),
+					'result' in maybeNrfCloudDevice &&
+					maybeNrfCloudDevice.result?.state?.reported?.connection?.status ===
 						'connected'
 						? chalk.green('Yes')
 						: chalk.red('No'),
-					`${chalk.cyanBright(account.account.team.name)} ${chalk.cyan.dim(
-						account.account.team.tenantId,
+					`${chalk.cyanBright(account.team.name)} ${chalk.cyan.dim(
+						account.team.tenantId,
 					)}`,
 				],
 			]),

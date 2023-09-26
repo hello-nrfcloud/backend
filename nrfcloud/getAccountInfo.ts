@@ -1,28 +1,40 @@
-import { slashless } from '../util/slashless.js'
+import { Type, type Static } from '@sinclair/typebox'
+import { validatedFetch } from './validatedFetch.js'
+import type { ValidationError } from 'ajv'
 
-export type AccountInfo = {
-	mqttEndpoint: string
-	mqttTopicPrefix: string
-	tenantId: string
-}
+const AccountInfoType = Type.Object({
+	mqttEndpoint: Type.String(), // e.g. 'mqtt.nrfcloud.com'
+	mqttTopicPrefix: Type.String(), // e.g. 'prod/a0673464-e4e1-4b87-bffd-6941a012067b/',
+	team: Type.Object({
+		tenantId: Type.String(), // e.g. 'bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce',
+		name: Type.String(), // e.g. 'hello.nrfcloud.com'
+	}),
+})
+export type AccountInfo = Static<typeof AccountInfoType>
 
-export const getAccountInfo = async ({
-	apiKey,
-	endpoint,
-}: {
-	apiKey: string
-	endpoint: URL
-}): Promise<AccountInfo> => {
-	const accountInfo = await (
-		await fetch(`${slashless(endpoint)}/v1/account`, {
-			headers: {
-				Authorization: `Bearer ${apiKey}`,
-			},
-		})
-	).json()
-	return {
-		mqttEndpoint: accountInfo.mqttEndpoint,
-		mqttTopicPrefix: accountInfo.mqttTopicPrefix,
-		tenantId: accountInfo.team.tenantId,
-	}
+export const getAccountInfo = async (
+	{
+		apiKey,
+		endpoint,
+	}: {
+		apiKey: string
+		endpoint: URL
+	},
+	fetchImplementation?: typeof fetch,
+): Promise<{ error: Error | ValidationError } | AccountInfo> => {
+	const maybeAccount = await validatedFetch(
+		{
+			endpoint,
+			apiKey,
+		},
+		fetchImplementation,
+	)(
+		{
+			resource: 'account',
+		},
+		AccountInfoType,
+	)
+
+	if ('error' in maybeAccount) return maybeAccount
+	return maybeAccount.result
 }

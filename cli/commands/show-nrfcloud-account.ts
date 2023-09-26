@@ -1,9 +1,9 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { table } from 'table'
-import { apiClient } from '../../nrfcloud/apiClient.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
 
 export const showNRFCloudAccount = ({
 	ssm,
@@ -20,12 +20,10 @@ export const showNRFCloudAccount = ({
 			account,
 		})()
 
-		const client = apiClient({
+		const accountNRF = await getAccountInfo({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
-
-		const accountNRF = await client.account()
 		if ('error' in accountNRF) {
 			console.error(chalk.red('⚠️'), '', chalk.red(accountNRF.error.message))
 			process.exit(1)
@@ -35,8 +33,8 @@ export const showNRFCloudAccount = ({
 			table([
 				['Team name', 'Tenant ID', 'API endpoint', 'API key'],
 				[
-					chalk.cyan(accountNRF.account.team.name),
-					chalk.cyan(accountNRF.account.team.tenantId),
+					chalk.cyan(accountNRF.team.name),
+					chalk.cyan(accountNRF.team.tenantId),
 					chalk.magenta(apiEndpoint.toString()),
 					chalk.magenta(`${apiKey.slice(0, 5)}***`),
 				],

@@ -1,19 +1,7 @@
-import {
-	Type,
-	type TSchema,
-	type Static,
-	type TObject,
-} from '@sinclair/typebox'
+import { Type, type TSchema, type Static } from '@sinclair/typebox'
 import { slashless } from '../util/slashless.js'
 import type { Nullable } from '../util/types.js'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import type { ErrorObject } from 'ajv'
-
-const DateString = Type.String({
-	pattern:
-		'^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d.\\d+([+-][0-2]\\d:[0-5]\\d|Z)$',
-	title: 'ISO Date string',
-})
+import { ValidationError, validatedFetch } from './validatedFetch.js'
 
 export const DeviceConfig = Type.Partial(
 	Type.Object({
@@ -96,52 +84,6 @@ const Page = <T extends TSchema>(Item: T) =>
 	})
 const Devices = Page(Device)
 
-const AccountInfo = Type.Object({
-	mqttEndpoint: Type.String(), // e.g. 'mqtt.nrfcloud.com'
-	mqttTopicPrefix: Type.String(), // e.g. 'prod/a0673464-e4e1-4b87-bffd-6941a012067b/',
-	team: Type.Object({
-		tenantId: Type.String(), // e.g. 'bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce',
-		name: Type.String(), // e.g. 'hello.nrfcloud.com'
-	}),
-	plan: Type.Object({
-		currentMonthTotalCost: Type.Number(), // e.g. 2.73
-		proxyUsageDeclarations: Type.Object({
-			AGPS: Type.Number(), // e.g. 0
-			GROUND_FIX: Type.Number(), // e.g. 200
-			PGPS: Type.Number(), // e.g. 0
-		}),
-	}),
-	role: Type.Union([
-		Type.Literal('owner'),
-		Type.Literal('admin'),
-		Type.Literal('editor'),
-		Type.Literal('viewer'),
-	]),
-	tags: Type.Array(Type.String()),
-})
-
-const BulkOpsRequest = Type.Object({
-	bulkOpsRequestId: Type.String(), // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
-	endpoint: Type.Union([
-		Type.Literal('PROVISION_DEVICES'),
-		Type.Literal('REGISTER_PUBLIC_KEYS'),
-		Type.Literal('VERIFY_ATTESTATION_TOKENS'),
-		Type.Literal('VERIFY_JWTS'),
-		Type.Literal('CLAIM_DEVICE_OWNERSHIP'),
-	]), // e.g. 'PROVISION_DEVICES'
-	status: Type.Union([
-		Type.Literal('PENDING'),
-		Type.Literal('IN_PROGRESS'),
-		Type.Literal('FAILED'),
-		Type.Literal('SUCCEEDED'),
-	]), // e.g. 'PENDING'
-	requestedAt: DateString, // e.g. '2020-06-25T21:05:12.830Z'
-	completedAt: Type.Optional(DateString), // e.g. '2020-06-25T21:05:12.830Z'
-	uploadedDataUrl: Type.String(), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.csv'
-	resultDataUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5-result.json'
-	errorSummaryUrl: Type.Optional(Type.String()), // e.g. 'https://bulk-ops-requests.nrfcloud.com/a5592ec1-18ae-4d9d-bc44-1d9bd927bbe9/provision_devices/01EZZJVDQJPWT7V4FWNVDHNMM5.json'
-})
-
 type FwType =
 	| 'APP'
 	| 'MODEM'
@@ -150,44 +92,7 @@ type FwType =
 	| 'BOOTLOADER'
 	| 'MDM_FULL'
 
-class ValidationError extends Error {
-	public errors: ErrorObject[]
-	public readonly isValidationError = true
-	constructor(errors: ErrorObject[]) {
-		super(`Validation errors`)
-		this.name = 'ValidationError'
-		this.errors = errors
-	}
-}
-
-const validate = <T extends TObject>(
-	SchemaObject: T,
-	data: unknown,
-): Static<T> => {
-	const maybeData = validateWithTypeBox(SchemaObject)(data)
-
-	if ('errors' in maybeData) {
-		throw new ValidationError(maybeData.errors)
-	}
-
-	return maybeData.value
-}
-
-const fetchData =
-	(fetchImplementation?: typeof fetch) =>
-	async (...args: Parameters<typeof fetch>): ReturnType<typeof fetch> => {
-		const response = await (fetchImplementation ?? fetch)(...args)
-		if (!response.ok)
-			throw new Error(`Error fetching status: ${response.status}`)
-
-		return response.json()
-	}
-
-const onError = (error: Error): { error: Error | ValidationError } => ({
-	error,
-})
-
-export const apiClient = (
+export const devices = (
 	{
 		endpoint,
 		apiKey,
@@ -197,20 +102,20 @@ export const apiClient = (
 	},
 	fetchImplementation?: typeof fetch,
 ): {
-	listDevices: () => Promise<
-		{ error: Error | ValidationError } | { devices: Static<typeof Devices> }
+	list: () => Promise<
+		{ error: Error | ValidationError } | { result: Static<typeof Devices> }
 	>
-	getDevice: (
+	get: (
 		id: string,
 	) => Promise<
-		{ error: Error | ValidationError } | { device: Static<typeof Device> }
+		{ error: Error | ValidationError } | { result: Static<typeof Device> }
 	>
 	updateConfig: (
 		id: string,
 		config: Nullable<Omit<Static<typeof DeviceConfig>, 'nod'>> &
 			Pick<Static<typeof DeviceConfig>, 'nod'>,
 	) => Promise<{ error: Error } | { success: boolean }>
-	registerDevices: (
+	register: (
 		devices: {
 			// A globally unique device id (UUIDs are highly recommended)	/^[a-z0-9:_-]{1,128}$/i
 			deviceId: string
@@ -224,41 +129,25 @@ export const apiClient = (
 			certPem: string
 		}[],
 	) => Promise<{ error: Error } | { bulkOpsRequestId: string }>
-	account: () => Promise<
-		| { error: Error | ValidationError }
-		| {
-				account: Static<typeof AccountInfo>
-		  }
-	>
-	getBulkOpsStatus: (bulkOpsId: string) => Promise<
-		| { error: Error | ValidationError }
-		| {
-				status: Static<typeof BulkOpsRequest>
-		  }
-	>
 } => {
 	const headers = {
 		Authorization: `Bearer ${apiKey}`,
 		Accept: 'application/json; charset=utf-8',
 	}
-	const fd = fetchData(fetchImplementation)
+	const vf = validatedFetch({ endpoint, apiKey }, fetchImplementation)
 	return {
-		listDevices: async () =>
-			fd(
-				`${slashless(endpoint)}/v1/devices?${new URLSearchParams({
-					pageLimit: '100',
-					deviceNameFuzzy: 'oob-',
-				}).toString()}`,
-				{ headers },
-			)
-				.then((res) => ({ devices: validate(Devices, res) }))
-				.catch(onError),
-		getDevice: async (id) =>
-			fd(`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}`, {
-				headers,
-			})
-				.then((res) => ({ device: validate(Device, res) }))
-				.catch(onError),
+		list: async () =>
+			vf(
+				{
+					resource: `devices?${new URLSearchParams({
+						pageLimit: '100',
+						deviceNameFuzzy: 'oob-',
+					}).toString()}`,
+				},
+				Devices,
+			),
+		get: async (id) =>
+			vf({ resource: `devices/${encodeURIComponent(id)}` }, Device),
 		updateConfig: async (id, config) =>
 			fetch(
 				`${slashless(endpoint)}/v1/devices/${encodeURIComponent(id)}/state`,
@@ -274,13 +163,12 @@ export const apiClient = (
 						},
 					}),
 				},
-			)
-				.then((res) => {
-					if (res.status >= 400) throw new Error(`Update failed: ${res.status}`)
-					return { success: true }
-				})
-				.catch(onError),
-		registerDevices: async (devices) => {
+			).then((res) => {
+				if (res.status >= 400)
+					return { error: new Error(`Update failed: ${res.status}`) }
+				return { success: true }
+			}),
+		register: async (devices) => {
 			const bulkRegistrationPayload = devices
 				.map(({ deviceId, subType, tags, fwTypes, certPem }) => [
 					[
@@ -294,6 +182,7 @@ export const apiClient = (
 				.map((cols) => cols.join(','))
 				.join('\n')
 
+			// FIXME: validate response
 			const registrationResult = await fetch(
 				`${slashless(endpoint)}/v1/devices`,
 				{
@@ -328,28 +217,5 @@ export const apiClient = (
 
 			return { error: new Error(`Import failed: ${JSON.stringify(res)}`) }
 		},
-		account: async () =>
-			fd(`${slashless(endpoint)}/v1/account`, {
-				headers: {
-					Authorization: `Bearer ${apiKey}`,
-					'Content-Type': 'application/octet-stream',
-				},
-			})
-				.then((res) => ({ account: validate(AccountInfo, res) }))
-				.catch(onError),
-		getBulkOpsStatus: async (bulkOpsId) =>
-			fd(
-				`${slashless(endpoint)}/v1/bulk-ops-requests/${encodeURIComponent(
-					bulkOpsId,
-				)}`,
-				{
-					headers: {
-						...headers,
-						'Content-Type': 'application/json',
-					},
-				},
-			)
-				.then((res) => ({ status: validate(BulkOpsRequest, res) }))
-				.catch(onError),
 	}
 }

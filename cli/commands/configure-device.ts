@@ -4,7 +4,7 @@ import chalk from 'chalk'
 import { isEqual } from 'lodash-es'
 import { table } from 'table'
 import { getDevice } from '../../devices/getDevice.js'
-import { apiClient, DeviceConfig } from '../../nrfcloud/apiClient.js'
+import { devices, DeviceConfig } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import type { Static } from '@sinclair/typebox'
@@ -83,12 +83,12 @@ export const configureDeviceCommand = ({
 			account: device.account,
 		})()
 
-		const client = apiClient({
+		const client = devices({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
 
-		const maybeNrfCloudDevice = await client.getDevice(device.id)
+		const maybeNrfCloudDevice = await client.get(device.id)
 
 		if ('error' in maybeNrfCloudDevice) {
 			console.error(
@@ -100,7 +100,7 @@ export const configureDeviceCommand = ({
 		}
 
 		const {
-			device: { state },
+			result: { state },
 		} = maybeNrfCloudDevice
 
 		console.log(
