@@ -69,11 +69,22 @@ export const logsCommand = ({
 						chalk.gray(`Deleting log group`),
 						chalk.yellow(logGroupName),
 					)
-					return logs.send(
-						new DeleteLogGroupCommand({
-							logGroupName,
-						}),
-					)
+					try {
+						await logs.send(
+							new DeleteLogGroupCommand({
+								logGroupName,
+							}),
+						)
+						console.log(
+							chalk.green(`Deleting log group`),
+							chalk.yellow(logGroupName),
+						)
+					} catch {
+						console.debug(
+							chalk.redBright(`Deleting log group failed.`),
+							chalk.yellow(logGroupName),
+						)
+					}
 				}),
 			)
 			return
