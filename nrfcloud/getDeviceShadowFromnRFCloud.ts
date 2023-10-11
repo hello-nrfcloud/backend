@@ -2,12 +2,15 @@ import { Type, type Static } from '@sinclair/typebox'
 import { logger } from '../lambda/util/logger.js'
 import { validatedFetch } from './validatedFetch.js'
 
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/All-Devices/operation/ListDevices
+ */
 const DeviceShadow = Type.Object({
 	id: Type.String(),
 	state: Type.Object({
-		reported: Type.Record(Type.String(), Type.Any()),
+		reported: Type.Record(Type.String(), Type.Unknown()),
 		version: Type.Number(),
-		metadata: Type.Record(Type.String(), Type.Any()),
+		metadata: Type.Record(Type.String(), Type.Unknown()),
 	}),
 })
 

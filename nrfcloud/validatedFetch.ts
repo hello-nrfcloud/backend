@@ -20,6 +20,7 @@ const validate = <T extends TObject>(
 	const maybeData = validateWithTypeBox(SchemaObject)(data)
 
 	if ('errors' in maybeData) {
+		console.error('Validation failed', { error: maybeData.errors })
 		throw new ValidationError(maybeData.errors)
 	}
 
@@ -31,9 +32,7 @@ const fetchData =
 	async (...args: Parameters<typeof fetch>): ReturnType<typeof fetch> => {
 		const response = await (fetchImplementation ?? fetch)(...args)
 		if (!response.ok)
-			throw new Error(
-				`Error fetching status: ${response.status} - ${response.statusText}`,
-			)
+			throw new Error(`Error fetching status: ${response.status}`)
 
 		return response.json()
 	}

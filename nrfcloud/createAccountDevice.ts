@@ -1,10 +1,13 @@
-import { Type } from '@sinclair/typebox'
+import { Type, type Static } from '@sinclair/typebox'
 import { validatedFetch } from './validatedFetch.js'
 
-export type CertificateCredentials = {
-	clientCert: string
-	privateKey: string
-}
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/Account-Devices/operation/CreateAccountDevice
+ */
+const CertificateCredentials = Type.Object({
+	clientCert: Type.String(),
+	privateKey: Type.String(),
+})
 
 export const createAccountDevice = async ({
 	apiKey,
@@ -12,22 +15,18 @@ export const createAccountDevice = async ({
 }: {
 	apiKey: string
 	endpoint: URL
-}): Promise<CertificateCredentials> => {
+}): Promise<Static<typeof CertificateCredentials>> => {
 	const vf = validatedFetch({ endpoint, apiKey })
 	const maybeResult = await vf(
 		{ resource: 'devices/account' },
-		Type.Object({
-			clientCert: Type.String(),
-			privateKey: Type.String(),
-		}),
+		CertificateCredentials,
 		{
 			method: 'POST',
 		},
 	)
 
 	if ('error' in maybeResult) {
-		console.error(`Failed to create account device:`, maybeResult.error)
-		throw new Error(`Failed to create account device`)
+		throw maybeResult.error
 	}
 
 	return {

@@ -17,12 +17,12 @@ import { once } from 'lodash-es'
 import { get, store } from '../cellGeoLocation/SingleCellGeoLocationCache.js'
 import { cellId } from '../cellGeoLocation/cellId.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import { slashless } from '../util/slashless.js'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
-import { validatedLoggingFetch } from './loggingFetch.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
+import { validatedFetch } from '../nrfcloud/validatedFetch.js'
+import { loggingFetch } from './loggingFetch.js'
 
 const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -36,11 +36,28 @@ const eventBus = new EventBridge({})
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
 
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/Account/operation/GetServiceToken
+ */
+const ServiceToken = Type.Object({
+	token: Type.String(),
+})
+
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/Ground-Fix
+ */
+const GroundFix = Type.Object({
+	lat: TLat, // 63.41999531
+	lon: TLng, // 10.42999506
+	uncertainty: TAccuracy, // 2420
+	fulfilledWith: Type.Literal('SCELL'),
+})
+
 const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
 const { track, metrics } = metricsForComponent('singleCellGeo')
 
-const trackFetch = validatedLoggingFetch({ track, log })
+const trackFetch = loggingFetch({ track, log })
 
 const getCached = get({
 	db,
@@ -53,23 +70,15 @@ const cache = store({
 
 const serviceToken = once(
 	async ({ apiEndpoint, apiKey }: { apiEndpoint: URL; apiKey: string }) => {
-		const maybeResult = await trackFetch(
-			new URL(`${slashless(apiEndpoint)}/v1/account/service-token`),
-			{
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${apiKey}`,
-				},
-			},
-			Type.Object({
-				token: Type.String(),
-			}),
+		const vf = validatedFetch({ endpoint: apiEndpoint, apiKey }, trackFetch)
+		const maybeResult = await vf(
+			{ resource: 'account/service-token' },
+			ServiceToken,
 		)
 
 		if ('error' in maybeResult) {
-			log.error('request failed', { error: maybeResult.error })
-			throw new Error(`Acquiring service token failed: ${maybeResult.error}`)
+			log.error(`Acquiring service token failed`, { error: maybeResult.error })
+			throw maybeResult.error
 		}
 
 		return maybeResult.result.token
@@ -148,8 +157,11 @@ const h = async (event: {
 				},
 			],
 		}
-		const maybeResult = await trackFetch(
-			new URL(`${slashless(apiEndpoint)}/v1/location/ground-fix`),
+
+		const vf = validatedFetch({ endpoint: apiEndpoint, apiKey }, trackFetch)
+		const maybeResult = await vf(
+			{ resource: 'location/ground-fix' },
+			GroundFix,
 			{
 				method: 'POST',
 				headers: {
@@ -158,12 +170,6 @@ const h = async (event: {
 				},
 				body: JSON.stringify(body),
 			},
-			Type.Object({
-				lat: TLat, // 63.41999531
-				lon: TLng, // 10.42999506
-				uncertainty: TAccuracy, // 2420
-				fulfilledWith: Type.Literal('SCELL'),
-			}),
 		)
 
 		if ('error' in maybeResult) {

@@ -84,6 +84,9 @@ const Page = <T extends TSchema>(Item: T) =>
 	})
 const Devices = Page(Device)
 
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/IP-Devices/operation/ProvisionDevices
+ */
 const ProvisionDevice = Type.Object({
 	bulkOpsRequestId: Type.String(),
 })
