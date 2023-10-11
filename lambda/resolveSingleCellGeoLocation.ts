@@ -2,7 +2,6 @@ import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import {
 	Context,
 	SingleCellGeoLocation,
@@ -20,7 +19,7 @@ import { cellId } from '../cellGeoLocation/cellId.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { slashless } from '../util/slashless.js'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
-import { loggingFetch } from './loggingFetch.js'
+import { validatedLoggingFetch } from './loggingFetch.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
@@ -41,7 +40,7 @@ const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
 const { track, metrics } = metricsForComponent('singleCellGeo')
 
-const trackFetch = loggingFetch({ track, log })
+const trackFetch = validatedLoggingFetch({ track, log })
 
 const getCached = get({
 	db,
@@ -54,8 +53,7 @@ const cache = store({
 
 const serviceToken = once(
 	async ({ apiEndpoint, apiKey }: { apiEndpoint: URL; apiKey: string }) => {
-		// FIXME: validate response
-		const res = await trackFetch(
+		const maybeResult = await trackFetch(
 			new URL(`${slashless(apiEndpoint)}/v1/account/service-token`),
 			{
 				method: 'GET',
@@ -64,20 +62,17 @@ const serviceToken = once(
 					Authorization: `Bearer ${apiKey}`,
 				},
 			},
+			Type.Object({
+				token: Type.String(),
+			}),
 		)
-		if (!res.ok) {
-			const body = await res.text()
-			console.error('request failed', {
-				body,
-				status: res.status,
-			})
-			throw new Error(`Acquiring service token failed: ${body} (${res.status})`)
+
+		if ('error' in maybeResult) {
+			log.error('request failed', { error: maybeResult.error })
+			throw new Error(`Acquiring service token failed: ${maybeResult.error}`)
 		}
-		const { token } = (await res.json()) as {
-			createdAt: string // e.g. '2022-12-19T19:39:02.655Z'
-			token: string // JWT
-		}
-		return token
+
+		return maybeResult.result.token
 	},
 )
 
@@ -153,8 +148,7 @@ const h = async (event: {
 				},
 			],
 		}
-		// FIXME: validate response
-		const res = await trackFetch(
+		const maybeResult = await trackFetch(
 			new URL(`${slashless(apiEndpoint)}/v1/location/ground-fix`),
 			{
 				method: 'POST',
@@ -164,33 +158,25 @@ const h = async (event: {
 				},
 				body: JSON.stringify(body),
 			},
-		)
-
-		if (!res.ok) {
-			track('single-cell:error', MetricUnits.Count, 1)
-			log.error('request failed', {
-				body: await res.text(),
-				status: res.status,
-			})
-			return
-		}
-
-		const response = await res.json()
-		const maybeLocation = validateWithTypeBox(
 			Type.Object({
 				lat: TLat, // 63.41999531
 				lon: TLng, // 10.42999506
 				uncertainty: TAccuracy, // 2420
 				fulfilledWith: Type.Literal('SCELL'),
 			}),
-		)(response)
-		if ('errors' in maybeLocation) {
-			throw new Error(
-				`Failed to resolve cell location: ${JSON.stringify(response)}`,
-			)
+		)
+
+		if ('error' in maybeResult) {
+			track('single-cell:error', MetricUnits.Count, 1)
+			log.error('Failed to resolve cell location:', {
+				error: maybeResult.error,
+			})
+
+			return
 		}
+
 		track('single-cell:resolved', MetricUnits.Count, 1)
-		const { lat, lon, uncertainty } = maybeLocation.value
+		const { lat, lon, uncertainty } = maybeResult.result
 		message = {
 			'@context': Context.singleCellGeoLocation.toString(),
 			lat,

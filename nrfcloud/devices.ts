@@ -84,6 +84,10 @@ const Page = <T extends TSchema>(Item: T) =>
 	})
 const Devices = Page(Device)
 
+const ProvisionDevice = Type.Object({
+	bulkOpsRequestId: Type.String(),
+})
+
 type FwType =
 	| 'APP'
 	| 'MODEM'
@@ -182,40 +186,22 @@ export const devices = (
 				.map((cols) => cols.join(','))
 				.join('\n')
 
-			// FIXME: validate response
-			const registrationResult = await fetch(
-				`${slashless(endpoint)}/v1/devices`,
-				{
-					headers: {
-						Authorization: `Bearer ${apiKey}`,
-						'Content-Type': 'application/octet-stream',
-					},
-					method: 'POST',
-					body: bulkRegistrationPayload,
+			const maybeResult = await vf({ resource: 'devices' }, ProvisionDevice, {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${apiKey}`,
+					'Content-Type': 'application/octet-stream',
 				},
-			)
+				body: bulkRegistrationPayload,
+			})
 
-			if (registrationResult.ok !== true) {
+			if ('error' in maybeResult) {
 				return {
-					error: new Error(
-						`${registrationResult.statusText} (${registrationResult.status})`,
-					),
+					error: maybeResult.error,
 				}
 			}
 
-			const res = await registrationResult.json()
-
-			if ('bulkOpsRequestId' in res)
-				return { bulkOpsRequestId: res.bulkOpsRequestId }
-
-			if ('code' in res && 'message' in res)
-				return {
-					error: new Error(
-						`${res.message} (${res.code}): ${JSON.stringify(res)}`,
-					),
-				}
-
-			return { error: new Error(`Import failed: ${JSON.stringify(res)}`) }
+			return { bulkOpsRequestId: maybeResult.result.bulkOpsRequestId }
 		},
 	}
 }

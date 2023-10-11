@@ -31,7 +31,9 @@ const fetchData =
 	async (...args: Parameters<typeof fetch>): ReturnType<typeof fetch> => {
 		const response = await (fetchImplementation ?? fetch)(...args)
 		if (!response.ok)
-			throw new Error(`Error fetching status: ${response.status}`)
+			throw new Error(
+				`Error fetching status: ${response.status} - ${response.statusText}`,
+			)
 
 		return response.json()
 	}
@@ -44,12 +46,14 @@ export const validatedFetch =
 	async <Schema extends TObject>(
 		{ resource }: { resource: string },
 		schema: Schema,
+		init?: RequestInit,
 	): Promise<{ error: Error | ValidationError } | { result: Static<Schema> }> =>
 		fetchData(fetchImplementation)(`${slashless(endpoint)}/v1/${resource}`, {
 			headers: {
 				...headers(apiKey),
 				'Content-Type': 'application/json',
 			},
+			...(init ?? {}),
 		})
 			.then((res) => ({ result: validate(schema, res) }))
 			.catch((error: Error): { error: Error | ValidationError } => ({

@@ -1,4 +1,5 @@
-import { slashless } from '../util/slashless.js'
+import { Type } from '@sinclair/typebox'
+import { validatedFetch } from './validatedFetch.js'
 
 export type CertificateCredentials = {
 	clientCert: string
@@ -12,18 +13,25 @@ export const createAccountDevice = async ({
 	apiKey: string
 	endpoint: URL
 }): Promise<CertificateCredentials> => {
-	const accountDevice = await // FIXME: validate response
-	(
-		await fetch(`${slashless(endpoint)}/v1/devices/account`, {
+	const vf = validatedFetch({ endpoint, apiKey })
+	const maybeResult = await vf(
+		{ resource: 'devices/account' },
+		Type.Object({
+			clientCert: Type.String(),
+			privateKey: Type.String(),
+		}),
+		{
 			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${apiKey}`,
-			},
-		})
-	).json()
+		},
+	)
+
+	if ('error' in maybeResult) {
+		console.error(`Failed to create account device:`, maybeResult.error)
+		throw new Error(`Failed to create account device`)
+	}
 
 	return {
-		clientCert: accountDevice.clientCert,
-		privateKey: accountDevice.privateKey,
+		clientCert: maybeResult.result.clientCert,
+		privateKey: maybeResult.result.privateKey,
 	}
 }
