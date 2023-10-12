@@ -4,7 +4,7 @@ import {
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
-import type { DeviceShadow } from './DeviceShadow'
+import type { DeviceShadowType } from './DeviceShadow'
 
 /**
  * Store the updated shadow in DynamoDB for sending it right after a client connects
@@ -16,7 +16,7 @@ export const store =
 	}: {
 		db: DynamoDBClient
 		TableName: string
-	}): ((shadow: DeviceShadow) => Promise<void>) =>
+	}): ((shadow: DeviceShadowType) => Promise<void>) =>
 	async (shadow) => {
 		await db.send(
 			new PutItemCommand({
@@ -38,7 +38,7 @@ export const get =
 	}: {
 		db: DynamoDBClient
 		TableName: string
-	}): ((deviceId: string) => Promise<{ shadow: DeviceShadow | null }>) =>
+	}): ((deviceId: string) => Promise<{ shadow: DeviceShadowType | null }>) =>
 	async (deviceId) => {
 		try {
 			const { Item } = await db.send(
@@ -52,7 +52,7 @@ export const get =
 				}),
 			)
 			const { shadow } = unmarshall(Item as Record<string, never>) as {
-				shadow: DeviceShadow
+				shadow: DeviceShadowType
 			}
 			return { shadow }
 		} catch {

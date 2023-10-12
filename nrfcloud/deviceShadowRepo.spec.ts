@@ -1,11 +1,11 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { store, get } from './deviceShadowRepo.js'
-import type { DeviceShadow } from './DeviceShadow'
+import type { DeviceShadowType } from './DeviceShadow'
 import { check, objectMatching } from 'tsmatchers'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import { ResourceNotFoundException } from '@aws-sdk/client-iot'
 
-const shadow: DeviceShadow = {
+const shadow: DeviceShadowType = {
 	id: 'someId',
 	tags: ['configuration:solar-shield', 'model:PCA20035'],
 	tenantId: 'a0673464-e4e1-4b87-bffd-6941a012067b',

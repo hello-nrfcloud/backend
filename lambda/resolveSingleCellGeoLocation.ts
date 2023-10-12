@@ -2,7 +2,6 @@ import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import {
 	Context,
 	SingleCellGeoLocation,
@@ -18,12 +17,12 @@ import { once } from 'lodash-es'
 import { get, store } from '../cellGeoLocation/SingleCellGeoLocationCache.js'
 import { cellId } from '../cellGeoLocation/cellId.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import { slashless } from '../util/slashless.js'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
-import { loggingFetch } from './loggingFetch.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
+import { JSONPayload, validatedFetch } from '../nrfcloud/validatedFetch.js'
+import { loggingFetch } from './loggingFetch.js'
 
 const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -36,6 +35,23 @@ const log = logger('singleCellGeo')
 const eventBus = new EventBridge({})
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
+
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/Account/operation/GetServiceToken
+ */
+const ServiceToken = Type.Object({
+	token: Type.String(),
+})
+
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/Ground-Fix
+ */
+const GroundFix = Type.Object({
+	lat: TLat, // 63.41999531
+	lon: TLng, // 10.42999506
+	uncertainty: TAccuracy, // 2420
+	fulfilledWith: Type.Literal('SCELL'),
+})
 
 const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
@@ -54,30 +70,18 @@ const cache = store({
 
 const serviceToken = once(
 	async ({ apiEndpoint, apiKey }: { apiEndpoint: URL; apiKey: string }) => {
-		// FIXME: validate response
-		const res = await trackFetch(
-			new URL(`${slashless(apiEndpoint)}/v1/account/service-token`),
-			{
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${apiKey}`,
-				},
-			},
+		const vf = validatedFetch({ endpoint: apiEndpoint, apiKey }, trackFetch)
+		const maybeResult = await vf(
+			{ resource: 'account/service-token' },
+			ServiceToken,
 		)
-		if (!res.ok) {
-			const body = await res.text()
-			console.error('request failed', {
-				body,
-				status: res.status,
-			})
-			throw new Error(`Acquiring service token failed: ${body} (${res.status})`)
+
+		if ('error' in maybeResult) {
+			log.error(`Acquiring service token failed`, { error: maybeResult.error })
+			throw maybeResult.error
 		}
-		const { token } = (await res.json()) as {
-			createdAt: string // e.g. '2022-12-19T19:39:02.655Z'
-			token: string // JWT
-		}
-		return token
+
+		return maybeResult.result.token
 	},
 )
 
@@ -153,44 +157,27 @@ const h = async (event: {
 				},
 			],
 		}
-		// FIXME: validate response
-		const res = await trackFetch(
-			new URL(`${slashless(apiEndpoint)}/v1/location/ground-fix`),
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${locationServiceToken}`,
-				},
-				body: JSON.stringify(body),
-			},
+
+		const vf = validatedFetch(
+			{ endpoint: apiEndpoint, apiKey: locationServiceToken },
+			trackFetch,
+		)
+		const maybeResult = await vf(
+			{ resource: 'location/ground-fix', payload: JSONPayload(body) },
+			GroundFix,
 		)
 
-		if (!res.ok) {
+		if ('error' in maybeResult) {
 			track('single-cell:error', MetricUnits.Count, 1)
-			log.error('request failed', {
-				body: await res.text(),
-				status: res.status,
+			log.error('Failed to resolve cell location:', {
+				error: maybeResult.error,
 			})
+
 			return
 		}
 
-		const response = await res.json()
-		const maybeLocation = validateWithTypeBox(
-			Type.Object({
-				lat: TLat, // 63.41999531
-				lon: TLng, // 10.42999506
-				uncertainty: TAccuracy, // 2420
-				fulfilledWith: Type.Literal('SCELL'),
-			}),
-		)(response)
-		if ('errors' in maybeLocation) {
-			throw new Error(
-				`Failed to resolve cell location: ${JSON.stringify(response)}`,
-			)
-		}
 		track('single-cell:resolved', MetricUnits.Count, 1)
-		const { lat, lon, uncertainty } = maybeLocation.value
+		const { lat, lon, uncertainty } = maybeResult.result
 		message = {
 			'@context': Context.singleCellGeoLocation.toString(),
 			lat,

@@ -20,6 +20,7 @@ const validate = <T extends TObject>(
 	const maybeData = validateWithTypeBox(SchemaObject)(data)
 
 	if ('errors' in maybeData) {
+		console.error('Validation failed', { error: maybeData.errors })
 		throw new ValidationError(maybeData.errors)
 	}
 
@@ -42,21 +43,55 @@ export const validatedFetch =
 		fetchImplementation?: typeof fetch,
 	) =>
 	async <Schema extends TObject>(
-		{ resource }: { resource: string },
+		params:
+			| {
+					resource: string
+			  }
+			| {
+					resource: string
+					payload: Payload
+			  }
+			| {
+					resource: string
+					method: string
+			  },
 		schema: Schema,
-	): Promise<{ error: Error | ValidationError } | { result: Static<Schema> }> =>
-		fetchData(fetchImplementation)(`${slashless(endpoint)}/v1/${resource}`, {
-			headers: {
-				...headers(apiKey),
-				'Content-Type': 'application/json',
-			},
-		})
+	): Promise<
+		{ error: Error | ValidationError } | { result: Static<Schema> }
+	> => {
+		const { resource } = params
+		const args: Parameters<typeof fetch>[1] = {
+			headers: headers(apiKey),
+		}
+		if ('payload' in params) {
+			const payload = params.payload
+			args.method = 'POST'
+			args.body = payload.body
+			args.headers = { ...(args.headers ?? {}), ['Content-Type']: payload.type }
+		} else if ('method' in params) {
+			args.method = params.method
+		}
+		return fetchData(fetchImplementation)(
+			`${slashless(endpoint)}/v1/${resource}`,
+			args,
+		)
 			.then((res) => ({ result: validate(schema, res) }))
 			.catch((error: Error): { error: Error | ValidationError } => ({
 				error,
 			}))
+	}
 
 const headers = (apiKey: string) => ({
 	Authorization: `Bearer ${apiKey}`,
 	Accept: 'application/json; charset=utf-8',
+})
+
+type Payload = {
+	/** The content-type of body */
+	type: string
+	body: string
+}
+export const JSONPayload = (payload: Record<string, unknown>): Payload => ({
+	type: 'application/json',
+	body: JSON.stringify(payload),
 })

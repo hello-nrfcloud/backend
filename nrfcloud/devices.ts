@@ -84,6 +84,13 @@ const Page = <T extends TSchema>(Item: T) =>
 	})
 const Devices = Page(Device)
 
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/IP-Devices/operation/ProvisionDevices
+ */
+const ProvisionDevice = Type.Object({
+	bulkOpsRequestId: Type.String(),
+})
+
 type FwType =
 	| 'APP'
 	| 'MODEM'
@@ -182,40 +189,24 @@ export const devices = (
 				.map((cols) => cols.join(','))
 				.join('\n')
 
-			// FIXME: validate response
-			const registrationResult = await fetch(
-				`${slashless(endpoint)}/v1/devices`,
+			const maybeResult = await vf(
 				{
-					headers: {
-						Authorization: `Bearer ${apiKey}`,
-						'Content-Type': 'application/octet-stream',
+					resource: 'devices',
+					payload: {
+						body: bulkRegistrationPayload,
+						type: 'application/octet-stream',
 					},
-					method: 'POST',
-					body: bulkRegistrationPayload,
 				},
+				ProvisionDevice,
 			)
 
-			if (registrationResult.ok !== true) {
+			if ('error' in maybeResult) {
 				return {
-					error: new Error(
-						`${registrationResult.statusText} (${registrationResult.status})`,
-					),
+					error: maybeResult.error,
 				}
 			}
 
-			const res = await registrationResult.json()
-
-			if ('bulkOpsRequestId' in res)
-				return { bulkOpsRequestId: res.bulkOpsRequestId }
-
-			if ('code' in res && 'message' in res)
-				return {
-					error: new Error(
-						`${res.message} (${res.code}): ${JSON.stringify(res)}`,
-					),
-				}
-
-			return { error: new Error(`Import failed: ${JSON.stringify(res)}`) }
+			return { bulkOpsRequestId: maybeResult.result.bulkOpsRequestId }
 		},
 	}
 }

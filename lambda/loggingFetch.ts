@@ -4,7 +4,10 @@ import type { Logger } from '@aws-lambda-powertools/logger'
 
 export const loggingFetch =
 	({ track, log }: { track: AddMetricsFn; log: Logger }) =>
-	async (url: URL, init?: RequestInit): ReturnType<typeof fetch> => {
+	async (
+		url: URL | RequestInfo,
+		init?: RequestInit,
+	): ReturnType<typeof fetch> => {
 		log.debug(`fetch:url`, url.toString())
 		if (init?.body !== null && init?.body !== undefined)
 			log.debug(`fetch:body`, init.body.toString())

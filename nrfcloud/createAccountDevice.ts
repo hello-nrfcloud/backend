@@ -1,9 +1,13 @@
-import { slashless } from '../util/slashless.js'
+import { Type, type Static } from '@sinclair/typebox'
+import { validatedFetch } from './validatedFetch.js'
 
-export type CertificateCredentials = {
-	clientCert: string
-	privateKey: string
-}
+/**
+ * @link https://api.nrfcloud.com/v1/#tag/Account-Devices/operation/CreateAccountDevice
+ */
+const CertificateCredentials = Type.Object({
+	clientCert: Type.String(),
+	privateKey: Type.String(),
+})
 
 export const createAccountDevice = async ({
 	apiKey,
@@ -11,19 +15,19 @@ export const createAccountDevice = async ({
 }: {
 	apiKey: string
 	endpoint: URL
-}): Promise<CertificateCredentials> => {
-	const accountDevice = await // FIXME: validate response
-	(
-		await fetch(`${slashless(endpoint)}/v1/devices/account`, {
-			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${apiKey}`,
-			},
-		})
-	).json()
+}): Promise<Static<typeof CertificateCredentials>> => {
+	const vf = validatedFetch({ endpoint, apiKey })
+	const maybeResult = await vf(
+		{ resource: 'devices/account', method: 'POST' },
+		CertificateCredentials,
+	)
+
+	if ('error' in maybeResult) {
+		throw maybeResult.error
+	}
 
 	return {
-		clientCert: accountDevice.clientCert,
-		privateKey: accountDevice.privateKey,
+		clientCert: maybeResult.result.clientCert,
+		privateKey: maybeResult.result.privateKey,
 	}
 }
