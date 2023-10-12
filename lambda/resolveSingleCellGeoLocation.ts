@@ -21,7 +21,7 @@ import { getDeviceAttributesById } from './getDeviceAttributes.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
-import { validatedFetch } from '../nrfcloud/validatedFetch.js'
+import { JSONPayload, validatedFetch } from '../nrfcloud/validatedFetch.js'
 import { loggingFetch } from './loggingFetch.js'
 
 const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
@@ -158,18 +158,13 @@ const h = async (event: {
 			],
 		}
 
-		const vf = validatedFetch({ endpoint: apiEndpoint, apiKey }, trackFetch)
+		const vf = validatedFetch(
+			{ endpoint: apiEndpoint, apiKey: locationServiceToken },
+			trackFetch,
+		)
 		const maybeResult = await vf(
-			{ resource: 'location/ground-fix' },
+			{ resource: 'location/ground-fix', payload: JSONPayload(body) },
 			GroundFix,
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${locationServiceToken}`,
-				},
-				body: JSON.stringify(body),
-			},
 		)
 
 		if ('error' in maybeResult) {

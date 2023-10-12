@@ -189,14 +189,16 @@ export const devices = (
 				.map((cols) => cols.join(','))
 				.join('\n')
 
-			const maybeResult = await vf({ resource: 'devices' }, ProvisionDevice, {
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${apiKey}`,
-					'Content-Type': 'application/octet-stream',
+			const maybeResult = await vf(
+				{
+					resource: 'devices',
+					payload: {
+						body: bulkRegistrationPayload,
+						type: 'application/octet-stream',
+					},
 				},
-				body: bulkRegistrationPayload,
-			})
+				ProvisionDevice,
+			)
 
 			if ('error' in maybeResult) {
 				return {

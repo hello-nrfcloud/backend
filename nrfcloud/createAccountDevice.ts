@@ -18,11 +18,8 @@ export const createAccountDevice = async ({
 }): Promise<Static<typeof CertificateCredentials>> => {
 	const vf = validatedFetch({ endpoint, apiKey })
 	const maybeResult = await vf(
-		{ resource: 'devices/account' },
+		{ resource: 'devices/account', method: 'POST' },
 		CertificateCredentials,
-		{
-			method: 'POST',
-		},
 	)
 
 	if ('error' in maybeResult) {
