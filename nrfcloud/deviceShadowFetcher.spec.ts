@@ -29,6 +29,6 @@ describe('deviceShadowFetcher()', () => {
 			}),
 		)
 
-		expect(res).toMatchObject([])
+		expect(res).toMatchObject({ shadows: [] })
 	})
 })

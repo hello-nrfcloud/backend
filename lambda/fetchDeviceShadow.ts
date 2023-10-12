@@ -20,6 +20,7 @@ import { createLock } from '../websocket/lock.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import { logger } from './util/logger.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
+import { loggingFetch } from './loggingFetch.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
@@ -142,16 +143,16 @@ const h = async (): Promise<void> => {
 						allNRFCloudSettings[account]?.nrfCloudSettings ?? {}
 					if (apiKey === undefined) return []
 
-					const deviceShadow = deviceShadowFetcher({
-						endpoint:
-							apiEndpoint !== undefined
-								? new URL(apiEndpoint)
-								: defaultApiEndpoint,
-						apiKey,
-						onError: () => {
-							track('error', MetricUnits.Count, 1)
+					const deviceShadow = deviceShadowFetcher(
+						{
+							endpoint:
+								apiEndpoint !== undefined
+									? new URL(apiEndpoint)
+									: defaultApiEndpoint,
+							apiKey,
 						},
-					})
+						loggingFetch({ track, log }),
+					)
 
 					return (
 						await Promise.all(
@@ -172,7 +173,12 @@ const h = async (): Promise<void> => {
 										MetricUnits.Milliseconds,
 										Date.now() - start,
 									)
-									return res
+									if ('error' in res) {
+										track('error', MetricUnits.Count, 1)
+										log.error(`Fetching shadow error`, { error: res.error })
+										return []
+									}
+									return res.shadows
 								}),
 							),
 						)

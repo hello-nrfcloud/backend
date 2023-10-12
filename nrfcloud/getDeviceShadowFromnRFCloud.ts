@@ -1,7 +1,7 @@
 import { Type, type Static } from '@sinclair/typebox'
-import { logger } from '../lambda/util/logger.js'
 import { validatedFetch } from './validatedFetch.js'
 import { DeviceShadow } from './DeviceShadow.js'
+import type { ValidationError } from 'ajv'
 
 const DeviceShadows = Type.Array(DeviceShadow)
 
@@ -14,20 +14,20 @@ const ListDevices = Type.Object({
 	pageNextToken: Type.Optional(Type.String({ minLength: 1 })),
 })
 
-const log = logger('deviceShadowFetcher')
-
 export const deviceShadowFetcher = (
 	{
 		endpoint,
 		apiKey,
-		onError,
 	}: {
 		endpoint: URL
 		apiKey: string
-		onError?: (error: Error) => void
 	},
 	fetchImplementation?: typeof fetch,
-): ((devices: string[]) => Promise<Static<typeof DeviceShadows>>) => {
+): ((
+	devices: string[],
+) => Promise<
+	{ shadows: Static<typeof DeviceShadows> } | { error: Error | ValidationError }
+>) => {
 	const vf = validatedFetch({ endpoint, apiKey }, fetchImplementation)
 
 	return async (devices) => {
@@ -43,14 +43,11 @@ export const deviceShadowFetcher = (
 			.join('&')
 		const url = `devices?${queryString}`
 
-		log.info(`Fetching device shadow`, { url })
 		const maybeResult = await vf({ resource: url }, ListDevices)
 		if ('error' in maybeResult) {
-			onError?.(maybeResult.error)
-			log.error(`Fetching shadow error`, { error: maybeResult.error })
-			return []
+			return { error: maybeResult.error }
 		}
 
-		return maybeResult.result.items
+		return { shadows: maybeResult.result.items }
 	}
 }
