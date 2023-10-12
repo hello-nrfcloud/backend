@@ -5,10 +5,13 @@ import { DeviceShadow } from './DeviceShadow.js'
 
 const DeviceShadows = Type.Array(DeviceShadow)
 
+/**
+ * @see https://api.nrfcloud.com/v1#tag/All-Devices/operation/ListDevices
+ */
 const ListDevices = Type.Object({
 	items: DeviceShadows,
 	total: Type.Number(),
-	pageNextToken: Type.String(),
+	pageNextToken: Type.Optional(Type.String()),
 })
 
 const log = logger('deviceShadowFetcher')
