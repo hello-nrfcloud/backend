@@ -16,16 +16,19 @@ const ListDevices = Type.Object({
 
 const log = logger('deviceShadowFetcher')
 
-export const deviceShadowFetcher = ({
-	endpoint,
-	apiKey,
-	onError,
-}: {
-	endpoint: URL
-	apiKey: string
-	onError?: (error: Error) => void
-}): ((devices: string[]) => Promise<Static<typeof DeviceShadows>>) => {
-	const vf = validatedFetch({ endpoint, apiKey })
+export const deviceShadowFetcher = (
+	{
+		endpoint,
+		apiKey,
+		onError,
+	}: {
+		endpoint: URL
+		apiKey: string
+		onError?: (error: Error) => void
+	},
+	fetchImplementation?: typeof fetch,
+): ((devices: string[]) => Promise<Static<typeof DeviceShadows>>) => {
+	const vf = validatedFetch({ endpoint, apiKey }, fetchImplementation)
 
 	return async (devices) => {
 		const params = {
