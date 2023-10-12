@@ -5,7 +5,7 @@ import {
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
 import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
-import { type DeviceShadow } from '../../nrfcloud/DeviceShadow.js'
+import { type DeviceShadowType } from '../../nrfcloud/DeviceShadow.js'
 import type { AddMetricsFn } from '../metrics/metrics.js'
 import type { WebsocketPayload } from '../publishToWebsocketClients.js'
 
@@ -26,7 +26,7 @@ export const sendShadowToConnection =
 		connectionId,
 		shadow,
 	}: {
-		shadow: DeviceShadow
+		shadow: DeviceShadowType
 		model: string
 		connectionId: string
 	}): Promise<void> => {

@@ -215,9 +215,7 @@ const h = async (): Promise<void> => {
 					'shadowAge',
 					MetricUnits.Seconds,
 					Math.round(Date.now() / 1000) -
-						getShadowUpdateTime(
-							deviceShadow.state.metadata as Record<string, any>,
-						),
+						getShadowUpdateTime(deviceShadow.state.metadata),
 				)
 
 				log.info(
