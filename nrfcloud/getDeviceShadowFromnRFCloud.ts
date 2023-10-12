@@ -10,8 +10,8 @@ const DeviceShadows = Type.Array(DeviceShadow)
  */
 const ListDevices = Type.Object({
 	items: DeviceShadows,
-	total: Type.Number(),
-	pageNextToken: Type.Optional(Type.String()),
+	total: Type.Optional(Type.Number({ minimum: 0 })),
+	pageNextToken: Type.Optional(Type.String({ minLength: 1 })),
 })
 
 const log = logger('deviceShadowFetcher')
