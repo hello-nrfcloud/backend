@@ -1,152 +1,171 @@
-# `hello.nrfcloud.com` backend
+# nRF Asset Tracker Web Application for AWS
 
-[![GitHub Actions](https://github.com/hello-nrfcloud/backend/workflows/Test%20and%20Release/badge.svg)](https://github.com/hello-nrfcloud/backend/actions/workflows/test-and-release.yaml)
+[![GitHub Actions](https://github.com/NordicSemiconductor/asset-tracker-cloud-app-aws-js/workflows/Test%20and%20Release/badge.svg)](https://github.com/NordicSemiconductor/asset-tracker-cloud-app-aws-js/actions)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![Renovate](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com)
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+[![Mergify Status](https://img.shields.io/endpoint.svg?url=https://api.mergify.com/v1/badges/NordicSemiconductor/asset-tracker-cloud-app-aws-js)](https://mergify.io)
+[![@commitlint/config-conventional](https://img.shields.io/badge/%40commitlint-config--conventional-brightgreen)](https://github.com/conventional-changelog/commitlint/tree/master/@commitlint/config-conventional)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier/)
 [![ESLint: TypeScript](https://img.shields.io/badge/ESLint-TypeScript-blue.svg)](https://github.com/typescript-eslint/typescript-eslint)
+[![React](https://github.com/aleen42/badges/raw/master/src/react.svg)](https://reactjs.org/)
+[![Bootstrap 5](https://img.shields.io/badge/Bootstrap-5-ffffff?labelColor=7952b3)](https://getbootstrap.com/docs/5.0/)
+[![CSS modules](https://img.shields.io/badge/CSS-modules-yellow)](https://github.com/css-modules/css-modules)
+[![Vite](https://github.com/aleen42/badges/raw/master/src/vitejs.svg)](https://vitejs.dev/)
 
-Cloud backend for [`hello.nrfcloud.com`](https://github.com/hello-nrfcloud/web)
-developed using [AWS CDK](https://aws.amazon.com/cdk) in
+The nRF Asset Tracker Web Application for AWS is a reference single-page
+application (SPA) developed with [React](https://reactjs.org/) in
 [TypeScript](https://www.typescriptlang.org/).
 
-## Installation in your AWS account
+The UI components are themed using
+[Bootstrap 5](https://getbootstrap.com/docs/5.0/) and
+[CSS modules](https://github.com/css-modules/css-modules). All complex UI logic
+is extracted using [React hooks](https://reactjs.org/docs/hooks-custom.html) to
+allow re-use when changing the UI framework.
 
-### Setup
+[Vite](https://vitejs.dev/) is used as the frontend toolchain.
 
-Provide your AWS credentials, for example using the `.envrc` (see
-[the example](.envrc.example)).
+> :information_source:
+> [Read the complete nRF Asset Tracker documentation](https://nordicsemiconductor.github.io/asset-tracker-cloud-docs/).
 
-Install the dependencies:
+## Set up
+
+    npm ci
+
+## Configuration
+
+In the
+[nRF Asset Tracker for AWS](https://github.com/NordicSemiconductor/asset-tracker-cloud-aws-js)
+folder, run `node cli web-app-config` and store the output in a local `.envrc`
+file. Then run `direnv allow` to allow it.
 
 ```bash
-npm ci
+# .envrc
+export PUBLIC_CELL_GEO_LOCATION_CACHE_TABLE_NAME=...
+export PUBLIC_CLOUDFRONT_DISTRIBUTION_ID=...
+export PUBLIC_FOTA_BUCKET_NAME=...
+export PUBLIC_GEOLOCATION_API_URL=...
+export PUBLIC_HISTORICALDATA_TABLE_INFO=...
+export PUBLIC_IDENTITY_POOL_ID=...
+export PUBLIC_NETWORK_SURVEY_GEOLOCATION_API_URL=...
+export PUBLIC_NETWORKSURVEY_STORAGE_TABLE_NAME=...
+export PUBLIC_USER_IOT_POLICY_NAME=...
+export PUBLIC_USER_POOL_ID=...
+export PUBLIC_USER_POOL_CLIENT_ID=...
+export PUBLIC_WEB_APP_BUCKET_NAME=...
+export PUBLIC_WEB_APP_DOMAIN_NAME=...
+export PUBLIC_SENTRY_DSN=...
+export PUBLIC_REGION=...
+export PUBLIC_MQTT_ENDPOINT=...
 ```
 
-### Run once
+## Running
 
-To setup MQTT bridge, you have to run the below command to generate a
-certificate used by MQTT broker to connect nRF Cloud under your account. So, you
-need to prepare nRF Cloud API key.
+    npm start
+
+## End-to-end tests using Playwright
+
+The frontend provides [end-to-end tests](./e2e-tests) using
+[Playwright](https://playwright.dev/).
+
+### Configure AWS credentials
+
+The end-to-end tests run against an instance of the
+[nRF Asset Tracker for AWS](https://github.com/NordicSemiconductor/asset-tracker-cloud-aws-js).
+
+Either, use the credentials you created, when setting up the solution, or enable
+the Web App CI feature and use the dedicated credentials created for this task.
+The latter option is the recommended approach since it limits the permission
+scope to only the needed ones. They can also be used to
+[run the end-to-end tests on GitHub Actions](#running-end-to-end-tests-using-github-actions).
+
+Add these environment variables to your `.envrc`. Then run `direnv allow` to
+allow it.
 
 ```bash
-./cli.sh configure-nrfcloud-account <account> apiKey <API key>
-./cli.sh initialize-nrfcloud-account <account>
-./cli.sh create-health-check-device <account>
+# .envrc
+export AWS_REGION=...
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export WEBAPP_STACK_NAME=...
 ```
 
-#### nRF Cloud Location Services Service Key
+### Running the tests
 
-The single-cell geo-location features uses the nRF Cloud
-[Ground Fix API](https://api.nrfcloud.com/v1#tag/Ground-Fix) which requires the
-service to be enabled in the account's plan. Manage the account at
-<https://nrfcloud.com/#/manage-plan>.
+You can then run the tests using
 
-### Deploy
+    npm run test:e2e
+
+### Running individual tests
+
+    npx playwright test authenticated/map/locationHistory/gnss.spec.ts
+
+### Playwright Inspector
+
+For developing tests it is helpful to run the
+[Playwright Inspector](https://playwright.dev/docs/inspector).
+
+You can enabled the inspector during the tests by running
+
+    PWDEBUG=1 npm run test:e2e
+
+### Running end-to-end tests using GitHub Actions
+
+[This workflow](./.github/workflows/test-and-release.yaml) runs the end-to-end
+tests for every commit. For this to work a running instance of
+[nRF Asset Tracker for AWS](https://github.com/NordicSemiconductor/asset-tracker-cloud-aws-js)
+is needed. The tests will be run against this instance. Typically it will be the
+production instance, to ensure that the web application works with the current
+production setup.
+
+In order for the test runner to interact with the instance for retrieving the
+app configuration and for providing test data you need to configure AWS
+credentials as
+[GitHub environment secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-an-environment).
+
+Set these secrets:
+
+- `AWS_REGION`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `WEBAPP_STACK_NAME`
+
+If you have enabled the web application CI of the nRF Asset Tracker for AWS
+(`node cli configure context stack web-app-ci 1`) you can acquire them using the
+nRF Asset Tracker for AWS CLI:
 
 ```bash
-npx cdk bootstrap # if this is the first time you use CDK in this account
-npx cdk deploy
+node cli web-app-ci -s
 ```
 
-## What messages MQTT bridge forwards
+You can set the secrets through the GitHub UI (make sure to create the
+`production`
+[environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)
+in your repository first).
 
-According to nRF Cloud documentation,
-[Setting up a message bridge](https://docs.nrfcloud.com/Devices/Messages/SetupMessageBridge/),
-all messages under `<stage>/<team id>/m/#` are bridged. Since the messages are
-forwarded from nRF Cloud, therefore all messages are following the protocol
-described
-[here](https://github.com/nRFCloud/application-protocols/tree/v1/schemas).
-
-**Note** Shadow data will **NOT** be forwarded to MQTT bridge since they are
-using topic as `$aws/things/${deviceId}/shadow/update`
-
-## Adding another nRF Cloud team
-
-The backend supports the integration with multiple nRF Cloud accounts.
-
-Follow the steps above to set up the MQTT bridge for another account, then
-trigger a deployment.
+Alternatively you can use the [GitHub CLI](https://cli.github.com/) using the
+environment settings from above:
 
 ```bash
-npx cdk deploy
+gh secret set AWS_REGION --env production --body "${AWS_REGION}"
+gh secret set AWS_ACCESS_KEY_ID --env production --body "${AWS_ACCESS_KEY_ID}"
+gh secret set AWS_SECRET_ACCESS_KEY --env production --body "${AWS_SECRET_ACCESS_KEY}"
+gh secret set WEBAPP_STACK_NAME --env production --body "${WEBAPP_STACK_NAME}"
 ```
 
-List the configured accounts:
+## Sentry
+
+Optionally, Sentry can be enabled for the web application. Export the
+`PUBLIC_SENTRY_DSN` environment variable.
+
+To enable this in the continuous deployment pipeline of nRF Asset Tracker,
+configure the DSN using the CLI:
 
 ```bash
-./cli.sh list-nrfcloud-accounts
+./cli.sh configure thirdParty sentry sentryDsn https://4f901247818d46099a3f15b6ada9390e@o4504255385174016.ingest.sentry.io/4504684789170176
 ```
 
-## Websocket Protocol
-
-Message received from MQTT bridge will be published to websocket connection that
-associates with the same device id.
-
-Messages will be converted using
-[`@hello.nrfcloud.com/proto`](https://github.com/hello-nrfcloud/proto).
-
-## Device Simulator
-
-You can create a simulated device for a particular nRF Cloud account using the
-CLI:
+When the next deployment is triggered, the DSN becomes available via
 
 ```bash
-./cli.sh register-simulator-device <account>
-```
-
-This will create a new device, register its public key with nRF Cloud and its
-fingerprint in the device database.
-
-Afterwards you can run the simulator using
-
-```bash
-./cli.sh simulate-device <deviceId>
-```
-
-which will send simulated data to nRF Cloud.
-
-## Shadow fetcher configuration
-
-To customize the frequency of the shadow fetcher for each model, you can modify
-the configuration using
-
-```bash
-./cli.sh set-shadow-fetcher-config <modelName> <value>
-```
-
-The value parameter can be specified in the following formats:
-
-- interval
-- interval:count
-- interval:count, interval:count
-
-Here, `interval` refers to the interval in seconds between fetching the shadow
-of a device, and `count` represents the number of iterations.
-
-### Examples
-
-- `10` will fetch the shadow of a device every 10 seconds indefinitely.
-- `5:30` will fetch the shadow of a device every 5 seconds indefinitely.
-- `5:30, 30` will fetch the shadow of a device every 5 seconds for 30 times,
-  then switch to fetching it every 30 seconds thereafter.
-- `5:30, 30:20, 60` will fetch the shadow of a device every 5 seconds for 30
-  times, then switch to fetching it every 30 seconds for another 20 times.
-  Finally, fetching the shadow every 60 seconds indefinitely
-
-## Continuous Integration
-
-To run continuous integration tests, deploy the CI application **in a seperate
-account**:
-
-```bash
-npx cdk --app 'npx tsx --no-warnings cdk/ci.ts' deploy
-```
-
-and provide the Role ARN to GitHub Actions:
-
-```bash
-CI_ROLE=`aws cloudformation describe-stacks --stack-name ${STACK_NAME:-hello-nrfcloud-backend}-ci | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ciRoleArn") | .OutputValue'`
-gh secret set AWS_ROLE --env ci --body $CI_ROLE
+./cli.sh web-app-config
 ```
