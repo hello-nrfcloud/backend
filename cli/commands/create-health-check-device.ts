@@ -120,6 +120,14 @@ export const createHealthCheckDevice = ({
 			healthCheckClientId: deviceId,
 			healthCheckModel: 'PCA20035+solar',
 			healthCheckFingerPrint: `29a.${generateCode()}`,
+			healthCheckPublicKey: await readFile(
+				path.join(deviceCertificates.publicKey),
+				'utf-8',
+			),
+			healthCheckPkcs8PrivateKey: await readFile(
+				path.join(deviceCertificates.pkcs8PrivateKey),
+				'utf-8',
+			),
 		}
 		await updateSettings({ ssm, stackName, account })(settings)
 

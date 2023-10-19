@@ -14,7 +14,10 @@ import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
 import { DeviceLastSeen } from '../resources/DeviceLastSeen.js'
 import { DeviceShadow } from '../resources/DeviceShadow.js'
 import { DeviceStorage } from '../resources/DeviceStorage.js'
-import { HealthCheckMqttBridge } from '../resources/HealthCheckMqttBridge.js'
+import {
+	HealthCheckMqttBridge,
+	type CoAPSimulatorImage,
+} from '../resources/HealthCheckMqttBridge.js'
 import { HistoricalData } from '../resources/HistoricalData.js'
 import {
 	Integration,
@@ -43,6 +46,7 @@ export class BackendStack extends Stack {
 			caCertificate,
 			nRFCloudAccounts,
 			bridgeImageSettings,
+			coapSimulatorImage,
 			repository,
 			gitHubOICDProviderArn,
 			env,
@@ -55,6 +59,7 @@ export class BackendStack extends Stack {
 			caCertificate: CAFiles
 			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 			bridgeImageSettings: BridgeImageSettings
+			coapSimulatorImage: CoAPSimulatorImage
 			gitHubOICDProviderArn: string
 			repository: {
 				owner: string
@@ -144,6 +149,7 @@ export class BackendStack extends Stack {
 		new HealthCheckMqttBridge(this, {
 			websocketAPI,
 			deviceStorage,
+			coapSimulatorImage,
 			layers: [...lambdaLayers, healthCheckLayerVersion],
 			lambdaSources,
 		})

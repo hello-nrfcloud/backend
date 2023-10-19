@@ -8,6 +8,7 @@ import {
 } from '../util/settings.js'
 
 export const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
+export const defaultCoAPEndpoint = new URL('coaps://coap.nrfcloud.com')
 
 export type Settings = {
 	apiEndpoint: URL
@@ -17,6 +18,8 @@ export type Settings = {
 	accountDeviceClientId: string
 	mqttEndpoint: string
 	mqttTopicPrefix: string
+	coapEndpoint: URL
+	coapPort: number
 }
 
 export const getSettings = ({
@@ -44,6 +47,8 @@ export const getSettings = ({
 			mqttEndpoint,
 			accountDeviceClientId,
 			mqttTopicPrefix,
+			coapEndpoint,
+			coapPort,
 		} = p
 		if (apiKey === undefined)
 			throw new Error(`No nRF Cloud API key configured!`)
@@ -67,6 +72,11 @@ export const getSettings = ({
 			accountDevicePrivateKey,
 			accountDeviceClientId,
 			mqttTopicPrefix,
+			coapEndpoint:
+				coapEndpoint === undefined
+					? defaultCoAPEndpoint
+					: new URL(coapEndpoint),
+			coapPort: Number(coapPort ?? `5684`),
 		}
 	}
 }

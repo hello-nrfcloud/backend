@@ -11,6 +11,7 @@ type BackendLambdas = {
 	onDeviceMessage: PackedLambda
 	storeMessagesInTimestream: PackedLambda
 	healthCheck: PackedLambda
+	healthCheckForCoAP: PackedLambda
 	historicalDataRequest: PackedLambda
 	kpis: PackedLambda
 	configureDevice: PackedLambda

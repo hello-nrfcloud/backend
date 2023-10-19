@@ -16,7 +16,13 @@ import { ensureGitHubOIDCProvider } from './ensureGitHubOIDCProvider.js'
 import { env } from './helpers/env.js'
 import { packLayer } from './helpers/lambdas/packLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
-import { ECR_NAME, STACK_NAME } from './stacks/stackConfig.js'
+import {
+	ECR_NAME,
+	STACK_NAME,
+	ECR_COAP_SIMULATOR,
+	COAP_SIMULATOR_DOWNLOAD_URL,
+	COAP_SIMULATOR_DOWNLOAD_SECRET,
+} from './stacks/stackConfig.js'
 import { mkdir } from 'node:fs/promises'
 import { Scope } from '../util/settings.js'
 import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
@@ -24,6 +30,8 @@ import { caLocation } from '../bridge/caLocation.js'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'
 import { storeCertificateInSSM } from './helpers/certificates/storeCertificateInSSM.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
+import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
+import { hashFolder } from '../docker/hashFolder.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -123,6 +131,15 @@ await Promise.all(
 // then the system will create image based on the folder hash
 const releaseImageTag = process.env.RELEASE_IMAGE_TAG
 const repositoryUri = await getOrCreateRepository({ ecr })(ECR_NAME)
+const mosquittoLatestTag = await getMosquittoLatestTag()
+const bridgeDockerfilePath = path.join(
+	process.cwd(),
+	'cdk',
+	'resources',
+	'containers',
+	'bridge',
+)
+const bridgeHash = await hashFolder(bridgeDockerfilePath)
 const { imageTag } = await getOrBuildDockerImage({
 	ecr,
 	releaseImageTag,
@@ -130,14 +147,45 @@ const { imageTag } = await getOrBuildDockerImage({
 })({
 	repositoryUri,
 	repositoryName: ECR_NAME,
-	dockerFilePath: path.join(
-		process.cwd(),
-		'cdk',
-		'resources',
-		'containers',
-		'bridge',
-	),
+	dockerFilePath: bridgeDockerfilePath,
+	imageTagFactory: async () => `${bridgeHash}_${mosquittoLatestTag}`,
+	buildArgs: {
+		MOSQUITTO_VERSION: mosquittoLatestTag,
+	},
 })
+// Prebuild / reuse coap-simulator docker image
+if (COAP_SIMULATOR_DOWNLOAD_URL === undefined) {
+	throw new Error(`CoAP simulator download url is not configured`)
+}
+if (COAP_SIMULATOR_DOWNLOAD_SECRET === undefined) {
+	throw new Error(`CoAP simulator download secret is not configured`)
+}
+const repositoryCoapSimulatorUri = await getOrCreateRepository({ ecr })(
+	ECR_COAP_SIMULATOR,
+)
+const coapDockerfilePath = path.join(
+	process.cwd(),
+	'cdk',
+	'resources',
+	'containers',
+	'coap',
+)
+const coapHash = await hashFolder(coapDockerfilePath)
+const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
+	ecr,
+	releaseImageTag: undefined,
+	debug: debug('CoAP simulator docker image'),
+})({
+	repositoryUri: repositoryCoapSimulatorUri,
+	repositoryName: ECR_COAP_SIMULATOR,
+	dockerFilePath: coapDockerfilePath,
+	imageTagFactory: async () => `${coapHash}`,
+	buildArgs: {
+		COAP_SIMULATOR_DOWNLOAD_URL,
+		COAP_SIMULATOR_DOWNLOAD_SECRET,
+	},
+})
+
 const nRFCloudAccounts = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
@@ -160,6 +208,10 @@ new BackendApp({
 	bridgeImageSettings: {
 		imageTag,
 		repositoryUri,
+	},
+	coapSimulatorImage: {
+		imageTag: coapSimulatorImageTag,
+		repositoryName: ECR_COAP_SIMULATOR,
 	},
 	repository,
 	gitHubOICDProviderArn: await ensureGitHubOIDCProvider({
