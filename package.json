@@ -61,7 +61,7 @@
     "@types/semver": "7.5.4",
     "@types/ws": "8.5.8",
     "@types/yazl": "2.4.4",
-    "@typescript-eslint/eslint-plugin": "6.8.0",
+    "@typescript-eslint/eslint-plugin": "6.9.0",
     "aws-cdk": "2.102.0",
     "aws-cdk-lib": "2.102.0",
     "cdk": "2.102.0",
