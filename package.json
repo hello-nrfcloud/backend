@@ -28,7 +28,7 @@
   "author": "Nordic Semiconductor ASA | nordicsemi.no",
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "@aws-lambda-powertools/logger": "1.14.1",
+    "@aws-lambda-powertools/logger": "1.14.2",
     "@aws-sdk/client-apigatewaymanagementapi": "3.441.0",
     "@aws-sdk/client-cloudformation": "3.441.0",
     "@aws-sdk/client-cloudwatch-logs": "3.441.0",
@@ -122,7 +122,7 @@
   },
   "prettier": "@nordicsemiconductor/asset-tracker-cloud-code-style/.prettierrc",
   "dependencies": {
-    "@aws-lambda-powertools/metrics": "1.14.1",
+    "@aws-lambda-powertools/metrics": "1.14.2",
     "@hello.nrfcloud.com/proto": "5.5.18",
     "@middy/core": "4.6.5",
     "@nordicsemiconductor/from-env": "2.0.0",
