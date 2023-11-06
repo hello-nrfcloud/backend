@@ -14,6 +14,7 @@ import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
 } from '../util/checkMessageFromWebsocket.js'
+import { createPublicKey, createPrivateKey } from 'node:crypto'
 
 const { DevicesTableName, stackName, websocketUrl, coapLambda } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -95,6 +96,12 @@ const publishDeviceMessageOnCoAP =
 		}
 	}
 
+type KeyPair = {
+	publicKey: string
+	privateKey: string
+}
+const cacheAccountCertificates = new Map<string, KeyPair>()
+
 const h = async (): Promise<void> => {
 	const store = new Map<string, { ts: number; temperature: number }>()
 	track('checkMessageFromWebsocket', MetricUnits.Count, 1)
@@ -112,12 +119,30 @@ const h = async (): Promise<void> => {
 					healthCheckSettings: {
 						healthCheckFingerPrint: fingerprint,
 						healthCheckClientId: deviceId,
-						healthCheckPublicKey: publicKey,
-						healthCheckPkcs8PrivateKey: privateKey,
+						healthCheckClientCert,
+						healthCheckPrivateKey,
 					},
 				} = settings
 
-				if (publicKey === undefined || privateKey === undefined) return
+				let certificates: KeyPair
+				if (cacheAccountCertificates.has(account) === false) {
+					const publicKey = createPublicKey(healthCheckClientCert)
+						.export({
+							format: 'pem',
+							type: 'spki',
+						})
+						.toString()
+					const privateKey = createPrivateKey(healthCheckPrivateKey)
+						.export({
+							format: 'pem',
+							type: 'pkcs8',
+						})
+						.toString()
+					certificates = { publicKey, privateKey }
+					cacheAccountCertificates.set(account, certificates)
+				} else {
+					certificates = cacheAccountCertificates.get(account) as KeyPair
+				}
 
 				await checkMessageFromWebsocket({
 					endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
@@ -132,8 +157,7 @@ const h = async (): Promise<void> => {
 							nrfCloudSettings,
 							deviceProperties: {
 								deviceId,
-								publicKey,
-								privateKey,
+								...certificates,
 							},
 						})({
 							appId: 'TEMP',

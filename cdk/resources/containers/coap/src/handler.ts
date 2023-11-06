@@ -2,8 +2,30 @@ import { writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { execFile } from 'node:child_process'
+import { type Handler } from 'aws-lambda'
 
-const run = async ({ command, args }) => {
+type DeviceProperties = {
+	deviceId: string
+	publicKey: string
+	privateKey: string
+	host: string
+	port: number
+}
+
+type Event = { deviceProperties: DeviceProperties; args: string[] }
+
+type EventResponse = {
+	statusCode: number
+	body?: string | string[]
+}
+
+const run = async ({
+	command,
+	args,
+}: {
+	command: string
+	args: string[]
+}): Promise<string[]> => {
 	return new Promise((resolve, reject) => {
 		const cwd = '/function'
 		console.log(`Run command: "${command}" with "${args}" at "${cwd}"`)
@@ -27,9 +49,9 @@ const run = async ({ command, args }) => {
 }
 
 export const createDeviceProperties = (
-	devicePropertiesLocation,
-	deviceProperties,
-) => {
+	devicePropertiesLocation: string,
+	deviceProperties: DeviceProperties,
+): void => {
 	const { deviceId, publicKey, privateKey, host, port } = deviceProperties
 	// Generate device.properties
 	const data = `
@@ -42,18 +64,18 @@ publicKey=${publicKey.trim().split('\n').slice(1, -1).join('')}
 	writeFileSync(devicePropertiesLocation, data)
 }
 
-const redact = (event) => {
+const redact = (event: Event): Event => {
 	return {
 		...event,
 		deviceProperties: Object.fromEntries(
 			Object.entries(event.deviceProperties).map(([key, value]) => {
 				return [key, key.includes('Key') ? '***' : value]
 			}),
-		),
+		) as DeviceProperties,
 	}
 }
 
-export const handler = async (event) => {
+export const handler: Handler<Event, EventResponse> = async (event) => {
 	console.log('EVENT: ', redact(event))
 
 	try {
@@ -75,9 +97,15 @@ export const handler = async (event) => {
 
 		return response
 	} catch (error) {
-		return {
-			statusCode: 400,
-			body: error.message,
+		if (error instanceof Error) {
+			return {
+				statusCode: 400,
+				body: error.message,
+			}
+		} else {
+			return {
+				statusCode: 400,
+			}
 		}
 	}
 }

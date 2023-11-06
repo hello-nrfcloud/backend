@@ -11,8 +11,6 @@ export type Settings = {
 	healthCheckClientId: string
 	healthCheckModel: string
 	healthCheckFingerPrint: string
-	healthCheckPublicKey?: string
-	healthCheckPkcs8PrivateKey?: string
 }
 
 export const updateSettings = ({
@@ -64,8 +62,6 @@ export const getSettings = ({
 			healthCheckClientId,
 			healthCheckModel,
 			healthCheckFingerPrint,
-			healthCheckPublicKey,
-			healthCheckPkcs8PrivateKey,
 		} = p
 		if (healthCheckClientCert === undefined)
 			throw new Error(`No health check client certificate configured`)
@@ -84,8 +80,6 @@ export const getSettings = ({
 			healthCheckClientId,
 			healthCheckModel,
 			healthCheckFingerPrint,
-			healthCheckPublicKey,
-			healthCheckPkcs8PrivateKey,
 		}
 	}
 }

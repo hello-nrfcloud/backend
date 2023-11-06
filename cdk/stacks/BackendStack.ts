@@ -14,10 +14,7 @@ import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
 import { DeviceLastSeen } from '../resources/DeviceLastSeen.js'
 import { DeviceShadow } from '../resources/DeviceShadow.js'
 import { DeviceStorage } from '../resources/DeviceStorage.js'
-import {
-	HealthCheckMqttBridge,
-	type CoAPSimulatorImage,
-} from '../resources/HealthCheckMqttBridge.js'
+import { HealthCheckMqttBridge } from '../resources/HealthCheckMqttBridge.js'
 import { HistoricalData } from '../resources/HistoricalData.js'
 import {
 	Integration,
@@ -33,6 +30,10 @@ import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 import { SingleCellGeoLocation } from '../resources/SingleCellGeoLocation.js'
 import { WebsocketConnectionsTable } from '../resources/WebsocketConnectionsTable.js'
 import { WebsocketEventBus } from '../resources/WebsocketEventBus.js'
+import {
+	HealthCheckCoAP,
+	type CoAPSimulatorImage,
+} from '../resources/HealthCheckCoAP.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -149,10 +150,19 @@ export class BackendStack extends Stack {
 		new HealthCheckMqttBridge(this, {
 			websocketAPI,
 			deviceStorage,
-			coapSimulatorImage,
 			layers: [...lambdaLayers, healthCheckLayerVersion],
 			lambdaSources,
 		})
+
+		if (this.node.tryGetContext('isTest') !== true) {
+			new HealthCheckCoAP(this, {
+				websocketAPI,
+				deviceStorage,
+				coapSimulatorImage,
+				layers: [...lambdaLayers, healthCheckLayerVersion],
+				lambdaSources,
+			})
+		}
 
 		new ConvertDeviceMessages(this, {
 			deviceStorage,

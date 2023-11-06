@@ -1,14 +1,12 @@
 # Define custom function directory
 ARG FUNCTION_DIR="/function"
 ARG COAP_SIMULATOR_DOWNLOAD_URL
-ARG COAP_SIMULATOR_DOWNLOAD_SECRET
 
 FROM node:20 as build-image
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
 ARG COAP_SIMULATOR_DOWNLOAD_URL
-ARG COAP_SIMULATOR_DOWNLOAD_SECRET
 
 # Install build dependencies
 RUN apt-get update && \
@@ -22,7 +20,7 @@ RUN apt-get update && \
   tar
 
 # Download CoAP simulator binary
-RUN curl ${COAP_SIMULATOR_DOWNLOAD_URL} -o /tmp/coap.zip -H "Referer: ${COAP_SIMULATOR_DOWNLOAD_SECRET}" && \
+RUN curl ${COAP_SIMULATOR_DOWNLOAD_URL} -o /tmp/coap.zip && \
   unzip /tmp/coap.zip -d /tmp
 
 # Copy function code
@@ -34,9 +32,11 @@ WORKDIR ${FUNCTION_DIR}
 RUN echo '{"type": "module"}' > ${FUNCTION_DIR}/package.json
 
 # Install the runtime interface client
-RUN npm install aws-lambda-ric
+RUN npm install aws-lambda-ric @swc/core @swc/cli
 
-COPY src ${FUNCTION_DIR}/
+COPY src /tmp/src/
+
+RUN npx swcx compile --config-json '{"jsc":{"target":"es2022"}}' --out-file ${FUNCTION_DIR}/handler.js /tmp/src/handler.ts
 
 # Grab a fresh slim copy of the image to reduce the final size
 FROM node:20-slim
@@ -57,10 +57,9 @@ WORKDIR ${FUNCTION_DIR}
 COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
 
 COPY --from=build-image /tmp/coap-simulator ${FUNCTION_DIR}/coap-simulator
-# COPY coap-simulator ${FUNCTION_DIR}/coap-simulator
 
 # Set runtime interface client as default command for the container runtime
 ENTRYPOINT ["/usr/local/bin/npx", "aws-lambda-ric"]
 
 # Pass the name of the function handler as an argument to the runtime
-CMD ["index.handler"]
+CMD ["handler.handler"]

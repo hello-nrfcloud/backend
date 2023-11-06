@@ -54,13 +54,9 @@ export const deviceCertificateLocations = (
 	certificate: string
 	CSR: string
 	signedCert: string
-	publicKey: string
-	pkcs8PrivateKey: string
 } => ({
 	privateKey: path.join(certificatesDir, `${deviceId}.key`),
 	certificate: path.join(certificatesDir, `${deviceId}.pem`),
 	CSR: path.join(certificatesDir, `${deviceId}.csr`),
 	signedCert: path.join(certificatesDir, `${deviceId}.signed.pem`),
-	publicKey: path.join(certificatesDir, `${deviceId}.pub.pem`),
-	pkcs8PrivateKey: path.join(certificatesDir, `${deviceId}.pkcs.pem`),
 })

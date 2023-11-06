@@ -61,8 +61,6 @@ export const createDeviceCertificate = async ({
 	certificate: string
 	CSR: string
 	signedCert: string
-	publicKey: string
-	pkcs8PrivateKey: string
 }> => {
 	const deviceCertificates = deviceCertificateLocations(dest, deviceId)
 

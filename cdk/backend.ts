@@ -20,8 +20,6 @@ import {
 	ECR_NAME,
 	STACK_NAME,
 	ECR_COAP_SIMULATOR,
-	COAP_SIMULATOR_DOWNLOAD_URL,
-	COAP_SIMULATOR_DOWNLOAD_SECRET,
 } from './stacks/stackConfig.js'
 import { mkdir } from 'node:fs/promises'
 import { Scope } from '../util/settings.js'
@@ -154,11 +152,8 @@ const { imageTag } = await getOrBuildDockerImage({
 	},
 })
 // Prebuild / reuse coap-simulator docker image
-if (COAP_SIMULATOR_DOWNLOAD_URL === undefined) {
+if (process.env.COAP_SIMULATOR_DOWNLOAD_URL === undefined) {
 	throw new Error(`CoAP simulator download url is not configured`)
-}
-if (COAP_SIMULATOR_DOWNLOAD_SECRET === undefined) {
-	throw new Error(`CoAP simulator download secret is not configured`)
 }
 const repositoryCoapSimulatorUri = await getOrCreateRepository({ ecr })(
 	ECR_COAP_SIMULATOR,
@@ -181,8 +176,7 @@ const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
 	dockerFilePath: coapDockerfilePath,
 	imageTagFactory: async () => `${coapHash}`,
 	buildArgs: {
-		COAP_SIMULATOR_DOWNLOAD_URL,
-		COAP_SIMULATOR_DOWNLOAD_SECRET,
+		COAP_SIMULATOR_DOWNLOAD_URL: process.env.COAP_SIMULATOR_DOWNLOAD_URL,
 	},
 })
 
