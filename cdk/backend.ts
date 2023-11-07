@@ -19,7 +19,7 @@ import { packBackendLambdas } from './packBackendLambdas.js'
 import {
 	ECR_NAME,
 	STACK_NAME,
-	ECR_COAP_SIMULATOR,
+	ECR_NAME_COAP_SIMULATOR,
 } from './stacks/stackConfig.js'
 import { mkdir } from 'node:fs/promises'
 import { Scope } from '../util/settings.js'
@@ -156,7 +156,7 @@ if (process.env.COAP_SIMULATOR_DOWNLOAD_URL === undefined) {
 	throw new Error(`CoAP simulator download url is not configured`)
 }
 const repositoryCoapSimulatorUri = await getOrCreateRepository({ ecr })(
-	ECR_COAP_SIMULATOR,
+	ECR_NAME_COAP_SIMULATOR,
 )
 const coapDockerfilePath = path.join(
 	process.cwd(),
@@ -172,7 +172,7 @@ const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
 	debug: debug('CoAP simulator docker image'),
 })({
 	repositoryUri: repositoryCoapSimulatorUri,
-	repositoryName: ECR_COAP_SIMULATOR,
+	repositoryName: ECR_NAME_COAP_SIMULATOR,
 	dockerFilePath: coapDockerfilePath,
 	imageTagFactory: async () => `${coapHash}`,
 	buildArgs: {
@@ -205,7 +205,7 @@ new BackendApp({
 	},
 	coapSimulatorImage: {
 		imageTag: coapSimulatorImageTag,
-		repositoryName: ECR_COAP_SIMULATOR,
+		repositoryName: ECR_NAME_COAP_SIMULATOR,
 	},
 	repository,
 	gitHubOICDProviderArn: await ensureGitHubOIDCProvider({

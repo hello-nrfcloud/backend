@@ -7,10 +7,6 @@ import * as net from 'node:net'
 import { setTimeout } from 'node:timers/promises'
 import { DeferTimeoutError } from './defer.js'
 
-type ConnectionError = {
-	code: string
-}
-
 const getRandomPort = async (): Promise<number> => {
 	const server = net.createServer()
 	return new Promise((resolve) => {
@@ -60,8 +56,8 @@ describe('checkMessageFromWebsocket', () => {
 	it('should reject with false on invalid message', async () => {
 		const validate = jest.fn().mockResolvedValue(ValidateResponse.invalid)
 
-		try {
-			await checkMessageFromWebsocket({
+		await expect(
+			checkMessageFromWebsocket({
 				endpoint: `ws://localhost:${port}`,
 				timeoutMS: 1000,
 				onConnect: async () => {
@@ -70,18 +66,16 @@ describe('checkMessageFromWebsocket', () => {
 					})
 				},
 				validate,
-			})
-		} catch (error) {
-			expect(error).toBe(false)
-			expect(validate).toHaveBeenCalled()
-		}
+			}),
+		).rejects.toBeFalsy()
+		expect(validate).toHaveBeenCalled()
 	})
 
 	it('should reject with DeferTimeoutError on timeout', async () => {
 		const validate = jest.fn().mockResolvedValue(ValidateResponse.invalid)
 
-		try {
-			await checkMessageFromWebsocket({
+		await expect(
+			checkMessageFromWebsocket({
 				endpoint: `ws://localhost:${port}`,
 				timeoutMS: 500,
 				onConnect: async () => {
@@ -91,17 +85,15 @@ describe('checkMessageFromWebsocket', () => {
 					})
 				},
 				validate,
-			})
-		} catch (error) {
-			expect(error).toBeInstanceOf(DeferTimeoutError)
-		}
+			}),
+		).rejects.toBeInstanceOf(DeferTimeoutError)
 	})
 
 	it('should reject on WebSocket error', async () => {
 		const validate = jest.fn().mockResolvedValue(ValidateResponse.invalid)
 
-		try {
-			await checkMessageFromWebsocket({
+		await expect(
+			checkMessageFromWebsocket({
 				endpoint: `ws://localhost:${port + 1}`,
 				timeoutMS: 500,
 				onConnect: async () => {
@@ -111,9 +103,8 @@ describe('checkMessageFromWebsocket', () => {
 					})
 				},
 				validate,
-			})
-		} catch (error) {
-			expect((error as ConnectionError).code).toEqual('ECONNREFUSED')
-		}
+			}),
+		).rejects.toThrow()
+		expect(validate).not.toHaveBeenCalled()
 	})
 })

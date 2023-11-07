@@ -50,7 +50,6 @@ export class HealthCheckCoAP extends Construct {
 		})
 
 		// Lambda functions
-		// Running CoAP health check only on production
 		const coapLambda = new Lambda.DockerImageFunction(this, 'coapSimulator', {
 			memorySize: 1792,
 			timeout: Duration.seconds(30),
@@ -82,7 +81,6 @@ export class HealthCheckCoAP extends Construct {
 				STACK_NAME: Stack.of(this).stackName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				WEBSOCKET_URL: websocketAPI.websocketURI,
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 				COAP_LAMBDA: coapLambda.functionName,
 			},
 			initialPolicy: [

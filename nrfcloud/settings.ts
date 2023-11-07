@@ -76,7 +76,7 @@ export const getSettings = ({
 				coapEndpoint === undefined
 					? defaultCoAPEndpoint
 					: new URL(coapEndpoint),
-			coapPort: Number(coapPort ?? `5684`),
+			coapPort: parseInt(coapPort ?? `5684`, 10),
 		}
 	}
 }

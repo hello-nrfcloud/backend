@@ -25,8 +25,8 @@ const run = async ({
 }: {
 	command: string
 	args: string[]
-}): Promise<string[]> => {
-	return new Promise((resolve, reject) => {
+}): Promise<string[]> =>
+	new Promise((resolve, reject) => {
 		const cwd = '/function'
 		console.log(`Run command: "${command}" with "${args}" at "${cwd}"`)
 
@@ -46,7 +46,6 @@ const run = async ({
 			},
 		)
 	})
-}
 
 export const createDeviceProperties = (
 	devicePropertiesLocation: string,
@@ -54,26 +53,25 @@ export const createDeviceProperties = (
 ): void => {
 	const { deviceId, publicKey, privateKey, host, port } = deviceProperties
 	// Generate device.properties
-	const data = `
-deviceId=${deviceId}
-host=${host}
-port=${port}
-privateKey=${privateKey.trim().split('\n').slice(1, -1).join('')}
-publicKey=${publicKey.trim().split('\n').slice(1, -1).join('')}
-    `
+	const data = [
+		`deviceId=${deviceId}`,
+		`host=${host}`,
+		`port=${port}`,
+		`privateKey=${privateKey.trim().split('\n').slice(1, -1).join('')}`,
+		`publicKey=${publicKey.trim().split('\n').slice(1, -1).join('')}`,
+	].join('\n')
+
 	writeFileSync(devicePropertiesLocation, data)
 }
 
-const redact = (event: Event): Event => {
-	return {
-		...event,
-		deviceProperties: Object.fromEntries(
-			Object.entries(event.deviceProperties).map(([key, value]) => {
-				return [key, key.includes('Key') ? '***' : value]
-			}),
-		) as DeviceProperties,
-	}
-}
+const redact = (event: Event): Event => ({
+	...event,
+	deviceProperties: Object.fromEntries(
+		Object.entries(event.deviceProperties).map(([key, value]) => {
+			return [key, key.includes('Key') ? '***' : value]
+		}),
+	) as DeviceProperties,
+})
 
 export const handler: Handler<Event, EventResponse> = async (event) => {
 	console.log('EVENT: ', redact(event))

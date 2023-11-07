@@ -48,7 +48,7 @@ await Promise.all(
 				account,
 			})
 		} else {
-			log.warn(`${account} does not have health check settings`)
+			log.critical(`${account} does not have health check settings`)
 		}
 	}),
 )
@@ -112,7 +112,7 @@ const h = async (): Promise<void> => {
 					!('healthCheckSettings' in settings) ||
 					!('nrfCloudSettings' in settings)
 				)
-					return
+					throw new Error(`No health check settings for ${account}`)
 
 				const {
 					nrfCloudSettings,

@@ -18,6 +18,20 @@ developed using [AWS CDK](https://aws.amazon.com/cdk) in
 Provide your AWS credentials, for example using the `.envrc` (see
 [the example](.envrc.example)).
 
+### CoAP Simulator
+
+Recently, nRF Cloud has added support for CoAP. Therefore, it is essential to
+ensure that the messages sent via CoAP will be successfully delivered to
+`hello.nrfcloud` through the MQTT bridge. The nRF Cloud team offers a
+[CoAP simulator](https://github.com/nRFCloud/coap-simulator), which we will
+employ in conjunction with Lambda to execute the CoAP simulator and transmit a
+message to nRF Cloud.
+
+To accomplish this, you need to supply the URL to the CoAP simulator binary in
+zip format via an environment variable, `COAP_SIMULATOR_DOWNLOAD_URL`. For
+example, you can do this by using the `.envrc` file (please refer to
+[the example](.envrc.example)).
+
 Install the dependencies:
 
 ```bash
