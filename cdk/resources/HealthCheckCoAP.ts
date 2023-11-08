@@ -5,6 +5,7 @@ import {
 	aws_iam as IAM,
 	aws_lambda as Lambda,
 	aws_logs as Logs,
+	aws_ecr as ECR,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -17,40 +18,62 @@ import { Scope } from '../../util/settings.js'
 
 export type BridgeImageSettings = BridgeSettings
 
-export class HealthCheckMqttBridge extends Construct {
+export type CoAPSimulatorImage = {
+	imageTag: string
+	repositoryName: string
+}
+
+export class HealthCheckCoAP extends Construct {
 	public constructor(
 		parent: Construct,
 		{
 			websocketAPI,
 			deviceStorage,
+			coapSimulatorImage,
 			layers,
 			lambdaSources,
 		}: {
 			websocketAPI: WebsocketAPI
 			deviceStorage: DeviceStorage
+			coapSimulatorImage: CoAPSimulatorImage
 			layers: Lambda.ILayerVersion[]
 			lambdaSources: {
-				healthCheck: PackedLambda
 				healthCheckForCoAP: PackedLambda
 			}
 		},
 	) {
-		super(parent, 'healthCheckMqttBridge')
+		super(parent, 'HealthCheckCoAP')
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
-			description: `Scheduler to health check mqtt bridge`,
+			description: `Scheduler to health check CoAP`,
 			schedule: Events.Schedule.rate(Duration.minutes(1)),
 		})
 
 		// Lambda functions
-		const healthCheck = new Lambda.Function(this, 'healthCheck', {
-			handler: lambdaSources.healthCheck.handler,
+		const coapLambda = new Lambda.DockerImageFunction(this, 'coapSimulator', {
+			memorySize: 1792,
+			timeout: Duration.seconds(30),
+			description: 'CoAP simulator (JAVA) - lambda container image',
+			code: Lambda.DockerImageCode.fromEcr(
+				ECR.Repository.fromRepositoryName(
+					this,
+					'coapSimulatorRepository',
+					coapSimulatorImage.repositoryName,
+				),
+				{
+					tagOrDigest: coapSimulatorImage.imageTag,
+				},
+			),
+		})
+
+		const healthCheckCoAP = new Lambda.Function(this, 'healthCheckCoAP', {
+			handler: lambdaSources.healthCheckForCoAP.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: Duration.seconds(15),
+			timeout: Duration.seconds(30),
 			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.healthCheck).code,
-			description: 'End to end test for mqtt bridge',
+			code: new LambdaSource(this, lambdaSources.healthCheckForCoAP).code,
+			description: 'End to end test for CoAP to mqtt bridge',
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
@@ -58,7 +81,7 @@ export class HealthCheckMqttBridge extends Construct {
 				STACK_NAME: Stack.of(this).stackName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				WEBSOCKET_URL: websocketAPI.websocketURI,
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				COAP_LAMBDA: coapLambda.functionName,
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
@@ -86,7 +109,8 @@ export class HealthCheckMqttBridge extends Construct {
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheck))
-		deviceStorage.devicesTable.grantWriteData(healthCheck)
+		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheckCoAP))
+		deviceStorage.devicesTable.grantWriteData(healthCheckCoAP)
+		coapLambda.grantInvoke(healthCheckCoAP)
 	}
 }

@@ -4,8 +4,6 @@ import {
 	GetAuthorizationTokenCommand,
 } from '@aws-sdk/client-ecr'
 import type { logFn } from '../cli/log'
-import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
-import { hashFolder } from '../docker/hashFolder.js'
 import { hasValues } from '../util/hasValues.js'
 import { isFirstElementInArrayNotEmpty } from '../util/isFirstElementInArrayNotEmpty.js'
 import { run } from '../util/run.js'
@@ -62,10 +60,14 @@ export const getOrBuildDockerImage =
 		repositoryUri,
 		repositoryName,
 		dockerFilePath,
+		imageTagFactory,
+		buildArgs,
 	}: {
 		repositoryUri: string
 		repositoryName: string
 		dockerFilePath: string
+		imageTagFactory: () => Promise<string>
+		buildArgs?: Record<string, string>
 	}): Promise<{ imageTag: string }> => {
 		const imageTagExists = imageTagOfRepositoryExists({
 			ecr,
@@ -88,9 +90,7 @@ export const getOrBuildDockerImage =
 		}
 
 		// During develop phase
-		const hash = await hashFolder(dockerFilePath)
-		const baseVersion = await getMosquittoLatestTag()
-		const imageTag = `${hash}_${baseVersion}`
+		const imageTag = await imageTagFactory()
 
 		debug?.(`Checking image tag: ${imageTag}`)
 		const exists = await imageTagExists(imageTag)
@@ -101,19 +101,17 @@ export const getOrBuildDockerImage =
 			debug?.(`Image tag ${imageTag} does not exist on ${repositoryUri}`)
 			// Create a docker image
 			debug?.(`Building docker image with tag ${imageTag}`)
+			const baseArgs = ['buildx', 'build', '--platform', 'linux/amd64']
+			const extraArgs =
+				buildArgs !== undefined
+					? Object.entries(buildArgs).reduce(
+							(p, [key, value]) => p.concat(['--build-arg', `${key}=${value}`]),
+							[] as string[],
+					  )
+					: []
 			await run({
 				command: 'docker',
-				args: [
-					'buildx',
-					'build',
-					'--platform',
-					'linux/amd64',
-					'--build-arg',
-					`MOSQUITTO_VERSION=${baseVersion}`,
-					'-t',
-					imageTag,
-					dockerFilePath,
-				],
+				args: [...baseArgs, ...extraArgs, '-t', imageTag, dockerFilePath],
 			})
 
 			const tokenResult = await ecr.send(new GetAuthorizationTokenCommand({}))

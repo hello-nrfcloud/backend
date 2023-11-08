@@ -38,6 +38,7 @@
     "@aws-sdk/client-eventbridge": "3.441.0",
     "@aws-sdk/client-iam": "3.444.0",
     "@aws-sdk/client-iot": "3.441.0",
+    "@aws-sdk/client-lambda": "3.438.0",
     "@aws-sdk/client-sqs": "3.441.0",
     "@aws-sdk/client-ssm": "3.441.0",
     "@aws-sdk/client-sts": "3.441.0",

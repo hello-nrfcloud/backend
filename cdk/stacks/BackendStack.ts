@@ -30,6 +30,10 @@ import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 import { SingleCellGeoLocation } from '../resources/SingleCellGeoLocation.js'
 import { WebsocketConnectionsTable } from '../resources/WebsocketConnectionsTable.js'
 import { WebsocketEventBus } from '../resources/WebsocketEventBus.js'
+import {
+	HealthCheckCoAP,
+	type CoAPSimulatorImage,
+} from '../resources/HealthCheckCoAP.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -43,6 +47,7 @@ export class BackendStack extends Stack {
 			caCertificate,
 			nRFCloudAccounts,
 			bridgeImageSettings,
+			coapSimulatorImage,
 			repository,
 			gitHubOICDProviderArn,
 			env,
@@ -55,6 +60,7 @@ export class BackendStack extends Stack {
 			caCertificate: CAFiles
 			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 			bridgeImageSettings: BridgeImageSettings
+			coapSimulatorImage: CoAPSimulatorImage
 			gitHubOICDProviderArn: string
 			repository: {
 				owner: string
@@ -147,6 +153,16 @@ export class BackendStack extends Stack {
 			layers: [...lambdaLayers, healthCheckLayerVersion],
 			lambdaSources,
 		})
+
+		if (this.node.tryGetContext('isTest') !== true) {
+			new HealthCheckCoAP(this, {
+				websocketAPI,
+				deviceStorage,
+				coapSimulatorImage,
+				layers: [...lambdaLayers, healthCheckLayerVersion],
+				lambdaSources,
+			})
+		}
 
 		new ConvertDeviceMessages(this, {
 			deviceStorage,
