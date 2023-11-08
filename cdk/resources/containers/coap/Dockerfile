@@ -2,7 +2,7 @@
 ARG FUNCTION_DIR="/function"
 ARG COAP_SIMULATOR_DOWNLOAD_URL
 
-FROM node:20 as build-image
+FROM node:21 as build-image
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
@@ -39,7 +39,7 @@ COPY src /tmp/src/
 RUN npx swcx compile --config-json '{"jsc":{"target":"es2022"}}' --out-file ${FUNCTION_DIR}/handler.js /tmp/src/handler.ts
 
 # Grab a fresh slim copy of the image to reduce the final size
-FROM node:20-slim
+FROM node:21-slim
 
 RUN apt-get update && apt-get install -y openjdk-17-jre-headless
 
