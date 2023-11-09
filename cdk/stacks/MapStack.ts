@@ -3,6 +3,7 @@ import { PublicDevices } from '../resources/map/PublicDevices.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
+import { MAP_STACK_NAME } from './stackConfig.js'
 
 /**
  * Provides resources for hello.nrfcloud.com/map
@@ -18,7 +19,7 @@ export class MapStack extends Stack {
 			lambdaSources: BackendLambdas
 		},
 	) {
-		super(parent, 'map')
+		super(parent, MAP_STACK_NAME)
 
 		const mapLayer = new Lambda.LayerVersion(this, 'mapLayer', {
 			code: new LambdaSource(this, {

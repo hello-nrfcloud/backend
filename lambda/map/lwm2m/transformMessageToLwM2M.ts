@@ -5,26 +5,23 @@ import {
 	type Transformer,
 } from '@hello.nrfcloud.com/proto-lwm2m'
 
-type Update = {
-	state: {
-		reported?: Record<string, unknown>
-		desired?: Record<string, unknown>
-	}
-}
-
 /**
  * Very simple implementation of a converter.
  */
-export const transformShadowUpdateToLwM2M = (
+export const transformMessageToLwM2M = (
 	transformers: Readonly<Array<Transformer>>,
-): ((update: Update) => Promise<ReturnType<typeof senMLtoLwM2M>>) => {
+): ((
+	message: Record<string, unknown>,
+) => Promise<ReturnType<typeof senMLtoLwM2M>>) => {
 	// Turn the JSONata in the transformers into executable functions
 	const transformerFns = transformers.map(({ match, transform }) => ({
 		match: jsonata(match),
 		transform: jsonata(transform),
 	}))
 
-	return async (input: Update): Promise<Array<LwM2MObjectInstance>> =>
+	return async (
+		input: Record<string, unknown>,
+	): Promise<Array<LwM2MObjectInstance>> =>
 		Promise.all(
 			transformerFns.map(async ({ match, transform }) => {
 				// Check if the `matched` JSONata returns `true`.

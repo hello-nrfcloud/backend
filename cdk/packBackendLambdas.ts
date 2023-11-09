@@ -48,10 +48,6 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'lambda/resolveSingleCellGeoLocation.ts',
 	),
 	// Map lambdas
-	iotRulePublicDeviceCheck: await packLambdaFromPath(
-		'updatesToLwM2M',
-		'lambda/map/iotRulePublicDeviceCheck.ts',
-	),
 	updatesToLwM2M: await packLambdaFromPath(
 		'updatesToLwM2M',
 		'lambda/map/updatesToLwM2M.ts',

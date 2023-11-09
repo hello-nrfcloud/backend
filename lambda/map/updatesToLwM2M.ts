@@ -2,7 +2,7 @@ import {
 	IoTDataPlaneClient,
 	UpdateThingShadowCommand,
 } from '@aws-sdk/client-iot-data-plane'
-import { transformShadowUpdateToLwM2M } from './lwm2m/transformShadowUpdateToLwM2M.js'
+import { transformMessageToLwM2M } from './lwm2m/transformMessageToLwM2M.js'
 import {
 	models,
 	type LwM2MObjectInstance,
@@ -10,8 +10,8 @@ import {
 import { objectsToShadow } from './lwm2m/objectsToShadow.js'
 
 const iotData = new IoTDataPlaneClient({})
-const transformUpdate = transformShadowUpdateToLwM2M(
-	models['asset_tracker_v2+AWS'].transforms,
+const transformUpdate = transformMessageToLwM2M(
+	models['PCA20035+solar'].transforms,
 )
 
 const updateShadow = async (
@@ -33,21 +33,17 @@ const updateShadow = async (
 
 /**
  * Store shadow updates in asset_tracker_v2 shadow format as LwM2M objects in a named shadow.
- *
- * Also store the updates in a table for historical data.
  */
 export const handler = async (event: {
+	message: Record<string, unknown>
 	deviceId: string
-	update: {
-		state: {
-			reported?: Record<string, unknown>
-			desired?: Record<string, unknown>
-		}
-	}
 }): Promise<void> => {
 	console.debug(JSON.stringify({ event }))
-	const { deviceId, update } = event
-	const objects = await transformUpdate(update)
+	const { deviceId, message } = event
+
+	// FIXME: check if device is "public"
+
+	const objects = await transformUpdate(message)
 	console.log(
 		JSON.stringify({
 			deviceId,
@@ -55,5 +51,5 @@ export const handler = async (event: {
 		}),
 	)
 
-	void updateShadow(deviceId, objects)
+	await updateShadow(deviceId, objects)
 }

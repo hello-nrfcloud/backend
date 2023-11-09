@@ -24,7 +24,6 @@ export class PublicDevices extends Construct {
 			mapLayer: Lambda.ILayerVersion
 			lambdaSources: {
 				updatesToLwM2M: PackedLambda
-				iotRulePublicDeviceCheck: PackedLambda
 			}
 		},
 	) {
@@ -41,30 +40,6 @@ export class PublicDevices extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 		})
 
-		const iotRulePublicDeviceCheck = new Lambda.Function(
-			this,
-			'iotRulePublicDeviceCheck',
-			{
-				handler: lambdaSources.iotRulePublicDeviceCheck.handler,
-				architecture: Lambda.Architecture.ARM_64,
-				runtime: Lambda.Runtime.NODEJS_18_X,
-				timeout: Duration.minutes(15),
-				memorySize: 1792,
-				code: Lambda.Code.fromAsset(
-					lambdaSources.iotRulePublicDeviceCheck.zipFile,
-				),
-				description:
-					'Invoked by the IoT Rule to check whether data from this device can be published.',
-				layers: [mapLayer],
-				environment: {
-					VERSION: this.node.tryGetContext('version'),
-					TABLE_NAME: table.tableName,
-				},
-				logRetention: Logs.RetentionDays.ONE_WEEK,
-			},
-		)
-		table.grantReadData(iotRulePublicDeviceCheck)
-
 		const updatesToLwM2M = new Lambda.Function(this, 'updatesToLwM2M', {
 			handler: lambdaSources.updatesToLwM2M.handler,
 			architecture: Lambda.Architecture.ARM_64,
@@ -77,6 +52,7 @@ export class PublicDevices extends Construct {
 			layers: [mapLayer],
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
+				TABLE_NAME: table.tableName,
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
@@ -86,6 +62,7 @@ export class PublicDevices extends Construct {
 			],
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
+		table.grantReadData(updatesToLwM2M)
 
 		const ruleRole = new IAM.Role(this, 'ruleRole', {
 			assumedBy: new IAM.ServicePrincipal(
@@ -109,20 +86,19 @@ export class PublicDevices extends Construct {
 
 		const rule = new IoT.CfnTopicRule(this, 'rule', {
 			topicRulePayload: {
-				description: `Convert shadow updates to LwM2M`,
+				description: `Convert devices messages to LwM2M`,
 				ruleDisabled: false,
 				awsIotSqlVersion: '2016-03-23',
 				sql: [
-					`SELECT * as update,`,
-					`aws_lambda("${iotRulePublicDeviceCheck.functionArn}", {"payload":topic(3)}) as deviceConsent`,
-					`topic(3) as deviceId`,
-					`FROM '$aws/things/+/shadow/update'`,
-					`WHERE deviceConsent.public = True`,
+					`SELECT * as message,`,
+					`topic(4) as deviceId`,
+					`FROM 'data/m/d/+/d2c'`, // 'data/m/d/<device Id>/d2c'
+					`WHERE messageType = 'DATA'`,
 				].join(' '),
 				actions: [
 					{
 						lambda: {
-							functionArn: iotRulePublicDeviceCheck.functionArn,
+							functionArn: updatesToLwM2M.functionArn,
 						},
 					},
 				],
@@ -133,13 +109,6 @@ export class PublicDevices extends Construct {
 					},
 				},
 			},
-		})
-
-		iotRulePublicDeviceCheck.addPermission('invokeByRule', {
-			principal: new IAM.ServicePrincipal(
-				'iot.amazonaws.com',
-			) as IAM.IPrincipal,
-			sourceArn: rule.attrArn,
 		})
 
 		updatesToLwM2M.addPermission('invokeByRule', {

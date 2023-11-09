@@ -18,5 +18,4 @@ type BackendLambdas = {
 	resolveSingleCellGeoLocation: PackedLambda
 	// Map
 	updatesToLwM2M: PackedLambda
-	iotRulePublicDeviceCheck: PackedLambda
 }
