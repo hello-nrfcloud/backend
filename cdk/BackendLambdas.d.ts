@@ -16,4 +16,7 @@ type BackendLambdas = {
 	kpis: PackedLambda
 	configureDevice: PackedLambda
 	resolveSingleCellGeoLocation: PackedLambda
+	// Map
+	updatesToLwM2M: PackedLambda
+	iotRulePublicDeviceCheck: PackedLambda
 }

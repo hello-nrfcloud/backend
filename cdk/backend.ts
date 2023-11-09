@@ -213,6 +213,16 @@ new BackendApp({
 		id: 'healthCheckLayer',
 		dependencies: healthCheckPackagesInLayer,
 	}),
+	mapsLayer: await packLayer({
+		id: 'mapsLayer',
+		dependencies: [
+			'@nordicsemiconductor/from-env',
+			'@sinclair/typebox',
+			'ajv',
+			'@hello.nrfcloud.com/proto-lwm2m',
+			'@middy/core',
+		],
+	}),
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
 	caCertificate,
