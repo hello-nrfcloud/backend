@@ -76,6 +76,11 @@ jobs:
           ./cli.sh fake-nrfcloud-account-device elite
           ./cli.sh create-fake-nrfcloud-health-check-device elite
 
+      # The health check does not run, but this will test at least that the image can be generated
+      - name: Configure CoAP Health Check Simulator Download URL
+        run: |
+          ./cli.sh configure-coap-health-check simulatorDownloadURL ${{ env.COAP_SIMULATOR_DOWNLOAD_URL }}
+
       - name: Deploy test resources stack
         run: |
           npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never

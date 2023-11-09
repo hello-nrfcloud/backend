@@ -28,11 +28,13 @@ employ in conjunction with Lambda to execute the CoAP simulator and transmit a
 message to nRF Cloud.
 
 To accomplish this, you need to supply the URL to the CoAP simulator binary in
-zip format via an environment variable, `COAP_SIMULATOR_DOWNLOAD_URL`. For
-example, you can do this by using the `.envrc` file (please refer to
-[the example](.envrc.example)).
+zip format via an SSM parameter for the stack.
 
-Install the dependencies:
+```bash
+./cli.sh configure-coap-health-check simulatorDownloadURL <URL to the ZIP file>
+```
+
+### Install the dependencies
 
 ```bash
 npm ci

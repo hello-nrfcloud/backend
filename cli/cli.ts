@@ -33,6 +33,7 @@ import { configureRFCloudAccountCommand } from './commands/configure-nrfcloud-ac
 import { getNRFCloudBulkOpsStatus } from './commands/get-nrfcloud-bulkops-status.js'
 import { importUnsupportedDevice } from './commands/import-unsupported-device.js'
 import { listDevicesCommand } from './commands/list-devices.js'
+import { configureCoAPHealthCheckCommand } from './commands/configure-coap-health-check.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -77,11 +78,13 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				iot,
 				ssm,
 			}),
-		)
-		commands.push(
 			createFakeNrfCloudHealthCheckDevice({
 				iot,
 				ssm,
+			}),
+			configureCoAPHealthCheckCommand({
+				ssm,
+				stackName: STACK_NAME,
 			}),
 		)
 	} else {

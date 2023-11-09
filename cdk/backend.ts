@@ -30,6 +30,7 @@ import { storeCertificateInSSM } from './helpers/certificates/storeCertificateIn
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
 import { hashFolder } from '../docker/hashFolder.js'
+import { getCoAPHealthCheckSettings } from '../nrfcloud/coap-health-check.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -152,9 +153,6 @@ const { imageTag } = await getOrBuildDockerImage({
 	},
 })
 // Prebuild / reuse coap-simulator docker image
-if (process.env.COAP_SIMULATOR_DOWNLOAD_URL === undefined) {
-	throw new Error(`CoAP simulator download url is not configured`)
-}
 const repositoryCoapSimulatorUri = await getOrCreateRepository({ ecr })(
 	ECR_NAME_COAP_SIMULATOR,
 )
@@ -176,7 +174,12 @@ const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
 	dockerFilePath: coapDockerfilePath,
 	imageTagFactory: async () => `${coapHash}`,
 	buildArgs: {
-		COAP_SIMULATOR_DOWNLOAD_URL: process.env.COAP_SIMULATOR_DOWNLOAD_URL,
+		COAP_SIMULATOR_DOWNLOAD_URL: (
+			await getCoAPHealthCheckSettings({
+				ssm,
+				stackName: STACK_NAME,
+			})
+		).simulatorDownloadURL.toString(),
 	},
 })
 
