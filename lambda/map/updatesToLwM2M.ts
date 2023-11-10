@@ -19,7 +19,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 
 const { TableName } = fromEnv({
-	TableName: 'DEVICES_TABLE_NAME',
+	TableName: 'PUBLIC_DEVICES_TABLE_NAME',
 })(process.env)
 
 const iotData = new IoTDataPlaneClient({})
@@ -54,6 +54,8 @@ const devicesInfoCache = new Map<string, { id: string; model: string } | null>()
 
 /**
  * Store shadow updates in asset_tracker_v2 shadow format as LwM2M objects in a named shadow.
+ *
+ * TODO: ignore health-check devices
  */
 export const handler = async (event: {
 	message: Record<string, unknown>

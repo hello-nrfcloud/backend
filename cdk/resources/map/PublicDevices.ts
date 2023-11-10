@@ -40,6 +40,17 @@ export class PublicDevices extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 		})
 
+		// Used for the unique active devices per day KPI
+		publicDevicesTable.addGlobalSecondaryIndex({
+			indexName: 'deviceId',
+			partitionKey: {
+				name: 'deviceId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.INCLUDE,
+			nonKeyAttributes: ['model'],
+		})
+
 		const updatesToLwM2M = new Lambda.Function(this, 'updatesToLwM2M', {
 			handler: lambdaSources.updatesToLwM2M.handler,
 			architecture: Lambda.Architecture.ARM_64,
