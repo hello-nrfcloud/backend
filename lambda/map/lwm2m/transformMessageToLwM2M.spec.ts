@@ -11,10 +11,9 @@ void describe('transformMessageToLwM2M()', () => {
 	void it('should convert a shadow update', async () => {
 		const expected: LwM2MObjectInstance = {
 			ObjectID: LwM2MObjectID.Environment_14205,
-			ObjectVersion: '1.0',
 			Resources: {
 				0: 15.5,
-				99: new Date('2023-11-05T16:41:13.174Z'),
+				99: new Date(1699564330376),
 			},
 		}
 		assert.deepEqual(
