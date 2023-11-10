@@ -48,11 +48,15 @@ export const getOrBuildDockerImage =
 	({
 		ecr,
 		releaseImageTag,
+		beforeBuild,
+		afterBuild,
 		debug,
 		error: logError,
 	}: {
 		ecr: ECRClient
 		releaseImageTag?: string
+		beforeBuild?: () => Promise<void>
+		afterBuild?: () => Promise<void>
 		debug?: logFn
 		error?: logFn
 	}) =>
@@ -98,6 +102,7 @@ export const getOrBuildDockerImage =
 			debug?.(`Image tag ${imageTag} exists on ${repositoryUri}`)
 			return { imageTag }
 		} else {
+			if (beforeBuild !== undefined) await beforeBuild()
 			debug?.(`Image tag ${imageTag} does not exist on ${repositoryUri}`)
 			// Create a docker image
 			debug?.(`Building docker image with tag ${imageTag}`)
@@ -113,6 +118,7 @@ export const getOrBuildDockerImage =
 				command: 'docker',
 				args: [...baseArgs, ...extraArgs, '-t', imageTag, dockerFilePath],
 			})
+			if (afterBuild !== undefined) await afterBuild()
 
 			const tokenResult = await ecr.send(new GetAuthorizationTokenCommand({}))
 			if (

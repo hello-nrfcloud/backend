@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { createReadStream, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
-const hashFile = async (file: string): Promise<string> => {
+export const hashFile = async (file: string): Promise<string> => {
 	const hash = createHash('md5')
 	const content = createReadStream(file)
 
