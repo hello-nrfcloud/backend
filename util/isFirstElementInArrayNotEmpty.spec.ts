@@ -1,6 +1,8 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { isFirstElementInArrayNotEmpty } from './isFirstElementInArrayNotEmpty.js'
 
-describe('isFirstElementInArrayNotEmpty', () => {
+void describe('isFirstElementInArrayNotEmpty', () => {
 	type TestObject = {
 		a?: string
 		b?: number
@@ -19,23 +21,23 @@ describe('isFirstElementInArrayNotEmpty', () => {
 		{ a: 'hello', b: 123, c: false },
 	]
 
-	it('returns true if the first element has values for all specified properties', () => {
+	void it('returns true if the first element has values for all specified properties', () => {
 		const result = isFirstElementInArrayNotEmpty(validArray, 'a', 'b', 'c')
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 
-	it('returns false if the first element has any specified properties are null or undefined', () => {
+	void it('returns false if the first element has any specified properties are null or undefined', () => {
 		const result = isFirstElementInArrayNotEmpty(invalidArray, 'a', 'b')
-		expect(result).toBe(false)
+		assert.equal(result, false)
 	})
 
-	it('returns false if the array is empty', () => {
+	void it('returns false if the array is empty', () => {
 		const result = isFirstElementInArrayNotEmpty(emptyArray, 'a')
-		expect(result).toBe(false)
+		assert.equal(result, false)
 	})
 
-	it('returns true if no properties are specified', () => {
+	void it('returns true if no properties are specified', () => {
 		const result = isFirstElementInArrayNotEmpty(validArray)
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 })

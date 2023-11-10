@@ -1,16 +1,9 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { getSensorQueryStatement } from './getSensorQueryStatement.js'
 
-describe('getSensorQueryStatement', () => {
-	beforeEach(() => {
-		jest.useFakeTimers()
-		jest.setSystemTime(1688104200000)
-	})
-
-	afterEach(() => {
-		jest.useRealTimers()
-	})
-
-	it('returns the correct query statement for gain request', () => {
+void describe('getSensorQueryStatement', () => {
+	void it('returns the correct query statement for gain request', () => {
 		const result = getSensorQueryStatement({
 			type: 'lastDay',
 			attributes: {
@@ -22,6 +15,7 @@ describe('getSensorQueryStatement', () => {
 			),
 			historicalDataDatabaseName: 'database1',
 			historicalDataTableName: 'table1',
+			now: new Date(1688104200000),
 		})
 
 		const expectedQuery = [
@@ -35,10 +29,10 @@ describe('getSensorQueryStatement', () => {
 			`ORDER BY bin(time, 5minute) DESC`,
 		].join(' ')
 
-		expect(result).toEqual(expectedQuery)
+		assert.equal(result, expectedQuery)
 	})
 
-	it('returns the correct query statement for battery request', () => {
+	void it('returns the correct query statement for battery request', () => {
 		const result = getSensorQueryStatement({
 			type: 'lastHour',
 			attributes: {
@@ -51,6 +45,7 @@ describe('getSensorQueryStatement', () => {
 			),
 			historicalDataDatabaseName: 'database1',
 			historicalDataTableName: 'table1',
+			now: new Date(1688104200000),
 		})
 
 		const expectedQuery = [
@@ -64,10 +59,10 @@ describe('getSensorQueryStatement', () => {
 			`ORDER BY bin(time, 1minute) DESC`,
 		].join(' ')
 
-		expect(result).toEqual(expectedQuery)
+		assert.equal(result, expectedQuery)
 	})
 
-	it('returns the correct query statement for weekly battery request', () => {
+	void it('returns the correct query statement for weekly battery request', () => {
 		const result = getSensorQueryStatement({
 			type: 'lastWeek',
 			attributes: {
@@ -79,6 +74,7 @@ describe('getSensorQueryStatement', () => {
 			),
 			historicalDataDatabaseName: 'database1',
 			historicalDataTableName: 'table1',
+			now: new Date(1688104200000),
 		})
 
 		const expectedQuery = [
@@ -92,6 +88,6 @@ describe('getSensorQueryStatement', () => {
 			`ORDER BY bin(time, 1hour) DESC`,
 		].join(' ')
 
-		expect(result).toEqual(expectedQuery)
+		assert.equal(result, expectedQuery)
 	})
 })

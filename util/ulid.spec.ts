@@ -1,10 +1,12 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { ulid, ulidRegEx } from './ulid.js'
 
-describe('ulid()', () => {
-	it('should return a Ulid', () => expect(ulid()).toMatch(ulidRegEx))
-	it('should not return the same Ulid', () => {
+void describe('ulid()', () => {
+	void it('should return a Ulid', () => assert.match(ulid(), ulidRegEx))
+	void it('should not return the same Ulid', () => {
 		const id1 = ulid()
 		const id2 = ulid()
-		expect(id1).not.toMatch(id2)
+		assert.notEqual(id1, id2)
 	})
 })

@@ -1,6 +1,8 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { hasValues } from './hasValues.js'
 
-describe('hasValues', () => {
+void describe('hasValues', () => {
 	type TestObject = {
 		a?: string
 		b?: number
@@ -12,18 +14,18 @@ describe('hasValues', () => {
 		b: 123,
 	}
 
-	it('returns true if all specified properties have values', () => {
+	void it('returns true if all specified properties have values', () => {
 		const result = hasValues(testObject, 'a', 'b')
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 
-	it('returns false if any specified properties are null or undefined', () => {
+	void it('returns false if any specified properties are null or undefined', () => {
 		const result = hasValues(testObject, 'a', 'b', 'c')
-		expect(result).toBe(false)
+		assert.equal(result, false)
 	})
 
-	it('returns true if no properties are specified', () => {
+	void it('returns true if no properties are specified', () => {
 		const result = hasValues(testObject)
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 })

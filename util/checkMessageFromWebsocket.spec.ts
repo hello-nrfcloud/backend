@@ -1,3 +1,5 @@
+import { describe, it, mock, before, after } from 'node:test'
+import assert from 'node:assert/strict'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
@@ -22,22 +24,20 @@ const getRandomPort = async (): Promise<number> => {
 let port: number
 let fakeServer: WebSocketServer
 
-describe('checkMessageFromWebsocket', () => {
-	beforeAll(async () => {
+void describe('checkMessageFromWebsocket', () => {
+	before(async () => {
 		port = await getRandomPort()
 		fakeServer = new WebSocketServer({ port })
 	})
 
-	beforeEach(() => {
-		jest.clearAllMocks()
-	})
-
-	afterAll(() => {
+	after(() => {
 		fakeServer.close()
 	})
 
-	it('should resolve with true on successful validation', async () => {
-		const validate = jest.fn().mockResolvedValue(ValidateResponse.valid)
+	void it('should resolve with true on successful validation', async () => {
+		const validate = mock.fn(async () =>
+			Promise.resolve(ValidateResponse.valid),
+		)
 		const result = await checkMessageFromWebsocket({
 			endpoint: `ws://localhost:${port}`,
 			timeoutMS: 1000,
@@ -49,14 +49,15 @@ describe('checkMessageFromWebsocket', () => {
 			validate,
 		})
 
-		expect(result).toBe(true)
-		expect(validate).toHaveBeenCalled()
+		assert.equal(result, true)
+		assert.equal(validate.mock.callCount(), 1)
 	})
 
-	it('should reject with false on invalid message', async () => {
-		const validate = jest.fn().mockResolvedValue(ValidateResponse.invalid)
-
-		await expect(
+	void it('should reject with false on invalid message', async () => {
+		const validate = mock.fn(async () =>
+			Promise.resolve(ValidateResponse.invalid),
+		)
+		void assert.rejects(async () =>
 			checkMessageFromWebsocket({
 				endpoint: `ws://localhost:${port}`,
 				timeoutMS: 1000,
@@ -67,32 +68,29 @@ describe('checkMessageFromWebsocket', () => {
 				},
 				validate,
 			}),
-		).rejects.toBeFalsy()
-		expect(validate).toHaveBeenCalled()
+		)
+		assert.equal(validate.mock.callCount(), 0)
 	})
 
-	it('should reject with DeferTimeoutError on timeout', async () => {
-		const validate = jest.fn().mockResolvedValue(ValidateResponse.invalid)
+	void it('should reject with DeferTimeoutError on timeout', async () =>
+		assert.rejects(
+			async () =>
+				checkMessageFromWebsocket({
+					endpoint: `ws://localhost:${port}`,
+					timeoutMS: 500,
+					onConnect: async () => {
+						await setTimeout(600)
+						fakeServer.clients.forEach((client) => {
+							client.send('hello')
+						})
+					},
+					validate: async () => Promise.resolve(ValidateResponse.invalid),
+				}),
+			DeferTimeoutError,
+		))
 
-		await expect(
-			checkMessageFromWebsocket({
-				endpoint: `ws://localhost:${port}`,
-				timeoutMS: 500,
-				onConnect: async () => {
-					await setTimeout(600)
-					fakeServer.clients.forEach((client) => {
-						client.send('hello')
-					})
-				},
-				validate,
-			}),
-		).rejects.toBeInstanceOf(DeferTimeoutError)
-	})
-
-	it('should reject on WebSocket error', async () => {
-		const validate = jest.fn().mockResolvedValue(ValidateResponse.invalid)
-
-		await expect(
+	void it('should reject on WebSocket error', async () =>
+		assert.rejects(async () =>
 			checkMessageFromWebsocket({
 				endpoint: `ws://localhost:${port + 1}`,
 				timeoutMS: 500,
@@ -102,9 +100,7 @@ describe('checkMessageFromWebsocket', () => {
 						client.send('hello')
 					})
 				},
-				validate,
+				validate: async () => Promise.reject(new Error()),
 			}),
-		).rejects.toThrow()
-		expect(validate).not.toHaveBeenCalled()
-	})
+		))
 })

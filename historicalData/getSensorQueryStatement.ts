@@ -11,6 +11,7 @@ export const getSensorQueryStatement = ({
 	historicalDataTableName,
 	deviceId,
 	context,
+	now,
 }: {
 	type: keyof typeof HistoricalDataTimeSpans
 	attributes: Static<typeof CommonAggregatedRequest>['attributes']
@@ -18,8 +19,12 @@ export const getSensorQueryStatement = ({
 	historicalDataTableName: string
 	deviceId: string
 	context: URL
+	now?: Date
 }): string => {
-	const { start, end } = getStartAndEndForType(type)
+	const { start, end } = getStartAndEndForType(
+		type,
+		(now ?? new Date()).getTime(),
+	)
 	const binnedTime = getBinnedTime(type)
 	const aggs = Object.entries(attributes).map(
 		([prop, { aggregate }]) =>

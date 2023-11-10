@@ -1,13 +1,15 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { cellId } from './cellId.js'
 
-describe('cellId', () => {
-	it('should generate a cellId', () => {
-		expect(
+void describe('cellId', () => {
+	void it('should generate a cellId', () =>
+		assert.equal(
 			cellId({
 				area: 42,
 				mccmnc: 53005,
 				cell: 666,
 			}),
-		).toEqual('53005-42-666')
-	})
+			'53005-42-666',
+		))
 })

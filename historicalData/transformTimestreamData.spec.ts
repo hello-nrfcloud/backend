@@ -1,7 +1,9 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { transformTimestreamData } from './transformTimestreamData.js'
 
-describe('transformTimestreamData', () => {
-	it('should extract single attribute from multiple values in single row', () => {
+void describe('transformTimestreamData', () => {
+	void it('should extract single attribute from multiple values in single row', () => {
 		const data = [
 			{
 				avgMA: 3.40141,
@@ -27,12 +29,13 @@ describe('transformTimestreamData', () => {
 				ts: new Date('2021-06-30T00:15:00Z').getTime(),
 			},
 		]
-		expect(
+		assert.deepEqual(
 			transformTimestreamData(data, [{ fromKey: 'avgMA', toKey: 'mA' }]),
-		).toEqual(expectedTransformedDataAvg)
+			expectedTransformedDataAvg,
+		)
 	})
 
-	it('should extract multiple attributes from multiple rows with that have same time', () => {
+	void it('should extract multiple attributes from multiple rows with that have same time', () => {
 		const data = [
 			{
 				lat: 40.7128,
@@ -74,12 +77,13 @@ describe('transformTimestreamData', () => {
 				ts: new Date('2021-06-30T00:15:00Z').getTime(),
 			},
 		]
-		expect(
+		assert.deepEqual(
 			transformTimestreamData(data, [
 				{ fromKey: 'lat', toKey: 'lat' },
 				{ fromKey: 'lng', toKey: 'lng' },
 				{ fromKey: 'acc', toKey: 'acc' },
 			]),
-		).toEqual(expectedTransformedDataAvg)
+			expectedTransformedDataAvg,
+		)
 	})
 })

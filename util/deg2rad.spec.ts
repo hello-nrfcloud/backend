@@ -1,6 +1,8 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { deg2rad } from './deg2rad.js'
 
-describe('deg2rad()', () => {
-	it('should convert degrees to radians', () =>
-		expect(deg2rad(180)).toEqual(Math.PI))
+void describe('deg2rad()', () => {
+	void it('should convert degrees to radians', () =>
+		assert.equal(deg2rad(180), Math.PI))
 })

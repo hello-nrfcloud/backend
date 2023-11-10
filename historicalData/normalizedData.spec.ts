@@ -1,7 +1,9 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { normalizedData } from './normalizedData.js'
 
-describe('normalizedData', () => {
-	it('should normalize the data correctly', () => {
+void describe('normalizedData', () => {
+	void it('should normalize the data correctly', () => {
 		const data = [
 			{
 				measure_name: 'temperature',
@@ -19,7 +21,7 @@ describe('normalizedData', () => {
 
 		const normalized = normalizedData(data)
 
-		expect(normalized).toEqual([
+		assert.deepEqual(normalized, [
 			{
 				measure_name: 'temperature',
 				temperature: 25,
@@ -38,7 +40,7 @@ describe('normalizedData', () => {
 		])
 	})
 
-	it('should handle missing measure_name or measure_value::double', () => {
+	void it('should handle missing measure_name or measure_value::double', () => {
 		const data = [
 			{
 				measure_name: 'temperature',
@@ -55,7 +57,7 @@ describe('normalizedData', () => {
 
 		const normalized = normalizedData(data)
 
-		expect(normalized).toEqual([
+		assert.deepEqual(normalized, [
 			{
 				measure_name: 'temperature',
 				temperature: 25,

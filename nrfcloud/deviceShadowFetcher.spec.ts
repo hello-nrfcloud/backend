@@ -1,8 +1,10 @@
+import { describe, it, mock } from 'node:test'
+import assert from 'node:assert/strict'
 import { deviceShadowFetcher } from './getDeviceShadowFromnRFCloud.js'
 
-describe('deviceShadowFetcher()', () => {
-	it('should accept a response without pagination and total devices', async () => {
-		const mockFetch = jest.fn(() => ({
+void describe('deviceShadowFetcher()', () => {
+	void it('should accept a response without pagination and total devices', async () => {
+		const mockFetch = mock.fn(() => ({
 			ok: true,
 			json: async () =>
 				Promise.resolve({
@@ -19,16 +21,16 @@ describe('deviceShadowFetcher()', () => {
 
 		const res = await fetcher(['device-id'])
 
-		expect(mockFetch).toHaveBeenCalledWith(
+		assert.deepEqual(mockFetch.mock.calls[0]?.arguments, [
 			`https://example.com/v1/devices?deviceIds=device-id&includeState=true&includeStateMeta=true&pageLimit=100`,
-			expect.objectContaining({
+			{
 				headers: {
 					Accept: 'application/json; charset=utf-8',
 					Authorization: 'Bearer some-key',
 				},
-			}),
-		)
+			},
+		])
 
-		expect(res).toMatchObject({ shadows: [] })
+		assert.deepEqual(res, { shadows: [] })
 	})
 })

@@ -10,6 +10,7 @@ export const getLocationQueryStatement = ({
 	historicalDataTableName,
 	deviceId,
 	context,
+	now,
 }: {
 	type: keyof typeof HistoricalDataTimeSpans
 	attributes: Static<typeof LocationRequest>['attributes']
@@ -17,8 +18,12 @@ export const getLocationQueryStatement = ({
 	historicalDataTableName: string
 	deviceId: string
 	context: URL
+	now?: Date
 }): string => {
-	const { start, end } = getStartAndEndForType(type)
+	const { start, end } = getStartAndEndForType(
+		type,
+		(now ?? new Date()).getTime(),
+	)
 	const measureNames = Object.values(attributes).map(
 		({ attribute }) => attribute,
 	)
