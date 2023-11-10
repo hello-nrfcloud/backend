@@ -86,7 +86,7 @@
     "prettier": "3.0.3",
     "semver": "7.5.4",
     "tsmatchers": "5.0.0",
-    "tsx": "4.0.0",
+    "tsx": "4.1.0",
     "typescript": "5.2.2",
     "ws": "8.14.2",
     "yazl": "2.5.1"
