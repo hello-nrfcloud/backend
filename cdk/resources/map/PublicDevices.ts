@@ -30,7 +30,7 @@ export class PublicDevices extends Construct {
 		super(parent, 'public-devices')
 
 		// This table records the user consent for a certain device to be public
-		const table = new DynamoDB.Table(this, 'devices', {
+		const publicDevicesTable = new DynamoDB.Table(this, 'publicDevicesTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
 				name: 'id',
@@ -52,7 +52,7 @@ export class PublicDevices extends Construct {
 			layers: [mapLayer],
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				TABLE_NAME: table.tableName,
+				PUBLIC_DEVICES_TABLE_NAME: publicDevicesTable.tableName,
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
@@ -62,7 +62,7 @@ export class PublicDevices extends Construct {
 			],
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		table.grantReadData(updatesToLwM2M)
+		publicDevicesTable.grantReadData(updatesToLwM2M)
 
 		const ruleRole = new IAM.Role(this, 'ruleRole', {
 			assumedBy: new IAM.ServicePrincipal(

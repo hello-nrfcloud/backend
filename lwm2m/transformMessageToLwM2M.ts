@@ -5,14 +5,16 @@ import {
 	type Transformer,
 } from '@hello.nrfcloud.com/proto-lwm2m'
 
+export type MessageTransformer = (
+	message: Record<string, unknown>,
+) => Promise<ReturnType<typeof senMLtoLwM2M>>
+
 /**
  * Very simple implementation of a converter.
  */
 export const transformMessageToLwM2M = (
 	transformers: Readonly<Array<Transformer>>,
-): ((
-	message: Record<string, unknown>,
-) => Promise<ReturnType<typeof senMLtoLwM2M>>) => {
+): MessageTransformer => {
 	// Turn the JSONata in the transformers into executable functions
 	const transformerFns = transformers.map(({ match, transform }) => ({
 		match: jsonata(match),
