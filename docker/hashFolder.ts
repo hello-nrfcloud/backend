@@ -41,6 +41,14 @@ const generateMd5ForFolder = async (
 	return md5Hashes
 }
 
+export const hashStrings = (data: string[]): string => {
+	const hashMD5 = data.reduce((h, str) => {
+		return h.update(str)
+	}, createHash('md5'))
+
+	return hashMD5.digest('hex')
+}
+
 export const hashFolder = async (path: string): Promise<string> => {
 	const filesHash = await generateMd5ForFolder(path)
 

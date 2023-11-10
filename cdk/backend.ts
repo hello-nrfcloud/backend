@@ -29,7 +29,7 @@ import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertifi
 import { storeCertificateInSSM } from './helpers/certificates/storeCertificateInSSM.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
-import { hashFolder } from '../docker/hashFolder.js'
+import { hashFolder, hashStrings } from '../docker/hashFolder.js'
 import { getCoAPHealthCheckSettings } from '../nrfcloud/coap-health-check.js'
 
 const repoUrl = new URL(pJSON.repository.url)
@@ -163,7 +163,22 @@ const coapDockerfilePath = path.join(
 	'containers',
 	'coap',
 )
-const coapHash = await hashFolder(coapDockerfilePath)
+const coapSimulatorDownloadUrl = (
+	await getCoAPHealthCheckSettings({
+		ssm,
+		stackName: STACK_NAME,
+	})
+).simulatorDownloadURL.toString()
+const { headers, ok, status } = await fetch(coapSimulatorDownloadUrl, {
+	method: 'HEAD',
+})
+if (!ok) throw new Error(`Failed to download CoAP simulator: ${status}`)
+
+const coapSimulatorBinaryHash = `${headers.get('etag')}-${headers.get(
+	'content-length',
+)}-${headers.get('last-modified')}`
+const coapDockerfileHash = await hashFolder(coapDockerfilePath)
+const coapHash = hashStrings([coapDockerfileHash, coapSimulatorBinaryHash])
 const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
 	ecr,
 	releaseImageTag: undefined,
@@ -174,12 +189,7 @@ const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
 	dockerFilePath: coapDockerfilePath,
 	imageTagFactory: async () => `${coapHash}`,
 	buildArgs: {
-		COAP_SIMULATOR_DOWNLOAD_URL: (
-			await getCoAPHealthCheckSettings({
-				ssm,
-				stackName: STACK_NAME,
-			})
-		).simulatorDownloadURL.toString(),
+		COAP_SIMULATOR_DOWNLOAD_URL: coapSimulatorDownloadUrl,
 	},
 })
 
