@@ -1,0 +1,67 @@
+{
+  "id": "someId",
+  "tags": ["configuration:solar-shield", "model:PCA20035"],
+  "tenantId": "a0673464-e4e1-4b87-bffd-6941a012067b",
+  "$meta": {
+    "updatedAt": "2023-04-20T07:29:46.467Z",
+    "createdAt": "2023-04-19T11:49:07.370Z"
+  },
+  "name": "someId",
+  "type": "Generic",
+  "subType": "PCA10090",
+  "firmware": {
+    "supports": ["MODEM", "APP"],
+    "app": {
+      "name": "asset_tracker_v2",
+      "version": "1.10.0+thingy91.low-power.solar.memfault.nrfcloud"
+    },
+    "modem": "mfw_nrf9160_1.3.4"
+  },
+  "state": {
+    "reported": {
+      "config": {
+        "activeMode": false,
+        "locationTimeout": 300,
+        "activeWaitTime": 120,
+        "movementResolution": 120,
+        "movementTimeout": 3600,
+        "accThreshAct": 4,
+        "accThreshInact": 4,
+        "accTimeoutInact": 60,
+        "nod": []
+      }
+    },
+    "version": 8835,
+    "metadata": {
+      "reported": {
+        "config": {
+          "activeMode": {
+            "timestamp": 1681975785
+          },
+          "locationTimeout": {
+            "timestamp": 1681975785
+          },
+          "activeWaitTime": {
+            "timestamp": 1681975785
+          },
+          "movementResolution": {
+            "timestamp": 1681975785
+          },
+          "movementTimeout": {
+            "timestamp": 1681975785
+          },
+          "accThreshAct": {
+            "timestamp": 1681975785
+          },
+          "accThreshInact": {
+            "timestamp": 1681975785
+          },
+          "accTimeoutInact": {
+            "timestamp": 1681975785
+          },
+          "nod": []
+        }
+      }
+    }
+  }
+}

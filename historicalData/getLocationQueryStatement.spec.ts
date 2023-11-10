@@ -1,16 +1,9 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { getLocationQueryStatement } from './getLocationQueryStatement.js'
 
-describe('getLocationQueryStatement', () => {
-	beforeEach(() => {
-		jest.useFakeTimers()
-		jest.setSystemTime(1688104200000)
-	})
-
-	afterEach(() => {
-		jest.useRealTimers()
-	})
-
-	it('returns the correct query statement for location request', () => {
+void describe('getLocationQueryStatement', () => {
+	void it('returns the correct query statement for location request', () => {
 		const result = getLocationQueryStatement({
 			type: 'lastMonth',
 			attributes: {
@@ -25,6 +18,7 @@ describe('getLocationQueryStatement', () => {
 			),
 			historicalDataDatabaseName: 'database1',
 			historicalDataTableName: 'table1',
+			now: new Date(1688104200000),
 		})
 
 		const expectedQuery = [
@@ -37,6 +31,6 @@ describe('getLocationQueryStatement', () => {
 			`ORDER BY time DESC`,
 		].join(' ')
 
-		expect(result).toEqual(expectedQuery)
+		assert.equal(result, expectedQuery)
 	})
 })

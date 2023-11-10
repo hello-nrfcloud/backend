@@ -1,3 +1,5 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { createTrailOfCoordinates } from './createTrailOfCoordinates.js'
 
 const coordinates = [
@@ -79,12 +81,11 @@ const coordinates = [
 	},
 ]
 
-describe('createTrailOfCoordinates()', () => {
-	it('should return an empty list if no coordinate given', () => {
-		expect(createTrailOfCoordinates(1, [])).toHaveLength(0)
-	})
-	it('should return the coordinate if only one coordinate is given', () => {
-		expect(
+void describe('createTrailOfCoordinates()', () => {
+	void it('should return an empty list if no coordinate given', () =>
+		assert.equal(createTrailOfCoordinates(1, []).length, 0))
+	void it('should return the coordinate if only one coordinate is given', () => {
+		assert.deepEqual(
 			createTrailOfCoordinates(1, [
 				{
 					lat: 63.422214376965165,
@@ -92,18 +93,19 @@ describe('createTrailOfCoordinates()', () => {
 					ts: 1691114567,
 				},
 			]),
-		).toMatchObject([
-			{
-				lat: 63.422214376965165,
-				lng: 10.43763831347703,
-				ts: 1691114567,
-				count: 1,
-				radiusKm: 0,
-			},
-		])
+			[
+				{
+					lat: 63.422214376965165,
+					lng: 10.43763831347703,
+					ts: 1691114567,
+					count: 1,
+					radiusKm: 0,
+				},
+			],
+		)
 	})
-	it('should return two coordinates if the distance between them is above 1km', () => {
-		expect(
+	void it('should return two coordinates if the distance between them is above 1km', () => {
+		assert.deepEqual(
 			createTrailOfCoordinates(1, [
 				{
 					lat: 63.422214376965165,
@@ -116,25 +118,26 @@ describe('createTrailOfCoordinates()', () => {
 					ts: 1691114567,
 				},
 			]),
-		).toMatchObject([
-			{
-				lat: 63.422214376965165,
-				lng: 10.43763831347703,
-				ts: 1691114567,
-				count: 1,
-				radiusKm: 0,
-			},
-			{
-				lat: 63.36316007133849,
-				lng: 10.355729671057269,
-				ts: 1691114567,
-				count: 1,
-				radiusKm: 0,
-			},
-		])
+			[
+				{
+					lat: 63.422214376965165,
+					lng: 10.43763831347703,
+					ts: 1691114567,
+					count: 1,
+					radiusKm: 0,
+				},
+				{
+					lat: 63.36316007133849,
+					lng: 10.355729671057269,
+					ts: 1691114567,
+					count: 1,
+					radiusKm: 0,
+				},
+			],
+		)
 	})
-	it('should only return one counted coordinate if the distance is less than 1km', () => {
-		expect(
+	void it('should only return one counted coordinate if the distance is less than 1km', () => {
+		assert.deepEqual(
 			createTrailOfCoordinates(1, [
 				{
 					lat: 63.422214376965165,
@@ -147,17 +150,18 @@ describe('createTrailOfCoordinates()', () => {
 					ts: 1691114667,
 				},
 			]),
-		).toMatchObject([
-			{
-				lat: 63.422214376965165,
-				lng: 10.43763831347703,
-				ts: 1691114567,
-				count: 2,
-				radiusKm: 0,
-			},
-		])
+			[
+				{
+					lat: 63.422214376965165,
+					lng: 10.43763831347703,
+					ts: 1691114567,
+					count: 2,
+					radiusKm: 0,
+				},
+			],
+		)
 	})
-	it('should return counted coordinates with a distance > 50 meters, and ignore coordinates with smaller distance. Every coordinate should be counted.', () => {
+	void it('should return counted coordinates with a distance > 50 meters, and ignore coordinates with smaller distance. Every coordinate should be counted.', () => {
 		const expectedResults50m = [
 			{
 				lat: 63.422214376965165,
@@ -182,12 +186,13 @@ describe('createTrailOfCoordinates()', () => {
 			},
 		]
 
-		expect(createTrailOfCoordinates(0.05, coordinates)).toEqual(
+		assert.deepEqual(
+			createTrailOfCoordinates(0.05, coordinates),
 			expectedResults50m,
 		)
 	})
 
-	it('should return coordinates with a distance > 1 meter, and ignore coordinates with smaller distance. Every coordinate should be counted.', () => {
+	void it('should return coordinates with a distance > 1 meter, and ignore coordinates with smaller distance. Every coordinate should be counted.', () => {
 		const expectedResults1m = [
 			{
 				lat: 63.422214376965165,
@@ -233,11 +238,12 @@ describe('createTrailOfCoordinates()', () => {
 				radiusKm: 0,
 			},
 		]
-		expect(createTrailOfCoordinates(0.0001, coordinates)).toEqual(
+		assert.deepEqual(
+			createTrailOfCoordinates(0.0001, coordinates),
 			expectedResults1m,
 		)
 	})
-	it('should return coordinates with a distance > 1 km, and ignore coordinates with smaller distance. Every coordinates should be counted.', () => {
+	void it('should return coordinates with a distance > 1 km, and ignore coordinates with smaller distance. Every coordinates should be counted.', () => {
 		const expectedResults1Km = [
 			{
 				lat: 63.422214376965165,
@@ -247,9 +253,12 @@ describe('createTrailOfCoordinates()', () => {
 				count: 15,
 			},
 		]
-		expect(createTrailOfCoordinates(1, coordinates)).toEqual(expectedResults1Km)
+		assert.deepEqual(
+			createTrailOfCoordinates(1, coordinates),
+			expectedResults1Km,
+		)
 	})
-	it('should return coordinates with a distance > 1 km and count all positions even if the function only gets one coordinate', () => {
+	void it('should return coordinates with a distance > 1 km and count all positions even if the function only gets one coordinate', () => {
 		const oneCoordinate = [
 			{
 				lat: 63.422214376965165,
@@ -277,7 +286,8 @@ describe('createTrailOfCoordinates()', () => {
 				radiusKm: 0,
 			},
 		]
-		expect(createTrailOfCoordinates(1, oneCoordinate)).toEqual(
+		assert.deepEqual(
+			createTrailOfCoordinates(1, oneCoordinate),
 			expectedResults1coordinate,
 		)
 	})

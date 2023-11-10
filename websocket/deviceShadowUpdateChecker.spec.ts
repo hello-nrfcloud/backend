@@ -1,17 +1,10 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { hashSHA1 } from '../util/hashSHA1.js'
 import {
 	createDeviceUpdateChecker,
 	parseConfig,
 } from './deviceShadowUpdateChecker.js'
-jest.mock('@aws-lambda-powertools/logger')
-jest.mock('../util/settings.js', () => ({
-	getSettingsOptional: () => async () => returnedMockData,
-	Scope: {
-		CDK_CONTEXT: 'stack/context',
-	},
-}))
-
-let returnedMockData: { [key: string]: string }
 
 const hashConfig = (config: {
 	[key: string]: string
@@ -27,8 +20,8 @@ const hashConfig = (config: {
 		{} as { [key: string]: string },
 	)
 
-describe('parseConfig', () => {
-	it('should parse a valid configuration object', () => {
+void describe('parseConfig', () => {
+	void it('should parse a valid configuration object', () => {
 		const config = {
 			default: '5',
 			Model1: '5:10, 15: 20 , 20 ',
@@ -46,10 +39,10 @@ describe('parseConfig', () => {
 		}
 
 		const parsedConfig = parseConfig(config)
-		expect(parsedConfig).toEqual(expectedScheduleConfig)
+		assert.deepEqual(parsedConfig, expectedScheduleConfig)
 	})
 
-	it('should handle invalid format or empty values in the configuration object', () => {
+	void it('should handle invalid format or empty values in the configuration object', () => {
 		const config = {
 			default: '20, 30:5, 10',
 			Model1: 'wrong format',
@@ -68,10 +61,10 @@ describe('parseConfig', () => {
 
 		const parsedConfig = parseConfig(config)
 
-		expect(parsedConfig).toEqual(expectedScheduleConfig)
+		assert.deepEqual(parsedConfig, expectedScheduleConfig)
 	})
 
-	it('should have convert the maximum interval count to maximum number', () => {
+	void it('should have convert the maximum interval count to maximum number', () => {
 		const config = {
 			default: '5:2',
 			Model1: '15:3, 10:2, 5:1',
@@ -88,16 +81,16 @@ describe('parseConfig', () => {
 
 		const parsedConfig = parseConfig(config)
 
-		expect(parsedConfig).toEqual(expectedScheduleConfig)
+		assert.deepEqual(parsedConfig, expectedScheduleConfig)
 	})
 })
 
-describe('deviceShadowUpdateChecker', () => {
-	it('returns true if the device has not been updated in the given interval with no configuration', async () => {
+void describe('deviceShadowUpdateChecker', () => {
+	void it('returns true if the device has not been updated in the given interval with no configuration', async () => {
 		// Default is 5 seconds
-		returnedMockData = {}
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
+			{},
 		)
 
 		const device = {
@@ -106,14 +99,14 @@ describe('deviceShadowUpdateChecker', () => {
 			count: 0,
 		}
 		const result = deviceShadowUpdateChecker(device)
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 
-	it('returns false if the device has been updated more recently than the given interval with no configuration', async () => {
+	void it('returns false if the device has been updated more recently than the given interval with no configuration', async () => {
 		// Default is 5 seconds
-		returnedMockData = {}
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
+			{},
 		)
 
 		const device = {
@@ -122,16 +115,18 @@ describe('deviceShadowUpdateChecker', () => {
 			count: 0,
 		}
 		const result = deviceShadowUpdateChecker(device)
-		expect(result).toBe(false)
+		assert.equal(result, false)
 	})
 
-	it('uses the default configuration interval if no model-specific configuration is available', async () => {
-		returnedMockData = hashConfig({
-			'test-model': '4',
-			default: '6:10',
-		})
+	void it('uses the default configuration interval if no model-specific configuration is available', async () => {
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
+			parseConfig(
+				hashConfig({
+					'test-model': '4',
+					default: '6:10',
+				}),
+			),
 		)
 
 		const device = {
@@ -140,16 +135,18 @@ describe('deviceShadowUpdateChecker', () => {
 			count: 1,
 		}
 		const result = deviceShadowUpdateChecker(device)
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 
-	it('uses the default configuration maximum interval if no model-specific configuration is available and count exceeds the limit', async () => {
-		returnedMockData = hashConfig({
-			'test-model': '20',
-			default: '2:10, 6:15',
-		})
+	void it('uses the default configuration maximum interval if no model-specific configuration is available and count exceeds the limit', async () => {
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
+			parseConfig(
+				hashConfig({
+					'test-model': '20',
+					default: '2:10, 6:15',
+				}),
+			),
 		)
 
 		const device = {
@@ -158,16 +155,18 @@ describe('deviceShadowUpdateChecker', () => {
 			count: 20,
 		}
 		const result = deviceShadowUpdateChecker(device)
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 
-	it('uses the correct interval for the device model', async () => {
-		returnedMockData = hashConfig({
-			'test-model': '4',
-			default: '6:10',
-		})
+	void it('uses the correct interval for the device model', async () => {
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
+			parseConfig(
+				hashConfig({
+					'test-model': '4',
+					default: '6:10',
+				}),
+			),
 		)
 
 		const device = {
@@ -176,15 +175,17 @@ describe('deviceShadowUpdateChecker', () => {
 			count: 3,
 		}
 		const result = deviceShadowUpdateChecker(device)
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 
-	it('uses the correct interval for the device count', async () => {
-		returnedMockData = hashConfig({
-			'test-model': '1:2, 6:10',
-		})
+	void it('uses the correct interval for the device count', async () => {
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
+			parseConfig(
+				hashConfig({
+					'test-model': '1:2, 6:10',
+				}),
+			),
 		)
 
 		const device = {
@@ -193,15 +194,17 @@ describe('deviceShadowUpdateChecker', () => {
 			count: 3,
 		}
 		const result = deviceShadowUpdateChecker(device)
-		expect(result).toBe(true)
+		assert.equal(result, true)
 	})
 
-	it('uses the default configuration interval for the device if no configuration is matched', async () => {
-		returnedMockData = hashConfig({
-			default: '6',
-		})
+	void it('uses the default configuration interval for the device if no configuration is matched', async () => {
 		const deviceShadowUpdateChecker = await createDeviceUpdateChecker(
 			new Date(),
+			parseConfig(
+				hashConfig({
+					default: '6',
+				}),
+			),
 		)
 
 		const device1 = {
@@ -216,9 +219,9 @@ describe('deviceShadowUpdateChecker', () => {
 		}
 
 		const result1 = deviceShadowUpdateChecker(device1)
-		expect(result1).toBe(true)
+		assert.equal(result1, true)
 
 		const result2 = deviceShadowUpdateChecker(device2)
-		expect(result2).toBe(false)
+		assert.equal(result2, false)
 	})
 })

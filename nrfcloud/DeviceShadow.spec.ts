@@ -1,8 +1,10 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { DeviceShadow } from './DeviceShadow.js'
 
-describe('DeviceShadow type', () => {
-	it('should document the device shadow object', () => {
+void describe('DeviceShadow type', () => {
+	void it('should document the device shadow object', () => {
 		const res = validateWithTypeBox(DeviceShadow)({
 			id: 'some-device',
 			state: {
@@ -47,6 +49,6 @@ describe('DeviceShadow type', () => {
 				},
 			},
 		})
-		expect(res).not.toHaveProperty('errors')
+		assert.equal('errors' in res, false)
 	})
 })

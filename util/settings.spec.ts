@@ -1,3 +1,5 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import {
 	Scope,
@@ -6,56 +8,58 @@ import {
 	getSettings,
 } from './settings.js'
 
-describe('getSettingsOptional()', () => {
-	it('should return the given default value if parameter does not exist', async () => {
+void describe('getSettingsOptional()', () => {
+	void it('should return the given default value if parameter does not exist', async () => {
 		const stackConfig = getSettingsOptional<
 			Record<string, string>,
 			Record<string, never>
 		>({
 			ssm: {
-				send: jest.fn().mockResolvedValue({ Parameters: undefined }),
+				send: async () => Promise.resolve({ Parameters: undefined }),
 			} as unknown as SSMClient,
 			stackName: 'STACK_NAME',
 			scope: Scope.STACK_CONFIG,
 		})
 
 		const result = await stackConfig({})
-		expect(result).toEqual({})
+		assert.deepEqual(result, {})
 	})
 })
 
-describe('settingsPath()', () => {
-	it('should produce a fully qualified parameter name', () =>
-		expect(
+void describe('settingsPath()', () => {
+	void it('should produce a fully qualified parameter name', () =>
+		assert.equal(
 			settingsPath({
 				scope: Scope.STACK_CONFIG,
 				stackName: 'hello-nrfcloud',
 				property: 'someProperty',
 			}),
-		).toEqual('/hello-nrfcloud/stack/context/someProperty'))
+			'/hello-nrfcloud/stack/context/someProperty',
+		))
 
-	it('should produce a fully qualified parameter name for valid string scope', () =>
-		expect(
+	void it('should produce a fully qualified parameter name for valid string scope', () =>
+		assert.equal(
 			settingsPath({
 				scope: 'thirdParty/elite',
 				stackName: 'hello-nrfcloud',
 				property: 'someProperty',
 			}),
-		).toEqual('/hello-nrfcloud/thirdParty/elite/someProperty'))
+			'/hello-nrfcloud/thirdParty/elite/someProperty',
+		))
 
-	it('should error for invalid string scope', () => {
-		expect(() =>
+	void it('should error for invalid string scope', () => {
+		assert.throws(() =>
 			settingsPath({
 				scope: 'invalidScope',
 				stackName: 'hello-nrfcloud',
 				property: 'someProperty',
 			}),
-		).toThrowError()
+		)
 	})
 })
 
-describe('getSettings()', () => {
-	it('should return the object with same scope', async () => {
+void describe('getSettings()', () => {
+	void it('should return the object with same scope', async () => {
 		const returnedValues = [
 			{
 				Name: `/hello-nrfcloud/stack/context/key1`,
@@ -73,14 +77,14 @@ describe('getSettings()', () => {
 
 		const stackConfig = getSettings({
 			ssm: {
-				send: jest.fn().mockResolvedValue({ Parameters: returnedValues }),
+				send: async () => Promise.resolve({ Parameters: returnedValues }),
 			} as unknown as SSMClient,
 			stackName: 'hello-nrfcloud',
 			scope: Scope.STACK_CONFIG,
 		})
 
 		const result = await stackConfig()
-		expect(result).toEqual({
+		assert.deepEqual(result, {
 			key1: 'value1',
 			key2: 'value2',
 			key3: 'value3',

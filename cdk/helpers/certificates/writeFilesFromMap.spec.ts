@@ -1,10 +1,12 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import path from 'node:path'
 import os from 'node:os'
 import fs from 'node:fs/promises'
 import { writeFilesFromMap } from './writeFilesFromMap.js'
 
-describe('writeFilesFromMap()', () => {
-	it('should read files from a map', async () => {
+void describe('writeFilesFromMap()', () => {
+	void it('should read files from a map', async () => {
 		const tempDir = await fs.mkdtemp(
 			path.join(os.tmpdir(), 'writeFilesFromMap-'),
 		)
@@ -16,7 +18,7 @@ describe('writeFilesFromMap()', () => {
 			[f2]: 'f2',
 		})
 
-		expect(await fs.readFile(f1, 'utf-8')).toEqual('f1')
-		expect(await fs.readFile(f2, 'utf-8')).toEqual('f2')
+		assert.equal(await fs.readFile(f1, 'utf-8'), 'f1')
+		assert.equal(await fs.readFile(f2, 'utf-8'), 'f2')
 	})
 })

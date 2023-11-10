@@ -93,8 +93,9 @@ const getScheduleConfig = async (): Promise<ScheduleConfig> => {
 
 export const createDeviceUpdateChecker = async (
 	referenceTime: Date,
+	scheduleConfig?: ScheduleConfig,
 ): Promise<(device: WillUpdatedDevice) => boolean> => {
-	const config = await getScheduleConfig()
+	const config = scheduleConfig ?? (await getScheduleConfig())
 	return (device) => {
 		// The default is 5 seconds rate
 		const defaultStep = config['default'] ?? [
