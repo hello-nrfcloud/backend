@@ -218,9 +218,10 @@ new BackendApp({
 		dependencies: [
 			'@nordicsemiconductor/from-env',
 			'@sinclair/typebox',
-			'ajv',
 			'@hello.nrfcloud.com/proto-lwm2m',
+			'@hello.nrfcloud.com/proto',
 			'@middy/core',
+			'id128',
 		],
 	}),
 	iotEndpoint: await getIoTEndpoint({ iot })(),
@@ -241,4 +242,5 @@ new BackendApp({
 	}),
 	env: accountEnv,
 	isTest: process.env.IS_TEST === '1',
+	domain: 'hello.nrfcloud.com',
 })

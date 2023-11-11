@@ -52,4 +52,12 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'updatesToLwM2M',
 		'lambda/map/updatesToLwM2M.ts',
 	),
+	shareDevice: await packLambdaFromPath(
+		'shareDevice',
+		'lambda/map/shareDevice.ts',
+	),
+	confirmOwnership: await packLambdaFromPath(
+		'confirmOwnership',
+		'lambda/map/confirmOwnership.ts',
+	),
 })

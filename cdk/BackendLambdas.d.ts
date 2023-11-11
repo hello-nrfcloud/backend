@@ -18,4 +18,6 @@ type BackendLambdas = {
 	resolveSingleCellGeoLocation: PackedLambda
 	// Map
 	updatesToLwM2M: PackedLambda
+	shareDevice: PackedLambda
+	confirmOwnership: PackedLambda
 }

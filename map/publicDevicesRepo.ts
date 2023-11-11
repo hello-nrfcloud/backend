@@ -1,6 +1,14 @@
-import { type DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
-import type { models } from '@hello.nrfcloud.com/proto-lwm2m'
+import {
+	type DynamoDBClient,
+	PutItemCommand,
+	GetItemCommand,
+	QueryCommand,
+	UpdateItemCommand,
+} from '@aws-sdk/client-dynamodb'
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
+import { models } from '@hello.nrfcloud.com/proto-lwm2m'
+import crypto from 'node:crypto'
+import { ulid } from '../util/ulid.js'
 
 type PublicDeviceRecord = {
 	/**
@@ -15,44 +23,192 @@ type PublicDeviceRecord = {
 	 *
 	 * @example "oob-352656108602296"
 	 */
-	deviceId: string
+	secret__deviceId: string
 	model: keyof typeof models
 	ownerEmail: string
+	// This contains an ULID
+	ownershipConfirmationToken: string
+	ownerConfirmed?: Date
 	ttl: number
 }
 
-export type PublicDevice = Omit<PublicDeviceRecord, 'ownerEmail' | 'ttl'>
+type PublicDeviceRecordById = Pick<
+	PublicDeviceRecord,
+	'id' | 'model' | 'secret__deviceId'
+>
+
+const modelNames = Object.keys(models)
+
+export type PublicDevice = Pick<PublicDeviceRecord, 'id' | 'model'>
 
 export const publicDevicesRepo = ({
 	db,
 	TableName,
+	IdIndexName,
+	now,
 }: {
 	db: DynamoDBClient
 	TableName: string
+	IdIndexName: string
+	now?: Date
 }): {
-	getByDeviceId: (deviceId: string) => Promise<PublicDevice | null>
+	getByDeviceId: (deviceId: string) => Promise<
+		| { publicDevice: PublicDevice }
+		| {
+				error:
+					| 'not_found'
+					| 'not_confirmed'
+					| 'confirmation_expired'
+					| 'unsupported_model'
+		  }
+	>
+	share: (args: { deviceId: string; model: string; email: string }) => Promise<
+		| {
+				error: Error
+		  }
+		| {
+				publicDevice: {
+					id: string
+					ownershipConfirmationToken: string
+				}
+		  }
+	>
+	confirmOwnership: (args: {
+		id: string
+		ownershipConfirmationToken: string
+	}) => Promise<
+		| {
+				error: Error
+		  }
+		| {
+				success: true
+		  }
+	>
 } => ({
-	getByDeviceId: async (deviceId: string): Promise<PublicDevice | null> => {
+	getByDeviceId: async (deviceId: string) => {
+		const { Item } = await db.send(
+			new GetItemCommand({
+				TableName,
+				Key: marshall({
+					secret__deviceId: deviceId.toLowerCase(),
+				}),
+			}),
+		)
+		if (Item === undefined) return { error: 'not_found' }
+		const device = unmarshall(Item)
+		if (device.ownerConfirmed === undefined || device.ownerConfirmed === null)
+			return { error: 'not_confirmed' }
+		const ownerConfirmed = new Date(device.ownerConfirmed)
+		if (ownerConfirmed.getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now())
+			return { error: 'confirmation_expired' }
+		if (!modelNames.includes(device.model))
+			return { error: 'unsupported_model' }
+		return {
+			publicDevice: {
+				id: device.id as string,
+				model: device.model as keyof typeof models,
+			},
+		}
+	},
+	share: async ({ deviceId, model, email }) => {
+		const id = crypto.randomUUID()
+		const ownershipConfirmationToken = ulid()
+
+		try {
+			await db.send(
+				new PutItemCommand({
+					TableName,
+					Item: marshall({
+						secret__deviceId: deviceId.toLowerCase(),
+						id,
+						ttl:
+							Math.round((now ?? new Date()).getTime() / 1000) +
+							30 * 24 * 60 * 60,
+						model,
+						ownerEmail: email,
+						ownershipConfirmationToken,
+						ownerConfirmed: null,
+					}),
+					ConditionExpression: 'attribute_not_exists(secret__deviceId)',
+				}),
+			)
+		} catch (err) {
+			return {
+				error: err as Error,
+			}
+		}
+
+		return {
+			publicDevice: {
+				id,
+				ownershipConfirmationToken: ownershipConfirmationToken.slice(-6),
+			},
+		}
+	},
+	confirmOwnership: async ({ id, ownershipConfirmationToken }) => {
 		const { Items } = await db.send(
 			new QueryCommand({
 				TableName,
-				IndexName: 'deviceId',
-				KeyConditionExpression: '#deviceId = :deviceId',
+				IndexName: IdIndexName,
+				KeyConditionExpression: '#id = :id',
 				ExpressionAttributeNames: {
-					'#deviceId': 'deviceId',
 					'#id': 'id',
-					'#model': 'model',
 				},
 				ExpressionAttributeValues: {
-					':deviceId': {
-						S: deviceId,
+					':id': {
+						S: id,
 					},
 				},
-				ProjectionExpression: '#deviceId, #id, #model',
-				Limit: 1,
 			}),
 		)
-		if (Items?.[0] === undefined) return null
-		return unmarshall(Items?.[0]) as PublicDevice
+
+		if (Items?.[0] === undefined)
+			return {
+				error: new Error(`Device ${id} not found.`),
+			}
+		const indexEntry = unmarshall(Items?.[0]) as PublicDeviceRecordById
+
+		const { Item } = await db.send(
+			new GetItemCommand({
+				TableName,
+				Key: marshall({
+					secret__deviceId: indexEntry.secret__deviceId,
+				}),
+			}),
+		)
+		if (Item === undefined)
+			return {
+				error: new Error(`Device ${id} not found.`),
+			}
+
+		const device = unmarshall(Item) as PublicDeviceRecord
+		if (
+			device.ownershipConfirmationToken.slice(-6) !== ownershipConfirmationToken
+		)
+			return {
+				error: new Error(
+					`Invalid ownership confirmation token: ${ownershipConfirmationToken}!`,
+				),
+			}
+
+		await db.send(
+			new UpdateItemCommand({
+				TableName,
+				Key: marshall({
+					secret__deviceId: device.secret__deviceId,
+				}),
+				UpdateExpression: 'SET #ownerConfirmed = :now',
+				ExpressionAttributeNames: {
+					'#ownerConfirmed': 'ownerConfirmed',
+				},
+				ExpressionAttributeValues: {
+					':now': {
+						S: (now ?? new Date()).toISOString(),
+					},
+				},
+			}),
+		)
+
+		return { success: true }
 	},
 })

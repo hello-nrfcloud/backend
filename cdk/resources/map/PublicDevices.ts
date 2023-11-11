@@ -15,6 +15,8 @@ import type { PackedLambda } from '../../helpers/lambdas/packLambda'
  * Contains the resources to manage the information about public devices
  */
 export class PublicDevices extends Construct {
+	public readonly publicDevicesTable: DynamoDB.Table
+	public readonly publicDevicesTablePublicIdIndexName = 'idIndex'
 	constructor(
 		parent: Construct,
 		{
@@ -30,10 +32,10 @@ export class PublicDevices extends Construct {
 		super(parent, 'public-devices')
 
 		// This table records the user consent for a certain device to be public
-		const publicDevicesTable = new DynamoDB.Table(this, 'publicDevicesTable', {
+		this.publicDevicesTable = new DynamoDB.Table(this, 'table', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
-				name: 'id',
+				name: 'secret__deviceId',
 				type: DynamoDB.AttributeType.STRING,
 			},
 			timeToLiveAttribute: 'ttl',
@@ -41,10 +43,10 @@ export class PublicDevices extends Construct {
 		})
 
 		// Used for the unique active devices per day KPI
-		publicDevicesTable.addGlobalSecondaryIndex({
-			indexName: 'deviceId',
+		this.publicDevicesTable.addGlobalSecondaryIndex({
+			indexName: this.publicDevicesTablePublicIdIndexName,
 			partitionKey: {
-				name: 'deviceId',
+				name: 'id',
 				type: DynamoDB.AttributeType.STRING,
 			},
 			projectionType: DynamoDB.ProjectionType.INCLUDE,
@@ -63,7 +65,9 @@ export class PublicDevices extends Construct {
 			layers: [mapLayer],
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
-				PUBLIC_DEVICES_TABLE_NAME: publicDevicesTable.tableName,
+				PUBLIC_DEVICES_TABLE_NAME: this.publicDevicesTable.tableName,
+				PUBLIC_DEVICES_TABLE_ID_INDEX_NAME:
+					this.publicDevicesTablePublicIdIndexName,
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({
@@ -73,7 +77,7 @@ export class PublicDevices extends Construct {
 			],
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 		})
-		publicDevicesTable.grantReadData(updatesToLwM2M)
+		this.publicDevicesTable.grantReadData(updatesToLwM2M)
 
 		const ruleRole = new IAM.Role(this, 'ruleRole', {
 			assumedBy: new IAM.ServicePrincipal(

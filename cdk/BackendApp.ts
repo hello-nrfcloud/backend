@@ -5,11 +5,16 @@ import { MapStack } from './stacks/MapStack.js'
 export class BackendApp extends App {
 	public constructor({
 		isTest,
+		domain,
 		...rest
-	}: ConstructorParameters<typeof BackendStack>[1] & { isTest: boolean }) {
+	}: ConstructorParameters<typeof BackendStack>[1] & {
+		isTest: boolean
+		domain: string
+	}) {
 		super({
 			context: {
 				isTest,
+				domain,
 			},
 		})
 

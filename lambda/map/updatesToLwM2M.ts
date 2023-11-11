@@ -18,8 +18,9 @@ import {
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 
-const { TableName } = fromEnv({
+const { TableName, IdIndexName } = fromEnv({
 	TableName: 'PUBLIC_DEVICES_TABLE_NAME',
+	IdIndexName: 'PUBLIC_DEVICES_TABLE_ID_INDEX_NAME',
 })(process.env)
 
 const iotData = new IoTDataPlaneClient({})
@@ -49,7 +50,11 @@ const updateShadow = async (
 	)
 }
 
-const devicesRepo = publicDevicesRepo({ db: new DynamoDBClient({}), TableName })
+const devicesRepo = publicDevicesRepo({
+	db: new DynamoDBClient({}),
+	TableName,
+	IdIndexName,
+})
 const devicesInfoCache = new Map<string, { id: string; model: string } | null>()
 
 /**
@@ -65,7 +70,13 @@ export const handler = async (event: {
 	const { deviceId, message } = event
 
 	if (!devicesInfoCache.has(deviceId)) {
-		devicesInfoCache.set(deviceId, await devicesRepo.getByDeviceId(deviceId))
+		const maybeDevice = await devicesRepo.getByDeviceId(deviceId)
+		if ('error' in maybeDevice) {
+			console.debug(`[${deviceId}]`, `Error: ${maybeDevice.error}`)
+			devicesInfoCache.set(deviceId, null)
+		} else {
+			devicesInfoCache.set(deviceId, maybeDevice.publicDevice)
+		}
 	}
 	const deviceInfo = devicesInfoCache.get(deviceId) as PublicDevice | null
 	if (deviceInfo === null) {

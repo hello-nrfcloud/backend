@@ -1,8 +1,9 @@
-import { App, Stack, aws_lambda as Lambda } from 'aws-cdk-lib'
-import { PublicDevices } from '../resources/map/PublicDevices.js'
+import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
+import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
-import type { BackendLambdas } from '../BackendLambdas.js'
+import { PublicDevices } from '../resources/map/PublicDevices.js'
+import { ShareAPI } from '../resources/map/ShareAPI.js'
 import { MAP_STACK_NAME } from './stackConfig.js'
 
 /**
@@ -23,7 +24,7 @@ export class MapStack extends Stack {
 
 		const mapLayer = new Lambda.LayerVersion(this, 'mapLayer', {
 			code: new LambdaSource(this, {
-				id: 'basmapLayereLayer',
+				id: 'mapBaseLayer',
 				zipFile: layer.layerZipFile,
 				hash: layer.hash,
 			}).code,
@@ -31,9 +32,27 @@ export class MapStack extends Stack {
 			compatibleRuntimes: [Lambda.Runtime.NODEJS_18_X],
 		})
 
-		new PublicDevices(this, {
+		const publicDevices = new PublicDevices(this, {
 			mapLayer,
 			lambdaSources,
+		})
+
+		const shareAPI = new ShareAPI(this, {
+			mapLayer,
+			lambdaSources,
+			publicDevices,
+		})
+
+		// Outputs
+		new CfnOutput(this, 'shareAPIEndpoint', {
+			exportName: `${this.stackName}:shareAPIEndpoint`,
+			description: 'API endpoint for sharing devices',
+			value: shareAPI.shareURL.url,
+		})
+		new CfnOutput(this, 'confirmOwnershipAPIEndpoint', {
+			exportName: `${this.stackName}:confirmOwnershipAPIEndpoint`,
+			description: 'API endpoint for confirming ownership',
+			value: shareAPI.confirmOwnershipURL.url,
 		})
 	}
 }
