@@ -64,7 +64,7 @@ export class LwM2MShadow extends Construct {
 				sql: [
 					`SELECT * as message,`,
 					`topic(4) as deviceId`,
-					`FROM 'data/m/d/+/d2c'`, // 'data/m/d/<device Id>/d2c'
+					`FROM 'data/m/d/+/+'`, // 'data/m/d/<device Id>/d2c' and 'data/m/d/<device Id>/c2d'
 					`WHERE messageType = 'DATA'`,
 				].join(' '),
 				actions: [
