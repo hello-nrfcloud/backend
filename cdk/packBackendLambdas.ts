@@ -64,4 +64,8 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'connectionInformationGeoLocation',
 		'lambda/map/connectionInformationGeoLocation.ts',
 	),
+	devicesData: await packLambdaFromPath(
+		'devicesData',
+		'lambda/map/devicesData.ts',
+	),
 })

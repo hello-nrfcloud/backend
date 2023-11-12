@@ -10,7 +10,7 @@ import { models } from '@hello.nrfcloud.com/proto-lwm2m'
 import crypto from 'node:crypto'
 import { ulid } from '../util/ulid.js'
 
-type PublicDeviceRecord = {
+export type PublicDeviceRecord = {
 	/**
 	 * This is the public ID of the device, a UUIDv4.
 	 * Only the public ID should be shown.
@@ -32,9 +32,9 @@ type PublicDeviceRecord = {
 	ttl: number
 }
 
-type PublicDeviceRecordById = Pick<
+export type PublicDeviceRecordById = Pick<
 	PublicDeviceRecord,
-	'id' | 'model' | 'secret__deviceId'
+	'id' | 'model' | 'ownerConfirmed' | 'secret__deviceId'
 >
 
 const modelNames = Object.keys(models)

@@ -21,4 +21,5 @@ type BackendLambdas = {
 	shareDevice: PackedLambda
 	confirmOwnership: PackedLambda
 	connectionInformationGeoLocation: PackedLambda
+	devicesData: PackedLambda
 }

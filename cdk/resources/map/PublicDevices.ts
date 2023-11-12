@@ -6,7 +6,9 @@ import { Construct } from 'constructs'
  */
 export class PublicDevices extends Construct {
 	public readonly publicDevicesTable: DynamoDB.Table
-	public readonly publicDevicesTablePublicIdIndexName = 'idIndex'
+	public readonly publicDevicesTablePublicIdIndexName = 'publicIdIndex'
+	public readonly publicDevicesTableModelOwnerConfirmedIndex =
+		'modelOwnerConfirmedIndex'
 	constructor(parent: Construct) {
 		super(parent, 'public-devices')
 
@@ -27,8 +29,26 @@ export class PublicDevices extends Construct {
 				name: 'id',
 				type: DynamoDB.AttributeType.STRING,
 			},
+			sortKey: {
+				name: 'ownerConfirmed',
+				type: DynamoDB.AttributeType.STRING,
+			},
 			projectionType: DynamoDB.ProjectionType.INCLUDE,
 			nonKeyAttributes: ['model'],
+		})
+
+		this.publicDevicesTable.addGlobalSecondaryIndex({
+			indexName: this.publicDevicesTableModelOwnerConfirmedIndex,
+			partitionKey: {
+				name: 'model',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			sortKey: {
+				name: 'ownerConfirmed',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.INCLUDE,
+			nonKeyAttributes: ['id'],
 		})
 	}
 }

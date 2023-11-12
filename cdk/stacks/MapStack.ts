@@ -7,6 +7,7 @@ import { LwM2MShadow } from '../resources/map/LwM2MShadow.js'
 import { PublicDevices } from '../resources/map/PublicDevices.js'
 import { ShareAPI } from '../resources/map/ShareAPI.js'
 import { MAP_STACK_NAME } from './stackConfig.js'
+import { DevicesAPI } from '../resources/map/DevicesAPI.js'
 
 /**
  * Provides resources for hello.nrfcloud.com/map
@@ -53,6 +54,12 @@ export class MapStack extends Stack {
 			publicDevices,
 		})
 
+		const devicesAPI = new DevicesAPI(this, {
+			mapLayer,
+			lambdaSources,
+			publicDevices,
+		})
+
 		// Outputs
 		new CfnOutput(this, 'shareAPIEndpoint', {
 			exportName: `${this.stackName}:shareAPIEndpoint`,
@@ -63,6 +70,11 @@ export class MapStack extends Stack {
 			exportName: `${this.stackName}:confirmOwnershipAPIEndpoint`,
 			description: 'API endpoint for confirming ownership',
 			value: shareAPI.confirmOwnershipURL.url,
+		})
+		new CfnOutput(this, 'devicesAPIEndpoint', {
+			exportName: `${this.stackName}:devicesAPIEndpoint`,
+			description: 'API endpoint for retrieving public device information',
+			value: devicesAPI.devicesURL.url,
 		})
 	}
 }
