@@ -222,6 +222,7 @@ new BackendApp({
 			'@hello.nrfcloud.com/proto',
 			'@middy/core',
 			'id128',
+			'lodash-es',
 		],
 	}),
 	iotEndpoint: await getIoTEndpoint({ iot })(),

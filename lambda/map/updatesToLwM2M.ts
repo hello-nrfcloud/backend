@@ -1,29 +1,23 @@
-import {
-	IoTDataPlaneClient,
-	UpdateThingShadowCommand,
-} from '@aws-sdk/client-iot-data-plane'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
+import { models } from '@hello.nrfcloud.com/proto-lwm2m'
+import { fromEnv } from '@nordicsemiconductor/from-env'
 import {
 	transformMessageToLwM2M,
 	type MessageTransformer,
 } from '../../lwm2m/transformMessageToLwM2M.js'
 import {
-	models,
-	type LwM2MObjectInstance,
-} from '@hello.nrfcloud.com/proto-lwm2m'
-import { objectsToShadow } from '../../lwm2m/objectsToShadow.js'
-import {
 	publicDevicesRepo,
 	type PublicDevice,
 } from '../../map/publicDevicesRepo.js'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { updateLwM2MShadow } from './updateLwM2MShadow.js'
 
 const { TableName, IdIndexName } = fromEnv({
 	TableName: 'PUBLIC_DEVICES_TABLE_NAME',
 	IdIndexName: 'PUBLIC_DEVICES_TABLE_ID_INDEX_NAME',
 })(process.env)
 
-const iotData = new IoTDataPlaneClient({})
+const updateShadow = updateLwM2MShadow(new IoTDataPlaneClient({}))
 
 const transformers = Object.entries(models).reduce(
 	(transformers, [model, transforms]) => ({
@@ -32,23 +26,6 @@ const transformers = Object.entries(models).reduce(
 	}),
 	{},
 ) as Record<keyof typeof models, MessageTransformer>
-
-const updateShadow = async (
-	deviceId: string,
-	objects: LwM2MObjectInstance[],
-): Promise<void> => {
-	await iotData.send(
-		new UpdateThingShadowCommand({
-			thingName: deviceId,
-			shadowName: 'lwm2m',
-			payload: JSON.stringify({
-				state: {
-					reported: objectsToShadow(objects),
-				},
-			}),
-		}),
-	)
-}
 
 const devicesRepo = publicDevicesRepo({
 	db: new DynamoDBClient({}),

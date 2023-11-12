@@ -19,6 +19,7 @@ export class BackendApp extends App {
 		})
 
 		new BackendStack(this, rest)
+		// Under active development
 		new MapStack(this, {
 			layer: rest.mapsLayer,
 			lambdaSources: rest.lambdaSources,

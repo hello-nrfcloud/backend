@@ -2,6 +2,8 @@ import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
 import type { BackendLambdas } from '../BackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
+import { ConnectionInformationGeoLocation } from '../resources/map/ConnectionInformationGeoLocation.js'
+import { LwM2MShadow } from '../resources/map/LwM2MShadow.js'
 import { PublicDevices } from '../resources/map/PublicDevices.js'
 import { ShareAPI } from '../resources/map/ShareAPI.js'
 import { MAP_STACK_NAME } from './stackConfig.js'
@@ -32,7 +34,15 @@ export class MapStack extends Stack {
 			compatibleRuntimes: [Lambda.Runtime.NODEJS_18_X],
 		})
 
-		const publicDevices = new PublicDevices(this, {
+		const publicDevices = new PublicDevices(this)
+
+		new LwM2MShadow(this, {
+			mapLayer,
+			lambdaSources,
+			publicDevices,
+		})
+
+		new ConnectionInformationGeoLocation(this, {
 			mapLayer,
 			lambdaSources,
 		})

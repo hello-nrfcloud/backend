@@ -196,7 +196,7 @@ export class BackendStack extends Stack {
 			websocketEventBus,
 		})
 
-		new SingleCellGeoLocation(this, {
+		const scell = new SingleCellGeoLocation(this, {
 			lambdaSources,
 			layers: lambdaLayers,
 			websocketEventBus,
@@ -239,6 +239,11 @@ export class BackendStack extends Stack {
 			exportName: `${this.stackName}:cdRoleArn`,
 			description: 'Role ARN to use in the deploy GitHub Actions Workflow',
 			value: cd.role.roleArn,
+		})
+		new CfnOutput(this, 'singleCellGeoLocationsTableName', {
+			exportName: `${this.stackName}:singleCellGeoLocationsTableName`,
+			description: 'Name of the table containing single cell geo locations',
+			value: scell.table.tableName,
 		})
 	}
 }

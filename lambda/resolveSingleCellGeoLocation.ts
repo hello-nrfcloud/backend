@@ -2,27 +2,23 @@ import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import {
-	Context,
-	SingleCellGeoLocation,
-	accuracy as TAccuracy,
-	lat as TLat,
-	lng as TLng,
-} from '@hello.nrfcloud.com/proto/hello'
+import { Context, SingleCellGeoLocation } from '@hello.nrfcloud.com/proto/hello'
 import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { Type, type Static } from '@sinclair/typebox'
+import { type Static } from '@sinclair/typebox'
 import { once } from 'lodash-es'
 import { get, store } from '../cellGeoLocation/SingleCellGeoLocationCache.js'
 import { cellId } from '../cellGeoLocation/cellId.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
+import { JSONPayload, validatedFetch } from '../nrfcloud/validatedFetch.js'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
+import { loggingFetch } from './loggingFetch.js'
 import { metricsForComponent } from './metrics/metrics.js'
+import { GroundFix } from './nrfcloud/groundFix.js'
+import { serviceToken } from './nrfcloud/serviceToken.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
-import { JSONPayload, validatedFetch } from '../nrfcloud/validatedFetch.js'
-import { loggingFetch } from './loggingFetch.js'
 
 const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -31,33 +27,16 @@ const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
 	cacheTableName: 'CACHE_TABLE_NAME',
 })(process.env)
 
-const log = logger('singleCellGeo')
+export const log = logger('singleCellGeo')
 const eventBus = new EventBridge({})
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
-
-/**
- * @link https://api.nrfcloud.com/v1/#tag/Account/operation/GetServiceToken
- */
-const ServiceToken = Type.Object({
-	token: Type.String(),
-})
-
-/**
- * @link https://api.nrfcloud.com/v1/#tag/Ground-Fix
- */
-const GroundFix = Type.Object({
-	lat: TLat, // 63.41999531
-	lon: TLng, // 10.42999506
-	uncertainty: TAccuracy, // 2420
-	fulfilledWith: Type.Literal('SCELL'),
-})
 
 const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
 const { track, metrics } = metricsForComponent('singleCellGeo')
 
-const trackFetch = loggingFetch({ track, log })
+export const trackFetch = loggingFetch({ track, log })
 
 const getCached = get({
 	db,
@@ -68,24 +47,12 @@ const cache = store({
 	TableName: cacheTableName,
 })
 
-const serviceToken = once(
-	async ({ apiEndpoint, apiKey }: { apiEndpoint: URL; apiKey: string }) => {
-		const vf = validatedFetch({ endpoint: apiEndpoint, apiKey }, trackFetch)
-		const maybeResult = await vf(
-			{ resource: 'account/service-token' },
-			ServiceToken,
-		)
-
-		if ('error' in maybeResult) {
-			log.error(`Acquiring service token failed`, { error: maybeResult.error })
-			throw maybeResult.error
-		}
-
-		return maybeResult.result.token
-	},
-)
-
 const allAccountsSettings = once(getAllAccountsSettings({ ssm, stackName }))
+const fetchToken = serviceToken(trackFetch, (error) => {
+	log.error(`Acquiring service token failed`, {
+		error,
+	})
+})
 
 /**
  * Handle configure device request
@@ -120,7 +87,7 @@ const h = async (event: {
 	}
 
 	const { apiEndpoint, apiKey } = settings.nrfCloudSettings
-	const locationServiceToken = await serviceToken({ apiEndpoint, apiKey })
+	const locationServiceToken = await fetchToken({ apiEndpoint, apiKey })
 
 	const {
 		ts,

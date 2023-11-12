@@ -60,4 +60,8 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'confirmOwnership',
 		'lambda/map/confirmOwnership.ts',
 	),
+	connectionInformationGeoLocation: await packLambdaFromPath(
+		'connectionInformationGeoLocation',
+		'lambda/map/connectionInformationGeoLocation.ts',
+	),
 })
