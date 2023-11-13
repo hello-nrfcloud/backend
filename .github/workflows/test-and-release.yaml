@@ -93,7 +93,7 @@ jobs:
       - name: Deploy solution stack
         env:
           IS_TEST: 1
-        run: npx cdk deploy --require-approval never
+        run: npx cdk deploy --all --require-approval never
 
       - name: Run End-to-End Tests
         run: npm run test:e2e
@@ -128,7 +128,7 @@ jobs:
         if: always()
         run: |
           ./cli.sh logs -X
-          npx cdk destroy -f
+          npx cdk destroy --all -f
           npx cdk --app 'npx tsx --no-warnings cdk/test-resources.ts' destroy -f
           ./cli.sh fake-nrfcloud-account-device acme --remove
           ./cli.sh configure-nrfcloud-account acme apiEndpoint -X
