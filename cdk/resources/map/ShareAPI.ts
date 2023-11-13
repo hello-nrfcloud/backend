@@ -15,12 +15,12 @@ export class ShareAPI extends Construct {
 	constructor(
 		parent: Construct,
 		{
-			mapLayer,
+			baseLayer,
 			lambdaSources,
 			publicDevices,
 		}: {
 			publicDevices: PublicDevices
-			mapLayer: Lambda.ILayerVersion
+			baseLayer: Lambda.ILayerVersion
 			lambdaSources: {
 				shareDevice: PackedLambda
 				confirmOwnership: PackedLambda
@@ -39,7 +39,7 @@ export class ShareAPI extends Construct {
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.shareDevice.zipFile),
 			description: 'Invoked by a user that wants to share a device',
-			layers: [mapLayer],
+			layers: [baseLayer],
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
@@ -81,7 +81,7 @@ export class ShareAPI extends Construct {
 			code: Lambda.Code.fromAsset(lambdaSources.confirmOwnership.zipFile),
 			description:
 				'Invoked by a user that wants confirm their device ownership.',
-			layers: [mapLayer],
+			layers: [baseLayer],
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,

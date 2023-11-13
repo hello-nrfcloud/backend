@@ -13,12 +13,12 @@ export class DevicesAPI extends Construct {
 	constructor(
 		parent: Construct,
 		{
-			mapLayer,
+			baseLayer,
 			lambdaSources,
 			publicDevices,
 		}: {
 			publicDevices: PublicDevices
-			mapLayer: Lambda.ILayerVersion
+			baseLayer: Lambda.ILayerVersion
 			lambdaSources: {
 				devicesData: PackedLambda
 			}
@@ -35,7 +35,7 @@ export class DevicesAPI extends Construct {
 			code: Lambda.Code.fromAsset(lambdaSources.devicesData.zipFile),
 			description:
 				'Provides the data of the public devices to the map frontend',
-			layers: [mapLayer],
+			layers: [baseLayer],
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,

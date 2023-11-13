@@ -25,7 +25,7 @@ export class MapBackendStack extends Stack {
 	) {
 		super(parent, MAP_BACKEND_STACK_NAME)
 
-		const mapLayer = new Lambda.LayerVersion(this, 'mapLayer', {
+		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
 			code: new LambdaSource(this, {
 				id: 'mapBaseLayer',
 				zipFile: layer.layerZipFile,
@@ -38,24 +38,24 @@ export class MapBackendStack extends Stack {
 		const publicDevices = new PublicDevices(this)
 
 		new LwM2MShadow(this, {
-			mapLayer,
+			baseLayer,
 			lambdaSources,
 			publicDevices,
 		})
 
 		new ConnectionInformationGeoLocation(this, {
-			mapLayer,
+			baseLayer,
 			lambdaSources,
 		})
 
 		const shareAPI = new ShareAPI(this, {
-			mapLayer,
+			baseLayer,
 			lambdaSources,
 			publicDevices,
 		})
 
 		const devicesAPI = new DevicesAPI(this, {
-			mapLayer,
+			baseLayer,
 			lambdaSources,
 			publicDevices,
 		})

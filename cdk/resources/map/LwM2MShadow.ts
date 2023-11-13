@@ -17,11 +17,11 @@ export class LwM2MShadow extends Construct {
 	constructor(
 		parent: Construct,
 		{
-			mapLayer,
+			baseLayer,
 			lambdaSources,
 			publicDevices,
 		}: {
-			mapLayer: Lambda.ILayerVersion
+			baseLayer: Lambda.ILayerVersion
 			lambdaSources: {
 				updatesToLwM2M: PackedLambda
 			}
@@ -39,7 +39,7 @@ export class LwM2MShadow extends Construct {
 			code: Lambda.Code.fromAsset(lambdaSources.updatesToLwM2M.zipFile),
 			description:
 				'Store shadow updates asset_tracker_v2 shadow format as LwM2M objects in a named shadow.',
-			layers: [mapLayer],
+			layers: [baseLayer],
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,

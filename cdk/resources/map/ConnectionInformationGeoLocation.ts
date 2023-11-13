@@ -24,12 +24,12 @@ export class ConnectionInformationGeoLocation extends Construct {
 		parent: Construct,
 		{
 			lambdaSources,
-			mapLayer,
+			baseLayer,
 		}: {
 			lambdaSources: {
 				connectionInformationGeoLocation: PackedLambda
 			}
-			mapLayer: Lambda.ILayerVersion
+			baseLayer: Lambda.ILayerVersion
 		},
 	) {
 		super(parent, 'connection-information-geo-location')
@@ -64,7 +64,7 @@ export class ConnectionInformationGeoLocation extends Construct {
 				BACKEND_STACK_NAME: STACK_NAME,
 				CACHE_TABLE_NAME: this.table.tableName,
 			},
-			layers: [mapLayer],
+			layers: [baseLayer],
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 			initialPolicy: [
 				new IAM.PolicyStatement({
