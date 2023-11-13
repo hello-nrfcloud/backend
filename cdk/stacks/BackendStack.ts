@@ -55,7 +55,7 @@ export class BackendStack extends Stack {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
 			healthCheckLayer: PackedLayer
-			mapsLayer: PackedLayer
+			mapLayer: PackedLayer
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
@@ -196,7 +196,7 @@ export class BackendStack extends Stack {
 			websocketEventBus,
 		})
 
-		const scell = new SingleCellGeoLocation(this, {
+		new SingleCellGeoLocation(this, {
 			lambdaSources,
 			layers: lambdaLayers,
 			websocketEventBus,
@@ -239,11 +239,6 @@ export class BackendStack extends Stack {
 			exportName: `${this.stackName}:cdRoleArn`,
 			description: 'Role ARN to use in the deploy GitHub Actions Workflow',
 			value: cd.role.roleArn,
-		})
-		new CfnOutput(this, 'singleCellGeoLocationsTableName', {
-			exportName: `${this.stackName}:singleCellGeoLocationsTableName`,
-			description: 'Name of the table containing single cell geo locations',
-			value: scell.table.tableName,
 		})
 	}
 }

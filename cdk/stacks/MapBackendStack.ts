@@ -1,18 +1,18 @@
 import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
-import type { BackendLambdas } from '../BackendLambdas.js'
+import type { MapBackendLambdas } from '../MapBackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
 import { ConnectionInformationGeoLocation } from '../resources/map/ConnectionInformationGeoLocation.js'
 import { LwM2MShadow } from '../resources/map/LwM2MShadow.js'
 import { PublicDevices } from '../resources/map/PublicDevices.js'
 import { ShareAPI } from '../resources/map/ShareAPI.js'
-import { MAP_STACK_NAME } from './stackConfig.js'
+import { MAP_BACKEND_STACK_NAME } from './stackConfig.js'
 import { DevicesAPI } from '../resources/map/DevicesAPI.js'
 
 /**
- * Provides resources for hello.nrfcloud.com/map
+ * Provides resources for the backend serving data to hello.nrfcloud.com/map
  */
-export class MapStack extends Stack {
+export class MapBackendStack extends Stack {
 	constructor(
 		parent: App,
 		{
@@ -20,10 +20,10 @@ export class MapStack extends Stack {
 			lambdaSources,
 		}: {
 			layer: PackedLayer
-			lambdaSources: BackendLambdas
+			lambdaSources: MapBackendLambdas
 		},
 	) {
-		super(parent, MAP_STACK_NAME)
+		super(parent, MAP_BACKEND_STACK_NAME)
 
 		const mapLayer = new Lambda.LayerVersion(this, 'mapLayer', {
 			code: new LambdaSource(this, {

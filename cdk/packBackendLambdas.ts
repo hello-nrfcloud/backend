@@ -47,25 +47,4 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'resolveSingleCellGeoLocation',
 		'lambda/resolveSingleCellGeoLocation.ts',
 	),
-	// Map lambdas
-	updatesToLwM2M: await packLambdaFromPath(
-		'updatesToLwM2M',
-		'lambda/map/updatesToLwM2M.ts',
-	),
-	shareDevice: await packLambdaFromPath(
-		'shareDevice',
-		'lambda/map/shareDevice.ts',
-	),
-	confirmOwnership: await packLambdaFromPath(
-		'confirmOwnership',
-		'lambda/map/confirmOwnership.ts',
-	),
-	connectionInformationGeoLocation: await packLambdaFromPath(
-		'connectionInformationGeoLocation',
-		'lambda/map/connectionInformationGeoLocation.ts',
-	),
-	devicesData: await packLambdaFromPath(
-		'devicesData',
-		'lambda/map/devicesData.ts',
-	),
 })

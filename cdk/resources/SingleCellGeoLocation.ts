@@ -20,7 +20,6 @@ import type { WebsocketEventBus } from './WebsocketEventBus.js'
  * Resolve device geo location based on network information
  */
 export class SingleCellGeoLocation extends Construct {
-	public readonly table: DynamoDB.ITable
 	public constructor(
 		parent: Construct,
 		{
@@ -39,7 +38,7 @@ export class SingleCellGeoLocation extends Construct {
 	) {
 		super(parent, 'SingleCellGeoLocation')
 
-		this.table = new DynamoDB.Table(this, 'table', {
+		const table = new DynamoDB.Table(this, 'table', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
 				name: 'cellId',
@@ -67,7 +66,7 @@ export class SingleCellGeoLocation extends Construct {
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 				STACK_NAME: Stack.of(this).stackName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-				CACHE_TABLE_NAME: this.table.tableName,
+				CACHE_TABLE_NAME: table.tableName,
 			},
 			layers,
 			logRetention: Logs.RetentionDays.ONE_WEEK,
@@ -97,7 +96,7 @@ export class SingleCellGeoLocation extends Construct {
 		})
 		websocketEventBus.eventBus.grantPutEventsTo(fn)
 		deviceStorage.devicesTable.grantReadData(fn)
-		this.table.grantWriteData(fn)
+		table.grantWriteData(fn)
 
 		const rule = new IoT.CfnTopicRule(this, 'topicRule', {
 			topicRulePayload: {

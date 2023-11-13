@@ -1,0 +1,4 @@
+- User share / confirm
+- Single cell geolocation
+- Updates to LwM2M shadow
+- Return list of devices

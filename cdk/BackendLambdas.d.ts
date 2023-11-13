@@ -16,10 +16,4 @@ type BackendLambdas = {
 	kpis: PackedLambda
 	configureDevice: PackedLambda
 	resolveSingleCellGeoLocation: PackedLambda
-	// Map
-	updatesToLwM2M: PackedLambda
-	shareDevice: PackedLambda
-	confirmOwnership: PackedLambda
-	connectionInformationGeoLocation: PackedLambda
-	devicesData: PackedLambda
 }

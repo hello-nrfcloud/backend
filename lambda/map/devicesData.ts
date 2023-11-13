@@ -12,6 +12,7 @@ import {
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-lwm2m'
 import { shadowToObjects } from '../../lwm2m/shadowToObjects.js'
+import { consentDurationMS } from '../../map/consentDuration.js'
 
 const { publicDevicesTableName, publicDevicesTableModelOwnerConfirmedIndex } =
 	fromEnv({
@@ -46,7 +47,7 @@ export const handler = async (): Promise<APIGatewayProxyResultV2> => {
 				ExpressionAttributeValues: {
 					':model': { S: model },
 					':minConfirmTime': {
-						S: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+						S: new Date(Date.now() - consentDurationMS).toISOString(),
 					},
 				},
 				ProjectionExpression: '#id',

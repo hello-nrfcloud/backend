@@ -1,15 +1,18 @@
 import { App } from 'aws-cdk-lib'
 import { BackendStack } from './stacks/BackendStack.js'
-import { MapStack } from './stacks/MapStack.js'
+import { MapBackendStack } from './stacks/MapBackendStack.js'
+import type { MapBackendLambdas } from './MapBackendLambdas.js'
 
 export class BackendApp extends App {
 	public constructor({
 		isTest,
 		domain,
+		MapBackendLambdasources,
 		...rest
 	}: ConstructorParameters<typeof BackendStack>[1] & {
 		isTest: boolean
 		domain: string
+		MapBackendLambdasources: MapBackendLambdas
 	}) {
 		super({
 			context: {
@@ -19,10 +22,10 @@ export class BackendApp extends App {
 		})
 
 		new BackendStack(this, rest)
-		// Under active development
-		new MapStack(this, {
-			layer: rest.mapsLayer,
-			lambdaSources: rest.lambdaSources,
+
+		new MapBackendStack(this, {
+			layer: rest.mapLayer,
+			lambdaSources: MapBackendLambdasources,
 		})
 	}
 }

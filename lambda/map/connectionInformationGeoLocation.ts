@@ -41,18 +41,7 @@ const apiSettings = once(
 const fetchToken = serviceToken()
 
 export const handler = async (event: {
-	connectionInformation: ConnectionInformation_14203['Resources'] /* e.g. 
-	{
-		'0': 'LTE-M'
-		'1': 20
-		'2': -99
-		'3': 2305
-		'4': 33703712
-		'5': 24202
-		'6': '100.74.127.55'
-		'99': 1699565816864
-	}
-	*/
+	connectionInformation: ConnectionInformation_14203['Resources']
 	id: string // e.g. '4872a392-3457-4761-9ee0-418971b0db09'
 }): Promise<void> => {
 	console.log(JSON.stringify(event))

@@ -1,4 +1,4 @@
-import { type APIGatewayProxyResultV2 } from 'aws-lambda'
+import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { type Static } from '@sinclair/typebox'
 import { Context, ProblemDetail } from '@hello.nrfcloud.com/proto/hello'
 

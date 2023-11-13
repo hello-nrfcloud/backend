@@ -9,6 +9,7 @@ import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { models } from '@hello.nrfcloud.com/proto-lwm2m'
 import crypto from 'node:crypto'
 import { ulid } from '../util/ulid.js'
+import { consentDurationMS, consentDurationSeconds } from './consentDuration.js'
 
 export type PublicDeviceRecord = {
 	/**
@@ -99,7 +100,7 @@ export const publicDevicesRepo = ({
 		if (device.ownerConfirmed === undefined || device.ownerConfirmed === null)
 			return { error: 'not_confirmed' }
 		const ownerConfirmed = new Date(device.ownerConfirmed)
-		if (ownerConfirmed.getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now())
+		if (ownerConfirmed.getTime() + consentDurationMS < Date.now())
 			return { error: 'confirmation_expired' }
 		if (!modelNames.includes(device.model))
 			return { error: 'unsupported_model' }
@@ -123,7 +124,7 @@ export const publicDevicesRepo = ({
 						id,
 						ttl:
 							Math.round((now ?? new Date()).getTime() / 1000) +
-							30 * 24 * 60 * 60,
+							consentDurationSeconds,
 						model,
 						ownerEmail: email,
 						ownershipConfirmationToken,

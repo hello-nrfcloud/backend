@@ -5,6 +5,7 @@ import { marshall } from '@aws-sdk/util-dynamodb'
 import { assertCall } from '../util/test/assertCall.js'
 import { randomUUID } from 'node:crypto'
 import { ulid } from '../util/ulid.js'
+import { consentDurationSeconds } from './consentDuration.js'
 
 void describe('publicDevicesRepo()', () => {
 	void describe('getByDeviceId()', () => {
@@ -87,7 +88,7 @@ void describe('publicDevicesRepo()', () => {
 					Item: marshall({
 						secret__deviceId: 'some-device',
 						id,
-						ttl: Math.round(now.getTime() / 1000) + 30 * 24 * 60 * 60,
+						ttl: Math.round(now.getTime() / 1000) + consentDurationSeconds,
 						ownerEmail: 'alex@example.com',
 						// ownershipConfirmationToken: generateCode(),
 					}),
