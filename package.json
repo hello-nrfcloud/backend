@@ -4,7 +4,7 @@
   "description": "Cloud backend for hello.nrfcloud.com developed using AWS CDK in TypeScript",
   "type": "module",
   "scripts": {
-    "test": "find ./ -type f -name \\*.spec.ts -not -path './node_modules/*' -not -path './dist/*' | xargs npx tsx --test --test-reporter spec",
+    "test": "npx globstar -- npx tsx --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
     "test:e2e": "npx tsx --no-warnings ./feature-runner/run-features.ts > e2e-test-result.json && cat e2e-test-result.json | npx tsx --no-warnings ./feature-runner/console-reporter.ts --only-failed --with-timestamps",
     "prepare": "husky install && check-node-version --package",
     "deploy": "cdk deploy",
@@ -75,6 +75,7 @@
     "eslint-plugin-prefer-arrow": "1.2.3",
     "eslint-plugin-unicorn": "49.0.0",
     "glob": "10.3.10",
+    "globstar": "1.0.0",
     "husky": "8.0.3",
     "id128": "1.6.6",
     "jsonata": "2.0.3",
