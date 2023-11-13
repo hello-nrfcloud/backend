@@ -19,9 +19,8 @@ RUN apt-get update && \
   wget \
   tar
 
-# Download CoAP simulator binary
-RUN curl ${COAP_SIMULATOR_DOWNLOAD_URL} -o /tmp/coap.zip && \
-  unzip /tmp/coap.zip -d /tmp
+ADD ${COAP_SIMULATOR_DOWNLOAD_URL} /tmp/coap.zip
+RUN unzip /tmp/coap.zip -d /tmp
 
 # Copy function code
 RUN mkdir -p ${FUNCTION_DIR}

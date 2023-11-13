@@ -31,6 +31,7 @@ import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
 import { hashFolder } from '../docker/hashFolder.js'
 import { getCoAPHealthCheckSettings } from '../nrfcloud/coap-health-check.js'
+import { checkSumOfStrings } from './helpers/lambdas/checksumOfFiles.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -163,7 +164,26 @@ const coapDockerfilePath = path.join(
 	'containers',
 	'coap',
 )
-const coapHash = await hashFolder(coapDockerfilePath)
+const coapSimulatorDownloadUrl = (
+	await getCoAPHealthCheckSettings({
+		ssm,
+		stackName: STACK_NAME,
+	})
+).simulatorDownloadURL.toString()
+const res = await fetch(coapSimulatorDownloadUrl, {
+	method: 'HEAD',
+})
+if (!res.ok)
+	throw new Error(`Failed to download CoAP simulator: ${await res.text()}`)
+const coapSimulatorBinaryHash = res.headers.get('etag')
+if (coapSimulatorBinaryHash === null)
+	throw new Error(`[CoAP simulator] No ETag present in server response.`)
+
+const coapDockerfileHash = await hashFolder(coapDockerfilePath)
+const coapHash = checkSumOfStrings([
+	coapDockerfileHash,
+	coapSimulatorBinaryHash,
+])
 const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
 	ecr,
 	releaseImageTag: undefined,
@@ -174,12 +194,7 @@ const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
 	dockerFilePath: coapDockerfilePath,
 	imageTagFactory: async () => `${coapHash}`,
 	buildArgs: {
-		COAP_SIMULATOR_DOWNLOAD_URL: (
-			await getCoAPHealthCheckSettings({
-				ssm,
-				stackName: STACK_NAME,
-			})
-		).simulatorDownloadURL.toString(),
+		COAP_SIMULATOR_DOWNLOAD_URL: coapSimulatorDownloadUrl,
 	},
 })
 
