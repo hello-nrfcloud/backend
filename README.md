@@ -28,7 +28,10 @@ employ in conjunction with Lambda to execute the CoAP simulator and transmit a
 message to nRF Cloud.
 
 To accomplish this, you need to supply the URL to the CoAP simulator binary in
-zip format via an SSM parameter for the stack.
+zip format via an SSM parameter for the stack. Please note that the server
+_MUST_ serve a `HEAD` request with and `ETag` header containing the hash of the
+file in order to detect binary changes and rebuild the Docker image if
+necessary.
 
 ```bash
 ./cli.sh configure-coap-health-check simulatorDownloadURL <URL to the ZIP file>

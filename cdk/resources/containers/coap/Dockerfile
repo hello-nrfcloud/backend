@@ -1,12 +1,12 @@
 # Define custom function directory
 ARG FUNCTION_DIR="/function"
-ARG COAP_SIMULATOR_BINARY
+ARG COAP_SIMULATOR_DOWNLOAD_URL
 
 FROM node:21 as build-image
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
-ARG COAP_SIMULATOR_BINARY
+ARG COAP_SIMULATOR_DOWNLOAD_URL
 
 # Install build dependencies
 RUN apt-get update && \
@@ -19,8 +19,7 @@ RUN apt-get update && \
   wget \
   tar
 
-# Extract CoAP simulator binary
-COPY ${COAP_SIMULATOR_BINARY} /tmp/coap.zip
+ADD ${COAP_SIMULATOR_DOWNLOAD_URL} /tmp/coap.zip
 RUN unzip /tmp/coap.zip -d /tmp
 
 # Copy function code

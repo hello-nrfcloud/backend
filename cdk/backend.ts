@@ -29,13 +29,9 @@ import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertifi
 import { storeCertificateInSSM } from './helpers/certificates/storeCertificateInSSM.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
-import { hashFile, hashFolder, hashStrings } from '../docker/hashFolder.js'
+import { hashFolder } from '../docker/hashFolder.js'
 import { getCoAPHealthCheckSettings } from '../nrfcloud/coap-health-check.js'
-import { tmpdir } from 'node:os'
-import { createWriteStream } from 'node:fs'
-import { copyFile, rm } from 'node:fs/promises'
-import { pipeline } from 'node:stream'
-import { promisify } from 'node:util'
+import { checkSumOfStrings } from './helpers/lambdas/checksumOfFiles.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -174,40 +170,31 @@ const coapSimulatorDownloadUrl = (
 		stackName: STACK_NAME,
 	})
 ).simulatorDownloadURL.toString()
-const { body, ok, status } = await fetch(coapSimulatorDownloadUrl, {
-	method: 'GET',
+const res = await fetch(coapSimulatorDownloadUrl, {
+	method: 'HEAD',
 })
-if (!ok) throw new Error(`Failed to download CoAP simulator: ${status}`)
+if (!res.ok)
+	throw new Error(`Failed to download CoAP simulator: ${await res.text()}`)
+const coapSimulatorBinaryHash = res.headers.get('etag')
+if (coapSimulatorBinaryHash === null)
+	throw new Error(`[CoAP simulator] No ETag present in server response.`)
 
-const tmpCoapSimulatorPath = path.join(tmpdir(), 'coap-simulator.zip')
-await promisify(pipeline)(
-	body as unknown as NodeJS.ReadableStream,
-	createWriteStream(tmpCoapSimulatorPath),
-)
-
-const coapSimulatorBinaryHash = await hashFile(tmpCoapSimulatorPath)
 const coapDockerfileHash = await hashFolder(coapDockerfilePath)
-const coapHash = hashStrings([coapDockerfileHash, coapSimulatorBinaryHash])
+const coapHash = checkSumOfStrings([
+	coapDockerfileHash,
+	coapSimulatorBinaryHash,
+])
 const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
 	ecr,
 	releaseImageTag: undefined,
 	debug: debug('CoAP simulator docker image'),
-	beforeBuild: async () => {
-		await copyFile(
-			tmpCoapSimulatorPath,
-			path.join(coapDockerfilePath, 'coap-simulator.zip'),
-		)
-	},
-	afterBuild: async () => {
-		await rm(path.join(coapDockerfilePath, 'coap-simulator.zip'))
-	},
 })({
 	repositoryUri: repositoryCoapSimulatorUri,
 	repositoryName: ECR_NAME_COAP_SIMULATOR,
 	dockerFilePath: coapDockerfilePath,
 	imageTagFactory: async () => `${coapHash}`,
 	buildArgs: {
-		COAP_SIMULATOR_BINARY: 'coap-simulator.zip',
+		COAP_SIMULATOR_DOWNLOAD_URL: coapSimulatorDownloadUrl,
 	},
 })
 
