@@ -1,0 +1,37 @@
+name: Run unit test on MacOS
+
+on:
+  push:
+    branches:
+      - test-script
+
+permissions:
+  id-token: write
+  contents: write
+  issues: write
+  actions: write
+
+jobs:
+  test-on-macos:
+    runs-on: macos-latest
+
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Keep npm cache around to speed up installs
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: build-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
+      - name: Run Unit Tests
+        run: npm test
