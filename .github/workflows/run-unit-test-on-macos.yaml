@@ -2,8 +2,7 @@ name: Run unit test on MacOS
 
 on:
   push:
-    branches:
-      - test-script
+  workflow_dispatch:
 
 permissions:
   id-token: write
