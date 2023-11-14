@@ -8,9 +8,8 @@ import { formatTypeBoxErrors } from '../util/formatTypeBoxErrors.js'
 import { aResponse } from '../util/aResponse.js'
 import { aProblem } from '../util/aProblem.js'
 
-const { publicDevicesTableName, publicDevicesTableIdIndexName } = fromEnv({
+const { publicDevicesTableName } = fromEnv({
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
-	publicDevicesTableIdIndexName: 'PUBLIC_DEVICES_TABLE_ID_INDEX_NAME',
 })(process.env)
 
 const db = new DynamoDBClient({})
@@ -18,21 +17,17 @@ const db = new DynamoDBClient({})
 const publicDevice = publicDevicesRepo({
 	db,
 	TableName: publicDevicesTableName,
-	IdIndexName: publicDevicesTableIdIndexName,
 })
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
-		id: Type.RegExp(
-			/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/,
-			{
-				title: 'ID',
-				description: 'The public ID of the shared device.',
-			},
-		),
-		ownershipConfirmationToken: Type.RegExp(/^[0-9A-Z]{6}$/, {
+		id: Type.RegExp(/^[a-zA-Z0-9:_-]{1,128}$/, {
+			title: 'Device ID',
+			description: 'The device ID of the shared device.',
+		}),
+		token: Type.RegExp(/^[0-9A-Z]{6}$/, {
 			title: 'Ownership Confirmation Token',
-			description: 'The 6 character token to confirm the ownershipe.',
+			description: 'The 6 character token to confirm the ownership.',
 			examples: ['RPGWT2'],
 		}),
 	}),
@@ -52,11 +47,11 @@ export const handler = async (
 		})
 	}
 
-	const { id, ownershipConfirmationToken } = maybeValidInput.value
+	const { id, token } = maybeValidInput.value
 
 	const maybeConfirmed = await publicDevice.confirmOwnership({
-		id,
-		ownershipConfirmationToken,
+		deviceId: id,
+		ownershipConfirmationToken: token,
 	})
 	if ('error' in maybeConfirmed) {
 		return aProblem({

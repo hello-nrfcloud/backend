@@ -1,6 +1,6 @@
+const alphabet = 'abcdefghijkmnpqrstuvwxyz' // Removed o,l
+const numbers = '23456789' // Removed 0,1
 export const generateCode = (len = 6): string => {
-	const alphabet = 'abcdefghijkmnpqrstuvwxyz' // Removed o,l
-	const numbers = '23456789' // Removed 0,1
 	const characters = `${alphabet}${numbers}`
 
 	let code = ``
@@ -9,3 +9,5 @@ export const generateCode = (len = 6): string => {
 	}
 	return code
 }
+
+export const CodeRegExp = new RegExp(`^[${alphabet}${numbers}]+$`)

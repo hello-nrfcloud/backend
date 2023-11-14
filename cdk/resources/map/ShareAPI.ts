@@ -45,6 +45,7 @@ export class ShareAPI extends Construct {
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 				FROM_EMAIL: `notification@${domain}`,
 				NODE_NO_WARNINGS: '1',
+				IS_TEST: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			logRetention: Logs.RetentionDays.ONE_WEEK,
 			initialPolicy: [
@@ -85,8 +86,6 @@ export class ShareAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
-				PUBLIC_DEVICES_TABLE_ID_INDEX_NAME:
-					publicDevices.publicDevicesTablePublicIdIndexName,
 				NODE_NO_WARNINGS: '1',
 			},
 			logRetention: Logs.RetentionDays.ONE_WEEK,

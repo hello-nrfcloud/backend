@@ -43,8 +43,6 @@ export class LwM2MShadow extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
-				PUBLIC_DEVICES_TABLE_ID_INDEX_NAME:
-					publicDevices.publicDevicesTablePublicIdIndexName,
 			},
 			initialPolicy: [
 				new IAM.PolicyStatement({

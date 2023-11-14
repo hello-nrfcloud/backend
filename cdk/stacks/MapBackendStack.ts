@@ -78,3 +78,9 @@ export class MapBackendStack extends Stack {
 		})
 	}
 }
+
+export type StackOutputs = {
+	confirmOwnershipAPIEndpoint: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
+	devicesAPIEndpoint: string // e.g. 'https://a2udxgawcxd5tbmmfagi726jsm0obxov.lambda-url.eu-west-1.on.aws/'
+	shareAPIEndpoint: string // e.g. 'https://iiet67bnlmbtuhiblik4wcy4ni0oujot.lambda-url.eu-west-1.on.aws/'
+}

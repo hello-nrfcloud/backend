@@ -14,12 +14,13 @@ import { sendOwnershipVerificationEmail } from './sendOwnershipVerificationEmail
 import { aResponse } from '../util/aResponse.js'
 import { aProblem } from '../util/aProblem.js'
 
-const { publicDevicesTableName, publicDevicesTableIdIndexName, fromEmail } =
-	fromEnv({
-		publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
-		publicDevicesTableIdIndexName: 'PUBLIC_DEVICES_TABLE_ID_INDEX_NAME',
-		fromEmail: 'FROM_EMAIL',
-	})(process.env)
+const { publicDevicesTableName, fromEmail, isTestString } = fromEnv({
+	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
+	fromEmail: 'FROM_EMAIL',
+	isTestString: 'IS_TEST',
+})(process.env)
+
+const isTest = isTestString === '1'
 
 const db = new DynamoDBClient({})
 const ses = new SESClient({})
@@ -27,7 +28,6 @@ const ses = new SESClient({})
 const publicDevice = publicDevicesRepo({
 	db,
 	TableName: publicDevicesTableName,
-	IdIndexName: publicDevicesTableIdIndexName,
 })
 
 const sendEmail = sendOwnershipVerificationEmail(ses, fromEmail)
@@ -74,6 +74,7 @@ export const handler = async (
 		deviceId,
 		model,
 		email,
+		generateToken: isTest ? () => '123456' : undefined,
 	})
 	if ('error' in maybePublished) {
 		if (maybePublished.error instanceof ConditionalCheckFailedException) {
@@ -88,12 +89,13 @@ export const handler = async (
 			status: 500,
 		})
 	}
-	await sendEmail({
-		email,
-		deviceId,
-		ownershipConfirmationToken:
-			maybePublished.publicDevice.ownershipConfirmationToken,
-	})
+	if (!isTest)
+		await sendEmail({
+			email,
+			deviceId,
+			ownershipConfirmationToken:
+				maybePublished.publicDevice.ownershipConfirmationToken,
+		})
 
 	console.debug(JSON.stringify({ deviceId, model, email }))
 

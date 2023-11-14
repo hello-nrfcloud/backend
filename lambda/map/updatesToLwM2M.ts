@@ -12,9 +12,8 @@ import {
 } from '../../map/publicDevicesRepo.js'
 import { updateLwM2MShadow } from './updateLwM2MShadow.js'
 
-const { TableName, IdIndexName } = fromEnv({
+const { TableName } = fromEnv({
 	TableName: 'PUBLIC_DEVICES_TABLE_NAME',
-	IdIndexName: 'PUBLIC_DEVICES_TABLE_ID_INDEX_NAME',
 })(process.env)
 
 const updateShadow = updateLwM2MShadow(new IoTDataPlaneClient({}))
@@ -30,7 +29,6 @@ const transformers = Object.entries(models).reduce(
 const devicesRepo = publicDevicesRepo({
 	db: new DynamoDBClient({}),
 	TableName,
-	IdIndexName,
 })
 const devicesInfoCache = new Map<string, { id: string; model: string } | null>()
 
