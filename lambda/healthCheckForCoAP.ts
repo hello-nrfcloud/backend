@@ -65,7 +65,7 @@ const publishDeviceMessageOnCoAP =
 			privateKey: string
 		}
 	}) =>
-	async (message: Record<string, unknown>): Promise<void> => {
+	async (message: Record<string, unknown>): Promise<number | undefined> => {
 		const timeout = setTimeout(() => {
 			throw new Error('CoAP simulator timeout')
 		}, 25000)
@@ -93,6 +93,27 @@ const publishDeviceMessageOnCoAP =
 			log.error(`CoAP simulator error`, { error: result.body })
 
 			throw new Error(`CoAP simulator error`)
+		} else {
+			log.debug(`CoAP simulator log`, { log: result.body })
+			const coapStart = (result.body as string[])?.[0]
+			if (coapStart === undefined) return
+
+			const matches =
+				/^(?<year>\d{4})-(?<month>\d{1,2})-(?<day>\d{1,2}) (?<hour>\d{1,2}):(?<minute>\d{1,2}):(?<second>\d{1,2}),(?<ms>\d{1,3})/.exec(
+					coapStart,
+				)
+			if (matches === null) return
+
+			return Date.UTC(
+				parseInt(matches.groups?.year ?? '0', 10),
+				parseInt(matches.groups?.month ?? '0', 10) - 1,
+				parseInt(matches.groups?.day ?? '0', 10),
+				parseInt(matches.groups?.hour ?? '0', 10),
+				parseInt(matches.groups?.minute ?? '0', 10) +
+					new Date().getTimezoneOffset(),
+				parseInt(matches.groups?.second ?? '0', 10),
+				parseInt(matches.groups?.ms ?? '0', 10),
+			)
 		}
 	}
 
@@ -103,7 +124,10 @@ type KeyPair = {
 const cacheAccountCertificates = new Map<string, KeyPair>()
 
 const h = async (): Promise<void> => {
-	const store = new Map<string, { ts: number; temperature: number }>()
+	const store = new Map<
+		string,
+		{ ts: number; temperature: number; coapTs?: number }
+	>()
 	track('checkMessageFromWebsocket', MetricUnits.Count, 1)
 	await Promise.all(
 		Object.entries(allAccountsSettings).map(async ([account, settings]) => {
@@ -152,8 +176,7 @@ const h = async (): Promise<void> => {
 							ts: Date.now(),
 							temperature: Number((Math.random() * 20).toFixed(1)),
 						}
-						store.set(account, data)
-						await publishDeviceMessageOnCoAP({
+						const coapTs = await publishDeviceMessageOnCoAP({
 							nrfCloudSettings,
 							deviceProperties: {
 								deviceId,
@@ -165,6 +188,7 @@ const h = async (): Promise<void> => {
 							ts: data.ts,
 							data: `${data.temperature}`,
 						})
+						store.set(account, { ...data, coapTs })
 					},
 					validate: async (message) => {
 						try {
@@ -184,7 +208,7 @@ const h = async (): Promise<void> => {
 							track(
 								`receivingMessageDuration`,
 								MetricUnits.Seconds,
-								(Date.now() - (data?.ts ?? 0)) / 1000,
+								(Date.now() - (data?.coapTs ?? data?.ts ?? 0)) / 1000,
 							)
 							assert.deepEqual(messageObj, expectedMessage)
 							return ValidateResponse.valid
