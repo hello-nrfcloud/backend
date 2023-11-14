@@ -39,7 +39,7 @@ export const provisionDkCommand = ({
 	stackName: string
 	env: Required<Environment>
 }): CommandDefinition => ({
-	command: 'provision-dk <account> <productionRun> <model>',
+	command: 'provision-dk <account> <productionRunNumber> <model>',
 	options: [
 		{
 			flags: '-p, --port <port>',
@@ -64,15 +64,16 @@ export const provisionDkCommand = ({
 	],
 	action: async (
 		account,
-		productionRun,
+		productionRunNumber,
 		model,
 		{ port, dk, atHost, debug, deletePrivateKey },
 	) => {
+		const productionRun = parseInt(productionRunNumber, 10)
 		const dir = ensureCertificateDir(env)
 		const {
 			privateKey: caPrivateKeyLocation,
 			certificate: caCertificateLocation,
-		} = await ensureProductionRunCACertificate(dir, parseInt(productionRun, 10))
+		} = await ensureProductionRunCACertificate(dir, productionRun)
 
 		console.log(
 			chalk.magenta(`Flashing certificate`),
