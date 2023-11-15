@@ -2,6 +2,7 @@ import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb'
 import {
 	GetThingShadowCommand,
 	IoTDataPlaneClient,
+	ResourceNotFoundException,
 } from '@aws-sdk/client-iot-data-plane'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { fromEnv } from '@nordicsemiconductor/from-env'
@@ -54,29 +55,44 @@ export const handler = async (): Promise<APIGatewayProxyResultV2> => {
 			}),
 		)
 
-		const modelDevices = await Promise.all(
-			(Items ?? [])
-				.map((item) => unmarshall(item) as { id: string })
-				.map(async ({ id }) => {
-					const shadow = await iotData.send(
-						new GetThingShadowCommand({ thingName: id, shadowName: 'lwm2m' }),
-					)
-					return {
-						id,
-						model,
-						state:
-							shadow.payload === undefined
-								? []
-								: shadowToObjects(
-										JSON.parse(decoder.decode(shadow.payload)).state.reported,
-								  ),
-					}
-				}),
-		)
+		const modelDevicesWithState = (
+			await Promise.all(
+				(Items ?? [])
+					.map((item) => unmarshall(item) as { id: string })
+					.map(async ({ id }) => {
+						try {
+							const shadow = await iotData.send(
+								new GetThingShadowCommand({
+									thingName: id,
+									shadowName: 'lwm2m',
+								}),
+							)
+							return {
+								id,
+								model,
+								state:
+									shadow.payload === undefined
+										? []
+										: shadowToObjects(
+												JSON.parse(decoder.decode(shadow.payload)).state
+													.reported,
+										  ),
+							}
+						} catch (err) {
+							if (err instanceof ResourceNotFoundException) {
+								console.debug(`[id]: no shadow found.`)
+							} else {
+								console.error(err)
+							}
+							return { id, model }
+						}
+					}),
+			)
+		).filter(({ state }) => state !== undefined)
 
-		console.log(model, `Devices: ${modelDevices.length}`)
+		console.log(model, `Devices: ${modelDevicesWithState.length}`)
 
-		devices.push(...modelDevices)
+		devices.push(...modelDevicesWithState)
 	}
 
 	return aResponse(

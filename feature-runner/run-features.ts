@@ -174,8 +174,9 @@ runner
 	.addStepRunners(...RESTSteps)
 
 const res = await runner.run({
-	shareDeviceURL: mapBackendConfig.shareAPIEndpoint,
-	confirmOwnershipURL: mapBackendConfig.confirmOwnershipAPIEndpoint,
+	shareDeviceAPI: new URL(mapBackendConfig.shareAPIURL),
+	confirmOwnershipAPI: new URL(mapBackendConfig.confirmOwnershipAPIURL),
+	devicesAPI: new URL(mapBackendConfig.devicesAPIURL),
 })
 
 await Promise.all(cleaners.map(async (fn) => fn()))

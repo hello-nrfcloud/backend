@@ -2,8 +2,12 @@
 exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
-  shareDeviceURL: "https://share-device.lambda-url.eu-west-1.on.aws/"
-  confirmOwnershipURL: "https://confirm-ownership.lambda-url.eu-west-1.on.aws/"
+  publicDeviceId: outfling-swanherd-attaghan
+  shareDeviceAPI: "https://share-device.lambda-url.eu-west-1.on.aws/"
+  confirmOwnershipAPI: "https://confirm-ownership.lambda-url.eu-west-1.on.aws/"
+  devicesAPI: "https://confirm-ownership.lambda-url.eu-west-1.on.aws/"
+  ts: 1694503339523
+  tsISO: 2023-09-12T00:00:00.000Z
 ---
 
 # Sharing a device on the map
@@ -22,7 +26,7 @@ And I have a user's email in `email`
 
 > Using the device ID I can share the device
 
-When I `POST` to `${shareDeviceURL}` with
+When I `POST` to `${shareDeviceAPI}` with
 
 ```json
 {
@@ -32,12 +36,14 @@ When I `POST` to `${shareDeviceURL}` with
 }
 ```
 
-Then the response should be a
-`https://github.com/hello-nrfcloud/backend/map/share-device-request`
+Then I should receive a
+`https://github.com/hello-nrfcloud/backend/map/share-device-request` response
+
+And I store `id` of the last response into `publicDeviceId`
 
 ## Confirm the email
 
-When I `POST` to `${confirmOwnershipURL}` with
+When I `POST` to `${confirmOwnershipAPI}` with
 
 ```json
 {
@@ -46,5 +52,51 @@ When I `POST` to `${confirmOwnershipURL}` with
 }
 ```
 
-Then the response should be a
+Then I should receive a
 `https://github.com/hello-nrfcloud/backend/map/share-device-ownership-confirmed`
+response
+
+## The devices publishes data
+
+> Devices publish using their own protocol, and it is converted to LwM2M
+> according to the definitions in https://github.com/hello-nrfcloud/proto-lwm2m/
+
+Given I store `$millis()` into `ts`
+
+And I store `$fromMillis(${ts})` into `tsISO`
+
+And the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c`
+
+```json
+{
+  "appId": "SOLAR",
+  "messageType": "DATA",
+  "data": "3.123457",
+  "ts": "$number{ts}"
+}
+```
+
+When I `GET` `${devicesAPI}`
+
+Then I should receive a `https://github.com/hello-nrfcloud/backend/map/devices`
+response
+
+And `$.devices[id="${publicDeviceId}"]` of the last response should match
+
+```json
+{
+  "id": "${publicDeviceId}",
+  "model": "PCA20035+solar",
+  "state": [
+    {
+      "ObjectID": 14210,
+      "ObjectVersion": "1.0",
+      "Resources": {
+        "0": 3.123457,
+        "99": "${tsISO}"
+      }
+    }
+  ]
+}
+```

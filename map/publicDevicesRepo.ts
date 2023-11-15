@@ -6,9 +6,9 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { models } from '@hello.nrfcloud.com/proto-lwm2m'
-import crypto from 'node:crypto'
 import { consentDurationMS, consentDurationSeconds } from './consentDuration.js'
 import { generateCode } from '../cli/devices/generateCode.js'
+import { randomWords } from '@nordicsemiconductor/random-words'
 
 export type PublicDeviceRecord = {
 	/**
@@ -114,7 +114,7 @@ export const publicDevicesRepo = ({
 		}
 	},
 	share: async ({ deviceId, model, email, generateToken }) => {
-		const id = crypto.randomUUID()
+		const id = randomWords({ numWords: 3 }).join('-')
 		const ownershipConfirmationToken = generateToken?.() ?? generateCode()
 
 		try {

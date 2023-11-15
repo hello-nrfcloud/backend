@@ -74,10 +74,7 @@ void describe('publicDevicesRepo()', () => {
 
 			const id = ('publicDevice' in res && res.publicDevice.id) as string
 
-			assert.match(
-				id,
-				/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/,
-			)
+			assert.match(id, /^[a-z0-9]{8}-[a-z0-9]{8}-[a-z0-9]{8}$/) // e.g. mistrist-manicate-lunation
 
 			assertCall(send, {
 				input: {

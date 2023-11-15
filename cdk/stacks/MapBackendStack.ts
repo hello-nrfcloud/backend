@@ -61,18 +61,18 @@ export class MapBackendStack extends Stack {
 		})
 
 		// Outputs
-		new CfnOutput(this, 'shareAPIEndpoint', {
-			exportName: `${this.stackName}:shareAPIEndpoint`,
+		new CfnOutput(this, 'shareAPIURL', {
+			exportName: `${this.stackName}:shareAPI`,
 			description: 'API endpoint for sharing devices',
 			value: shareAPI.shareURL.url,
 		})
-		new CfnOutput(this, 'confirmOwnershipAPIEndpoint', {
-			exportName: `${this.stackName}:confirmOwnershipAPIEndpoint`,
+		new CfnOutput(this, 'confirmOwnershipAPIURL', {
+			exportName: `${this.stackName}:confirmOwnershipAPI`,
 			description: 'API endpoint for confirming ownership',
 			value: shareAPI.confirmOwnershipURL.url,
 		})
-		new CfnOutput(this, 'devicesAPIEndpoint', {
-			exportName: `${this.stackName}:devicesAPIEndpoint`,
+		new CfnOutput(this, 'devicesAPIURL', {
+			exportName: `${this.stackName}:devicesAPI`,
 			description: 'API endpoint for retrieving public device information',
 			value: devicesAPI.devicesURL.url,
 		})
@@ -80,7 +80,7 @@ export class MapBackendStack extends Stack {
 }
 
 export type StackOutputs = {
-	confirmOwnershipAPIEndpoint: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
-	devicesAPIEndpoint: string // e.g. 'https://a2udxgawcxd5tbmmfagi726jsm0obxov.lambda-url.eu-west-1.on.aws/'
-	shareAPIEndpoint: string // e.g. 'https://iiet67bnlmbtuhiblik4wcy4ni0oujot.lambda-url.eu-west-1.on.aws/'
+	confirmOwnershipAPIURL: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
+	devicesAPIURL: string // e.g. 'https://a2udxgawcxd5tbmmfagi726jsm0obxov.lambda-url.eu-west-1.on.aws/'
+	shareAPIURL: string // e.g. 'https://iiet67bnlmbtuhiblik4wcy4ni0oujot.lambda-url.eu-west-1.on.aws/'
 }

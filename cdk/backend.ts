@@ -225,6 +225,7 @@ new BackendApp({
 			'@middy/core',
 			'id128',
 			'lodash-es',
+			'@nordicsemiconductor/random-words',
 		],
 	}),
 	iotEndpoint: await getIoTEndpoint({ iot })(),
