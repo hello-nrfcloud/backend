@@ -13,7 +13,10 @@ export class DeviceStorage extends Construct {
 				name: 'deviceId',
 				type: DynamoDB.AttributeType.STRING,
 			},
-			removalPolicy: RemovalPolicy.RETAIN,
+			removalPolicy:
+				this.node.tryGetContext('isTest') === true
+					? RemovalPolicy.DESTROY
+					: RemovalPolicy.RETAIN,
 			pointInTimeRecovery: true,
 		})
 		this.devicesTable.addGlobalSecondaryIndex({
