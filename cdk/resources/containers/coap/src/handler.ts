@@ -41,8 +41,8 @@ const run = async ({
 					return reject(error)
 				}
 
-				const outputs = (stdout || stderr).replace(/^[\d\-:,\s]+|\s*$/gm, '')
-				return resolve(outputs.split(os.EOL))
+				const outputs = stdout || stderr
+				return resolve(outputs.split(os.EOL).filter(Boolean))
 			},
 		)
 	})
@@ -81,11 +81,20 @@ export const handler: Handler<Event, EventResponse> = async (event) => {
 			os.tmpdir(),
 			`${event.deviceProperties.deviceId}.properties`,
 		)
+		const deviceDtlsSession = path.join(
+			os.tmpdir(),
+			`${event.deviceProperties.deviceId}.properties.session`,
+		)
 		createDeviceProperties(devicePropertiesFile, event.deviceProperties)
 
 		const result = await run({
 			command: 'coap-simulator/bin/coap-simulator',
-			args: event.args.concat(['-c', devicePropertiesFile]),
+			args: event.args.concat([
+				'--config',
+				devicePropertiesFile,
+				'--dtls-session',
+				deviceDtlsSession,
+			]),
 		})
 
 		const response = {

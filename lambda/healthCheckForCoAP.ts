@@ -15,6 +15,7 @@ import {
 	checkMessageFromWebsocket,
 } from '../util/checkMessageFromWebsocket.js'
 import { createPublicKey, createPrivateKey } from 'node:crypto'
+import { parseDateTimeFromLogToTimestamp } from '../util/parseDateTimeFromLogToTimestamp.js'
 
 const { DevicesTableName, stackName, websocketUrl, coapLambda } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -65,7 +66,7 @@ const publishDeviceMessageOnCoAP =
 			privateKey: string
 		}
 	}) =>
-	async (message: Record<string, unknown>): Promise<void> => {
+	async (message: Record<string, unknown>): Promise<number | null> => {
 		const timeout = setTimeout(() => {
 			throw new Error('CoAP simulator timeout')
 		}, 25000)
@@ -93,6 +94,12 @@ const publishDeviceMessageOnCoAP =
 			log.error(`CoAP simulator error`, { error: result.body })
 
 			throw new Error(`CoAP simulator error`)
+		} else {
+			log.debug(`CoAP simulator log`, { log: result.body })
+			const coapStart = (result.body as string[])?.[0]
+			if (coapStart === undefined) return null
+
+			return parseDateTimeFromLogToTimestamp(coapStart)
 		}
 	}
 
@@ -103,7 +110,10 @@ type KeyPair = {
 const cacheAccountCertificates = new Map<string, KeyPair>()
 
 const h = async (): Promise<void> => {
-	const store = new Map<string, { ts: number; temperature: number }>()
+	const store = new Map<
+		string,
+		{ ts: number; temperature: number; coapTs: number | null }
+	>()
 	track('checkMessageFromWebsocket', MetricUnits.Count, 1)
 	await Promise.all(
 		Object.entries(allAccountsSettings).map(async ([account, settings]) => {
@@ -152,8 +162,7 @@ const h = async (): Promise<void> => {
 							ts: Date.now(),
 							temperature: Number((Math.random() * 20).toFixed(1)),
 						}
-						store.set(account, data)
-						await publishDeviceMessageOnCoAP({
+						const coapTs = await publishDeviceMessageOnCoAP({
 							nrfCloudSettings,
 							deviceProperties: {
 								deviceId,
@@ -165,17 +174,20 @@ const h = async (): Promise<void> => {
 							ts: data.ts,
 							data: `${data.temperature}`,
 						})
+						store.set(account, { ...data, coapTs })
 					},
 					validate: async (message) => {
 						try {
 							const data = store.get(account)
+							if (data === undefined) return ValidateResponse.skip
+
 							const messageObj = JSON.parse(message)
 							log.debug(`ws incoming message`, { messageObj })
 							const expectedMessage = {
 								'@context':
 									'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/airTemperature',
-								ts: data?.ts,
-								c: data?.temperature,
+								ts: data.ts,
+								c: data.temperature,
 							}
 
 							if (messageObj['@context'] !== expectedMessage['@context'])
@@ -184,7 +196,7 @@ const h = async (): Promise<void> => {
 							track(
 								`receivingMessageDuration`,
 								MetricUnits.Seconds,
-								(Date.now() - (data?.ts ?? 0)) / 1000,
+								(Date.now() - (data.coapTs ?? data.ts)) / 1000,
 							)
 							assert.deepEqual(messageObj, expectedMessage)
 							return ValidateResponse.valid
