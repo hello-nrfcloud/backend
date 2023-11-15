@@ -15,6 +15,7 @@ import {
 	checkMessageFromWebsocket,
 } from '../util/checkMessageFromWebsocket.js'
 import { createPublicKey, createPrivateKey } from 'node:crypto'
+import { parseDateTimeFromLogToTimestamp } from '../util/parseDateTimeFromLogToTimestamp.js'
 
 const { DevicesTableName, stackName, websocketUrl, coapLambda } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -65,7 +66,7 @@ const publishDeviceMessageOnCoAP =
 			privateKey: string
 		}
 	}) =>
-	async (message: Record<string, unknown>): Promise<number | undefined> => {
+	async (message: Record<string, unknown>): Promise<number | null> => {
 		const timeout = setTimeout(() => {
 			throw new Error('CoAP simulator timeout')
 		}, 25000)
@@ -96,24 +97,9 @@ const publishDeviceMessageOnCoAP =
 		} else {
 			log.debug(`CoAP simulator log`, { log: result.body })
 			const coapStart = (result.body as string[])?.[0]
-			if (coapStart === undefined) return
+			if (coapStart === undefined) return null
 
-			const matches =
-				/^(?<year>\d{4})-(?<month>\d{1,2})-(?<day>\d{1,2}) (?<hour>\d{1,2}):(?<minute>\d{1,2}):(?<second>\d{1,2}),(?<ms>\d{1,3})/.exec(
-					coapStart,
-				)
-			if (matches === null) return
-
-			return Date.UTC(
-				parseInt(matches.groups?.year ?? '0', 10),
-				parseInt(matches.groups?.month ?? '0', 10) - 1,
-				parseInt(matches.groups?.day ?? '0', 10),
-				parseInt(matches.groups?.hour ?? '0', 10),
-				parseInt(matches.groups?.minute ?? '0', 10) +
-					new Date().getTimezoneOffset(),
-				parseInt(matches.groups?.second ?? '0', 10),
-				parseInt(matches.groups?.ms ?? '0', 10),
-			)
+			return parseDateTimeFromLogToTimestamp(coapStart)
 		}
 	}
 
@@ -126,7 +112,7 @@ const cacheAccountCertificates = new Map<string, KeyPair>()
 const h = async (): Promise<void> => {
 	const store = new Map<
 		string,
-		{ ts: number; temperature: number; coapTs?: number }
+		{ ts: number; temperature: number; coapTs: number | null }
 	>()
 	track('checkMessageFromWebsocket', MetricUnits.Count, 1)
 	await Promise.all(
