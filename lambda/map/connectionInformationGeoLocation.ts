@@ -105,6 +105,7 @@ export const handler = async (event: {
 
 	// Write to shadow
 	if (geoLocation !== null) {
+		console.log(JSON.stringify(geoLocation))
 		const singleCellGeoLocation: Geolocation_14201 & LwM2MObjectInstance = {
 			ObjectID: LwM2MObjectID.Geolocation_14201,
 			ObjectVersion: '1.0',

@@ -6,10 +6,12 @@ import {
 import { Type } from '@sinclair/typebox'
 import { assert } from 'chai'
 import jsonata from 'jsonata'
-import pRetry from 'p-retry'
 import { check, objectMatching } from 'tsmatchers'
+import { doRequest } from '../lib/doRequest.js'
 
-let lastResponse: Record<string, unknown> | undefined = undefined
+let currentRequest: ReturnType<typeof doRequest> = {
+	match: async () => Promise.reject(new Error(`No request pending!`)),
+}
 
 export const steps: StepRunner<Record<string, any>>[] = [
 	regExpMatchedStep(
@@ -27,56 +29,28 @@ export const steps: StepRunner<Record<string, any>>[] = [
 				withPayload: Type.Optional(Type.Literal(' with')),
 			}),
 		},
-		async ({
-			match: { method, endpoint, withPayload },
-			log: { progress },
-			step,
-		}) => {
+		async ({ match: { method, endpoint, withPayload }, log, step }) => {
 			const url = new URL(endpoint)
 
 			const headers: HeadersInit = {
 				Accept: 'application/json',
 			}
 
-			progress(`> ${method} ${endpoint}`)
-			Object.entries(headers).forEach(([k, v]) => progress(`> ${k}: ${v}`))
 			let bodyAsString: string | undefined = undefined
 			if (withPayload !== undefined) {
-				const body = JSON.parse(codeBlockOrThrow(step).code)
-				bodyAsString = JSON.stringify(body)
+				bodyAsString = JSON.stringify(JSON.parse(codeBlockOrThrow(step).code))
 				headers['Content-type'] = 'application/json'
-				progress(`> ${body}`)
 			}
 
-			const res = await pRetry(
-				async () => {
-					const res = await fetch(url, {
-						method,
-						body: bodyAsString,
-						headers,
-					})
-					if (!res.ok) {
-						const error = await res.text()
-						progress(`<! ${error}`)
-						throw new Error(`Request failed: ${error}`)
-					}
-					return res
-				},
+			currentRequest = doRequest(
+				url,
 				{
-					retries: 5,
-					minTimeout: 1000,
-					maxTimeout: 2000,
-					onFailedAttempt: (error) => {
-						progress(`attempt #${error.attemptNumber}`)
-					},
+					method,
+					body: bodyAsString,
+					headers,
 				},
+				log,
 			)
-			progress(`< ${res.status} ${res.statusText}`)
-			for (const [k, v] of res.headers.entries()) {
-				progress(`< ${k}: ${v}`)
-			}
-			lastResponse = await res.json()
-			progress(`< ${JSON.stringify(lastResponse)}`)
 		},
 	),
 	regExpMatchedStep(
@@ -87,49 +61,50 @@ export const steps: StepRunner<Record<string, any>>[] = [
 			}),
 		},
 		async ({ match: { context } }) => {
-			if (
-				lastResponse === undefined ||
-				!('@context' in (lastResponse ?? {})) ||
-				typeof lastResponse['@context'] !== 'string'
-			)
-				throw new Error(`No @context present in last response!`)
-			assert.equal(
-				new URL(context).toString(),
-				new URL(lastResponse['@context']).toString(),
+			await currentRequest.match(async ({ body }) =>
+				check(body).is(
+					objectMatching({
+						'@context': context,
+					}),
+				),
 			)
 		},
 	),
 	regExpMatchedStep(
 		{
 			regExp:
-				/^I store `(?<exp>[^`]+)` of the last response into `(?<storeName>[^`]+)`$/,
+				/^I store `(?<exp>[^`]+)` of the last request response into `(?<storeName>[^`]+)`$/,
 			schema: Type.Object({
 				exp: Type.String(),
 				storeName: Type.String(),
 			}),
 		},
 		async ({ match: { exp, storeName }, log: { progress }, context }) => {
-			const e = jsonata(exp)
-			const result = await e.evaluate(lastResponse)
-			progress(result)
-			assert.notEqual(result, undefined)
-			context[storeName] = result
+			await currentRequest.match(async ({ body }) => {
+				const e = jsonata(exp)
+				const result = await e.evaluate(body)
+				progress(result)
+				assert.notEqual(result, undefined)
+				context[storeName] = result
+			})
 		},
 	),
 	regExpMatchedStep(
 		{
-			regExp: /^`(?<exp>[^`]+)` of the last response should match$/,
+			regExp: /^`(?<exp>[^`]+)` of the last request response should match$/,
 			schema: Type.Object({
 				exp: Type.String(),
 			}),
 		},
 		async ({ step, match: { exp }, log: { progress } }) => {
-			const e = jsonata(exp)
-			const result = await e.evaluate(lastResponse)
-			const expected = JSON.parse(codeBlockOrThrow(step).code)
-			progress(result)
-			progress(expected)
-			check(result).is(objectMatching(expected))
+			await currentRequest.match(async ({ body }) => {
+				const e = jsonata(exp)
+				const result = await e.evaluate(body)
+				const expected = JSON.parse(codeBlockOrThrow(step).code)
+				progress(result)
+				progress(expected)
+				check(result).is(objectMatching(expected))
+			})
 		},
 	),
 ]

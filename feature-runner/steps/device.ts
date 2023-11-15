@@ -42,7 +42,7 @@ const createDeviceForModel = ({
 			log: { progress },
 			context,
 		}) => {
-			const account = maybeAccount ?? 'acme'
+			const account = maybeAccount ?? 'nordic'
 			const fingerprint = `92b.${generateCode()}`
 			const id = randomUUID()
 
@@ -179,9 +179,9 @@ const publishDeviceMessage = (
 		async ({ match: { id, topic }, log: { progress, error }, step }) => {
 			const message = JSON.parse(codeBlockOrThrow(step).code)
 
-			const nRFCloudSettings = allAccountSettings['acme']?.nrfCloudSettings
+			const nRFCloudSettings = allAccountSettings['nordic']?.nrfCloudSettings
 			if (nRFCloudSettings === undefined) {
-				throw new Error('No default nRF Cloud settings (acme)')
+				throw new Error('No default nRF Cloud settings (nordic)')
 			}
 
 			progress(`Device id ${id} publishes to topic ${topic}`)

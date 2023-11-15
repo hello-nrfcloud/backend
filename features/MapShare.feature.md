@@ -39,7 +39,7 @@ When I `POST` to `${shareDeviceAPI}` with
 Then I should receive a
 `https://github.com/hello-nrfcloud/backend/map/share-device-request` response
 
-And I store `id` of the last response into `publicDeviceId`
+And I store `id` of the last request response into `publicDeviceId`
 
 ## Confirm the email
 
@@ -58,6 +58,7 @@ response
 
 ## The devices publishes data
 
+> Once a device has been shared, its data will be publicly available.  
 > Devices publish using their own protocol, and it is converted to LwM2M
 > according to the definitions in https://github.com/hello-nrfcloud/proto-lwm2m/
 
@@ -82,7 +83,8 @@ When I `GET` `${devicesAPI}`
 Then I should receive a `https://github.com/hello-nrfcloud/backend/map/devices`
 response
 
-And `$.devices[id="${publicDeviceId}"]` of the last response should match
+And `$.devices[id="${publicDeviceId}"]` of the last request response should
+match
 
 ```json
 {

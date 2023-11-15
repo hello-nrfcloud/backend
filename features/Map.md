@@ -1,4 +1,0 @@
-- [x] User share / confirm
-- [ ] Updates to LwM2M shadow
-- [ ] Single cell geolocation
-- [ ] Return state of public devices
