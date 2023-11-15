@@ -2,6 +2,7 @@ import { describe, it, mock } from 'node:test'
 import { doRequest } from './doRequest.js'
 import { assertCall } from '../../util/test/assertCall.js'
 import { check, objectMatching } from 'tsmatchers'
+import assert from 'node:assert/strict'
 
 void describe('doRequest()', () => {
 	void it('should execute a request', async () => {
@@ -57,7 +58,7 @@ void describe('doRequest()', () => {
 			1,
 		)
 		const assertFn = mock.fn(async ({ response }) =>
-			check(response.status).is(200),
+			assert.equal(response.status, 200),
 		)
 
 		const inFlight = doRequest(
