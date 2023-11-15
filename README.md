@@ -66,7 +66,7 @@ service to be enabled in the account's plan. Manage the account at
 
 ```bash
 npx cdk bootstrap # if this is the first time you use CDK in this account
-npx cdk deploy
+npx cdk deploy --all
 ```
 
 ## What messages MQTT bridge forwards
@@ -89,7 +89,7 @@ Follow the steps above to set up the MQTT bridge for another account, then
 trigger a deployment.
 
 ```bash
-npx cdk deploy
+npx cdk deploy --all
 ```
 
 List the configured accounts:

@@ -55,6 +55,7 @@ export class BackendStack extends Stack {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
 			healthCheckLayer: PackedLayer
+			mapLayer: PackedLayer
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles

@@ -8,7 +8,9 @@ import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
+import type { StackOutputs as MapBackendStackOutputs } from '../cdk/stacks/MapBackendStack.js'
 import {
+	MAP_BACKEND_STACK_NAME,
 	STACK_NAME,
 	TEST_RESOURCES_STACK_NAME,
 } from '../cdk/stacks/stackConfig.js'
@@ -27,6 +29,8 @@ import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from './steps/storage.js'
 import { websocketStepRunners } from './steps/websocket.js'
+import { steps as userSteps } from './steps/user.js'
+import { steps as RESTSteps } from './steps/REST.js'
 
 const ssm = new SSMClient({})
 
@@ -37,9 +41,13 @@ const ssm = new SSMClient({})
  * step runners and reporters.
  */
 
-const config = await stackOutput(
+const backendConfig = await stackOutput(
 	new CloudFormationClient({}),
 )<BackendStackOutputs>(STACK_NAME)
+
+const mapBackendConfig = await stackOutput(
+	new CloudFormationClient({}),
+)<MapBackendStackOutputs>(MAP_BACKEND_STACK_NAME)
 
 const testConfig = await stackOutput(
 	new CloudFormationClient({}),
@@ -67,7 +75,8 @@ const configSettings = getSettings({
 const db = new DynamoDBClient({})
 const timestream = new TimestreamQueryClient({})
 const writeTimestream = new TimestreamWriteClient({})
-const [DatabaseName, TableName] = config.historicalDataTableInfo.split('|')
+const [DatabaseName, TableName] =
+	backendConfig.historicalDataTableInfo.split('|')
 if (DatabaseName === undefined || TableName === undefined)
 	throw Error('historicalDataTableInfo is not configured')
 const storeTimestream = storeRecordsInTimestream({
@@ -123,7 +132,7 @@ const cleaners: (() => Promise<void>)[] = []
 
 const { steps: webSocketSteps, cleanup: websocketCleanup } =
 	websocketStepRunners({
-		websocketUri: config.webSocketURI,
+		websocketUri: backendConfig.webSocketURI,
 	})
 cleaners.push(websocketCleanup)
 
@@ -138,8 +147,9 @@ runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(
 		...deviceSteps(allAccountSettings, db, {
-			devicesTableFingerprintIndexName: config.devicesTableFingerprintIndexName,
-			devicesTable: config.devicesTableName,
+			devicesTableFingerprintIndexName:
+				backendConfig.devicesTableFingerprintIndexName,
+			devicesTable: backendConfig.devicesTableName,
 		}),
 	)
 	.addStepRunners(
@@ -155,13 +165,19 @@ runner
 		...historicalDataSteps({
 			timestream,
 			storeTimestream,
-			historicalDataTableInfo: config.historicalDataTableInfo,
+			historicalDataTableInfo: backendConfig.historicalDataTableInfo,
 		}),
 	)
 	.addStepRunners(...storageSteps())
 	.addStepRunners(...configSteps)
+	.addStepRunners(...userSteps)
+	.addStepRunners(...RESTSteps)
 
-const res = await runner.run({})
+const res = await runner.run({
+	shareDeviceAPI: new URL(mapBackendConfig.shareAPIURL),
+	confirmOwnershipAPI: new URL(mapBackendConfig.confirmOwnershipAPIURL),
+	devicesAPI: new URL(mapBackendConfig.devicesAPIURL),
+})
 
 await Promise.all(cleaners.map(async (fn) => fn()))
 

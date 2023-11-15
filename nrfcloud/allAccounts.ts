@@ -45,7 +45,11 @@ export const getAllAccountsSettings =
 						stackName,
 						account,
 					}),
-					nrfCloudSettings: await nRFCloudSettings({ ssm, stackName, account }),
+					nrfCloudSettings: await getnRFCloudSettings({
+						ssm,
+						stackName,
+						account,
+					})(),
 				},
 			}
 		}, Promise.resolve({}))
@@ -61,16 +65,4 @@ const healthCheckSettings = async ({
 	account: string
 }): Promise<HealthCheckSettings> => {
 	return await getHealthCheckSettings({ ssm, stackName, account })()
-}
-
-const nRFCloudSettings = async ({
-	ssm,
-	stackName,
-	account,
-}: {
-	ssm: SSMClient
-	stackName: string
-	account: string
-}): Promise<Settings> => {
-	return await getnRFCloudSettings({ ssm, stackName, account })()
 }

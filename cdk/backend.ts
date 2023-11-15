@@ -32,6 +32,7 @@ import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
 import { hashFolder } from '../docker/hashFolder.js'
 import { getCoAPHealthCheckSettings } from '../nrfcloud/coap-health-check.js'
 import { checkSumOfStrings } from './helpers/lambdas/checksumOfFiles.js'
+import { packMapBackendLambdas } from './packMapBackendLambdas.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -205,6 +206,7 @@ const nRFCloudAccounts = await getAllAccountsSettings({
 
 new BackendApp({
 	lambdaSources: await packBackendLambdas(),
+	MapBackendLambdasources: await packMapBackendLambdas(),
 	layer: await packLayer({
 		id: 'baseLayer',
 		dependencies: packagesInLayer,
@@ -212,6 +214,19 @@ new BackendApp({
 	healthCheckLayer: await packLayer({
 		id: 'healthCheckLayer',
 		dependencies: healthCheckPackagesInLayer,
+	}),
+	mapLayer: await packLayer({
+		id: 'mapLayer',
+		dependencies: [
+			'@nordicsemiconductor/from-env',
+			'@sinclair/typebox',
+			'@hello.nrfcloud.com/proto-lwm2m',
+			'@hello.nrfcloud.com/proto',
+			'@middy/core',
+			'id128',
+			'lodash-es',
+			'@nordicsemiconductor/random-words',
+		],
 	}),
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
@@ -231,4 +246,5 @@ new BackendApp({
 	}),
 	env: accountEnv,
 	isTest: process.env.IS_TEST === '1',
+	domain: 'hello.nrfcloud.com',
 })

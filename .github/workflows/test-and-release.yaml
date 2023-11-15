@@ -71,8 +71,8 @@ jobs:
       # During e2e test the MQTT bridge will connect to the AWS IoT broker
       - name: Fake nRF Cloud account device
         run: |
-          ./cli.sh fake-nrfcloud-account-device acme
-          ./cli.sh create-fake-nrfcloud-health-check-device acme
+          ./cli.sh fake-nrfcloud-account-device nordic
+          ./cli.sh create-fake-nrfcloud-health-check-device nordic
           ./cli.sh fake-nrfcloud-account-device elite
           ./cli.sh create-fake-nrfcloud-health-check-device elite
 
@@ -85,15 +85,15 @@ jobs:
         run: |
           npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never
           MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
-          ./cli.sh configure-nrfcloud-account acme apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
-          ./cli.sh configure-nrfcloud-account acme apiKey apiKey_Acme
+          ./cli.sh configure-nrfcloud-account nordic apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          ./cli.sh configure-nrfcloud-account nordic apiKey apiKey_Nordic
           ./cli.sh configure-nrfcloud-account elite apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
           ./cli.sh configure-nrfcloud-account elite apiKey apiKey_Elite
 
       - name: Deploy solution stack
         env:
           IS_TEST: 1
-        run: npx cdk deploy --require-approval never
+        run: npx cdk deploy --all --require-approval never
 
       - name: Run End-to-End Tests
         run: npm run test:e2e
@@ -128,11 +128,11 @@ jobs:
         if: always()
         run: |
           ./cli.sh logs -X
-          npx cdk destroy -f
+          npx cdk destroy --all -f
           npx cdk --app 'npx tsx --no-warnings cdk/test-resources.ts' destroy -f
-          ./cli.sh fake-nrfcloud-account-device acme --remove
-          ./cli.sh configure-nrfcloud-account acme apiEndpoint -X
-          ./cli.sh configure-nrfcloud-account acme apiKey -X
+          ./cli.sh fake-nrfcloud-account-device nordic --remove
+          ./cli.sh configure-nrfcloud-account nordic apiEndpoint -X
+          ./cli.sh configure-nrfcloud-account nordic apiKey -X
           ./cli.sh fake-nrfcloud-account-device elite --remove
           ./cli.sh configure-nrfcloud-account elite apiEndpoint -X
           ./cli.sh configure-nrfcloud-account elite apiKey -X
