@@ -193,13 +193,15 @@ const h = async (): Promise<void> => {
 					validate: async (message) => {
 						try {
 							const data = store.get(account)
+							if (data === undefined) return ValidateResponse.skip
+
 							const messageObj = JSON.parse(message)
 							log.debug(`ws incoming message`, { messageObj })
 							const expectedMessage = {
 								'@context':
 									'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/airTemperature',
-								ts: data?.ts,
-								c: data?.temperature,
+								ts: data.ts,
+								c: data.temperature,
 							}
 
 							if (messageObj['@context'] !== expectedMessage['@context'])
@@ -208,7 +210,7 @@ const h = async (): Promise<void> => {
 							track(
 								`receivingMessageDuration`,
 								MetricUnits.Seconds,
-								(Date.now() - (data?.coapTs ?? data?.ts ?? 0)) / 1000,
+								(Date.now() - (data.coapTs ?? data.ts)) / 1000,
 							)
 							assert.deepEqual(messageObj, expectedMessage)
 							return ValidateResponse.valid
