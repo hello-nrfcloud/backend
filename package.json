@@ -130,7 +130,7 @@
     "@nordicsemiconductor/from-env": "2.0.0",
     "@nordicsemiconductor/random-words": "8.0.0",
     "@nordicsemiconductor/timestream-helpers": "6.0.1",
-    "@sinclair/typebox": "0.31.27",
+    "@sinclair/typebox": "0.31.28",
     "ajv": "8.12.0",
     "lodash-es": "4.17.21",
     "p-limit": "5.0.0",
