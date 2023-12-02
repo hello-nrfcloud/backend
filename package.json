@@ -72,7 +72,7 @@
     "check-node-version": "4.2.1",
     "commander": "11.1.0",
     "constructs": "10.3.0",
-    "eslint-config-prettier": "9.0.0",
+    "eslint-config-prettier": "9.1.0",
     "eslint-plugin-import": "2.29.0",
     "eslint-plugin-prefer-arrow": "1.2.3",
     "eslint-plugin-unicorn": "49.0.0",
