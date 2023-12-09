@@ -88,7 +88,7 @@
     "tsmatchers": "5.0.2",
     "tsx": "4.6.2",
     "typescript": "5.3.3",
-    "ws": "8.14.2",
+    "ws": "8.15.0",
     "yazl": "2.5.1"
   },
   "lint-staged": {
