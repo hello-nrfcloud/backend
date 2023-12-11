@@ -27,7 +27,7 @@ export const handler = async (
 		event.queryStringParameters !== undefined
 			? new URLSearchParams(
 					event.queryStringParameters as Record<string, string>,
-			  )
+				)
 			: undefined
 	const resource = event.path.replace(/^\//, '')
 	const pathWithQuery = `${resource}${
@@ -61,7 +61,7 @@ export const handler = async (
 								(o, [k, v]) => ({ ...o, [k]: v }),
 								{},
 							),
-					  },
+						},
 			body: {
 				S: event.body ?? '{}',
 			},
@@ -104,7 +104,7 @@ export const handler = async (
 										{},
 									),
 								),
-						  },
+							},
 				body: {
 					S: event.body ?? '{}',
 				},
@@ -146,7 +146,7 @@ export const handler = async (
 					event.queryStringParameters,
 					objItem.queryParams,
 					log,
-			  )
+				)
 			: true
 		if (matchedQueryParams === false) continue
 
@@ -176,7 +176,7 @@ export const handler = async (
 				? {
 						...headers,
 						'Content-Type': 'application/octet-stream',
-				  }
+					}
 				: headers,
 			body: isBinary
 				? /* body is HEX encoded */ Buffer.from(body, 'hex').toString('base64')
