@@ -76,7 +76,7 @@ export const handler = async (): Promise<APIGatewayProxyResultV2> => {
 										: shadowToObjects(
 												JSON.parse(decoder.decode(shadow.payload)).state
 													.reported,
-										  ),
+											),
 							}
 						} catch (err) {
 							if (err instanceof ResourceNotFoundException) {

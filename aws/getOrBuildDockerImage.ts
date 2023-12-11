@@ -107,7 +107,7 @@ export const getOrBuildDockerImage =
 					? Object.entries(buildArgs).reduce(
 							(p, [key, value]) => p.concat(['--build-arg', `${key}=${value}`]),
 							[] as string[],
-					  )
+						)
 					: []
 			await run({
 				command: 'docker',
