@@ -17,13 +17,6 @@ import {
 import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import {
-	Scope,
-	deleteSettings,
-	getSettings,
-	putSettings,
-} from '../util/settings.js'
-import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
@@ -56,21 +49,6 @@ const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
 })()
-const configWriter = putSettings({
-	ssm,
-	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
-})
-const configRemover = deleteSettings({
-	ssm,
-	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
-})
-const configSettings = getSettings({
-	ssm,
-	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
-})
 
 const db = new DynamoDBClient({})
 const timestream = new TimestreamQueryClient({})
@@ -136,13 +114,6 @@ const { steps: webSocketSteps, cleanup: websocketCleanup } =
 	})
 cleaners.push(websocketCleanup)
 
-const { steps: configSteps, cleanup: configCleanup } = configStepRunners({
-	configWriter,
-	configRemover,
-	configSettings,
-})
-cleaners.push(configCleanup)
-
 runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(
@@ -155,8 +126,6 @@ runner
 	.addStepRunners(
 		...mocknRFCloudSteps({
 			db,
-			ssm,
-			stackName: STACK_NAME,
 			responsesTableName: testConfig.responsesTableName,
 			requestsTableName: testConfig.requestsTableName,
 		}),
@@ -169,7 +138,6 @@ runner
 		}),
 	)
 	.addStepRunners(...storageSteps())
-	.addStepRunners(...configSteps)
 	.addStepRunners(...userSteps)
 	.addStepRunners(...RESTSteps)
 
