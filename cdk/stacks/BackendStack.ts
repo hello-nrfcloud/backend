@@ -123,12 +123,7 @@ export class BackendStack extends Stack {
 		const websocketConnectionsTable = new WebsocketConnectionsTable(this)
 		const websocketEventBus = new WebsocketEventBus(this)
 
-		const deviceShadow = new DeviceShadow(this, {
-			websocketEventBus,
-			websocketConnectionsTable,
-			layers: lambdaLayers,
-			lambdaSources,
-		})
+		const deviceShadow = new DeviceShadow(this)
 
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,

@@ -13,14 +13,6 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'publishToWebsocketClients',
 		'lambda/publishToWebsocketClients.ts',
 	),
-	prepareDeviceShadow: await packLambdaFromPath(
-		'prepareDeviceShadow',
-		'lambda/prepareDeviceShadow.ts',
-	),
-	fetchDeviceShadow: await packLambdaFromPath(
-		'fetchDeviceShadow',
-		'lambda/fetchDeviceShadow.ts',
-	),
 	onDeviceMessage: await packLambdaFromPath(
 		'onDeviceMessage',
 		'lambda/onDeviceMessage.ts',

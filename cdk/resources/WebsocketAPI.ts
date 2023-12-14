@@ -12,11 +12,11 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda'
 import { ApiLogging } from './ApiLogging.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
-import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable'
 import type { WebsocketEventBus } from './WebsocketEventBus'
+import type { DeviceShadow } from './DeviceShadow'
 
 export const integrationUri = (
 	parent: Construct,
@@ -39,9 +39,9 @@ export class WebsocketAPI extends Construct {
 			lambdaSources,
 			layers,
 			lastSeen,
-			deviceShadow,
 			eventBus,
 			connectionsTable,
+			deviceShadow,
 		}: {
 			deviceStorage: DeviceStorage
 			deviceShadow: DeviceShadow
