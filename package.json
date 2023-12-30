@@ -126,7 +126,7 @@
     "@aws-lambda-powertools/metrics": "1.17.0",
     "@hello.nrfcloud.com/proto": "5.5.24",
     "@hello.nrfcloud.com/proto-lwm2m": "2.2.1",
-    "@middy/core": "5.2.0",
+    "@middy/core": "5.2.1",
     "@nordicsemiconductor/from-env": "3.0.0",
     "@nordicsemiconductor/random-words": "8.0.0",
     "@nordicsemiconductor/timestream-helpers": "6.0.1",
