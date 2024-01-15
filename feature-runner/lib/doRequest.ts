@@ -19,8 +19,8 @@ export const doRequest = (
 		const endpoint = url.toString()
 		const { method, headers, body } = request
 		logger?.progress(`> ${method} ${endpoint}`)
-		Object.entries(headers ?? {}).forEach(
-			([k, v]) => logger?.progress(`> ${k}: ${v}`),
+		Object.entries(headers ?? {}).forEach(([k, v]) =>
+			logger?.progress(`> ${k}: ${v}`),
 		)
 		if (body !== undefined) logger?.progress(`> ${body}`)
 
