@@ -1,6 +1,6 @@
 import { ProblemDetail } from '@hello.nrfcloud.com/proto/hello'
 import { type Static, type TSchema } from '@sinclair/typebox'
-import type { ErrorObject } from 'ajv'
+import type { ValueError } from '@sinclair/typebox/compiler'
 import { toBadRequest } from './toBadRequest.js'
 
 /**
@@ -11,7 +11,7 @@ export const validateRequest = <Schema extends TSchema>(
 	validator: (payload: Record<string, any>) =>
 		| { value: Static<Schema> }
 		| {
-				errors: ErrorObject[]
+				errors: ValueError[]
 		  },
 ):
 	| {

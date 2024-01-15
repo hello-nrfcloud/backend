@@ -52,7 +52,6 @@ const packagesInLayer: string[] = [
 	'@nordicsemiconductor/from-env',
 	'@nordicsemiconductor/timestream-helpers',
 	'@sinclair/typebox',
-	'ajv',
 	'@hello.nrfcloud.com/proto',
 	'p-limit',
 	'@aws-lambda-powertools/metrics',

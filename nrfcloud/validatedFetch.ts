@@ -1,12 +1,12 @@
 import { type Static, type TObject } from '@sinclair/typebox'
 import { slashless } from '../util/slashless.js'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import type { ErrorObject } from 'ajv'
+import type { ValueError } from '@sinclair/typebox/compiler'
 
 export class ValidationError extends Error {
-	public errors: ErrorObject[]
+	public errors: ValueError[]
 	public readonly isValidationError = true
-	constructor(errors: ErrorObject[]) {
+	constructor(errors: ValueError[]) {
 		super(`Validation errors`)
 		this.name = 'ValidationError'
 		this.errors = errors
