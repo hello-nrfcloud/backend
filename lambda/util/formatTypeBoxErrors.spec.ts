@@ -19,6 +19,6 @@ void describe('formatTypeBoxErrors()', async () =>
 					}) as any
 				).errors,
 			),
-			`/email: Expected string to match '.+@.+'`,
+			`/email: Expected string to match regular expression`,
 		)
 	}))
