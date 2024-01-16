@@ -13,6 +13,7 @@ import { SESClient } from '@aws-sdk/client-ses'
 import { sendOwnershipVerificationEmail } from './sendOwnershipVerificationEmail.js'
 import { aResponse } from '../util/aResponse.js'
 import { aProblem } from '../util/aProblem.js'
+import { DeviceId } from './typebox.js'
 
 const { publicDevicesTableName, fromEmail, isTestString } = fromEnv({
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
@@ -34,10 +35,7 @@ const sendEmail = sendOwnershipVerificationEmail(ses, fromEmail)
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
-		deviceId: Type.RegExp(/^[a-zA-Z0-9:_-]{1,128}$/, {
-			title: 'Device ID',
-			description: 'Must follow the AWS IoT limitations for Thing names.',
-		}),
+		deviceId: DeviceId,
 		model: Type.Union(
 			Object.keys(models).map((s) => Type.Literal(s)),
 			{

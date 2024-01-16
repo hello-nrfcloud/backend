@@ -82,7 +82,7 @@ Then I should receive a `https://github.com/hello-nrfcloud/backend/map/devices`
 response
 
 And `$.devices[id="${publicDeviceId}"].state[ObjectID=14201]` of the last
-request response should match
+response should match
 
 ```json
 {

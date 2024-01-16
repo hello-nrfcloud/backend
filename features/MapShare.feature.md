@@ -39,7 +39,7 @@ When I `POST` to `${shareDeviceAPI}` with
 Then I should receive a
 `https://github.com/hello-nrfcloud/backend/map/share-device-request` response
 
-And I store `id` of the last request response into `publicDeviceId`
+And I store `id` of the last response into `publicDeviceId`
 
 ## Confirm the email
 
@@ -78,13 +78,12 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 }
 ```
 
-When I `GET` `${devicesAPI}`
+When I `GET` `${devicesAPI}?deviceId=${fingerprint_deviceId}`
 
 Then I should receive a `https://github.com/hello-nrfcloud/backend/map/devices`
 response
 
-And `$.devices[id="${publicDeviceId}"]` of the last request response should
-match
+And `$.devices[id="${publicDeviceId}"]` of the last response should match
 
 ```json
 {

@@ -7,6 +7,7 @@ import { validateWithTypeBox } from '../../util/validateWithTypeBox.js'
 import { formatTypeBoxErrors } from '../util/formatTypeBoxErrors.js'
 import { aResponse } from '../util/aResponse.js'
 import { aProblem } from '../util/aProblem.js'
+import { DeviceId } from './typebox.js'
 
 const { publicDevicesTableName } = fromEnv({
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
@@ -21,10 +22,7 @@ const publicDevice = publicDevicesRepo({
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
-		id: Type.RegExp(/^[a-zA-Z0-9:_-]{1,128}$/, {
-			title: 'Device ID',
-			description: 'The device ID of the shared device.',
-		}),
+		id: DeviceId,
 		token: Type.RegExp(/^[0-9A-Z]{6}$/, {
 			title: 'Ownership Confirmation Token',
 			description: 'The 6 character token to confirm the ownership.',

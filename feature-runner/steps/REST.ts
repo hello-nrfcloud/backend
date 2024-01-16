@@ -73,7 +73,7 @@ export const steps: StepRunner<Record<string, any>>[] = [
 	regExpMatchedStep(
 		{
 			regExp:
-				/^I store `(?<exp>[^`]+)` of the last request response into `(?<storeName>[^`]+)`$/,
+				/^I store `(?<exp>[^`]+)` of the last response into `(?<storeName>[^`]+)`$/,
 			schema: Type.Object({
 				exp: Type.String(),
 				storeName: Type.String(),
@@ -91,19 +91,23 @@ export const steps: StepRunner<Record<string, any>>[] = [
 	),
 	regExpMatchedStep(
 		{
-			regExp: /^`(?<exp>[^`]+)` of the last request response should match$/,
+			regExp: /^(?:`(?<exp>[^`]+)` of )?the last response should match$/,
 			schema: Type.Object({
-				exp: Type.String(),
+				exp: Type.Optional(Type.String()),
 			}),
 		},
 		async ({ step, match: { exp }, log: { progress } }) => {
 			await currentRequest.match(async ({ body }) => {
-				const e = jsonata(exp)
-				const result = await e.evaluate(body)
 				const expected = JSON.parse(codeBlockOrThrow(step).code)
-				progress(result)
 				progress(expected)
-				check(result).is(objectMatching(expected))
+				if (exp !== undefined) {
+					const e = jsonata(exp)
+					const result = await e.evaluate(body)
+					progress(result)
+					check(result).is(objectMatching(expected))
+				} else {
+					check(body).is(objectMatching(expected))
+				}
 			})
 		},
 	),
