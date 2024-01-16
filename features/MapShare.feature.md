@@ -101,3 +101,32 @@ And `$.devices[id="${publicDeviceId}"]` of the last response should match
   ]
 }
 ```
+
+## Access devices using their public ID
+
+> The public id will be shown on the map, and users can also provide a list of
+> public ids to select a set of devices they are interested in
+
+When I `GET` `${devicesAPI}?ids=${publicDeviceId}`
+
+Then I should receive a `https://github.com/hello-nrfcloud/backend/map/devices`
+response
+
+And `$.devices[id="${publicDeviceId}"]` of the last response should match
+
+```json
+{
+  "id": "${publicDeviceId}",
+  "model": "PCA20035+solar",
+  "state": [
+    {
+      "ObjectID": 14210,
+      "ObjectVersion": "1.0",
+      "Resources": {
+        "0": 3.123457,
+        "99": "${tsISO}"
+      }
+    }
+  ]
+}
+```

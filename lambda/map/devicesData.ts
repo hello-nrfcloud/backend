@@ -2,6 +2,7 @@ import {
 	DynamoDBClient,
 	GetItemCommand,
 	QueryCommand,
+	type QueryCommandInput,
 } from '@aws-sdk/client-dynamodb'
 import {
 	GetThingShadowCommand,
@@ -20,7 +21,9 @@ import { shadowToObjects } from '../../lwm2m/shadowToObjects.js'
 import { consentDurationMS } from '../../map/consentDuration.js'
 import { validateWithTypeBox } from '../../util/validateWithTypeBox.js'
 import { Type } from '@sinclair/typebox'
-import { DeviceId } from './typebox.js'
+import { DeviceId, PublicDeviceId } from './typebox.js'
+import { aProblem } from '../util/aProblem.js'
+import { formatTypeBoxErrors } from '../util/formatTypeBoxErrors.js'
 
 const { publicDevicesTableName, publicDevicesTableModelOwnerConfirmedIndex } =
 	fromEnv({
@@ -35,8 +38,10 @@ const decoder = new TextDecoder()
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
-		// Allows to search by deviceId (the IoT ThingName)
+		// Allows to search by the secret IoT ThingName
 		deviceId: Type.Optional(DeviceId),
+		// Allows to search by the public device id
+		ids: Type.Optional(Type.Array(PublicDeviceId)),
 	}),
 )
 
@@ -48,12 +53,23 @@ export const handler = async (
 	const devicesToFetch: { id: string; model: string }[] = []
 	const minConfirmTime = Date.now() - consentDurationMS
 
-	const q = validateInput(event.queryStringParameters ?? {})
-	if ('value' in q && q.value.deviceId !== undefined) {
+	const qs: Record<string, any> = event.queryStringParameters ?? {}
+	if ('ids' in qs) qs.ids = qs.ids?.split(',') ?? []
+	const maybeValidQuery = validateInput(qs)
+
+	if ('errors' in maybeValidQuery) {
+		return aProblem({
+			title: 'Validation failed',
+			status: 400,
+			detail: formatTypeBoxErrors(maybeValidQuery.errors),
+		})
+	}
+
+	if (maybeValidQuery.value.deviceId !== undefined) {
 		const { Item } = await db.send(
 			new GetItemCommand({
 				TableName: publicDevicesTableName,
-				Key: { secret__deviceId: { S: q.value.deviceId } },
+				Key: { secret__deviceId: { S: maybeValidQuery.value.deviceId } },
 				ExpressionAttributeNames: {
 					'#id': 'id',
 					'#model': 'model',
@@ -75,27 +91,38 @@ export const handler = async (
 		}
 	} else {
 		for (const model of Object.keys(models)) {
-			const { Items } = await db.send(
-				new QueryCommand({
-					TableName: publicDevicesTableName,
-					IndexName: publicDevicesTableModelOwnerConfirmedIndex,
-					KeyConditionExpression:
-						'#model = :model AND #ownerConfirmed > :minConfirmTime',
-					ExpressionAttributeNames: {
-						'#id': 'id',
-						'#model': 'model',
-						'#ownerConfirmed': 'ownerConfirmed',
+			const queryInput: QueryCommandInput = {
+				TableName: publicDevicesTableName,
+				IndexName: publicDevicesTableModelOwnerConfirmedIndex,
+				KeyConditionExpression:
+					'#model = :model AND #ownerConfirmed > :minConfirmTime',
+				ExpressionAttributeNames: {
+					'#id': 'id',
+					'#model': 'model',
+					'#ownerConfirmed': 'ownerConfirmed',
+				},
+				ExpressionAttributeValues: {
+					':model': { S: model },
+					':minConfirmTime': {
+						S: new Date(minConfirmTime).toISOString(),
 					},
-					ExpressionAttributeValues: {
-						':model': { S: model },
-						':minConfirmTime': {
-							S: new Date(minConfirmTime).toISOString(),
-						},
-					},
-					ProjectionExpression: '#id',
-				}),
-			)
+				},
+				ProjectionExpression: '#id',
+			}
 
+			if (maybeValidQuery.value.ids !== undefined) {
+				queryInput.ExpressionAttributeValues = {
+					...(queryInput.ExpressionAttributeValues ?? {}),
+					':ids': {
+						SS: maybeValidQuery.value.ids,
+					},
+				}
+				queryInput.FilterExpression = 'contains(:ids, #id) '
+			}
+
+			console.log(JSON.stringify({ queryInput }))
+
+			const { Items } = await db.send(new QueryCommand(queryInput))
 			devicesToFetch.push(
 				...(Items ?? [])
 					.map((item) => unmarshall(item) as { id: string })
@@ -128,7 +155,7 @@ export const handler = async (
 					}
 				} catch (err) {
 					if (err instanceof ResourceNotFoundException) {
-						console.debug(`[id]: no shadow found.`)
+						console.debug(`[${id}]: no shadow found.`)
 					} else {
 						console.error(err)
 					}
