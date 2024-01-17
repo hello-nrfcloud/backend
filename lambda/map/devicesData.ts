@@ -21,9 +21,10 @@ import { shadowToObjects } from '../../lwm2m/shadowToObjects.js'
 import { consentDurationMS } from '../../map/consentDuration.js'
 import { validateWithTypeBox } from '../../util/validateWithTypeBox.js'
 import { Type } from '@sinclair/typebox'
-import { DeviceId, PublicDeviceId } from './typebox.js'
 import { aProblem } from '../util/aProblem.js'
 import { formatTypeBoxErrors } from '../util/formatTypeBoxErrors.js'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
+import { DeviceId, PublicDeviceId } from '@hello.nrfcloud.com/proto/hello/map'
 
 const { publicDevicesTableName, publicDevicesTableModelOwnerConfirmedIndex } =
 	fromEnv({
@@ -170,9 +171,7 @@ export const handler = async (
 	return aResponse(
 		200,
 		{
-			'@context': new URL(
-				`https://github.com/hello-nrfcloud/backend/map/devices`,
-			),
+			'@context': Context.map.devices,
 			devices,
 		},
 		{

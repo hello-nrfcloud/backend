@@ -7,7 +7,8 @@ import { validateWithTypeBox } from '../../util/validateWithTypeBox.js'
 import { formatTypeBoxErrors } from '../util/formatTypeBoxErrors.js'
 import { aResponse } from '../util/aResponse.js'
 import { aProblem } from '../util/aProblem.js'
-import { DeviceId } from './typebox.js'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
+import { DeviceId } from '@hello.nrfcloud.com/proto/hello/map'
 
 const { publicDevicesTableName } = fromEnv({
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
@@ -61,9 +62,7 @@ export const handler = async (
 	console.debug(JSON.stringify({ id }))
 
 	return aResponse(200, {
-		'@context': new URL(
-			`https://github.com/hello-nrfcloud/backend/map/share-device-ownership-confirmed`,
-		),
+		'@context': Context.map.shareDevice.ownershipConfirmed,
 		id,
 	})
 }

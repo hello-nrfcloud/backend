@@ -5,7 +5,6 @@ import {
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import lambda, { type APIGatewayProxyResultV2 } from 'aws-lambda'
 import { Type } from '@sinclair/typebox'
-import { models } from '@hello.nrfcloud.com/proto-lwm2m'
 import { publicDevicesRepo } from '../../map/publicDevicesRepo.js'
 import { validateWithTypeBox } from '../../util/validateWithTypeBox.js'
 import { formatTypeBoxErrors } from '../util/formatTypeBoxErrors.js'
@@ -13,7 +12,8 @@ import { SESClient } from '@aws-sdk/client-ses'
 import { sendOwnershipVerificationEmail } from './sendOwnershipVerificationEmail.js'
 import { aResponse } from '../util/aResponse.js'
 import { aProblem } from '../util/aProblem.js'
-import { DeviceId } from './typebox.js'
+import { DeviceId, Model } from '@hello.nrfcloud.com/proto/hello/map'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
 
 const { publicDevicesTableName, fromEmail, isTestString } = fromEnv({
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
@@ -36,14 +36,7 @@ const sendEmail = sendOwnershipVerificationEmail(ses, fromEmail)
 const validateInput = validateWithTypeBox(
 	Type.Object({
 		deviceId: DeviceId,
-		model: Type.Union(
-			Object.keys(models).map((s) => Type.Literal(s)),
-			{
-				title: 'Model',
-				description:
-					'Must be one of the models defined in @hello.nrfcloud.com/proto-lwm2m',
-			},
-		),
+		model: Model,
 		email: Type.RegExp(/.+@.+/, {
 			title: 'Email',
 			description:
@@ -98,9 +91,7 @@ export const handler = async (
 	console.debug(JSON.stringify({ deviceId, model, email }))
 
 	return aResponse(200, {
-		'@context': new URL(
-			`https://github.com/hello-nrfcloud/backend/map/share-device-request`,
-		),
+		'@context': Context.map.shareDevice.request,
 		id: maybePublished.publicDevice.id,
 	})
 }
