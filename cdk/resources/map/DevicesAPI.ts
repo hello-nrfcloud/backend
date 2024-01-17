@@ -54,10 +54,6 @@ export class DevicesAPI extends Construct {
 		publicDevices.publicDevicesTable.grantReadData(devicesFn)
 		this.devicesURL = devicesFn.addFunctionUrl({
 			authType: Lambda.FunctionUrlAuthType.NONE,
-			cors: {
-				allowedOrigins: ['*'],
-				allowedMethods: [Lambda.HttpMethod.POST],
-			},
 		})
 	}
 }

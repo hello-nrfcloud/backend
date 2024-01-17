@@ -11,6 +11,7 @@ import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
+import { corsHeaders } from '../util/corsHeaders.js'
 
 const { publicDevicesTableName } = fromEnv({
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
@@ -39,9 +40,16 @@ export const handler = async (
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify(event))
 
+	const cors = corsHeaders(event, ['POST'])
+	if (event.requestContext.http.method === 'OPTIONS')
+		return {
+			statusCode: 200,
+			headers: cors,
+		}
+
 	const maybeValidInput = validateInput(JSON.parse(event.body ?? '{}'))
 	if ('errors' in maybeValidInput) {
-		return aProblem(event, {
+		return aProblem(cors, {
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidInput.errors),
@@ -55,7 +63,7 @@ export const handler = async (
 		ownershipConfirmationToken: token,
 	})
 	if ('error' in maybeConfirmed) {
-		return aProblem(event, {
+		return aProblem(cors, {
 			title: `Failed to confirm your ownership: ${maybeConfirmed.error.message}`,
 			status: 400,
 		})
@@ -63,7 +71,7 @@ export const handler = async (
 
 	console.debug(JSON.stringify({ id }))
 
-	return aResponse(event, 200, {
+	return aResponse(cors, 200, {
 		'@context': Context.map.shareDevice.ownershipConfirmed,
 		id,
 	})

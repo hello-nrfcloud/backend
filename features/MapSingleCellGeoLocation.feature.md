@@ -76,7 +76,7 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 }
 ```
 
-When I `GET` `${devicesAPI}`
+When I `POST` to `${devicesAPI}`
 
 Then I should receive a `https://github.com/hello-nrfcloud/proto/map/devices`
 response

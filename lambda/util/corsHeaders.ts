@@ -13,21 +13,24 @@ const origin = (event: { headers: APIGatewayProxyEventHeaders }): string => {
 	return defaultOrigin
 }
 
-export const corsHeaders = ({
-	headers,
-}: {
-	headers: APIGatewayProxyEventHeaders
-}): {
+export const corsHeaders = (
+	{
+		headers,
+	}: {
+		headers: APIGatewayProxyEventHeaders
+	},
+	allowedMethods = ['PUT', 'DELETE', 'POST', 'GET', 'PATCH'],
+): {
 	'Access-Control-Allow-Credentials': true
 	'Access-Control-Allow-Headers': 'content-type, accept, if-match'
-	'Access-Control-Allow-Methods': 'PUT, DELETE, POST, GET, PATCH'
+	'Access-Control-Allow-Methods': string
 	'Access-Control-Allow-Origin': string
 	'Access-Control-Max-Age': 600
 	Vary: 'Origin'
 } => ({
 	'Access-Control-Allow-Credentials': true,
 	'Access-Control-Allow-Origin': origin({ headers }),
-	'Access-Control-Allow-Methods': 'PUT, DELETE, POST, GET, PATCH',
+	'Access-Control-Allow-Methods': allowedMethods.join(', '),
 	'Access-Control-Allow-Headers': 'content-type, accept, if-match',
 	'Access-Control-Max-Age': 600,
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin#cors_and_caching

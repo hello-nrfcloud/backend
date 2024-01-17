@@ -2,16 +2,17 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { aProblem } from './aProblem.js'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
+import { corsHeaders } from './corsHeaders.js'
 
 void describe('aProblem()', () => {
 	void it('should return a problem response', () =>
 		assert.deepEqual(
 			aProblem(
-				{
+				corsHeaders({
 					headers: {
 						origin: 'https://hello.nrfcloud.com',
 					},
-				},
+				}),
 				{
 					title: `A Conflict!`,
 					status: 409,

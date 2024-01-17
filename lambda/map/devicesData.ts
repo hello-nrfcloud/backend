@@ -27,6 +27,7 @@ import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
+import { corsHeaders } from '../util/corsHeaders.js'
 
 const { publicDevicesTableName, publicDevicesTableModelOwnerConfirmedIndex } =
 	fromEnv({
@@ -53,6 +54,13 @@ export const handler = async (
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify({ event }))
 
+	const cors = corsHeaders(event, ['POST'])
+	if (event.requestContext.http.method === 'OPTIONS')
+		return {
+			statusCode: 200,
+			headers: cors,
+		}
+
 	const devicesToFetch: { id: string; model: string }[] = []
 	const minConfirmTime = Date.now() - consentDurationMS
 
@@ -61,7 +69,7 @@ export const handler = async (
 	const maybeValidQuery = validateInput(qs)
 
 	if ('errors' in maybeValidQuery) {
-		return aProblem(event, {
+		return aProblem(cors, {
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidQuery.errors),
@@ -171,7 +179,7 @@ export const handler = async (
 	console.log(JSON.stringify(devices))
 
 	return aResponse(
-		event,
+		cors,
 		200,
 		{
 			'@context': Context.map.devices,

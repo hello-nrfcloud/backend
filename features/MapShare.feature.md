@@ -78,7 +78,7 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 }
 ```
 
-When I `GET` `${devicesAPI}?deviceId=${fingerprint_deviceId}`
+When I `POST` to `${devicesAPI}?deviceId=${fingerprint_deviceId}`
 
 Then I should receive a `https://github.com/hello-nrfcloud/proto/map/devices`
 response
@@ -107,7 +107,7 @@ And `$.devices[id="${publicDeviceId}"]` of the last response should match
 > The public id will be shown on the map, and users can also provide a list of
 > public ids to select a set of devices they are interested in
 
-When I `GET` `${devicesAPI}?ids=${publicDeviceId}`
+When I `POST` to `${devicesAPI}?ids=${publicDeviceId}`
 
 Then I should receive a `https://github.com/hello-nrfcloud/proto/map/devices`
 response

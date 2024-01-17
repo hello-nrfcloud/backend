@@ -67,10 +67,6 @@ export class ShareAPI extends Construct {
 		publicDevices.publicDevicesTable.grantWriteData(shareFn)
 		this.shareURL = shareFn.addFunctionUrl({
 			authType: Lambda.FunctionUrlAuthType.NONE,
-			cors: {
-				allowedOrigins: ['*'],
-				allowedMethods: [Lambda.HttpMethod.POST],
-			},
 		})
 
 		const confirmOwnershipFn = new Lambda.Function(this, 'confirmOwnershipFn', {
@@ -93,10 +89,6 @@ export class ShareAPI extends Construct {
 		publicDevices.publicDevicesTable.grantReadWriteData(confirmOwnershipFn)
 		this.confirmOwnershipURL = confirmOwnershipFn.addFunctionUrl({
 			authType: Lambda.FunctionUrlAuthType.NONE,
-			cors: {
-				allowedOrigins: ['*'],
-				allowedMethods: [Lambda.HttpMethod.POST],
-			},
 		})
 	}
 }
