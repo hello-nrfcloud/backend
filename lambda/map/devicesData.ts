@@ -61,7 +61,7 @@ export const handler = async (
 	const maybeValidQuery = validateInput(qs)
 
 	if ('errors' in maybeValidQuery) {
-		return aProblem({
+		return aProblem(event, {
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidQuery.errors),
@@ -171,6 +171,7 @@ export const handler = async (
 	console.log(JSON.stringify(devices))
 
 	return aResponse(
+		event,
 		200,
 		{
 			'@context': Context.map.devices,

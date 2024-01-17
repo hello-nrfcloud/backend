@@ -41,7 +41,7 @@ export const handler = async (
 
 	const maybeValidInput = validateInput(JSON.parse(event.body ?? '{}'))
 	if ('errors' in maybeValidInput) {
-		return aProblem({
+		return aProblem(event, {
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidInput.errors),
@@ -55,7 +55,7 @@ export const handler = async (
 		ownershipConfirmationToken: token,
 	})
 	if ('error' in maybeConfirmed) {
-		return aProblem({
+		return aProblem(event, {
 			title: `Failed to confirm your ownership: ${maybeConfirmed.error.message}`,
 			status: 400,
 		})
@@ -63,7 +63,7 @@ export const handler = async (
 
 	console.debug(JSON.stringify({ id }))
 
-	return aResponse(200, {
+	return aResponse(event, 200, {
 		'@context': Context.map.shareDevice.ownershipConfirmed,
 		id,
 	})

@@ -54,7 +54,7 @@ export const handler = async (
 
 	const maybeValidInput = validateInput(JSON.parse(event.body ?? '{}'))
 	if ('errors' in maybeValidInput) {
-		return aProblem({
+		return aProblem(event, {
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidInput.errors),
@@ -71,13 +71,13 @@ export const handler = async (
 	})
 	if ('error' in maybePublished) {
 		if (maybePublished.error instanceof ConditionalCheckFailedException) {
-			return aProblem({
+			return aProblem(event, {
 				title: `Failed to share device: ${maybePublished.error.message}`,
 				status: 409,
 			})
 		}
 		console.error(maybePublished.error)
-		return aProblem({
+		return aProblem(event, {
 			title: `Failed to share device: ${maybePublished.error.message}`,
 			status: 500,
 		})
@@ -92,7 +92,7 @@ export const handler = async (
 
 	console.debug(JSON.stringify({ deviceId, model, email }))
 
-	return aResponse(200, {
+	return aResponse(event, 200, {
 		'@context': Context.map.shareDevice.request,
 		id: maybePublished.publicDevice.id,
 	})
