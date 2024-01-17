@@ -19,12 +19,14 @@ import { aResponse } from '../util/aResponse.js'
 import { models } from '@hello.nrfcloud.com/proto-lwm2m'
 import { shadowToObjects } from '../../lwm2m/shadowToObjects.js'
 import { consentDurationMS } from '../../map/consentDuration.js'
-import { validateWithTypeBox } from '../../util/validateWithTypeBox.js'
 import { Type } from '@sinclair/typebox'
 import { aProblem } from '../util/aProblem.js'
-import { formatTypeBoxErrors } from '../util/formatTypeBoxErrors.js'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import { DeviceId, PublicDeviceId } from '@hello.nrfcloud.com/proto/hello/map'
+import {
+	formatTypeBoxErrors,
+	validateWithTypeBox,
+} from '@hello.nrfcloud.com/proto'
 
 const { publicDevicesTableName, publicDevicesTableModelOwnerConfirmedIndex } =
 	fromEnv({

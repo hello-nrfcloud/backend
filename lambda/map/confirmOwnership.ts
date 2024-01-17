@@ -3,12 +3,14 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import lambda, { type APIGatewayProxyResultV2 } from 'aws-lambda'
 import { Type } from '@sinclair/typebox'
 import { publicDevicesRepo } from '../../map/publicDevicesRepo.js'
-import { validateWithTypeBox } from '../../util/validateWithTypeBox.js'
-import { formatTypeBoxErrors } from '../util/formatTypeBoxErrors.js'
 import { aResponse } from '../util/aResponse.js'
 import { aProblem } from '../util/aProblem.js'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import { DeviceId } from '@hello.nrfcloud.com/proto/hello/map'
+import {
+	formatTypeBoxErrors,
+	validateWithTypeBox,
+} from '@hello.nrfcloud.com/proto'
 
 const { publicDevicesTableName } = fromEnv({
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
