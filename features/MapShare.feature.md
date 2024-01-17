@@ -37,7 +37,7 @@ When I `POST` to `${shareDeviceAPI}` with
 ```
 
 Then I should receive a
-`https://github.com/hello-nrfcloud/backend/map/share-device-request` response
+`https://github.com/hello-nrfcloud/proto/map/share-device-request` response
 
 And I store `id` of the last response into `publicDeviceId`
 
@@ -53,7 +53,7 @@ When I `POST` to `${confirmOwnershipAPI}` with
 ```
 
 Then I should receive a
-`https://github.com/hello-nrfcloud/backend/map/share-device-ownership-confirmed`
+`https://github.com/hello-nrfcloud/proto/map/share-device-ownership-confirmed`
 response
 
 ## The devices publishes data
@@ -80,7 +80,7 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 
 When I `GET` `${devicesAPI}?deviceId=${fingerprint_deviceId}`
 
-Then I should receive a `https://github.com/hello-nrfcloud/backend/map/devices`
+Then I should receive a `https://github.com/hello-nrfcloud/proto/map/devices`
 response
 
 And `$.devices[id="${publicDeviceId}"]` of the last response should match
@@ -109,7 +109,7 @@ And `$.devices[id="${publicDeviceId}"]` of the last response should match
 
 When I `GET` `${devicesAPI}?ids=${publicDeviceId}`
 
-Then I should receive a `https://github.com/hello-nrfcloud/backend/map/devices`
+Then I should receive a `https://github.com/hello-nrfcloud/proto/map/devices`
 response
 
 And `$.devices[id="${publicDeviceId}"]` of the last response should match

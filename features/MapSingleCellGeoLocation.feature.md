@@ -78,7 +78,7 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 
 When I `GET` `${devicesAPI}`
 
-Then I should receive a `https://github.com/hello-nrfcloud/backend/map/devices`
+Then I should receive a `https://github.com/hello-nrfcloud/proto/map/devices`
 response
 
 And `$.devices[id="${publicDeviceId}"].state[ObjectID=14201]` of the last
