@@ -6,7 +6,6 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	RemovalPolicy,
 	aws_sqs as SQS,
 	Stack,
@@ -17,6 +16,7 @@ import { LambdaSource } from './LambdaSource.js'
 import { Scope } from '../../util/settings.js'
 import type { WebsocketEventBus } from './WebsocketEventBus'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 export class DeviceShadow extends Construct {
 	public readonly deviceShadowTable: DynamoDB.ITable
@@ -104,7 +104,7 @@ export class DeviceShadow extends Construct {
 				},
 				initialPolicy: [],
 				layers,
-				logRetention: Logs.RetentionDays.ONE_WEEK,
+				...new LambdaLogGroup(this, 'prepareDeviceShadowLogs'),
 			},
 		)
 		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
@@ -156,7 +156,7 @@ export class DeviceShadow extends Construct {
 				}),
 			],
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'fetchDeviceShadowLogs'),
 		})
 		const ssmReadPolicy = new IAM.PolicyStatement({
 			effect: IAM.Effect.ALLOW,

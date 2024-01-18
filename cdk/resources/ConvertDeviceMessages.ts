@@ -3,7 +3,6 @@ import {
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
@@ -11,6 +10,7 @@ import type { DeviceStorage } from './DeviceStorage.js'
 import { IoTActionRole } from './IoTActionRole.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 /**
  * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
@@ -52,7 +52,7 @@ export class ConvertDeviceMessages extends Construct {
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'onDeviceMessageLogs'),
 		})
 		websocketEventBus.eventBus.grantPutEventsTo(onDeviceMessage)
 		deviceStorage.devicesTable.grantReadData(onDeviceMessage)

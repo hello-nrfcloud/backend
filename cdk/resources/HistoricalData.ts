@@ -5,7 +5,6 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	RemovalPolicy,
 	aws_timestream as Timestream,
 } from 'aws-cdk-lib'
@@ -13,6 +12,7 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 /**
  * Store devices messages in their converted format
@@ -82,7 +82,7 @@ export class HistoricalData extends Construct {
 						resources: ['*'],
 					}),
 				],
-				logRetention: Logs.RetentionDays.ONE_WEEK,
+				...new LambdaLogGroup(this, 'storeMessagesInTimestreamLogs'),
 			},
 		)
 		new Events.Rule(this, 'messagesRule', {
@@ -131,7 +131,7 @@ export class HistoricalData extends Construct {
 						resources: ['*'],
 					}),
 				],
-				logRetention: Logs.RetentionDays.ONE_WEEK,
+				...new LambdaLogGroup(this, 'historicalDataRequestLogs'),
 			},
 		)
 		new Events.Rule(this, 'historicalDataRequestRule', {

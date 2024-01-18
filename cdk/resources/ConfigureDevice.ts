@@ -5,7 +5,6 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -13,6 +12,7 @@ import { Scope } from '../../util/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 /**
  * Handles device configuration requests
@@ -50,7 +50,7 @@ export class ConfigureDevice extends Construct {
 				STACK_NAME: Stack.of(this).stackName,
 			},
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'configureDeviceLogs'),
 			initialPolicy: [
 				new IAM.PolicyStatement({
 					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],

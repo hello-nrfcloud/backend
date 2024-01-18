@@ -3,7 +3,6 @@ import {
 	aws_events_targets as EventTargets,
 	aws_events as Events,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	aws_iam as IAM,
 	Stack,
 } from 'aws-cdk-lib'
@@ -13,6 +12,7 @@ import type { DeviceLastSeen } from '../DeviceLastSeen.js'
 import type { DeviceStorage } from '../DeviceStorage.js'
 import { LambdaSource } from '../LambdaSource.js'
 import { Scope } from '../../../util/settings.js'
+import { LambdaLogGroup } from '../LambdaLogGroup.js'
 
 export class KPIs extends Construct {
 	constructor(
@@ -72,7 +72,7 @@ export class KPIs extends Construct {
 				}),
 			],
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'lambdaLogs'),
 		})
 		lastSeen.table.grantReadData(lambda)
 		deviceStorage.devicesTable.grantReadData(lambda)

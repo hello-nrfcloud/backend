@@ -1,12 +1,8 @@
-import {
-	Duration,
-	aws_iam as IAM,
-	aws_lambda as Lambda,
-	aws_logs as Logs,
-} from 'aws-cdk-lib'
+import { Duration, aws_iam as IAM, aws_lambda as Lambda } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
 import type { PublicDevices } from './PublicDevices.js'
+import { LambdaLogGroup } from '../LambdaLogGroup.js'
 
 export class DevicesAPI extends Construct {
 	public readonly devicesURL: Lambda.FunctionUrl
@@ -43,7 +39,7 @@ export class DevicesAPI extends Construct {
 					publicDevices.publicDevicesTableModelOwnerConfirmedIndex,
 				NODE_NO_WARNINGS: '1',
 			},
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'devicesFnLogs'),
 			initialPolicy: [
 				new IAM.PolicyStatement({
 					actions: ['iot:GetThingShadow'],

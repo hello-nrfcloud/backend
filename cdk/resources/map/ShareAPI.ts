@@ -1,13 +1,13 @@
 import {
 	Duration,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	aws_iam as IAM,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../../helpers/lambdas/packLambda'
 import type { PublicDevices } from './PublicDevices.js'
+import { LambdaLogGroup } from '../LambdaLogGroup.js'
 
 export class ShareAPI extends Construct {
 	public readonly shareURL: Lambda.FunctionUrl
@@ -49,7 +49,7 @@ export class ShareAPI extends Construct {
 				NODE_NO_WARNINGS: '1',
 				IS_TEST: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'shareFnLogs'),
 			initialPolicy: [
 				new IAM.PolicyStatement({
 					actions: ['ses:SendEmail'],
@@ -86,7 +86,7 @@ export class ShareAPI extends Construct {
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 				NODE_NO_WARNINGS: '1',
 			},
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'confirmOwnershipFnLogs'),
 		})
 		publicDevices.publicDevicesTable.grantReadWriteData(confirmOwnershipFn)
 		this.confirmOwnershipURL = confirmOwnershipFn.addFunctionUrl({
@@ -107,7 +107,7 @@ export class ShareAPI extends Construct {
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 				NODE_NO_WARNINGS: '1',
 			},
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'sharingStatusFnLogs'),
 		})
 		publicDevices.publicDevicesTable.grantReadData(sharingStatusFn)
 		this.sharingStatusURL = sharingStatusFn.addFunctionUrl({

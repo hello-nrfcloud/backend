@@ -2,13 +2,13 @@ import { Construct } from 'constructs'
 import {
 	aws_lambda as Lambda,
 	aws_iam as IAM,
-	aws_logs as Logs,
 	aws_iot as IoT,
 	Duration,
 } from 'aws-cdk-lib'
 import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
 import type { PublicDevices } from './PublicDevices.js'
 import { IoTActionRole } from '../IoTActionRole.js'
+import { LambdaLogGroup } from '../LambdaLogGroup.js'
 
 /**
  * Manages the LwM2M shadow of the public devices
@@ -50,7 +50,7 @@ export class LwM2MShadow extends Construct {
 					resources: ['*'],
 				}),
 			],
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'updatesToLwM2MLogs'),
 		})
 		publicDevices.publicDevicesTable.grantReadData(updatesToLwM2M)
 

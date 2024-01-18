@@ -4,7 +4,6 @@ import {
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	RemovalPolicy,
 	Stack,
 } from 'aws-cdk-lib'
@@ -15,6 +14,7 @@ import type { DeviceStorage } from './DeviceStorage.js'
 import { IoTActionRole } from './IoTActionRole.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 /**
  * Resolve device geo location based on network information
@@ -69,7 +69,7 @@ export class SingleCellGeoLocation extends Construct {
 				CACHE_TABLE_NAME: table.tableName,
 			},
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'fnLogs'),
 			initialPolicy: [
 				new IAM.PolicyStatement({
 					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],

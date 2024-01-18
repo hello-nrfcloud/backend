@@ -4,7 +4,6 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	aws_ecr as ECR,
 	Stack,
 } from 'aws-cdk-lib'
@@ -15,6 +14,7 @@ import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from './LambdaSource.js'
 import { Scope } from '../../util/settings.js'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -107,7 +107,7 @@ export class HealthCheckCoAP extends Construct {
 				}),
 			],
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'healthCheckCoAPLogs'),
 		})
 		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheckCoAP))
 		deviceStorage.devicesTable.grantWriteData(healthCheckCoAP)

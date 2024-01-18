@@ -5,7 +5,6 @@ import {
 	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -16,7 +15,8 @@ import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaSource } from './LambdaSource.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable'
-import type { WebsocketEventBus } from './WebsocketEventBus'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 export const integrationUri = (
 	parent: Construct,
@@ -80,7 +80,7 @@ export class WebsocketAPI extends Construct {
 				DEVICE_SHADOW_TABLE_NAME: deviceShadow.deviceShadowTable.tableName,
 			},
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'onConnectLogs'),
 		})
 		eventBus.eventBus.grantPutEventsTo(onConnect)
 		connectionsTable.table.grantWriteData(onConnect)
@@ -105,7 +105,7 @@ export class WebsocketAPI extends Construct {
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'onMessageLogs'),
 		})
 		eventBus.eventBus.grantPutEventsTo(onMessage)
 		connectionsTable.table.grantWriteData(onMessage)
@@ -128,7 +128,7 @@ export class WebsocketAPI extends Construct {
 				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
 			},
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'onDisconnectLogs'),
 		})
 		connectionsTable.table.grantWriteData(onDisconnect)
 		eventBus.eventBus.grantPutEventsTo(onDisconnect)
@@ -143,7 +143,7 @@ export class WebsocketAPI extends Construct {
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.authorizer).code,
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'authorizerLambdaLogs'),
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
@@ -315,7 +315,7 @@ export class WebsocketAPI extends Construct {
 					}),
 				],
 				layers,
-				logRetention: Logs.RetentionDays.ONE_WEEK,
+				...new LambdaLogGroup(this, 'publishToWebsocketClientsLogs'),
 			},
 		)
 		connectionsTable.table.grantReadWriteData(publishToWebsocketClients)

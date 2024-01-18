@@ -5,7 +5,6 @@ import {
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	RemovalPolicy,
 	Stack,
 } from 'aws-cdk-lib'
@@ -14,6 +13,7 @@ import { IoTActionRole } from '../IoTActionRole.js'
 import { LambdaSource } from '../LambdaSource.js'
 import { Scope } from '../../../util/settings.js'
 import { STACK_NAME } from '../../stacks/stackConfig.js'
+import { LambdaLogGroup } from '../LambdaLogGroup.js'
 
 /**
  * Resources that geo-location devices based on the LwM2M Connection Information
@@ -65,7 +65,7 @@ export class ConnectionInformationGeoLocation extends Construct {
 				CACHE_TABLE_NAME: this.table.tableName,
 			},
 			layers: [baseLayer],
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'fnLogs'),
 			initialPolicy: [
 				new IAM.PolicyStatement({
 					actions: ['iot:UpdateThingShadow'],

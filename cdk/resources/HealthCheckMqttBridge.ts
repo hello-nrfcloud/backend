@@ -4,7 +4,6 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_logs as Logs,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -14,6 +13,7 @@ import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from './LambdaSource.js'
 import { Scope } from '../../util/settings.js'
+import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -84,7 +84,7 @@ export class HealthCheckMqttBridge extends Construct {
 				}),
 			],
 			layers,
-			logRetention: Logs.RetentionDays.ONE_WEEK,
+			...new LambdaLogGroup(this, 'healthCheckLogs'),
 		})
 		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheck))
 		deviceStorage.devicesTable.grantWriteData(healthCheck)

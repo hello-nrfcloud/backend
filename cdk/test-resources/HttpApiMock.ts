@@ -11,6 +11,7 @@ import {
 import type { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
+import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
 
 export class HttpApiMock extends Resource {
 	public readonly api: ApiGateway.RestApi
@@ -79,7 +80,7 @@ export class HttpApiMock extends Resource {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 			},
-			logRetention: Logs.RetentionDays.ONE_DAY,
+			...new LambdaLogGroup(this, 'Lambda', Logs.RetentionDays.ONE_DAY),
 		})
 		this.responsesTable.grantReadWriteData(lambda)
 		this.requestsTable.grantReadWriteData(lambda)
