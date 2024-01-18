@@ -24,6 +24,7 @@ void describe('aProblem()', () => {
 					'content-type': 'application/problem+json',
 					'Access-Control-Allow-Credentials': true,
 					'Access-Control-Allow-Headers': 'content-type, accept, if-match',
+					'Access-Control-Expose-Headers': 'x-amzn-requestid, etag',
 					'Access-Control-Allow-Methods': 'PUT, DELETE, POST, GET, PATCH',
 					'Access-Control-Allow-Origin': 'https://hello.nrfcloud.com',
 					'Access-Control-Max-Age': 600,
