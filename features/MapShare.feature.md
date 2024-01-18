@@ -5,6 +5,7 @@ exampleContext:
   publicDeviceId: outfling-swanherd-attaghan
   shareDeviceAPI: "https://share-device.lambda-url.eu-west-1.on.aws/"
   confirmOwnershipAPI: "https://confirm-ownership.lambda-url.eu-west-1.on.aws/"
+  sharingStatusAPI: "https://sharing-status.lambda-url.eu-west-1.on.aws/"
   devicesAPI: "https://confirm-ownership.lambda-url.eu-west-1.on.aws/"
   ts: 1694503339523
   tsISO: 2023-09-12T00:00:00.000Z
@@ -78,30 +79,6 @@ And the device `${fingerprint_deviceId}` publishes this message to the topic
 }
 ```
 
-When I `POST` to `${devicesAPI}?deviceId=${fingerprint_deviceId}`
-
-Then I should receive a `https://github.com/hello-nrfcloud/proto/map/devices`
-response
-
-And `$.devices[id="${publicDeviceId}"]` of the last response should match
-
-```json
-{
-  "id": "${publicDeviceId}",
-  "model": "PCA20035+solar",
-  "state": [
-    {
-      "ObjectID": 14210,
-      "ObjectVersion": "1.0",
-      "Resources": {
-        "0": 3.123457,
-        "99": "${tsISO}"
-      }
-    }
-  ]
-}
-```
-
 ## Access devices using their public ID
 
 > The public id will be shown on the map, and users can also provide a list of
@@ -128,5 +105,23 @@ And `$.devices[id="${publicDeviceId}"]` of the last response should match
       }
     }
   ]
+}
+```
+
+## The sharing status of a device can be checked using the device ID
+
+> Users should be able to determine whether a certain device is sharing data
+
+When I `GET` to `${sharingStatusAPI}?id=${fingerprint_deviceId}`
+
+Then I should receive a `https://github.com/hello-nrfcloud/proto/map/device`
+response
+
+And the last response should match
+
+```json
+{
+  "id": "${publicDeviceId}",
+  "model": "PCA20035+solar"
 }
 ```

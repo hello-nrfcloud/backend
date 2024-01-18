@@ -11,11 +11,13 @@ export const aResponse = (
 	result: {
 		'@context': URL
 	} & Record<string, unknown>,
+	cacheForSeconds: number = 60,
 	headers?: APIGatewayProxyStructuredResultV2['headers'],
 ): APIGatewayProxyResultV2 => ({
 	statusCode: status,
 	headers: {
 		'content-type': 'application/json',
+		'Cache-Control': `public, max-age=${cacheForSeconds}`,
 		...(headers ?? {}),
 		...cors,
 	},

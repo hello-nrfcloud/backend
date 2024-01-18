@@ -10,6 +10,10 @@ export const packMapBackendLambdas = async (): Promise<MapBackendLambdas> => ({
 		'shareDevice',
 		'lambda/map/shareDevice.ts',
 	),
+	sharingStatus: await packLambdaFromPath(
+		'sharingStatus',
+		'lambda/map/sharingStatus.ts',
+	),
 	confirmOwnership: await packLambdaFromPath(
 		'confirmOwnership',
 		'lambda/map/confirmOwnership.ts',

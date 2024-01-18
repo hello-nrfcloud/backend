@@ -12,6 +12,7 @@ import type { PublicDevices } from './PublicDevices.js'
 export class ShareAPI extends Construct {
 	public readonly shareURL: Lambda.FunctionUrl
 	public readonly confirmOwnershipURL: Lambda.FunctionUrl
+	public readonly sharingStatusURL: Lambda.FunctionUrl
 	constructor(
 		parent: Construct,
 		{
@@ -24,6 +25,7 @@ export class ShareAPI extends Construct {
 			lambdaSources: {
 				shareDevice: PackedLambda
 				confirmOwnership: PackedLambda
+				sharingStatus: PackedLambda
 			}
 		},
 	) {
@@ -35,7 +37,7 @@ export class ShareAPI extends Construct {
 			handler: lambdaSources.shareDevice.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: Duration.minutes(1),
+			timeout: Duration.seconds(10),
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.shareDevice.zipFile),
 			description: 'Invoked by a user that wants to share a device',
@@ -73,7 +75,7 @@ export class ShareAPI extends Construct {
 			handler: lambdaSources.confirmOwnership.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_18_X,
-			timeout: Duration.minutes(1),
+			timeout: Duration.seconds(10),
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.confirmOwnership.zipFile),
 			description:
@@ -88,6 +90,27 @@ export class ShareAPI extends Construct {
 		})
 		publicDevices.publicDevicesTable.grantReadWriteData(confirmOwnershipFn)
 		this.confirmOwnershipURL = confirmOwnershipFn.addFunctionUrl({
+			authType: Lambda.FunctionUrlAuthType.NONE,
+		})
+
+		const sharingStatusFn = new Lambda.Function(this, 'sharingStatusFn', {
+			handler: lambdaSources.sharingStatus.handler,
+			architecture: Lambda.Architecture.ARM_64,
+			runtime: Lambda.Runtime.NODEJS_18_X,
+			timeout: Duration.seconds(10),
+			memorySize: 1792,
+			code: Lambda.Code.fromAsset(lambdaSources.sharingStatus.zipFile),
+			description: 'Returns the sharing status of a device.',
+			layers: [baseLayer],
+			environment: {
+				VERSION: this.node.tryGetContext('version'),
+				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
+				NODE_NO_WARNINGS: '1',
+			},
+			logRetention: Logs.RetentionDays.ONE_WEEK,
+		})
+		publicDevices.publicDevicesTable.grantReadData(sharingStatusFn)
+		this.sharingStatusURL = sharingStatusFn.addFunctionUrl({
 			authType: Lambda.FunctionUrlAuthType.NONE,
 		})
 	}

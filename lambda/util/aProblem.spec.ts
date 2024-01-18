@@ -28,6 +28,7 @@ void describe('aProblem()', () => {
 					'Access-Control-Allow-Methods': 'PUT, DELETE, POST, GET, PATCH',
 					'Access-Control-Allow-Origin': 'https://hello.nrfcloud.com',
 					'Access-Control-Max-Age': 600,
+					'Cache-Control': 'public, max-age=60',
 					Vary: 'Origin',
 				},
 				body: JSON.stringify({

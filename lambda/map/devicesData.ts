@@ -1,6 +1,5 @@
 import {
 	DynamoDBClient,
-	GetItemCommand,
 	QueryCommand,
 	type QueryCommandInput,
 } from '@aws-sdk/client-dynamodb'
@@ -10,23 +9,23 @@ import {
 	ResourceNotFoundException,
 } from '@aws-sdk/client-iot-data-plane'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { fromEnv } from '@nordicsemiconductor/from-env'
-import type {
-	APIGatewayProxyEventV2,
-	APIGatewayProxyResultV2,
-} from 'aws-lambda'
-import { aResponse } from '../util/aResponse.js'
-import { models } from '@hello.nrfcloud.com/proto-lwm2m'
-import { shadowToObjects } from '../../lwm2m/shadowToObjects.js'
-import { consentDurationMS } from '../../map/consentDuration.js'
-import { Type } from '@sinclair/typebox'
-import { aProblem } from '../util/aProblem.js'
-import { Context } from '@hello.nrfcloud.com/proto/hello'
-import { DeviceId, PublicDeviceId } from '@hello.nrfcloud.com/proto/hello/map'
 import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
+import { models } from '@hello.nrfcloud.com/proto-lwm2m'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
+import { PublicDeviceId } from '@hello.nrfcloud.com/proto/hello/map'
+import { fromEnv } from '@nordicsemiconductor/from-env'
+import { Type } from '@sinclair/typebox'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+} from 'aws-lambda'
+import { shadowToObjects } from '../../lwm2m/shadowToObjects.js'
+import { consentDurationMS } from '../../map/consentDuration.js'
+import { aProblem } from '../util/aProblem.js'
+import { aResponse } from '../util/aResponse.js'
 import { corsHeaders } from '../util/corsHeaders.js'
 
 const { publicDevicesTableName, publicDevicesTableModelOwnerConfirmedIndex } =
@@ -42,8 +41,6 @@ const decoder = new TextDecoder()
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
-		// Allows to search by the secret IoT ThingName
-		deviceId: Type.Optional(DeviceId),
 		// Allows to search by the public device id
 		ids: Type.Optional(Type.Array(PublicDeviceId)),
 	}),
@@ -76,70 +73,44 @@ export const handler = async (
 		})
 	}
 
-	if (maybeValidQuery.value.deviceId !== undefined) {
-		const { Item } = await db.send(
-			new GetItemCommand({
-				TableName: publicDevicesTableName,
-				Key: { secret__deviceId: { S: maybeValidQuery.value.deviceId } },
-				ExpressionAttributeNames: {
-					'#id': 'id',
-					'#model': 'model',
-					'#ownerConfirmed': 'ownerConfirmed',
+	for (const model of Object.keys(models)) {
+		const queryInput: QueryCommandInput = {
+			TableName: publicDevicesTableName,
+			IndexName: publicDevicesTableModelOwnerConfirmedIndex,
+			KeyConditionExpression:
+				'#model = :model AND #ownerConfirmed > :minConfirmTime',
+			ExpressionAttributeNames: {
+				'#id': 'id',
+				'#model': 'model',
+				'#ownerConfirmed': 'ownerConfirmed',
+			},
+			ExpressionAttributeValues: {
+				':model': { S: model },
+				':minConfirmTime': {
+					S: new Date(minConfirmTime).toISOString(),
 				},
-				ProjectionExpression: '#id,#model,#ownerConfirmed',
-			}),
+			},
+			ProjectionExpression: '#id',
+		}
+
+		if (maybeValidQuery.value.ids !== undefined) {
+			queryInput.ExpressionAttributeValues = {
+				...(queryInput.ExpressionAttributeValues ?? {}),
+				':ids': {
+					SS: maybeValidQuery.value.ids,
+				},
+			}
+			queryInput.FilterExpression = 'contains(:ids, #id) '
+		}
+
+		console.log(JSON.stringify({ queryInput }))
+
+		const { Items } = await db.send(new QueryCommand(queryInput))
+		devicesToFetch.push(
+			...(Items ?? [])
+				.map((item) => unmarshall(item) as { id: string })
+				.map(({ id }) => ({ id, model })),
 		)
-		const { id, model, ownerConfirmed } = unmarshall(Item ?? {}) as {
-			id: string
-			model: string
-			ownerConfirmed?: string // e.g. '2024-01-16T15:49:20.287Z'
-		}
-		if (
-			ownerConfirmed !== undefined &&
-			new Date(ownerConfirmed).getTime() > minConfirmTime
-		) {
-			devicesToFetch.push({ id, model })
-		}
-	} else {
-		for (const model of Object.keys(models)) {
-			const queryInput: QueryCommandInput = {
-				TableName: publicDevicesTableName,
-				IndexName: publicDevicesTableModelOwnerConfirmedIndex,
-				KeyConditionExpression:
-					'#model = :model AND #ownerConfirmed > :minConfirmTime',
-				ExpressionAttributeNames: {
-					'#id': 'id',
-					'#model': 'model',
-					'#ownerConfirmed': 'ownerConfirmed',
-				},
-				ExpressionAttributeValues: {
-					':model': { S: model },
-					':minConfirmTime': {
-						S: new Date(minConfirmTime).toISOString(),
-					},
-				},
-				ProjectionExpression: '#id',
-			}
-
-			if (maybeValidQuery.value.ids !== undefined) {
-				queryInput.ExpressionAttributeValues = {
-					...(queryInput.ExpressionAttributeValues ?? {}),
-					':ids': {
-						SS: maybeValidQuery.value.ids,
-					},
-				}
-				queryInput.FilterExpression = 'contains(:ids, #id) '
-			}
-
-			console.log(JSON.stringify({ queryInput }))
-
-			const { Items } = await db.send(new QueryCommand(queryInput))
-			devicesToFetch.push(
-				...(Items ?? [])
-					.map((item) => unmarshall(item) as { id: string })
-					.map(({ id }) => ({ id, model })),
-			)
-		}
 	}
 
 	console.log(JSON.stringify({ devicesToFetch }))
@@ -185,8 +156,6 @@ export const handler = async (
 			'@context': Context.map.devices,
 			devices,
 		},
-		{
-			'Cache-control': `public, max-age=${60 * 10}`,
-		},
+		60 * 10,
 	)
 }

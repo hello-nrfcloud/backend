@@ -71,6 +71,11 @@ export class MapBackendStack extends Stack {
 			description: 'API endpoint for confirming ownership',
 			value: shareAPI.confirmOwnershipURL.url,
 		})
+		new CfnOutput(this, 'sharingStatusAPIURL', {
+			exportName: `${this.stackName}:sharingStatusAPI`,
+			description: 'API endpoint for checking the sharing status of a device',
+			value: shareAPI.sharingStatusURL.url,
+		})
 		new CfnOutput(this, 'devicesAPIURL', {
 			exportName: `${this.stackName}:devicesAPI`,
 			description: 'API endpoint for retrieving public device information',
@@ -80,6 +85,7 @@ export class MapBackendStack extends Stack {
 }
 
 export type StackOutputs = {
+	sharingStatusAPIURL: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
 	confirmOwnershipAPIURL: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
 	devicesAPIURL: string // e.g. 'https://a2udxgawcxd5tbmmfagi726jsm0obxov.lambda-url.eu-west-1.on.aws/'
 	shareAPIURL: string // e.g. 'https://iiet67bnlmbtuhiblik4wcy4ni0oujot.lambda-url.eu-west-1.on.aws/'

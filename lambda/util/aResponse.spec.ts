@@ -17,14 +17,12 @@ void describe('aResponse()', () => {
 					'@context': new URL(`https://example.com/some-context`),
 					foo: 'bar',
 				},
-				{
-					'Cache-control': `public, max-age=${60 * 10}`,
-				},
+				60 * 10,
 			),
 			{
 				statusCode: 200,
 				headers: {
-					'Cache-control': `public, max-age=${60 * 10}`,
+					'Cache-Control': `public, max-age=${60 * 10}`,
 					'content-type': 'application/json',
 					'Access-Control-Allow-Credentials': true,
 					'Access-Control-Allow-Headers': 'content-type, accept, if-match',

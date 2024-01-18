@@ -176,6 +176,7 @@ runner
 const res = await runner.run({
 	shareDeviceAPI: new URL(mapBackendConfig.shareAPIURL),
 	confirmOwnershipAPI: new URL(mapBackendConfig.confirmOwnershipAPIURL),
+	sharingStatusAPI: new URL(mapBackendConfig.sharingStatusAPIURL),
 	devicesAPI: new URL(mapBackendConfig.devicesAPIURL),
 })
 
