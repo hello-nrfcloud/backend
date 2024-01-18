@@ -29,7 +29,7 @@ void describe('sendOwnershipVerificationEmail()', () => {
 					Body: {
 						Text: {
 							Data: [
-								`This is your code to verify your device ownership: ${ownershipConfirmationToken}`,
+								`This is your token to verify your device ownership: ${ownershipConfirmationToken}`,
 								``,
 								`Note: you will need to re-verify your ownership every 30 days.`,
 								`A device that has not been confirmed will be removed from the application automatically.`,

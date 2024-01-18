@@ -21,7 +21,7 @@ export const sendOwnershipVerificationEmail =
 					Body: {
 						Text: {
 							Data: [
-								`This is your code to verify your device ownership: ${ownershipConfirmationToken}`,
+								`This is your token to verify your device ownership: ${ownershipConfirmationToken}`,
 								``,
 								`Note: you will need to re-verify your ownership every ${consentDurationDays} days.`,
 								`A device that has not been confirmed will be removed from the application automatically.`,
