@@ -154,7 +154,10 @@ export const handler = async (
 		200,
 		{
 			'@context': Context.map.devices,
-			devices,
+			devices: devices.map((device) => ({
+				'@context': Context.map.device,
+				...device,
+			})),
 		},
 		60 * 10,
 	)
