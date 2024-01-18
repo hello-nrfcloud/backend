@@ -5,7 +5,7 @@ import { marshall } from '@aws-sdk/util-dynamodb'
 import { assertCall } from '../util/test/assertCall.js'
 import { randomUUID } from 'node:crypto'
 import { consentDurationSeconds } from './consentDuration.js'
-import { CodeRegExp, generateCode } from '../cli/devices/generateCode.js'
+import { generateCode } from '../cli/devices/generateCode.js'
 
 void describe('publicDevicesRepo()', () => {
 	void describe('getByDeviceId()', () => {
@@ -91,7 +91,7 @@ void describe('publicDevicesRepo()', () => {
 			assert.match(
 				(send.mock.calls[0]?.arguments as any)?.[0]?.input.Item
 					.ownershipConfirmationToken.S,
-				CodeRegExp,
+				/^[abcdefghijkmnpqrstuvwxyz23456789]{6}$/i,
 				'A code should have been generated.',
 			)
 		})

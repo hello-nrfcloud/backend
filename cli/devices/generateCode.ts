@@ -9,5 +9,3 @@ export const generateCode = (len = 6): string => {
 	}
 	return code
 }
-
-export const CodeRegExp = new RegExp(`^[${alphabet}${numbers}]+$`)

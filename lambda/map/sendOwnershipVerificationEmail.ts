@@ -30,7 +30,7 @@ export const sendOwnershipVerificationEmail =
 						},
 					},
 					Subject: {
-						Data: `[hello.nrfcloud.com] › Verify device ownership for device ${deviceId}`,
+						Data: `[hello.nrfcloud.com] › Verify device ownership for device ${deviceId}: ${ownershipConfirmationToken}`,
 					},
 				},
 				Source: fromEmail,

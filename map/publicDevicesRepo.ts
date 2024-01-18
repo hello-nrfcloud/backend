@@ -117,7 +117,9 @@ export const publicDevicesRepo = ({
 	},
 	share: async ({ deviceId, model, email, generateToken }) => {
 		const id = randomWords({ numWords: 3 }).join('-')
-		const ownershipConfirmationToken = generateToken?.() ?? generateCode()
+		const ownershipConfirmationToken = (
+			generateToken?.() ?? generateCode()
+		).toUpperCase()
 
 		try {
 			await db.send(
