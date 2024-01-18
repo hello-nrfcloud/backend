@@ -80,7 +80,7 @@ export class HttpApiMock extends Resource {
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 			},
-			...new LambdaLogGroup(this, 'Lambda', Logs.RetentionDays.ONE_DAY),
+			...new LambdaLogGroup(this, 'LambdaLogs', Logs.RetentionDays.ONE_DAY),
 		})
 		this.responsesTable.grantReadWriteData(lambda)
 		this.requestsTable.grantReadWriteData(lambda)
