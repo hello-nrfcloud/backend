@@ -47,7 +47,7 @@ When I `POST` to `${confirmOwnershipAPI}` with
 
 ```json
 {
-  "id": "${fingerprint_deviceId}",
+  "deviceId": "${fingerprint_deviceId}",
   "token": "123456"
 }
 ```

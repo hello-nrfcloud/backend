@@ -84,7 +84,9 @@ export const publicDevicesRepo = ({
 				error: Error
 		  }
 		| {
-				success: true
+				publicDevice: {
+					id: string
+				}
 		  }
 	>
 } => ({
@@ -152,7 +154,7 @@ export const publicDevicesRepo = ({
 	},
 	confirmOwnership: async ({ deviceId, ownershipConfirmationToken }) => {
 		try {
-			await db.send(
+			const { Attributes } = await db.send(
 				new UpdateItemCommand({
 					TableName,
 					Key: marshall({
@@ -172,11 +174,16 @@ export const publicDevicesRepo = ({
 						},
 					},
 					ConditionExpression: '#token = :token',
+					ReturnValues: 'ALL_NEW',
 				}),
 			)
+			return {
+				publicDevice: {
+					id: Attributes?.['id']?.S as string,
+				},
+			}
 		} catch (err) {
 			return { error: err as Error }
 		}
-		return { success: true }
 	},
 })

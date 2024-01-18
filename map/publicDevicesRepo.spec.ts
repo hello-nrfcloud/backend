@@ -102,7 +102,11 @@ void describe('publicDevicesRepo()', () => {
 			const id = randomUUID()
 			const ownershipConfirmationToken = generateCode()
 
-			const send = mock.fn(async () => Promise.resolve())
+			const send = mock.fn(async () =>
+				Promise.resolve({
+					Attributes: marshall({ id }),
+				}),
+			)
 
 			const now = new Date()
 
@@ -117,7 +121,11 @@ void describe('publicDevicesRepo()', () => {
 				ownershipConfirmationToken,
 			})
 
-			assert.deepEqual(res, { success: true })
+			assert.deepEqual(res, {
+				publicDevice: {
+					id,
+				},
+			})
 
 			assertCall(send, {
 				input: {
@@ -135,6 +143,7 @@ void describe('publicDevicesRepo()', () => {
 						':token': { S: ownershipConfirmationToken },
 					},
 					ConditionExpression: '#token = :token',
+					ReturnValues: 'ALL_NEW',
 				},
 			})
 		})

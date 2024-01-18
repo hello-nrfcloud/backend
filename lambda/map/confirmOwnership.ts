@@ -26,7 +26,7 @@ const publicDevice = publicDevicesRepo({
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
-		id: DeviceId,
+		deviceId: DeviceId,
 		token: Type.RegExp(/^[0-9A-Z]{6}$/, {
 			title: 'Ownership Confirmation Token',
 			description: 'The 6 character token to confirm the ownership.',
@@ -56,10 +56,10 @@ export const handler = async (
 		})
 	}
 
-	const { id, token } = maybeValidInput.value
+	const { deviceId, token } = maybeValidInput.value
 
 	const maybeConfirmed = await publicDevice.confirmOwnership({
-		deviceId: id,
+		deviceId,
 		ownershipConfirmationToken: token,
 	})
 	if ('error' in maybeConfirmed) {
@@ -69,10 +69,10 @@ export const handler = async (
 		})
 	}
 
-	console.debug(JSON.stringify({ id }))
+	console.debug(JSON.stringify({ deviceId }))
 
 	return aResponse(cors, 200, {
 		'@context': Context.map.shareDevice.ownershipConfirmed,
-		id,
+		id: maybeConfirmed.publicDevice.id,
 	})
 }
