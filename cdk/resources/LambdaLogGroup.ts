@@ -1,5 +1,5 @@
 import { Construct } from 'constructs'
-import { aws_logs as Logs, Stack } from 'aws-cdk-lib'
+import { aws_logs as Logs, Names, Stack } from 'aws-cdk-lib'
 
 export class LambdaLogGroup extends Construct {
 	public readonly logGroup: Logs.LogGroup
@@ -11,8 +11,8 @@ export class LambdaLogGroup extends Construct {
 		super(parent, id)
 		this.logGroup = new Logs.LogGroup(this, 'logGroup', {
 			retention,
-			logGroupName: `/${Stack.of(this).stackName}/lambda/${id}-${this.node.id}`,
-			logGroupClass: Logs.LogGroupClass.INFREQUENT_ACCESS,
+			logGroupName: `/${Stack.of(this).stackName}/fn/${id}-${Names.uniqueId(this)}`,
+			logGroupClass: Logs.LogGroupClass.STANDARD, // INFREQUENT_ACCESS does not support custom metrics
 		})
 	}
 }
