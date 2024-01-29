@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npx globstar -- npx tsx --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
     "test:e2e": "npx tsx --no-warnings ./feature-runner/run-features.ts > e2e-test-result.json && cat e2e-test-result.json | npx tsx --no-warnings ./feature-runner/console-reporter.ts --only-failed --with-timestamps",
-    "prepare": "husky install && check-node-version --package",
+    "prepare": "husky && check-node-version --package",
     "deploy": "cdk deploy",
     "synth": "cdk synth"
   },
@@ -78,7 +78,7 @@
     "eslint-plugin-unicorn": "50.0.1",
     "glob": "10.3.10",
     "globstar": "1.0.0",
-    "husky": "8.0.3",
+    "husky": "9.0.6",
     "id128": "1.6.6",
     "jsonata": "2.0.3",
     "mqtt": "5.3.5",
