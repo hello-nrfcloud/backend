@@ -11,7 +11,13 @@ import {
 } from '../lib/websocket.js'
 import pRetry from 'p-retry'
 import { setTimeout } from 'timers/promises'
-import { check, objectMatching } from 'tsmatchers'
+import {
+	arrayContaining,
+	arrayMatching,
+	check,
+	objectMatching,
+} from 'tsmatchers'
+import type { Matcher } from 'tsmatchers/js/tsMatchers.js'
 
 const wsClients: Record<string, WebSocketClient> = {}
 const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
@@ -87,7 +93,7 @@ const receive = regExpMatchedStep(
 					)
 					try {
 						if (equalOrMatch === 'matches') {
-							check(message).is(objectMatching(expected))
+							match(message, expected)
 						} else {
 							assert.deepEqual(message, expected)
 						}
@@ -111,6 +117,18 @@ const receive = regExpMatchedStep(
 		})
 	},
 )
+
+const match = (actual: unknown, expected: unknown): void => {
+	if (Array.isArray(expected)) {
+		for (const el of expected) check(actual).is(arrayContaining(el))
+	}
+	if (typeof expected === 'object' && expected !== null) {
+		for (const [k, v] of Object.entries(expected)) {
+			check((actual as Record<string, any>)[k], v)
+		}
+	}
+	check(actual).is(expected as any)
+}
 
 const wsSend = <StepRunner>{
 	match: (title: string) =>
