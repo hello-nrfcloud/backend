@@ -5,17 +5,14 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
-import * as chai from 'chai'
-import { expect } from 'chai'
-import chaiSubset from 'chai-subset'
 import {
 	createWebsocketClient,
 	type WebSocketClient,
 } from '../lib/websocket.js'
 import pRetry from 'p-retry'
 import { setTimeout } from 'timers/promises'
-
-chai.use(chaiSubset)
+import { check } from 'tsmatchers'
+import { objectDeepMatching } from '../lib/objectDeepMatching.js'
 
 const wsClients: Record<string, WebSocketClient> = {}
 const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
@@ -91,7 +88,7 @@ const receive = regExpMatchedStep(
 					)
 					try {
 						if (equalOrMatch === 'matches') {
-							expect(message).to.containSubset(expected)
+							check(message).is(objectDeepMatching(expected))
 						} else {
 							assert.deepEqual(message, expected)
 						}

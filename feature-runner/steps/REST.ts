@@ -4,10 +4,10 @@ import {
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
-import { assert } from 'chai'
 import jsonata from 'jsonata'
 import { check, objectMatching } from 'tsmatchers'
 import { doRequest } from '../lib/doRequest.js'
+import assert from 'node:assert/strict'
 
 let currentRequest: ReturnType<typeof doRequest> = {
 	match: async () => Promise.reject(new Error(`No request pending!`)),

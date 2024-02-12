@@ -2,6 +2,7 @@
 exampleContext:
   trailDevice: 92b.y7i24q
   trailDevice_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+run: only
 ---
 
 # Location trail

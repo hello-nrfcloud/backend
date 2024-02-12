@@ -6,15 +6,11 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { Type } from '@sinclair/typebox'
-import * as chai from 'chai'
-import { expect } from 'chai'
-import chaiSubset from 'chai-subset'
 import pRetry from 'p-retry'
 import { convertMessageToTimestreamRecords } from '../../historicalData/convertMessageToTimestreamRecords.js'
 import { storeRecordsInTimestream } from '../../historicalData/storeRecordsInTimestream.js'
 import { paginateTimestreamQuery } from '../../historicalData/paginateTimestreamQuery.js'
-
-chai.use(chaiSubset)
+import { arrayContaining, check, objectMatching } from 'tsmatchers'
 
 let lastResult: Record<string, unknown>[] = []
 
@@ -88,9 +84,10 @@ const dateParser = (key: string, value: any) => {
 const assertResult = <StepRunner>{
 	match: (title) => /^the Timestream result should match$/.test(title),
 	run: async ({ step }) => {
-		expect(lastResult).to.containSubset(
-			JSON.parse(codeBlockOrThrow(step).code, dateParser),
-		)
+		const expected = JSON.parse(codeBlockOrThrow(step).code, dateParser)
+		for (const expectedObject of expected) {
+			check(lastResult).is(arrayContaining(objectMatching(expectedObject)))
+		}
 	},
 }
 
