@@ -123,7 +123,7 @@
     "@hello.nrfcloud.com/proto": "6.4.15",
     "@hello.nrfcloud.com/proto-lwm2m": "2.4.6",
     "@middy/core": "5.2.4",
-    "@nordicsemiconductor/from-env": "3.0.0",
+    "@nordicsemiconductor/from-env": "3.0.1",
     "@nordicsemiconductor/random-words": "8.0.0",
     "@nordicsemiconductor/timestream-helpers": "6.0.1",
     "@sinclair/typebox": "0.32.14",
