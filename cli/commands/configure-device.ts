@@ -180,7 +180,7 @@ export const configureDeviceCommand = ({
 		const res = await client.updateConfig(device.id, newConfig)
 
 		if ('error' in res) {
-			console.error(chalk.red(`Updated failed: ${res.error}.`))
+			console.error(chalk.red(`Updated failed: ${res.error.message}.`))
 		} else {
 			console.log(chalk.green('Updated configuration.'))
 		}

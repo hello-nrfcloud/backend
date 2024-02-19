@@ -22,7 +22,8 @@ export const doRequest = (
 		Object.entries(headers ?? {}).forEach(([k, v]) =>
 			logger?.progress(`> ${k}: ${v}`),
 		)
-		if (body !== undefined) logger?.progress(`> ${body}`)
+		if (body !== undefined)
+			logger?.progress(`> ${body?.toString() ?? '<no body>'}`)
 
 		const res = await (fetchImplementation ?? fetch)(url, request)
 		logger?.progress(`< ${res.status} ${res.statusText}`)

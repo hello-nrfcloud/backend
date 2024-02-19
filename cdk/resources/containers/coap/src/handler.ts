@@ -28,7 +28,9 @@ const run = async ({
 }): Promise<string[]> =>
 	new Promise((resolve, reject) => {
 		const cwd = '/function'
-		console.log(`Run command: "${command}" with "${args}" at "${cwd}"`)
+		console.log(
+			`Run command: "${command}" with "${args.join(',')}" at "${cwd}"`,
+		)
 
 		execFile(
 			command,
