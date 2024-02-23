@@ -37,7 +37,7 @@ export class ConfigureDevice extends Construct {
 		const configureDevice = new Lambda.Function(this, 'configureDevice', {
 			handler: lambdaSources.configureDevice.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.configureDevice).code,

@@ -46,7 +46,7 @@ export class HealthCheckMqttBridge extends Construct {
 		const healthCheck = new Lambda.Function(this, 'healthCheck', {
 			handler: lambdaSources.healthCheck.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(15),
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.healthCheck).code,

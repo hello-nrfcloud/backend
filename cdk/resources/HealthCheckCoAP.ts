@@ -69,7 +69,7 @@ export class HealthCheckCoAP extends Construct {
 		const healthCheckCoAP = new Lambda.Function(this, 'healthCheckCoAP', {
 			handler: lambdaSources.healthCheckForCoAP.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(30),
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.healthCheckForCoAP).code,

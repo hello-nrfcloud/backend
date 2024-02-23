@@ -25,7 +25,7 @@ export class DevicesAPI extends Construct {
 		const devicesFn = new Lambda.Function(this, 'devicesFn', {
 			handler: lambdaSources.devicesData.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.minutes(1),
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.devicesData.zipFile),
