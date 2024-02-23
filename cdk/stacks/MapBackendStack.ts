@@ -26,6 +26,7 @@ export class MapBackendStack extends Stack {
 		super(parent, MAP_BACKEND_STACK_NAME)
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
+			layerVersionName: `${Stack.of(this).stackName}-baseLayer`,
 			code: new LambdaSource(this, {
 				id: 'mapBaseLayer',
 				zipFile: layer.layerZipFile,

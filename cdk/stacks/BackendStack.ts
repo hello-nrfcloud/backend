@@ -75,6 +75,7 @@ export class BackendStack extends Stack {
 		})
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
+			layerVersionName: `${Stack.of(this).stackName}-baseLayer`,
 			code: new LambdaSource(this, {
 				id: 'baseLayer',
 				zipFile: layer.layerZipFile,

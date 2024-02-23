@@ -32,6 +32,7 @@ export class TestResourcesStack extends Stack {
 		super(parent, TEST_RESOURCES_STACK_NAME, { env })
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
+			layerVersionName: `${Stack.of(this).stackName}-baseLayer`,
 			code: new LambdaSource(this, {
 				id: 'baseLayer',
 				zipFile: layer.layerZipFile,
