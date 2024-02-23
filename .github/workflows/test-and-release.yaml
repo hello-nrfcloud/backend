@@ -114,6 +114,12 @@ jobs:
         if: failure()
         run: ./cli.sh logs -f ERROR
 
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: layers
+          path: dist/layers
+
       - name: Save stack outputs
         id: stack_outputs
         run: |
