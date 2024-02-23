@@ -5,6 +5,7 @@ import yazl from 'yazl'
 import { checkSumOfFiles } from './checksumOfFiles.js'
 import { commonParent } from './commonParent.js'
 import { findDependencies } from './findDependencies.js'
+import { fileURLToPath } from 'node:url'
 
 export type PackedLambda = {
 	id: string
@@ -62,7 +63,11 @@ export const packLambda = async ({
 		progress?.(`added`, jsFileName)
 	}
 
-	const hash = await checkSumOfFiles(lambdaFiles)
+	const hash = await checkSumOfFiles([
+		...lambdaFiles,
+		// Include this script, so artefact is updated if the way it's built is changed
+		fileURLToPath(import.meta.url),
+	])
 
 	// Mark it as ES module
 	zipfile.addBuffer(
