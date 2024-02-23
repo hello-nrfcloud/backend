@@ -52,7 +52,7 @@ export class SingleCellGeoLocation extends Construct {
 		const fn = new Lambda.Function(this, 'fn', {
 			handler: lambdaSources.resolveSingleCellGeoLocation.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(60),
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.resolveSingleCellGeoLocation)

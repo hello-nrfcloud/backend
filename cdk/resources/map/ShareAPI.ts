@@ -36,7 +36,7 @@ export class ShareAPI extends Construct {
 		const shareFn = new Lambda.Function(this, 'shareFn', {
 			handler: lambdaSources.shareDevice.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(10),
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.shareDevice.zipFile),
@@ -74,7 +74,7 @@ export class ShareAPI extends Construct {
 		const confirmOwnershipFn = new Lambda.Function(this, 'confirmOwnershipFn', {
 			handler: lambdaSources.confirmOwnership.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(10),
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.confirmOwnership.zipFile),
@@ -96,7 +96,7 @@ export class ShareAPI extends Construct {
 		const sharingStatusFn = new Lambda.Function(this, 'sharingStatusFn', {
 			handler: lambdaSources.sharingStatus.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(10),
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.sharingStatus.zipFile),

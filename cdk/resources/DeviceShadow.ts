@@ -89,7 +89,7 @@ export class DeviceShadow extends Construct {
 			{
 				handler: lambdaSources.prepareDeviceShadow.handler,
 				architecture: Lambda.Architecture.ARM_64,
-				runtime: Lambda.Runtime.NODEJS_18_X,
+				runtime: Lambda.Runtime.NODEJS_20_X,
 				timeout: Duration.seconds(5),
 				memorySize: 1792,
 				code: new LambdaSource(this, lambdaSources.prepareDeviceShadow).code,
@@ -113,7 +113,7 @@ export class DeviceShadow extends Construct {
 		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
 			handler: lambdaSources.fetchDeviceShadow.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: processDeviceShadowTimeout,
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.fetchDeviceShadow).code,

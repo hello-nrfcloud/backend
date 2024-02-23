@@ -37,7 +37,7 @@ export class ConvertDeviceMessages extends Construct {
 		const onDeviceMessage = new Lambda.Function(this, 'onDeviceMessage', {
 			handler: lambdaSources.onDeviceMessage.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
 			code: new LambdaSource(this, lambdaSources.onDeviceMessage).code,

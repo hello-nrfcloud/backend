@@ -33,7 +33,7 @@ export class LwM2MShadow extends Construct {
 		const updatesToLwM2M = new Lambda.Function(this, 'updatesToLwM2M', {
 			handler: lambdaSources.updatesToLwM2M.handler,
 			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_18_X,
+			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.minutes(15),
 			memorySize: 1792,
 			code: Lambda.Code.fromAsset(lambdaSources.updatesToLwM2M.zipFile),

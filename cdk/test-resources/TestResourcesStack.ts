@@ -32,13 +32,14 @@ export class TestResourcesStack extends Stack {
 		super(parent, TEST_RESOURCES_STACK_NAME, { env })
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
+			layerVersionName: `${Stack.of(this).stackName}-baseLayer`,
 			code: new LambdaSource(this, {
 				id: 'baseLayer',
 				zipFile: layer.layerZipFile,
 				hash: layer.hash,
 			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
-			compatibleRuntimes: [Lambda.Runtime.NODEJS_18_X],
+			compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
 		})
 		const powerToolLayer = Lambda.LayerVersion.fromLayerVersionArn(
 			this,

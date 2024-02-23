@@ -5,6 +5,7 @@ import { glob } from 'glob'
 import path from 'path'
 import { ZipFile } from 'yazl'
 import { checkSumOfFiles, checkSumOfStrings } from './checksumOfFiles.js'
+import { fileURLToPath } from 'node:url'
 
 export type PackedLayer = { layerZipFile: string; hash: string }
 
@@ -22,7 +23,7 @@ export const packLayer = async ({
 	)
 
 	const layerDir = path.join(process.cwd(), 'dist', 'layers', id)
-	const nodejsDir = path.join(layerDir, 'nodejs', 'node18')
+	const nodejsDir = path.join(layerDir, 'nodejs')
 
 	try {
 		await rm(layerDir, { recursive: true })
@@ -103,7 +104,12 @@ export const packLayer = async ({
 		layerZipFile: zipFileName,
 		hash: checkSumOfStrings([
 			JSON.stringify(dependencies),
-			await checkSumOfFiles([packageJSON, packageLock]),
+			await checkSumOfFiles([
+				packageJSON,
+				packageLock,
+				// Include this script, so artefact is updated if the way it's built is changed
+				fileURLToPath(import.meta.url),
+			]),
 		]),
 	}
 }
