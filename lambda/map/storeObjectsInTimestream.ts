@@ -1,10 +1,8 @@
 import {
-	type LwM2MObjectInstance,
 	definitions,
 	type LwM2MResourceInfo,
 	ResourceType,
 	isLwM2MObjectID,
-	instanceTs,
 } from '@hello.nrfcloud.com/proto-lwm2m'
 import {
 	TimeUnit,
@@ -64,12 +62,6 @@ export const handler = async (event: {
 		if (!isLwM2MObjectID(ObjectID)) continue
 		for (const [InstanceIDString, Resources] of Object.entries(Instances)) {
 			const ObjectInstanceID = parseInt(InstanceIDString ?? '0', 10)
-			const ts = instanceTs({
-				ObjectID,
-				ObjectVersion,
-				ObjectInstanceID,
-				Resources,
-			} as LwM2MObjectInstance) // because instance is valid and thus has a timestamp resource
 
 			const measures: MeasureValue[] = []
 
@@ -84,7 +76,7 @@ export const handler = async (event: {
 				if (Value === null) continue
 
 				measures.push({
-					Name: `${ObjectID}/${ObjectInstanceID}/${ResourceID}`,
+					Name: ResourceID,
 					Value: Value.toString(),
 					Type: toTimestreamType(def),
 				})
@@ -100,11 +92,17 @@ export const handler = async (event: {
 						Name: 'ObjectInstanceID',
 						Value: ObjectInstanceID.toString(),
 					},
+					{
+						Name: 'ObjectVersion',
+						Value: ObjectVersion,
+					},
 				],
 				MeasureName: `${ObjectID}/${ObjectInstanceID}`,
 				MeasureValues: measures,
 				MeasureValueType: MeasureValueType.MULTI,
-				Time: ts.getTime().toString(),
+				// Use current timestamp for record, because the device can send the same
+				// object multiple times with the same timestamp but different resources
+				Time: Date.now().toString(),
 				TimeUnit: TimeUnit.MILLISECONDS,
 			})
 		}
