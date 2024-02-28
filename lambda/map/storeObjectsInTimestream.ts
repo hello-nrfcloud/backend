@@ -9,6 +9,7 @@ import {
 import {
 	TimeUnit,
 	TimestreamWriteClient,
+	type MeasureValue,
 	type _Record,
 } from '@aws-sdk/client-timestream-write'
 import { logger } from '../util/logger.js'
@@ -40,7 +41,7 @@ export type LwM2MShadow = Record<
 		string, // InstanceID
 		Record<
 			string, // ResourceID
-			number | string | boolean
+			number | string | boolean | null
 		>
 	>
 >
@@ -63,13 +64,14 @@ export const handler = async (event: {
 		if (!isLwM2MObjectID(ObjectID)) continue
 		for (const [InstanceIDString, Resources] of Object.entries(Instances)) {
 			const ObjectInstanceID = parseInt(InstanceIDString ?? '0', 10)
-			const instance: LwM2MObjectInstance = {
+			const ts = instanceTs({
 				ObjectID,
 				ObjectVersion,
 				ObjectInstanceID,
 				Resources,
-			}
-			const ts = instanceTs(instance)
+			} as LwM2MObjectInstance) // because instance is valid and thus has a timestamp resource
+
+			const measures: MeasureValue[] = []
 
 			for (const [ResourceID, Value] of Object.entries(Resources)) {
 				const def = definitions[ObjectID].Resources[parseInt(ResourceID, 10)]
@@ -79,29 +81,32 @@ export const handler = async (event: {
 					)
 					continue
 				}
+				if (Value === null) continue
 
-				Records.push({
-					Dimensions: [
-						{
-							Name: 'ObjectID',
-							Value: ObjectID.toString(),
-						},
-						{
-							Name: 'ObjectInstanceID',
-							Value: ObjectInstanceID.toString(),
-						},
-						{
-							Name: 'ResourceID',
-							Value: ResourceID.toString(),
-						},
-					],
-					MeasureName: `${ObjectID}/${ObjectInstanceID}/${ResourceID}`,
-					MeasureValue: Value.toString(),
-					MeasureValueType: toTimestreamType(def),
-					Time: ts.getTime().toString(),
-					TimeUnit: TimeUnit.MILLISECONDS,
+				measures.push({
+					Name: `${ObjectID}/${ObjectInstanceID}/${ResourceID}`,
+					Value: Value.toString(),
+					Type: toTimestreamType(def),
 				})
 			}
+
+			Records.push({
+				Dimensions: [
+					{
+						Name: 'ObjectID',
+						Value: ObjectID.toString(),
+					},
+					{
+						Name: 'ObjectInstanceID',
+						Value: ObjectInstanceID.toString(),
+					},
+				],
+				MeasureName: `${ObjectID}/${ObjectInstanceID}`,
+				MeasureValues: measures,
+				MeasureValueType: MeasureValueType.MULTI,
+				Time: ts.getTime().toString(),
+				TimeUnit: TimeUnit.MILLISECONDS,
+			})
 		}
 	}
 

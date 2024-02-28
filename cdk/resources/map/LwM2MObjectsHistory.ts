@@ -103,7 +103,7 @@ export class LwM2MObjectsHistory extends Construct {
 				sql: [
 					`SELECT state.reported as reported,`,
 					`topic(3) as deviceId`,
-					`FROM '$aws/things/+/shadow/name/lwm2m/update/accepted'`,
+					`FROM '$aws/things/+/shadow/name/lwm2m/update'`,
 				].join(' '),
 				actions: [
 					{
