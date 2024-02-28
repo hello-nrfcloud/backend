@@ -90,6 +90,10 @@ export const handler = async (event: {
 							Name: 'ObjectInstanceID',
 							Value: ObjectInstanceID.toString(),
 						},
+						{
+							Name: 'ResourceID',
+							Value: ResourceID.toString(),
+						},
 					],
 					MeasureName: `${ObjectID}/${ObjectInstanceID}/${ResourceID}`,
 					MeasureValue: Value.toString(),
