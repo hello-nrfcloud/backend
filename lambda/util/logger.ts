@@ -8,15 +8,15 @@ export type Logger = {
 export const logger = (serviceName: string): Logger => ({
 	error: (message, detail) => {
 		console.error(`[${serviceName}]`, message)
-		if (detail !== undefined) console.error(detail)
+		if (detail !== undefined) console.error(JSON.stringify(detail))
 	},
 	debug: (...args) => {
-		console.debug(`[${serviceName}]`, ...args)
+		console.debug(`[${serviceName}]`, ...args.map((a) => JSON.stringify(a)))
 	},
 	info: (...args) => {
-		console.log(`[${serviceName}]`, ...args)
+		console.log(`[${serviceName}]`, ...args.map((a) => JSON.stringify(a)))
 	},
 	warn: (...args) => {
-		console.warn(`[${serviceName}]`, ...args)
+		console.warn(`[${serviceName}]`, ...args.map((a) => JSON.stringify(a)))
 	},
 })
