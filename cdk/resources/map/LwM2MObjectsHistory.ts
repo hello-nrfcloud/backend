@@ -101,9 +101,9 @@ export class LwM2MObjectsHistory extends Construct {
 				ruleDisabled: false,
 				awsIotSqlVersion: '2016-03-23',
 				sql: [
-					`SELECT current.state.reported as reported,`,
+					`SELECT state.reported as reported,`,
 					`topic(3) as deviceId`,
-					`FROM '$aws/things/+/shadow/name/lwm2m/update/documents'`,
+					`FROM '$aws/things/+/shadow/name/lwm2m/update/accepted'`,
 				].join(' '),
 				actions: [
 					{
