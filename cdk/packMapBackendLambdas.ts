@@ -26,4 +26,8 @@ export const packMapBackendLambdas = async (): Promise<MapBackendLambdas> => ({
 		'devicesData',
 		'lambda/map/devicesData.ts',
 	),
+	storeObjectsInTimestream: await packLambdaFromPath(
+		'storeObjectsInTimestream',
+		'lambda/map/storeObjectsInTimestream.ts',
+	),
 })

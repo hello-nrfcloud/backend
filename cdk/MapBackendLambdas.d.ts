@@ -7,4 +7,5 @@ type MapBackendLambdas = {
 	confirmOwnership: PackedLambda
 	connectionInformationGeoLocation: PackedLambda
 	devicesData: PackedLambda
+	storeObjectsInTimestream: PackedLambda
 }
