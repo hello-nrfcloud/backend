@@ -49,7 +49,7 @@ await Promise.all(
 				account,
 			})
 		} else {
-			log.critical(`${account} does not have health check settings`)
+			log.error(`${account} does not have health check settings`)
 		}
 	}),
 )

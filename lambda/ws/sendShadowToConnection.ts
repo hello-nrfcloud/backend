@@ -1,4 +1,3 @@
-import type { Logger } from '@aws-lambda-powertools/logger'
 import { MetricUnits } from '@aws-lambda-powertools/metrics'
 import {
 	EventBridgeClient,
@@ -8,6 +7,7 @@ import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import { type DeviceShadowType } from '../../nrfcloud/DeviceShadow.js'
 import type { AddMetricsFn } from '../metrics/metrics.js'
 import type { WebsocketPayload } from '../publishToWebsocketClients.js'
+import type { Logger } from '../util/logger.js'
 
 export const sendShadowToConnection =
 	({

@@ -1,4 +1,3 @@
-import type { Logger } from '@aws-lambda-powertools/logger'
 import { type Metrics } from '@aws-lambda-powertools/metrics'
 import { type TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
@@ -12,6 +11,7 @@ import {
 	CommonAggregatedResponse,
 } from '@hello.nrfcloud.com/proto/hello/history'
 import { paginateTimestreamQuery } from './paginateTimestreamQuery.js'
+import type { Logger } from '../lambda/util/logger.js'
 
 export const getHistoricalSensorData = ({
 	timestream,

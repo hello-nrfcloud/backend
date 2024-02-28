@@ -28,7 +28,6 @@
   "author": "Nordic Semiconductor ASA | nordicsemi.no",
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "@aws-lambda-powertools/logger": "1.18.1",
     "@aws-sdk/client-apigatewaymanagementapi": "3.523.0",
     "@aws-sdk/client-cloudformation": "3.523.0",
     "@aws-sdk/client-cloudwatch-logs": "3.523.0",

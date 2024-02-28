@@ -1,6 +1,6 @@
 import { MetricUnits } from '@aws-lambda-powertools/metrics'
-import type { AddMetricsFn } from './metrics/metrics'
-import type { Logger } from '@aws-lambda-powertools/logger'
+import type { AddMetricsFn } from './metrics/metrics.js'
+import type { Logger } from './util/logger.js'
 
 export const loggingFetch =
 	({ track, log }: { track: AddMetricsFn; log: Logger }) =>

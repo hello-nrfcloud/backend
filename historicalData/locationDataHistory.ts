@@ -1,4 +1,3 @@
-import type { Logger } from '@aws-lambda-powertools/logger'
 import { type Metrics } from '@aws-lambda-powertools/metrics'
 import { type TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
@@ -13,6 +12,7 @@ import { normalizedData } from './normalizedData.js'
 import { getLocationQueryStatement } from './getLocationQueryStatement.js'
 import { HistoricalDataTimeSpans } from './HistoricalDataTimeSpans.js'
 import { paginateTimestreamQuery } from './paginateTimestreamQuery.js'
+import type { Logger } from '../lambda/util/logger.js'
 
 export const getHistoricalLocationData = ({
 	timestream,

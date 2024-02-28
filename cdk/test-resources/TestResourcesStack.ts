@@ -41,17 +41,10 @@ export class TestResourcesStack extends Stack {
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
 			compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
 		})
-		const powerToolLayer = Lambda.LayerVersion.fromLayerVersionArn(
-			this,
-			'powertoolsLayer',
-			`arn:aws:lambda:${
-				Stack.of(this).region
-			}:094274105915:layer:AWSLambdaPowertoolsTypeScript:7`,
-		)
 
 		const httpMockApi = new HttpApiMock(this, {
 			lambdaSources,
-			layers: [baseLayer, powerToolLayer],
+			layers: [baseLayer],
 		})
 
 		// Export these so the test runner can use them
