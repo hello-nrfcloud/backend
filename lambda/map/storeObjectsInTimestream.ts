@@ -4,8 +4,8 @@ import {
 	type LwM2MResourceInfo,
 	ResourceType,
 	isLwM2MObjectID,
+	instanceTs,
 } from '@hello.nrfcloud.com/proto-lwm2m'
-import { instanceTs } from '../../lwm2m/instanceTs.js'
 import {
 	TimeUnit,
 	TimestreamWriteClient,
