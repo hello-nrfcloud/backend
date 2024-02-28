@@ -1,10 +1,9 @@
 import {
 	type LwM2MObjectInstance,
 	definitions,
-	LwM2MObjectID,
-	LwM2MObjectIDs,
 	type LwM2MResourceInfo,
 	ResourceType,
+	isLwM2MObjectID,
 } from '@hello.nrfcloud.com/proto-lwm2m'
 import { instanceTs } from '../../lwm2m/instanceTs.js'
 import {
@@ -34,9 +33,6 @@ const store = storeRecordsInTimestream({
 	TableName,
 	log,
 })
-
-export const isLwM2MObjectID = (n: number): n is LwM2MObjectID =>
-	LwM2MObjectIDs.includes(n)
 
 export type LwM2MShadow = Record<
 	string, // e.g. 14201:1.0 (ObjectID:ObjectVersion)
