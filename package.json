@@ -36,7 +36,7 @@
     "@aws-sdk/client-ecs": "3.523.0",
     "@aws-sdk/client-eventbridge": "3.523.0",
     "@aws-sdk/client-iam": "3.523.0",
-    "@aws-sdk/client-iot": "3.523.0",
+    "@aws-sdk/client-iot": "3.524.0",
     "@aws-sdk/client-iot-data-plane": "3.523.0",
     "@aws-sdk/client-lambda": "3.523.0",
     "@aws-sdk/client-ses": "3.523.0",
