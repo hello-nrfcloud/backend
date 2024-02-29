@@ -8,4 +8,5 @@ type MapBackendLambdas = {
 	connectionInformationGeoLocation: PackedLambda
 	devicesData: PackedLambda
 	storeObjectsInTimestream: PackedLambda
+	queryHistory: PackedLambda
 }

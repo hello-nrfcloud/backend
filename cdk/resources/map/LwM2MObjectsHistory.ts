@@ -17,6 +17,7 @@ import { LambdaSource } from '../LambdaSource.js'
  */
 export class LwM2MObjectsHistory extends Construct {
 	public readonly table: Timestream.CfnTable
+	public readonly historyURL: Lambda.FunctionUrl
 	public constructor(
 		parent: Construct,
 		{
@@ -25,6 +26,7 @@ export class LwM2MObjectsHistory extends Construct {
 		}: {
 			lambdaSources: {
 				storeObjectsInTimestream: PackedLambda
+				queryHistory: PackedLambda
 			}
 			baseLayer: Lambda.ILayerVersion
 		},
@@ -126,6 +128,45 @@ export class LwM2MObjectsHistory extends Construct {
 				'iot.amazonaws.com',
 			) as IAM.IPrincipal,
 			sourceArn: rule.attrArn,
+		})
+
+		const historyFn = new Lambda.Function(this, 'historyFn', {
+			handler: lambdaSources.queryHistory.handler,
+			architecture: Lambda.Architecture.ARM_64,
+			runtime: Lambda.Runtime.NODEJS_20_X,
+			timeout: Duration.seconds(10),
+			memorySize: 1792,
+			code: Lambda.Code.fromAsset(lambdaSources.queryHistory.zipFile),
+			description: 'Queries the LwM2M object history',
+			layers: [baseLayer],
+			environment: {
+				VERSION: this.node.tryGetContext('version'),
+				NODE_NO_WARNINGS: '1',
+				HISTORICAL_DATA_TABLE_INFO: this.table.ref,
+				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+			},
+			...new LambdaLogGroup(this, 'historyFnLogs'),
+			initialPolicy: [
+				new IAM.PolicyStatement({
+					resources: [this.table.attrArn],
+					actions: [
+						'timestream:Select',
+						'timestream:DescribeTable',
+						'timestream:ListMeasures',
+					],
+				}),
+				new IAM.PolicyStatement({
+					resources: ['*'],
+					actions: [
+						'timestream:DescribeEndpoints',
+						'timestream:SelectValues',
+						'timestream:CancelQuery',
+					],
+				}),
+			],
+		})
+		this.historyURL = historyFn.addFunctionUrl({
+			authType: Lambda.FunctionUrlAuthType.NONE,
 		})
 	}
 }

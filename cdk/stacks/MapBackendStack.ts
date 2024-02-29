@@ -62,7 +62,7 @@ export class MapBackendStack extends Stack {
 			publicDevices,
 		})
 
-		new LwM2MObjectsHistory(this, {
+		const lwm2mObjectHistory = new LwM2MObjectsHistory(this, {
 			baseLayer,
 			lambdaSources,
 		})
@@ -87,6 +87,11 @@ export class MapBackendStack extends Stack {
 			exportName: `${this.stackName}:devicesAPI`,
 			description: 'API endpoint for retrieving public device information',
 			value: devicesAPI.devicesURL.url,
+		})
+		new CfnOutput(this, 'queryHistoryAPIURL', {
+			exportName: `${this.stackName}:queryHistoryAPI`,
+			description: 'API endpoint for querying device history',
+			value: lwm2mObjectHistory.historyURL.url,
 		})
 	}
 }

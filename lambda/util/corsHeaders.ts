@@ -20,13 +20,14 @@ export const corsHeaders = (
 		headers: APIGatewayProxyEventHeaders
 	},
 	allowedMethods = ['PUT', 'DELETE', 'POST', 'GET', 'PATCH'],
+	cacheForSeconds = 600,
 ): {
 	'Access-Control-Allow-Credentials': true
 	'Access-Control-Allow-Headers': string
 	'Access-Control-Expose-Headers': string
 	'Access-Control-Allow-Methods': string
 	'Access-Control-Allow-Origin': string
-	'Access-Control-Max-Age': 600
+	'Access-Control-Max-Age': number
 	Vary: 'Origin'
 } => ({
 	'Access-Control-Allow-Credentials': true,
@@ -34,7 +35,7 @@ export const corsHeaders = (
 	'Access-Control-Allow-Methods': allowedMethods.join(', '),
 	'Access-Control-Allow-Headers': 'content-type, accept, if-match',
 	'Access-Control-Expose-Headers': 'x-amzn-requestid, etag',
-	'Access-Control-Max-Age': 600,
+	'Access-Control-Max-Age': cacheForSeconds,
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin#cors_and_caching
 	Vary: 'Origin',
 })

@@ -43,6 +43,7 @@
     "@aws-sdk/client-sqs": "3.523.0",
     "@aws-sdk/client-ssm": "3.523.0",
     "@aws-sdk/client-sts": "3.523.0",
+    "@aws-sdk/client-timestream-query": "3.523.0",
     "@aws-sdk/client-timestream-write": "3.523.0",
     "@aws-sdk/util-dynamodb": "3.523.0",
     "@bifravst/eslint-config-typescript": "6.0.8",

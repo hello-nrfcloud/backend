@@ -30,4 +30,8 @@ export const packMapBackendLambdas = async (): Promise<MapBackendLambdas> => ({
 		'storeObjectsInTimestream',
 		'lambda/map/storeObjectsInTimestream.ts',
 	),
+	queryHistory: await packLambdaFromPath(
+		'queryHistory',
+		'lambda/map/queryHistory.ts',
+	),
 })

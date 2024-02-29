@@ -225,6 +225,7 @@ new BackendApp({
 			'id128',
 			'lodash-es',
 			'@nordicsemiconductor/random-words',
+			'@nordicsemiconductor/timestream-helpers',
 		],
 	}),
 	iotEndpoint: await getIoTEndpoint({ iot })(),
