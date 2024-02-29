@@ -1,9 +1,4 @@
-import {
-	definitions,
-	type LwM2MResourceInfo,
-	ResourceType,
-	isLwM2MObjectID,
-} from '@hello.nrfcloud.com/proto-lwm2m'
+import { definitions, isLwM2MObjectID } from '@hello.nrfcloud.com/proto-lwm2m'
 import {
 	TimeUnit,
 	TimestreamWriteClient,
@@ -14,6 +9,7 @@ import { logger } from '../util/logger.js'
 import { MeasureValueType } from '@aws-sdk/client-timestream-write'
 import { storeRecordsInTimestream } from '../../historicalData/storeRecordsInTimestream.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { isNumeric } from './isNumeric.js'
 
 const { tableInfo } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
@@ -73,12 +69,15 @@ export const handler = async (event: {
 					)
 					continue
 				}
+
 				if (Value === null) continue
+
+				if (!isNumeric(def)) continue
 
 				measures.push({
 					Name: `${ObjectID}/${ObjectVersion}/${ResourceID}`,
 					Value: Value.toString(),
-					Type: toTimestreamType(def),
+					Type: MeasureValueType.DOUBLE,
 				})
 			}
 
@@ -117,18 +116,4 @@ export const handler = async (event: {
 			},
 		],
 	})
-}
-
-const toTimestreamType = (def: LwM2MResourceInfo) => {
-	switch (def.Type) {
-		case ResourceType.Boolean:
-			return MeasureValueType.BOOLEAN
-		case ResourceType.Float:
-		case ResourceType.Integer:
-			return MeasureValueType.DOUBLE
-		case ResourceType.String:
-		case ResourceType.Opaque:
-		case ResourceType.Time:
-			return MeasureValueType.VARCHAR
-	}
 }
