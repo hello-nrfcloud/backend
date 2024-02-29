@@ -76,7 +76,7 @@ export const handler = async (event: {
 				if (Value === null) continue
 
 				measures.push({
-					Name: `${ObjectID}:${ObjectVersion}/${ResourceID}`,
+					Name: `${ObjectID}/${ObjectVersion}/${ResourceID}`,
 					Value: Value.toString(),
 					Type: toTimestreamType(def),
 				})
