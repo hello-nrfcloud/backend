@@ -1,4 +1,4 @@
-import { MetricUnits } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import type { AddMetricsFn } from './metrics/metrics.js'
 import type { Logger } from './util/logger.js'
 
@@ -17,7 +17,7 @@ export const loggingFetch =
 		const res = await fetch(url, init)
 
 		const responseTime = Date.now() - start
-		track('apiResponseTime', MetricUnits.Milliseconds, responseTime)
+		track('apiResponseTime', MetricUnit.Milliseconds, responseTime)
 
 		log.debug('fetch:responseTime', responseTime.toString())
 		log.debug('fetch:status', res.status.toString())

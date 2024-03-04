@@ -1,4 +1,5 @@
-import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import {
 	BadRequestError,
@@ -107,14 +108,14 @@ const h = async (
 	if (gnss !== undefined) {
 		config.nod = gnss === false ? ['gnss'] : []
 		if (gnss === true) {
-			track('gnss:on', MetricUnits.Count, 1)
+			track('gnss:on', MetricUnit.Count, 1)
 		} else {
-			track('gnss:off', MetricUnits.Count, 1)
+			track('gnss:off', MetricUnit.Count, 1)
 		}
 	}
 
 	if (updateIntervalSeconds !== undefined) {
-		track('updateInterval', MetricUnits.Seconds, updateIntervalSeconds)
+		track('updateInterval', MetricUnit.Seconds, updateIntervalSeconds)
 		config.activeWaitTime = updateIntervalSeconds
 	}
 

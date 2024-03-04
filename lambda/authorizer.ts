@@ -1,4 +1,5 @@
-import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import {
 	DynamoDBClient,
 	QueryCommand,
@@ -56,7 +57,7 @@ const h = async (event: {
 	const fingerprint = event.queryStringParameters?.fingerprint
 	if (fingerprint === undefined) {
 		log.error(`Fingerprint cannot be empty`)
-		track('authorizer:badRequest', MetricUnits.Count, 1)
+		track('authorizer:badRequest', MetricUnit.Count, 1)
 		return deny
 	}
 	const res = await db.send(
@@ -78,7 +79,7 @@ const h = async (event: {
 	const device = res.Items?.[0] !== undefined ? unmarshall(res.Items[0]) : null
 	if (device === null) {
 		log.error(`DeviceId is not found with`, { fingerprint })
-		track('authorizer:badFingerprint', MetricUnits.Count, 1)
+		track('authorizer:badFingerprint', MetricUnit.Count, 1)
 		return deny
 	}
 
@@ -91,7 +92,7 @@ const h = async (event: {
 			deviceId,
 			account,
 		})
-		track('authorizer:badInfo', MetricUnits.Count, 1)
+		track('authorizer:badInfo', MetricUnit.Count, 1)
 		return deny
 	}
 
@@ -102,7 +103,7 @@ const h = async (event: {
 			deviceId,
 			account,
 		})
-		track('authorizer:badInfo', MetricUnits.Count, 1)
+		track('authorizer:badInfo', MetricUnit.Count, 1)
 		return deny
 	}
 
@@ -137,7 +138,7 @@ const h = async (event: {
 	)
 
 	log.debug(`Connection request for fingerprint ${fingerprint} authorized.`)
-	track('authorizer:success', MetricUnits.Count, 1)
+	track('authorizer:success', MetricUnit.Count, 1)
 
 	return {
 		principalId: 'me',
