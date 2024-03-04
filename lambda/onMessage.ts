@@ -2,7 +2,8 @@
  * Handle incoming websocket messages
  */
 
-import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import {
 	ConditionalCheckFailedException,
 	DynamoDBClient,
@@ -57,7 +58,7 @@ const { track, metrics } = metricsForComponent('onMessage')
 const error =
 	(deviceId: string, event: AuthorizedEvent) =>
 	async (problem: Static<typeof ProblemDetail>) => {
-		track('invalidRequest', MetricUnits.Count, 1)
+		track('invalidRequest', MetricUnit.Count, 1)
 		await eventBus.putEvents({
 			Entries: [
 				{
@@ -127,7 +128,7 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 			log.debug(`WebConnection is not found`, {
 				context: event.requestContext.authorizer,
 			})
-			track('ConnectionIdMissing', MetricUnits.Count, 1)
+			track('ConnectionIdMissing', MetricUnit.Count, 1)
 		}
 	}
 
@@ -196,7 +197,7 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 				validateHistoricalDataRequest,
 			)
 			if ('request' in maybeValidRequest)
-				track('historicalRequest', MetricUnits.Count, 1)
+				track('historicalRequest', MetricUnit.Count, 1)
 			break
 		case Context.configureDevice.toString():
 			maybeValidRequest = validateRequest<typeof ConfigureDevice>(
@@ -204,7 +205,7 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 				validateConfigureDeviceRequest,
 			)
 			if ('request' in maybeValidRequest)
-				track('configureDevice', MetricUnits.Count, 1)
+				track('configureDevice', MetricUnit.Count, 1)
 			break
 		default:
 			log.error(`Unexpected request`, maybeValidRequestContext)

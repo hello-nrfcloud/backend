@@ -1,4 +1,5 @@
-import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
@@ -111,7 +112,7 @@ const h = async (event: {
 			...maybeCached,
 			ts,
 		}
-		track('single-cell:cached', MetricUnits.Count, 1)
+		track('single-cell:cached', MetricUnit.Count, 1)
 	} else {
 		const body = {
 			lte: [
@@ -135,7 +136,7 @@ const h = async (event: {
 		)
 
 		if ('error' in maybeResult) {
-			track('single-cell:error', MetricUnits.Count, 1)
+			track('single-cell:error', MetricUnit.Count, 1)
 			log.error('Failed to resolve cell location:', {
 				error: maybeResult.error,
 			})
@@ -143,7 +144,7 @@ const h = async (event: {
 			return
 		}
 
-		track('single-cell:resolved', MetricUnits.Count, 1)
+		track('single-cell:resolved', MetricUnit.Count, 1)
 		const { lat, lon, uncertainty } = maybeResult.result
 		message = {
 			'@context': Context.singleCellGeoLocation.toString(),

@@ -1,4 +1,5 @@
-import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
@@ -34,14 +35,14 @@ const h = async () => {
 	await Promise.all([
 		getDailyActiveDevices(previousHour).then((dailyActiveDevicesCount) => {
 			console.log({ dailyActiveDevicesCount })
-			track('dailyActive:devices', MetricUnits.Count, dailyActiveDevicesCount)
+			track('dailyActive:devices', MetricUnit.Count, dailyActiveDevicesCount)
 		}),
 		getDailyActiveFingerprints(previousHour).then(
 			(dailyActiveFingerprintCount) => {
 				console.log({ dailyActiveFingerprintCount })
 				track(
 					'dailyActive:fingerprints',
-					MetricUnits.Count,
+					MetricUnit.Count,
 					dailyActiveFingerprintCount,
 				)
 			},
@@ -67,7 +68,7 @@ const h = async () => {
 				} else {
 					const costs = maybeCosts.currentMonthTotalCost
 					console.log({ [`${account}:costs`]: costs })
-					track(`nrfCloudMonthlyCosts:${account}`, MetricUnits.Count, costs)
+					track(`nrfCloudMonthlyCosts:${account}`, MetricUnit.Count, costs)
 				}
 			},
 		),

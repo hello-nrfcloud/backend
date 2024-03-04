@@ -1,4 +1,5 @@
-import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
@@ -28,7 +29,7 @@ const h = async (event: {
 	timestamp: number
 }): Promise<void> => {
 	log.debug('event', { event })
-	track('deviceMessage', MetricUnits.Count, 1)
+	track('deviceMessage', MetricUnit.Count, 1)
 	const { deviceId, message } = event
 
 	// Fetch model for device
@@ -45,9 +46,9 @@ const h = async (event: {
 	})(model, message)
 
 	if (converted.length === 0) {
-		track('unknownDeviceMessage', MetricUnits.Count, 1)
+		track('unknownDeviceMessage', MetricUnit.Count, 1)
 	} else {
-		track('convertedDeviceMessage', MetricUnits.Count, converted.length)
+		track('convertedDeviceMessage', MetricUnit.Count, converted.length)
 	}
 
 	await Promise.all(

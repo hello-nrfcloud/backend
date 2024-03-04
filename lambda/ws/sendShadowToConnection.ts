@@ -1,4 +1,4 @@
-import { MetricUnits } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import {
 	EventBridgeClient,
 	PutEventsCommand,
@@ -37,7 +37,7 @@ export const sendShadowToConnection =
 						message,
 					)} from model ${model}: ${error}`,
 				)
-				track('shadowConversionFailed', MetricUnits.Count, 1)
+				track('shadowConversionFailed', MetricUnit.Count, 1)
 			},
 		})(model, shadow.state)
 

@@ -1,4 +1,5 @@
-import { MetricUnits, logMetrics } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda'
@@ -114,7 +115,7 @@ const h = async (): Promise<void> => {
 		string,
 		{ ts: number; temperature: number; coapTs: number | null }
 	>()
-	track('checkMessageFromWebsocket', MetricUnits.Count, 1)
+	track('checkMessageFromWebsocket', MetricUnit.Count, 1)
 	await Promise.all(
 		Object.entries(allAccountsSettings).map(async ([account, settings]) => {
 			try {
@@ -195,7 +196,7 @@ const h = async (): Promise<void> => {
 
 							track(
 								`receivingMessageDuration`,
-								MetricUnits.Seconds,
+								MetricUnit.Seconds,
 								(Date.now() - (data.coapTs ?? data.ts)) / 1000,
 							)
 							assert.deepEqual(messageObj, expectedMessage)
@@ -207,10 +208,10 @@ const h = async (): Promise<void> => {
 						}
 					},
 				})
-				track(`success`, MetricUnits.Count, 1)
+				track(`success`, MetricUnit.Count, 1)
 			} catch (error) {
 				log.error(`health check error`, { error, account })
-				track('fail', MetricUnits.Count, 1)
+				track('fail', MetricUnit.Count, 1)
 			}
 		}),
 	)

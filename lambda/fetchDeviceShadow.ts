@@ -1,4 +1,5 @@
-import { logMetrics, MetricUnits } from '@aws-lambda-powertools/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridgeClient } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
@@ -82,7 +83,7 @@ const h = async (): Promise<void> => {
 	try {
 		const lockAcquired = await lock.acquiredLock(lockName, lockTTLSeconds)
 		if (lockAcquired === false) {
-			track('locked', MetricUnits.Count, 1)
+			track('locked', MetricUnit.Count, 1)
 			log.info(`Other process is still running, then ignore`)
 			return
 		}
@@ -94,7 +95,7 @@ const h = async (): Promise<void> => {
 
 		const connections = await connectionsRepo.getAll()
 		log.info(`Found ${connections.length} active connections`)
-		track('connections', MetricUnits.Count, connections.length)
+		track('connections', MetricUnit.Count, connections.length)
 
 		if (connections.length === 0) return
 
@@ -170,11 +171,11 @@ const h = async (): Promise<void> => {
 									)
 									track(
 										'apiResponseTime',
-										MetricUnits.Milliseconds,
+										MetricUnit.Milliseconds,
 										Date.now() - start,
 									)
 									if ('error' in res) {
-										track('error', MetricUnits.Count, 1)
+										track('error', MetricUnit.Count, 1)
 										log.error(`Fetching shadow error`, { error: res.error })
 										return []
 									}
@@ -201,7 +202,7 @@ const h = async (): Promise<void> => {
 
 				track(
 					'shadowVersionDelta',
-					MetricUnits.Count,
+					MetricUnit.Count,
 					deviceShadow.state.version - (d.version ?? 0),
 				)
 
@@ -212,14 +213,14 @@ const h = async (): Promise<void> => {
 				)
 
 				if (!isUpdated) {
-					track('shadowStale', MetricUnits.Count, 1)
+					track('shadowStale', MetricUnit.Count, 1)
 					continue
 				}
 
-				track('shadowUpdated', MetricUnits.Count, 1)
+				track('shadowUpdated', MetricUnit.Count, 1)
 				track(
 					'shadowAge',
-					MetricUnits.Seconds,
+					MetricUnit.Seconds,
 					Math.round(Date.now() / 1000) -
 						getShadowUpdateTime(deviceShadow.state.metadata),
 				)
@@ -244,7 +245,7 @@ const h = async (): Promise<void> => {
 		)
 	} catch (error) {
 		log.error(`fetch device shadow error`, { error })
-		track('error', MetricUnits.Count, 1)
+		track('error', MetricUnit.Count, 1)
 	} finally {
 		await lock.releaseLock(lockName)
 	}

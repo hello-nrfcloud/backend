@@ -1,4 +1,4 @@
-import { logMetrics } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
 import { InternalError } from '@hello.nrfcloud.com/proto/hello'
