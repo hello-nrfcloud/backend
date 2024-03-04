@@ -25,8 +25,9 @@ jobs:
     timeout-minutes: 30
 
     outputs:
-      image_tag: ${{ steps.stack_outputs.outputs.image_tag }}
-      repository_name: ${{ steps.stack_outputs.outputs.repository_name }}
+      mqtt_bridge_tag: ${{ steps.mqtt-bridge-container.outputs.tag }}
+      coap_simulator_tag: ${{ steps.coap-simulator-container.outputs.tag }}
+      openssl_layer_tag: ${{ steps.openssl-layer-container.outputs.tag }}
 
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +82,27 @@ jobs:
         run: |
           ./cli.sh configure-coap-health-check simulatorDownloadURL ${{ env.COAP_SIMULATOR_DOWNLOAD_URL }}
 
+      - name: Build MQTT bridge container
+        id: mqtt-bridge-container
+        run: |
+          TAG=$(./cli.sh build-container mqtt-bridge)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "MQTT_BRIDGE_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
+
+      - name: Build CoAP simulator container
+        id: coap-simulator-container
+        run: |
+          TAG=$(./cli.sh build-container coap-simulator)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "COAP_SIMULATOR_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
+
+      - name: Build OpenSSL layer container
+        id: openssl-layer-container
+        run: |
+          TAG=$(./cli.sh build-container openssl-layer)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "OPENSSL_LAYER_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
+
       - name: Deploy test resources stack
         run: |
           npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never
@@ -113,16 +135,6 @@ jobs:
       - name: Get logs
         if: failure()
         run: ./cli.sh logs -f ERROR
-
-      - name: Save stack outputs
-        id: stack_outputs
-        run: |
-          OUTPUTS=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} --query 'Stacks[*].Outputs'`
-          IMAGE_TAG=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeImageTag").OutputValue'`
-          REPOSITORY_URI=`echo $OUTPUTS | jq -r '.[][] | select(.OutputKey == "bridgeRepositoryURI").OutputValue'`
-          REPOSITORY_NAME=`echo "$REPOSITORY_URI" | sed 's/^.*amazonaws\.com\///g'`
-          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "repository_name=$REPOSITORY_NAME" >> $GITHUB_OUTPUT
 
       - name: Clean up End-to-End test resources
         if: always()
@@ -169,26 +181,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: github-action-hello-nrfcloud-backend
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Tag mqtt bridge image version
-        id: tag-mqtt-bridge-image-version
-        run: |
-          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo $LATEST_TAG
-          # Remove existing image tag version if any
-          aws ecr batch-delete-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=latest imageTag=$LATEST_TAG > /dev/null
-          MANIFEST=$( aws ecr batch-get-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-ids imageTag=${{ needs.e2e-tests.outputs.image_tag }} | jq -r --join-output '.images[].imageManifest' )
-          aws ecr put-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-tag latest --image-manifest "$MANIFEST"
-          aws ecr put-image --repository-name ${{ needs.e2e-tests.outputs.repository_name }} --image-tag "$LATEST_TAG" --image-manifest "$MANIFEST"
-
       - name: Trigger deployment workflow
         if: steps.tag-mqtt-bridge-image-version.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run deploy.yaml
+        run: |
+          gh workflow run deploy.yaml \
+            -F mqtt_bridge_tag=${{ needs.e2e-tests.outputs.mqtt_bridge_tag }} \
+            -F coap_simulator_tag=${{ needs.e2e-tests.outputs.coap_simulator_tag }} \
+            -F openssl_layer_tag=${{ needs.e2e-tests.outputs.openssl_layer_tag }}

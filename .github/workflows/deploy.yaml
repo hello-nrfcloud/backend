@@ -3,9 +3,15 @@ name: Deployment
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: "MQTT bridge version to deploy"
-        required: false
+      mqtt_bridge_tag:
+        description: "MQTT bridge container tag to deploy"
+        required: true
+      coap_simulator_tag:
+        description: "CoAP simulator container tag to deploy"
+        required: true
+      openssl_layer_tag:
+        description: "OpenSSL layer container tag to deploy"
+        required: true
 
 permissions:
   id-token: write
@@ -53,5 +59,9 @@ jobs:
 
       - name: Deploy solution stack
         env:
-          RELEASE_IMAGE_TAG: ${{ github.event.inputs.tag }}
+          MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
+          COAP_SIMULATOR_CONTAINER_TAG:
+            ${{ github.event.inputs.coap_simulator_tag }}
+          OPENSSL_LAYER_CONTAINER_TAG:
+            ${{ github.event.inputs.openssl_layer_tag }}
         run: npx cdk deploy --all --require-approval never

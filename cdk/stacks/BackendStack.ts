@@ -4,6 +4,8 @@ import {
 	aws_lambda as Lambda,
 	Stack,
 	type Environment,
+	aws_ecr as ECR,
+	aws_ecs as ECS,
 } from 'aws-cdk-lib'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
@@ -16,10 +18,7 @@ import { DeviceShadow } from '../resources/DeviceShadow.js'
 import { DeviceStorage } from '../resources/DeviceStorage.js'
 import { HealthCheckMqttBridge } from '../resources/HealthCheckMqttBridge.js'
 import { HistoricalData } from '../resources/HistoricalData.js'
-import {
-	Integration,
-	type BridgeImageSettings,
-} from '../resources/Integration.js'
+import { Integration } from '../resources/Integration.js'
 import { parameterStoreLayerARN } from '../resources/LambdaExtensionLayers.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
 import { WebsocketAPI } from '../resources/WebsocketAPI.js'
@@ -30,10 +29,11 @@ import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 import { SingleCellGeoLocation } from '../resources/SingleCellGeoLocation.js'
 import { WebsocketConnectionsTable } from '../resources/WebsocketConnectionsTable.js'
 import { WebsocketEventBus } from '../resources/WebsocketEventBus.js'
+import { HealthCheckCoAP } from '../resources/HealthCheckCoAP.js'
 import {
-	HealthCheckCoAP,
-	type CoAPSimulatorImage,
-} from '../resources/HealthCheckCoAP.js'
+	ContainerRepositoryId,
+	repositoryName,
+} from '../../aws/getOrCreateRepository.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -46,8 +46,8 @@ export class BackendStack extends Stack {
 			mqttBridgeCertificate,
 			caCertificate,
 			nRFCloudAccounts,
-			bridgeImageSettings,
-			coapSimulatorImage,
+			mqttBridgeContainerTag,
+			coapSimulatorContainerTag,
 			repository,
 			gitHubOICDProviderArn,
 			env,
@@ -55,13 +55,12 @@ export class BackendStack extends Stack {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
 			healthCheckLayer: PackedLayer
-			mapLayer: PackedLayer
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
 			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
-			bridgeImageSettings: BridgeImageSettings
-			coapSimulatorImage: CoAPSimulatorImage
+			mqttBridgeContainerTag: string
+			coapSimulatorContainerTag: string
 			gitHubOICDProviderArn: string
 			repository: {
 				owner: string
@@ -137,7 +136,14 @@ export class BackendStack extends Stack {
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
-			bridgeImageSettings,
+			bridgeImage: ECS.ContainerImage.fromEcrRepository(
+				ECR.Repository.fromRepositoryName(
+					this,
+					'mqtt-bridge-ecr',
+					repositoryName(ContainerRepositoryId.MQTTBridge),
+				),
+				mqttBridgeContainerTag,
+			),
 			nRFCloudAccounts,
 		})
 
@@ -152,7 +158,16 @@ export class BackendStack extends Stack {
 			new HealthCheckCoAP(this, {
 				websocketAPI,
 				deviceStorage,
-				coapSimulatorImage,
+				code: Lambda.DockerImageCode.fromEcr(
+					ECR.Repository.fromRepositoryName(
+						this,
+						'coap-simulator-ecr',
+						repositoryName(ContainerRepositoryId.CoAPSimulator),
+					),
+					{
+						tagOrDigest: coapSimulatorContainerTag,
+					},
+				),
 				layers: [...lambdaLayers, healthCheckLayerVersion],
 				lambdaSources,
 			})
@@ -212,16 +227,6 @@ export class BackendStack extends Stack {
 			description: 'Device table name fingerprint index name',
 			value: deviceStorage.devicesTableFingerprintIndexName,
 		})
-		new CfnOutput(this, 'bridgeRepositoryURI', {
-			exportName: `${this.stackName}:bridgeRepositoryURI`,
-			description: 'ECR name',
-			value: bridgeImageSettings.repositoryUri,
-		})
-		new CfnOutput(this, 'bridgeImageTag', {
-			exportName: `${this.stackName}:bridgeImageTag`,
-			description: 'Mqtt bridge image tag',
-			value: bridgeImageSettings.imageTag,
-		})
 		new CfnOutput(this, 'historicalDataTableInfo', {
 			exportName: `${this.stackName}:historicalDataTableInfo`,
 			description:
@@ -243,7 +248,5 @@ export type StackOutputs = {
 	historicalDataTableInfo: string
 	bridgePolicyName: string
 	bridgeCertificatePEM: string
-	bridgeRepositoryURI: string
-	bridgeImageTag: string
 	cdRoleArn: string
 }

@@ -36,7 +36,7 @@ export const ensureCA =
 			await run({
 				command: 'openssl',
 				args: ['genrsa', '-out', caFiles.key, '2048'],
-				log: debug,
+				log: { debug },
 			})
 
 			debug?.(`Generating certificate for CA ${caID}`)
@@ -58,7 +58,7 @@ export const ensureCA =
 					'-subj',
 					`/OU=${caID}`,
 				],
-				log: debug,
+				log: { debug },
 			})
 
 			await createCAVerificationCert({

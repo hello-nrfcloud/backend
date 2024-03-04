@@ -1,21 +1,17 @@
 import {
 	Duration,
 	aws_ec2 as EC2,
-	aws_ecr as ECR,
 	aws_ecs as ECS,
 	aws_iot as IoT,
 	Stack,
 } from 'aws-cdk-lib'
-import type { IRepository } from 'aws-cdk-lib/aws-ecr'
-import { LogDriver, type ICluster } from 'aws-cdk-lib/aws-ecs'
+import { LogDriver, type ICluster, ContainerImage } from 'aws-cdk-lib/aws-ecs'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 import { Construct } from 'constructs'
 import { readFileSync } from 'node:fs'
-import { URL } from 'node:url'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation'
-import { type Settings as BridgeSettings } from '../../bridge/settings.js'
 import {
 	parameterName,
 	type Settings as nRFCloudSettings,
@@ -23,24 +19,21 @@ import {
 import { Scope, settingsPath } from '../../util/settings.js'
 import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 
-export type BridgeImageSettings = BridgeSettings
-
 export class Integration extends Construct {
 	public readonly bridgeCertificate: IoT.CfnCertificate
-	public readonly bridgeRepository: IRepository
 	public constructor(
 		parent: Construct,
 		{
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
-			bridgeImageSettings,
+			bridgeImage,
 			nRFCloudAccounts,
 		}: {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
-			bridgeImageSettings: BridgeImageSettings
+			bridgeImage: ContainerImage
 			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
 		},
 	) {
@@ -140,15 +133,6 @@ export class Integration extends Construct {
 		})
 
 		const mqttBridgeTask = new ECS.FargateTaskDefinition(this, 'mqttBridge')
-		// Repository uri does not have protocol part while URL requires protocol
-		const repositoryUrl = new URL(
-			`https://${bridgeImageSettings.repositoryUri}`,
-		)
-		this.bridgeRepository = ECR.Repository.fromRepositoryName(
-			this,
-			'repo',
-			repositoryUrl.pathname.replace(/^\//, ''),
-		)
 
 		const nrfCloudSetting = (property: keyof nRFCloudSettings, scope: string) =>
 			StringParameter.fromStringParameterName(
@@ -280,10 +264,7 @@ export class Integration extends Construct {
 					hostPort: 1883,
 				},
 			],
-			image: ECS.ContainerImage.fromEcrRepository(
-				this.bridgeRepository,
-				bridgeImageSettings.imageTag,
-			),
+			image: bridgeImage,
 			secrets,
 			environment,
 			healthCheck: {
