@@ -149,6 +149,9 @@ jobs:
           ./cli.sh configure-nrfcloud-account elite apiEndpoint -X
           ./cli.sh configure-nrfcloud-account elite apiKey -X
           ./cli.sh clean-backup-certificates
+          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-coap-simulator
+          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-openssl-layer
+          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-mqtt-bridge
 
   release:
     needs:
