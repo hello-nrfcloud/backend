@@ -29,7 +29,7 @@
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "3.525.0",
-    "@aws-sdk/client-cloudformation": "3.525.0",
+    "@aws-sdk/client-cloudformation": "3.526.0",
     "@aws-sdk/client-cloudwatch-logs": "3.525.0",
     "@aws-sdk/client-dynamodb": "3.525.0",
     "@aws-sdk/client-ecr": "3.525.0",
