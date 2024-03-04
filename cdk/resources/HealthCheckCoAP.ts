@@ -4,11 +4,9 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
-	aws_ecr as ECR,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { type Settings as BridgeSettings } from '../../bridge/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
@@ -16,26 +14,19 @@ import { LambdaSource } from './LambdaSource.js'
 import { Scope } from '../../util/settings.js'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
 
-export type BridgeImageSettings = BridgeSettings
-
-export type CoAPSimulatorImage = {
-	imageTag: string
-	repositoryName: string
-}
-
 export class HealthCheckCoAP extends Construct {
 	public constructor(
 		parent: Construct,
 		{
 			websocketAPI,
 			deviceStorage,
-			coapSimulatorImage,
+			code,
 			layers,
 			lambdaSources,
 		}: {
 			websocketAPI: WebsocketAPI
 			deviceStorage: DeviceStorage
-			coapSimulatorImage: CoAPSimulatorImage
+			code: Lambda.DockerImageCode
 			layers: Lambda.ILayerVersion[]
 			lambdaSources: {
 				healthCheckForCoAP: PackedLambda
@@ -54,16 +45,7 @@ export class HealthCheckCoAP extends Construct {
 			memorySize: 1792,
 			timeout: Duration.seconds(30),
 			description: 'CoAP simulator (JAVA) - lambda container image',
-			code: Lambda.DockerImageCode.fromEcr(
-				ECR.Repository.fromRepositoryName(
-					this,
-					'coapSimulatorRepository',
-					coapSimulatorImage.repositoryName,
-				),
-				{
-					tagOrDigest: coapSimulatorImage.imageTag,
-				},
-			),
+			code,
 		})
 
 		const healthCheckCoAP = new Lambda.Function(this, 'healthCheckCoAP', {

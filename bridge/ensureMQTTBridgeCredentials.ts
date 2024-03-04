@@ -46,7 +46,7 @@ export const ensureMQTTBridgeCredentials =
 					'prime256v1',
 					'-genkey',
 				],
-				log: debug,
+				log: debug !== undefined ? { debug, stderr: debug } : undefined,
 			})
 
 			debug?.(`Generating CSR for MQTT bridge ${mqttBridgeId}`)
@@ -63,7 +63,7 @@ export const ensureMQTTBridgeCredentials =
 					'-subj',
 					`/CN=${mqttBridgeId}`,
 				],
-				log: debug,
+				log: debug !== undefined ? { debug, stderr: debug } : undefined,
 			})
 
 			debug?.(`Generating certificate for MQTT bridge ${mqttBridgeId}`)
@@ -86,7 +86,7 @@ export const ensureMQTTBridgeCredentials =
 					`5000`,
 					'-sha256',
 				],
-				log: debug,
+				log: debug !== undefined ? { debug, stderr: debug } : undefined,
 			})
 		}
 

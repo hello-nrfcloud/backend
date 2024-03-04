@@ -62,6 +62,22 @@ The single-cell geo-location features uses the nRF Cloud
 service to be enabled in the account's plan. Manage the account at
 <https://nrfcloud.com/#/manage-plan>.
 
+### Build the docker images
+
+Some of the feature are run from docker containers, ensure they have been built
+and published before deploying the solutions.
+
+```bash
+export MQTT_BRIDGE_IMAGE_TAG=$(./cli.sh build-container mqtt-bridge)
+export COAP_SIMULATOR_IMAGE_TAG=$(./cli.sh build-container coap-simulator)
+export OPENSSL_LAYER_IMAGE_TAG=$(./cli.sh build-container openssl-layer)
+
+# You can add these outputs to your .env file
+echo MQTT_BRIDGE_IMAGE_TAG=$MQTT_BRIDGE_IMAGE_TAG
+echo COAP_SIMULATOR_IMAGE_TAG=$COAP_SIMULATOR_IMAGE_TAG
+echo OPENSSL_LAYER_IMAGE_TAG=$OPENSSL_LAYER_IMAGE_TAG
+```
+
 ### Deploy
 
 ```bash

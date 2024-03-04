@@ -1,38 +1,30 @@
-import { ECRClient } from '@aws-sdk/client-ecr'
 import { IAMClient } from '@aws-sdk/client-iam'
 import { IoTClient } from '@aws-sdk/client-iot'
-import { STS } from '@aws-sdk/client-sts'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { STS } from '@aws-sdk/client-sts'
+import { fromEnv } from '@nordicsemiconductor/from-env'
+import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
-import { getOrBuildDockerImage } from '../aws/getOrBuildDockerImage.js'
-import { getOrCreateRepository } from '../aws/getOrCreateRepository.js'
+import { caLocation } from '../bridge/caLocation.js'
 import { ensureCA } from '../bridge/ensureCA.js'
 import { ensureMQTTBridgeCredentials } from '../bridge/ensureMQTTBridgeCredentials.js'
+import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
 import { debug, type logFn } from '../cli/log.js'
+import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import pJSON from '../package.json'
+import { Scope } from '../util/settings.js'
 import { BackendApp } from './BackendApp.js'
 import { ensureGitHubOIDCProvider } from './ensureGitHubOIDCProvider.js'
-import { env } from './helpers/env.js'
-import { packLayer } from './helpers/lambdas/packLayer.js'
-import { packBackendLambdas } from './packBackendLambdas.js'
-import {
-	ECR_NAME,
-	STACK_NAME,
-	ECR_NAME_COAP_SIMULATOR,
-} from './stacks/stackConfig.js'
-import { mkdir } from 'node:fs/promises'
-import { Scope } from '../util/settings.js'
-import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
-import { caLocation } from '../bridge/caLocation.js'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'
 import { storeCertificateInSSM } from './helpers/certificates/storeCertificateInSSM.js'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import { getMosquittoLatestTag } from '../docker/getMosquittoLatestTag.js'
-import { hashFolder } from '../docker/hashFolder.js'
-import { getCoAPHealthCheckSettings } from '../nrfcloud/coap-health-check.js'
-import { checkSumOfStrings } from './helpers/lambdas/checksumOfFiles.js'
+import { env } from './helpers/env.js'
+import { pack as packBaseLayer } from './layers/baseLayer.js'
+import { pack as packHealthCheckLayer } from './layers/healthCheckLayer.js'
+import { pack as packMapLayer } from './layers/mapLayer.js'
+import { packBackendLambdas } from './packBackendLambdas.js'
 import { packMapBackendLambdas } from './packMapBackendLambdas.js'
+import { STACK_NAME } from './stacks/stackConfig.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -42,24 +34,10 @@ const repository = {
 
 const iot = new IoTClient({})
 const sts = new STS({})
-const ecr = new ECRClient({})
 const iam = new IAMClient({})
 const ssm = new SSMClient({})
 
 const accountEnv = await env({ sts })
-
-const packagesInLayer: string[] = [
-	'@nordicsemiconductor/from-env',
-	'@nordicsemiconductor/timestream-helpers',
-	'@sinclair/typebox',
-	'@hello.nrfcloud.com/proto',
-	'p-limit',
-	'@aws-lambda-powertools/metrics',
-	'lodash-es',
-	'@middy/core',
-]
-
-const healthCheckPackagesInLayer: string[] = ['mqtt', 'ws']
 
 const certsDir = path.join(
 	process.cwd(),
@@ -126,78 +104,18 @@ await Promise.all(
 	}),
 )
 
-// Prebuild / reuse docker image
-// NOTE: It is intention that release image tag can be undefined during the development,
-// then the system will create image based on the folder hash
-const releaseImageTag = process.env.RELEASE_IMAGE_TAG
-const repositoryUri = await getOrCreateRepository({ ecr })(ECR_NAME)
-const mosquittoLatestTag = await getMosquittoLatestTag()
-const bridgeDockerfilePath = path.join(
-	process.cwd(),
-	'cdk',
-	'resources',
-	'containers',
-	'bridge',
-)
-const bridgeHash = await hashFolder(bridgeDockerfilePath)
-const { imageTag } = await getOrBuildDockerImage({
-	ecr,
-	releaseImageTag,
-	debug: debug('Docker image'),
-})({
-	repositoryUri,
-	repositoryName: ECR_NAME,
-	dockerFilePath: bridgeDockerfilePath,
-	imageTagFactory: async () => `${bridgeHash}_${mosquittoLatestTag}`,
-	buildArgs: {
-		MOSQUITTO_VERSION: mosquittoLatestTag,
-	},
-})
-// Prebuild / reuse coap-simulator docker image
-const repositoryCoapSimulatorUri = await getOrCreateRepository({ ecr })(
-	ECR_NAME_COAP_SIMULATOR,
-)
-const coapDockerfilePath = path.join(
-	process.cwd(),
-	'cdk',
-	'resources',
-	'containers',
-	'coap',
-)
-const coapSimulatorDownloadUrl = (
-	await getCoAPHealthCheckSettings({
-		ssm,
-		stackName: STACK_NAME,
-	})
-).simulatorDownloadURL.toString()
-const res = await fetch(coapSimulatorDownloadUrl, {
-	method: 'HEAD',
-})
-if (!res.ok)
-	throw new Error(`Failed to download CoAP simulator: ${await res.text()}`)
-const coapSimulatorBinaryHash = res.headers.get('etag')
-if (coapSimulatorBinaryHash === null)
-	throw new Error(`[CoAP simulator] No ETag present in server response.`)
+// Ensure needed container images exist
+const {
+	mqttBridgeContainerTag,
+	coapSimulatorContainerTag,
+	openSSLLayerContainerTag,
+} = fromEnv({
+	mqttBridgeContainerTag: 'MQTT_BRIDGE_CONTAINER_TAG',
+	coapSimulatorContainerTag: 'COAP_SIMULATOR_CONTAINER_TAG',
+	openSSLLayerContainerTag: 'OPENSSL_LAYER_CONTAINER_TAG',
+})(process.env)
 
-const coapDockerfileHash = await hashFolder(coapDockerfilePath)
-const coapHash = checkSumOfStrings([
-	coapDockerfileHash,
-	coapSimulatorBinaryHash,
-])
-const { imageTag: coapSimulatorImageTag } = await getOrBuildDockerImage({
-	ecr,
-	releaseImageTag: undefined,
-	debug: debug('CoAP simulator docker image'),
-})({
-	repositoryUri: repositoryCoapSimulatorUri,
-	repositoryName: ECR_NAME_COAP_SIMULATOR,
-	dockerFilePath: coapDockerfilePath,
-	imageTagFactory: async () => `${coapHash}`,
-	buildArgs: {
-		COAP_SIMULATOR_DOWNLOAD_URL: coapSimulatorDownloadUrl,
-	},
-})
-
+// Fetch all the configured nRF Cloud Accounts
 const nRFCloudAccounts = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
@@ -205,41 +123,14 @@ const nRFCloudAccounts = await getAllAccountsSettings({
 
 new BackendApp({
 	lambdaSources: await packBackendLambdas(),
-	MapBackendLambdasources: await packMapBackendLambdas(),
-	layer: await packLayer({
-		id: 'baseLayer',
-		dependencies: packagesInLayer,
-	}),
-	healthCheckLayer: await packLayer({
-		id: 'healthCheckLayer',
-		dependencies: healthCheckPackagesInLayer,
-	}),
-	mapLayer: await packLayer({
-		id: 'mapLayer',
-		dependencies: [
-			'@nordicsemiconductor/from-env',
-			'@sinclair/typebox',
-			'@hello.nrfcloud.com/proto-lwm2m',
-			'@hello.nrfcloud.com/proto',
-			'@middy/core',
-			'id128',
-			'lodash-es',
-			'@nordicsemiconductor/random-words',
-			'@nordicsemiconductor/timestream-helpers',
-		],
-	}),
+	layer: await packBaseLayer(),
+	healthCheckLayer: await packHealthCheckLayer(),
 	iotEndpoint: await getIoTEndpoint({ iot })(),
 	mqttBridgeCertificate,
 	caCertificate,
 	nRFCloudAccounts,
-	bridgeImageSettings: {
-		imageTag,
-		repositoryUri,
-	},
-	coapSimulatorImage: {
-		imageTag: coapSimulatorImageTag,
-		repositoryName: ECR_NAME_COAP_SIMULATOR,
-	},
+	mqttBridgeContainerTag,
+	coapSimulatorContainerTag,
 	repository,
 	gitHubOICDProviderArn: await ensureGitHubOIDCProvider({
 		iam,
@@ -247,4 +138,9 @@ new BackendApp({
 	env: accountEnv,
 	isTest: process.env.IS_TEST === '1',
 	domain: 'hello.nrfcloud.com',
+	map: {
+		lambdaSources: await packMapBackendLambdas(),
+		layer: await packMapLayer(),
+		openSSLLayerContainerTag,
+	},
 })

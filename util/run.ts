@@ -5,10 +5,14 @@ export const run = async (args: {
 	command: string
 	args?: string[]
 	input?: string
-	log?: (...message: any[]) => void
+	log?: {
+		debug?: (...message: any[]) => void
+		stdout?: (...message: any[]) => void
+		stderr?: (...message: any[]) => void
+	}
 }): Promise<string> =>
 	new Promise((resolve, reject) => {
-		args?.log?.(`${args.command} ${args.args?.join(' ')}`)
+		args.log?.debug?.(`${args.command} ${args.args?.join(' ')}`)
 		const p = spawn(args.command, args.args)
 		const result = [] as string[]
 		const errors = [] as string[]
@@ -29,8 +33,10 @@ export const run = async (args: {
 		})
 		p.stdout.on('data', (data) => {
 			result.push(data)
+			args.log?.stdout?.(data)
 		})
 		p.stderr.on('data', (data) => {
 			errors.push(data)
+			args.log?.stderr?.(data)
 		})
 	})

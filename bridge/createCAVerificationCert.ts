@@ -27,7 +27,7 @@ export const createCAVerificationCert = async ({
 	await run({
 		command: 'openssl',
 		args: ['genrsa', '-out', verificationKeyFile, '2048'],
-		log: debug,
+		log: { debug },
 	})
 
 	const registrationCode = await iot
@@ -48,7 +48,7 @@ export const createCAVerificationCert = async ({
 			'-subj',
 			`/CN=${registrationCode}`,
 		],
-		log: debug,
+		log: { debug },
 	})
 
 	await run({
@@ -69,7 +69,7 @@ export const createCAVerificationCert = async ({
 			`1`,
 			'-sha256',
 		],
-		log: debug,
+		log: { debug },
 	})
 
 	await Promise.all([unlink(verificationKeyFile), unlink(csrFile)])

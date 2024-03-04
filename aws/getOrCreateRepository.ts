@@ -5,35 +5,57 @@ import {
 	ImageTagMutability,
 	RepositoryNotFoundException,
 } from '@aws-sdk/client-ecr'
-import type { logFn } from '../cli/log'
+import type { logFn } from '../cli/log.js'
+import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
+
+export type ContainerRepository = {
+	uri: string
+	name: string
+}
+
+export enum ContainerRepositoryId {
+	MQTTBridge = 'mqtt-bridge',
+	CoAPSimulator = 'coap-simulator',
+	OpenSSLLayer = 'openssl-layer',
+}
+
+export const repositoryName = (id: ContainerRepositoryId): string =>
+	`${STACK_NAME}-${id}`
 
 export const getOrCreateRepository =
-	({ ecr, error: logError }: { ecr: ECRClient; error?: logFn }) =>
-	async (repositoryName: string): Promise<string> => {
+	({ ecr }: { ecr: ECRClient }) =>
+	async (
+		id: ContainerRepositoryId,
+		debug?: logFn,
+	): Promise<ContainerRepository> => {
+		const name = repositoryName(id)
 		try {
 			const result = await ecr.send(
 				new DescribeRepositoriesCommand({
-					repositoryNames: [repositoryName],
+					repositoryNames: [name],
 				}),
 			)
-
-			return result.repositories?.[0]?.repositoryUri ?? ''
+			const uri = result.repositories?.[0]?.repositoryUri ?? ''
+			return {
+				name,
+				uri,
+			}
 		} catch (error) {
 			if (error instanceof RepositoryNotFoundException) {
-				console.warn(
-					`Repository ${repositoryName} does not exist. Create a new repository.`,
-				)
+				debug?.(`Repository ${name} does not exist. Create a new repository.`)
 				// Create a repository
 				const result = await ecr.send(
 					new CreateRepositoryCommand({
-						repositoryName,
+						repositoryName: name,
 						imageTagMutability: ImageTagMutability.IMMUTABLE,
 					}),
 				)
 
-				return result.repository?.repositoryUri ?? ''
+				return {
+					name,
+					uri: result.repository?.repositoryUri ?? '',
+				}
 			} else {
-				logError?.(error)
 				throw error
 			}
 		}

@@ -22,6 +22,7 @@ export class MapBackendStack extends Stack {
 		}: {
 			layer: PackedLayer
 			lambdaSources: MapBackendLambdas
+			openSSLLayerContainerTag: string
 		},
 	) {
 		super(parent, MAP_BACKEND_STACK_NAME)

@@ -34,6 +34,8 @@ import { getNRFCloudBulkOpsStatus } from './commands/get-nrfcloud-bulkops-status
 import { importUnsupportedDevice } from './commands/import-unsupported-device.js'
 import { listDevicesCommand } from './commands/list-devices.js'
 import { configureCoAPHealthCheckCommand } from './commands/configure-coap-health-check.js'
+import { ECRClient } from '@aws-sdk/client-ecr'
+import { buildContainersCommand } from './commands/build-container.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -41,6 +43,7 @@ const db = new DynamoDBClient({})
 const cf = new CloudFormationClient({})
 const logs = new CloudWatchLogsClient({})
 const sts = new STSClient({})
+const ecr = new ECRClient({})
 
 const accountEnv = await env({ sts })
 
@@ -54,7 +57,7 @@ const die = (err: Error, origin: any) => {
 process.on('uncaughtException', die)
 process.on('unhandledRejection', die)
 
-console.log('')
+console.error('')
 
 const CLI = async ({ isCI }: { isCI: boolean }) => {
 	program.name('./cli.sh')
@@ -85,6 +88,10 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 			configureCoAPHealthCheckCommand({
 				ssm,
 				stackName: STACK_NAME,
+			}),
+			buildContainersCommand({
+				ecr,
+				ssm,
 			}),
 		)
 	} else {
