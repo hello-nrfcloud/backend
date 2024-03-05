@@ -7,13 +7,15 @@ import {
 import { signDeviceCertificate } from './devices/signDeviceCertificate.js'
 
 export const createCA = async (
-	dest: string,
+	destinationFolder: string,
+	CN: string,
+	email?: string,
 ): Promise<{
 	privateKey: string
 	certificate: string
 }> => {
 	// CA certificate
-	const certificates = simulatorCALocations(dest)
+	const certificates = simulatorCALocations(destinationFolder)
 
 	// Create a CA private key
 	try {
@@ -23,6 +25,8 @@ export const createCA = async (
 			command: 'openssl',
 			args: ['genrsa', '-out', certificates.privateKey, '2048'],
 		})
+		let sub = `/C=NO/ST=Trondelag/L=Trondheim/O=Nordic Semiconductor ASA/OU=hello.nrfcloud.com/CN=${CN}`
+		if (email !== undefined) sub = `${sub}/emailAddress=${email}`
 		await run({
 			command: 'openssl',
 			args: [
@@ -38,7 +42,7 @@ export const createCA = async (
 				'-out',
 				certificates.certificate,
 				'-subj',
-				'/OU=Cellular IoT Applications Team, CN=Device Simulator',
+				sub,
 			],
 		})
 	}

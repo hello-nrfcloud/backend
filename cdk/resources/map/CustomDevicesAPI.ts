@@ -9,6 +9,7 @@ import { Construct } from 'constructs'
 import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
 import { LambdaLogGroup } from '../LambdaLogGroup.js'
 import { Scope } from '../../../util/settings.js'
+import { STACK_NAME } from '../../stacks/stackConfig.js'
 
 export class CustomDevicesAPI extends Construct {
 	public readonly registerURL: Lambda.FunctionUrl
@@ -62,7 +63,7 @@ export class CustomDevicesAPI extends Construct {
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				NODE_NO_WARNINGS: '1',
-				STACK_NAME: Stack.of(this).stackName,
+				BACKEND_STACK_NAME: STACK_NAME,
 				OPENSSL_LAMBDA_FUNCTION_NAME: openSSLFn.functionName,
 			},
 			...new LambdaLogGroup(this, 'registerFnLogs'),
@@ -72,10 +73,10 @@ export class CustomDevicesAPI extends Construct {
 					resources: [
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${Scope.NRFCLOUD_ACCOUNT_PREFIX}/nordic`,
+						}:parameter/${STACK_NAME}/${Scope.NRFCLOUD_ACCOUNT_PREFIX}/nordic`,
 						`arn:aws:ssm:${Stack.of(this).region}:${
 							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${Scope.NRFCLOUD_ACCOUNT_PREFIX}/nordic/*`,
+						}:parameter/${STACK_NAME}/${Scope.NRFCLOUD_ACCOUNT_PREFIX}/nordic/*`,
 					],
 				}),
 			],

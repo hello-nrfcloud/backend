@@ -13,9 +13,10 @@ import { corsHeaders } from '../util/corsHeaders.js'
 import { aResponse } from '../util/aResponse.js'
 import { randomUUID } from 'node:crypto'
 import { devices as devicesApi } from '../../nrfcloud/devices.js'
+import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
 
-const { stackName, openSslLambdaFunctionName } = fromEnv({
-	stackName: 'STACK_NAME',
+const { backendStackName, openSslLambdaFunctionName } = fromEnv({
+	backendStackName: 'BACKEND_STACK_NAME',
 	openSslLambdaFunctionName: 'OPENSSL_LAMBDA_FUNCTION_NAME',
 })({
 	STACK_NAME,
@@ -25,9 +26,11 @@ const ssm = new SSMClient({})
 
 const { apiKey, apiEndpoint } = await getAPISettings({
 	ssm,
-	stackName,
+	stackName: backendStackName,
 	account: 'nordic',
 })()
+
+const accountInfoPromise = getAccountInfo({ endpoint: apiEndpoint, apiKey })
 
 const client = devicesApi({
 	endpoint: apiEndpoint,
@@ -36,10 +39,10 @@ const client = devicesApi({
 
 const lambda = new LambdaClient({})
 
+const knownModels = Object.keys(models)
+
 /**
  * This registers a custom device, which allows arbitrary users to showcase their products on the map.
- *
- * TODO: add email validation step
  */
 export const handler = async (
 	event: APIGatewayProxyEventV2,
@@ -53,9 +56,21 @@ export const handler = async (
 		}
 
 	const { model, email } = JSON.parse(event.body ?? '{}')
+	if (!knownModels.includes(model))
+		return aProblem(cors, {
+			title: `Unknown model: ${model}. Valid models are: ${knownModels.join(', ')}.`,
+			status: 400,
+		})
+
+	const accountInfo = await accountInfoPromise
+	if ('error' in accountInfo)
+		return aProblem(cors, {
+			status: 500,
+			title: 'Missing nRF Cloud Account information',
+		})
 
 	const deviceId = `map-${randomUUID()}`
-	const { key, cert } = JSON.parse(
+	const { privateKey, certificate } = JSON.parse(
 		(
 			await lambda.send(
 				new InvokeCommand({
@@ -69,18 +84,12 @@ export const handler = async (
 		).Payload?.transformToString() ?? '',
 	)
 
-	if (!Object.keys(models).includes(model))
-		return aProblem(cors, {
-			title: `Unknown model: ${model}`,
-			status: 400,
-		})
-
 	const registration = await client.register([
 		{
 			deviceId,
 			subType: 'map-custom',
 			tags: ['map', 'map-custom'],
-			certPem: cert,
+			certPem: certificate,
 		},
 	])
 
@@ -106,13 +115,24 @@ export const handler = async (
 			'@context': new URL(
 				'https://github.com/hello-nrfcloud/proto/map/device-credentials',
 			),
-			deviceId,
-			key,
-			cert,
+			device: {
+				deviceId,
+				model,
+			},
+			mqtt: {
+				endpoint: accountInfo.mqttEndpoint,
+				topic: {
+					senML: `${accountInfo.mqttTopicPrefix}m/senml/${deviceId}`,
+				},
+			},
+			credentials: {
+				privateKey,
+				certificate,
+			},
 		},
 		0,
 		{
-			'X-bulkOpsRequestId': registration.bulkOpsRequestId,
+			'x-bulk-ops-request-id': registration.bulkOpsRequestId,
 		},
 	)
 }

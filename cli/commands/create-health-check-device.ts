@@ -41,7 +41,7 @@ export const createHealthCheckDevice = ({
 		const dir = ensureCertificateDir(env)
 
 		// CA certificate
-		const caCertificates = await createCA(dir)
+		const caCertificates = await createCA(dir, 'Health Check')
 		console.log(
 			chalk.yellow('CA certificate:'),
 			chalk.blue(caCertificates.certificate),

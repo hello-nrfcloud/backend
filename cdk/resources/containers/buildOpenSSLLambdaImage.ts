@@ -38,11 +38,11 @@ export const buildOpenSSLLambdaImage = async (
 		return tag
 	}
 
-	const distDir = await fs.mkdtemp(path.join(os.tmpdir(), path.sep))
+	const distDir = await fs.mkdtemp(path.join(os.tmpdir(), 'code-'))
 
 	await run({
 		command: 'unzip',
-		args: [zipFile, '-d', path.join(distDir, 'lambda')],
+		args: ['-o', zipFile, '-d', path.join(distDir, 'lambda')],
 		log: { debug, stderr: debug, stdout: debug },
 	})
 

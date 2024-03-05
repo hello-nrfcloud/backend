@@ -12,6 +12,7 @@ import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { run } from '../../util/run.js'
 
 export const registerSimulatorDeviceCommand = ({
 	ssm,
@@ -42,7 +43,7 @@ export const registerSimulatorDeviceCommand = ({
 		const dir = ensureCertificateDir(env)
 
 		// CA certificate
-		const caCertificates = await createCA(dir)
+		const caCertificates = await createCA(dir, 'Device Simulator')
 		console.log(
 			chalk.yellow('CA certificate:'),
 			chalk.blue(caCertificates.certificate),
@@ -61,12 +62,17 @@ export const registerSimulatorDeviceCommand = ({
 			chalk.yellow('Private key:'),
 			chalk.blue(deviceCertificates.privateKey),
 		)
-
 		console.log(
 			chalk.yellow(
 				'Device certificate',
 				chalk.blue(deviceCertificates.certificate),
 			),
+		)
+		console.log(
+			await run({
+				command: 'openssl',
+				args: ['x509', '-text', '-noout', '-in', deviceCertificates.signedCert],
+			}),
 		)
 
 		const registration = await client.register([

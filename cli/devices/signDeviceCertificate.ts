@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import { run } from '../../util/run.js'
 import { deviceCertificateLocations } from '../certificates.js'
 
@@ -33,16 +32,4 @@ export const signDeviceCertificate = async ({
 			'10957',
 		],
 	})
-	console.log(
-		chalk.yellow(
-			'Signed device certificate',
-			chalk.blue(deviceSignedCertLocation),
-		),
-	)
-	console.log(
-		await run({
-			command: 'openssl',
-			args: ['x509', '-text', '-noout', '-in', deviceSignedCertLocation],
-		}),
-	)
 }
