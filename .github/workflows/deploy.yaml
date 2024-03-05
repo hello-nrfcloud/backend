@@ -18,7 +18,7 @@ on:
 
 permissions:
   id-token: write
-  packages: read
+  packages: write
 
 env:
   STACK_NAME: ${{ vars.STACK_NAME }}
@@ -74,6 +74,16 @@ jobs:
 
     environment: production
 
+    needs: docker
+
+    env:
+      FORCE_COLOR: 3
+      JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: 1
+      MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
+      COAP_SIMULATOR_CONTAINER_TAG:
+        ${{ github.event.inputs.coap_simulator_tag }}
+      OPENSSL_LAYER_CONTAINER_TAG: ${{ github.event.inputs.openssl_layer_tag }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -111,10 +121,4 @@ jobs:
       - run: npx cdk diff
 
       - name: Deploy solution stack
-        env:
-          MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
-          COAP_SIMULATOR_CONTAINER_TAG:
-            ${{ github.event.inputs.coap_simulator_tag }}
-          OPENSSL_LAYER_CONTAINER_TAG:
-            ${{ github.event.inputs.openssl_layer_tag }}
         run: npx cdk deploy --all --require-approval never

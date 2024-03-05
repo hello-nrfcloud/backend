@@ -9,13 +9,23 @@ on:
       stackName:
         description: "Name of the stack to clean"
         required: true
-
+      mqtt_bridge_tag:
+        description: "MQTT bridge container tag to deploy"
+        required: true
+      coap_simulator_tag:
+        description: "CoAP simulator container tag to deploy"
+        required: true
+      openssl_layer_tag:
+        description: "OpenSSL layer container tag to deploy"
+        required: true
 env:
   CI: 1
   FORCE_COLOR: 3
   JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: 1
-  COAP_SIMULATOR_DOWNLOAD_URL: ${{ secrets.COAP_SIMULATOR_DOWNLOAD_URL }}
   STACK_NAME: ${{ github.event.inputs.stackName }}
+  MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
+  COAP_SIMULATOR_CONTAINER_TAG: ${{ github.event.inputs.coap_simulator_tag }}
+  OPENSSL_LAYER_CONTAINER_TAG: ${{ github.event.inputs.openssl_layer_tag }}
 
 jobs:
   cleanup:

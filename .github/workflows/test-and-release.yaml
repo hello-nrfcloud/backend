@@ -159,11 +159,11 @@ jobs:
         if: github.ref == 'refs/heads/saga'
         run: |
           docker tag ${{ steps.mqtt-bridge-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker tag ${{ steps.coap-simulator-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker tag ${{ steps.openssl-layer-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker tag ${{ steps.coap-simulator-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
+          docker tag ${{ steps.openssl-layer-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.openssl-layer-container.outputs.tag }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.openssl-layer-container.outputs.tag }}
 
       - name: Trigger cleanup workflow
         if: always()
@@ -171,7 +171,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh workflow run cleanup.yaml \
-            -F stackName=${{ env.STACK_NAME }}
+            -F stackName=${{ env.STACK_NAME }} \
+            -F mqtt_bridge_tag=${{ needs.e2e-tests.outputs.mqtt_bridge_tag }} \
+            -F coap_simulator_tag=${{ needs.e2e-tests.outputs.coap_simulator_tag }} \
+            -F openssl_layer_tag=${{ needs.e2e-tests.outputs.openssl_layer_tag }}
 
   release:
     needs:
