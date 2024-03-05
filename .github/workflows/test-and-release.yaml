@@ -155,6 +155,11 @@ jobs:
 
       - run: docker image ls
 
+      # The Docker images that were used successfully in this test run are shared
+      # on the projects' container registry. The deploy workflow will pull them and
+      # use copy them to the product instance's container registry.
+      # This ensures that exactly the container that was verified to work is used
+      # in production.
       - name: Push Docker images to repository registry
         if: github.ref == 'refs/heads/saga'
         run: |
