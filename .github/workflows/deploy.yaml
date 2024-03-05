@@ -3,6 +3,9 @@ name: Deployment
 on:
   workflow_dispatch:
     inputs:
+      ref:
+        description: "Version to deploy"
+        required: true
       mqtt_bridge_tag:
         description: "MQTT bridge container tag to deploy"
         required: true
@@ -22,8 +25,50 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   FORCE_COLOR: 3
   JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: 1
+  REGISTRY: ghcr.io
 
 jobs:
+  docker:
+    name: Push Docker images to ECR
+
+    runs-on: ubuntu-22.04
+
+    environment: production
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: github-action-hello-nrfcloud-backend
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to the Container registry
+        if: github.ref == 'refs/heads/saga'
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Docker images from repository registry
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ github.event.inputs.mqtt_bridge_tag }}
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ github.event.inputs.coap_simulator_tag }}
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ github.event.inputs.openssl_layer_tag }}
+
+      - name: Tag Docker images for ECR
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ github.event.inputs.mqtt_bridge_tag }} ${{ env.STACK_NAME }}-coap-simulator:${{ github.event.inputs.mqtt_bridge_tag }}
+          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ github.event.inputs.coap_simulator_tag }} ${{ env.STACK_NAME }}-openssl-layer:${{ github.event.inputs.coap_simulator_tag }}
+          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ github.event.inputs.openssl_layer_tag }} ${{ env.STACK_NAME }}-mqtt-bridge:${{ github.event.inputs.openssl_layer_tag }}
+
+      - name: Push Docker images to ECR
+        run: |
+          docker push ${{ env.STACK_NAME }}-coap-simulator:${{ github.event.inputs.mqtt_bridge_tag }}
+          docker push ${{ env.STACK_NAME }}-openssl-layer:${{ github.event.inputs.coap_simulator_tag }}
+          docker push ${{ env.STACK_NAME }}-mqtt-bridge:${{ github.event.inputs.openssl_layer_tag }}
+
   deploy:
     runs-on: ubuntu-22.04
 
@@ -31,6 +76,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Determine released version
+        id: version
+        run: |
+          VERSION=`git describe --abbrev=0 --tags --always | tr -d '\n'`
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - uses: actions/setup-node@v4
         with:

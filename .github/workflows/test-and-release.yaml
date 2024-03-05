@@ -28,9 +28,17 @@ jobs:
       mqtt_bridge_tag: ${{ steps.mqtt-bridge-container.outputs.tag }}
       coap_simulator_tag: ${{ steps.coap-simulator-container.outputs.tag }}
       openssl_layer_tag: ${{ steps.openssl-layer-container.outputs.tag }}
+      ref: ${{ steps.ref.outputs.ref }}
+
+    env:
+      REGISTRY: ghcr.io
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: store checkout out version
+        id: ref
+        run: echo "ref=${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-node@v4
         with:
@@ -153,6 +161,21 @@ jobs:
           aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-openssl-layer
           aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-mqtt-bridge
 
+      - name: Log in to the Container registry
+        if: github.ref == 'refs/heads/saga'
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker images to repository registry
+        if: github.ref == 'refs/heads/saga'
+        run: |
+          docker tag ${{ env.STACK_NAME }}-mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker tag ${{ env.STACK_NAME }}-coap-simulator:${{ steps.coap-simulator-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker tag ${{ env.STACK_NAME }}-openssl-layer:${{ steps.openssl-layer-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.mqtt-bridge-container.outputs.tag }}
+
   release:
     needs:
       - e2e-tests
@@ -165,6 +188,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.e2e-tests.outputs.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -180,16 +205,18 @@ jobs:
         run: npm ci --no-audit
 
       - name: Semantic release
+        id: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
       - name: Trigger deployment workflow
-        if: steps.tag-mqtt-bridge-image-version.outcome == 'success'
+        if: steps.semantic-release.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh workflow run deploy.yaml \
+            -F ref=${{ needs.e2e-tests.outputs.ref }} \
             -F mqtt_bridge_tag=${{ needs.e2e-tests.outputs.mqtt_bridge_tag }} \
             -F coap_simulator_tag=${{ needs.e2e-tests.outputs.coap_simulator_tag }} \
             -F openssl_layer_tag=${{ needs.e2e-tests.outputs.openssl_layer_tag }}
