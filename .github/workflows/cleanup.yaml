@@ -1,5 +1,8 @@
 name: Cleanup
 
+permissions:
+  id-token: write
+
 on:
   workflow_dispatch:
     inputs:
