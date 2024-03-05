@@ -98,6 +98,10 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "MQTT_BRIDGE_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
 
+      # Containers are rebuilt for every run, this ensures that they can actually
+      # be built. If we were to use a pre-built version here we could run into
+      # the risk that they are no longer buildable.
+
       - name: Build CoAP simulator container
         id: coap-simulator-container
         run: |
