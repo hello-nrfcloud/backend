@@ -9,6 +9,7 @@ permissions:
   contents: write
   issues: write
   actions: write
+  packages: write
 
 env:
   CI: 1
@@ -144,23 +145,6 @@ jobs:
         if: failure()
         run: ./cli.sh logs -f ERROR
 
-      - name: Clean up End-to-End test resources
-        if: always()
-        run: |
-          ./cli.sh logs -X
-          npx cdk destroy --all -f
-          npx cdk --app 'npx tsx --no-warnings cdk/test-resources.ts' destroy -f
-          ./cli.sh fake-nrfcloud-account-device nordic --remove
-          ./cli.sh configure-nrfcloud-account nordic apiEndpoint -X
-          ./cli.sh configure-nrfcloud-account nordic apiKey -X
-          ./cli.sh fake-nrfcloud-account-device elite --remove
-          ./cli.sh configure-nrfcloud-account elite apiEndpoint -X
-          ./cli.sh configure-nrfcloud-account elite apiKey -X
-          ./cli.sh clean-backup-certificates
-          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-coap-simulator
-          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-openssl-layer
-          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-mqtt-bridge
-
       - name: Log in to the Container registry
         if: github.ref == 'refs/heads/saga'
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
@@ -180,6 +164,14 @@ jobs:
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.mqtt-bridge-container.outputs.tag }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.mqtt-bridge-container.outputs.tag }}
+
+      - name: Trigger cleanup workflow
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run cleanup.yaml \
+            -F stackName=${{ env.STACK_NAME }}
 
   release:
     needs:
