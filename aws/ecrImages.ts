@@ -85,6 +85,12 @@ export const buildAndPublishImage =
 			log: { debug },
 		})
 
+		await pushToECR({ ecr, repo })(tag, debug)
+	}
+
+const pushToECR =
+	({ ecr, repo }: { ecr: ECRClient; repo: ContainerRepository }) =>
+	async (tag: string, debug?: logFn): Promise<void> => {
 		const tokenResult = await ecr.send(new GetAuthorizationTokenCommand({}))
 		const authorizationToken =
 			tokenResult?.authorizationData?.[0]?.authorizationToken

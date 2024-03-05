@@ -35,7 +35,36 @@ jobs:
 
     environment: production
 
+    strategy:
+      matrix:
+        image:
+          - mqtt-bridge
+          - coap-simulator
+          - openssl-layer
+        include:
+          - image: mqtt-bridge
+            tag: ${{ github.event.inputs.mqtt_bridge_tag }}
+          - image: coap-simulator
+            tag: ${{ github.event.inputs.coap_simulator_tag }}
+          - image: openssl-layer
+            tag: ${{ github.event.inputs.openssl_layer_tag }}
+
     steps:
+      - name: Log in to the repo's container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Docker image from repository registry
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}:${{ matrix.tag }}
+
+      - name: Tag Docker image for ECR
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}:${{ matrix.tag }} ${{ env.STACK_NAME }}-${{ matrix.image }}:${{ matrix.tag }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -43,31 +72,32 @@ jobs:
           role-session-name: github-action-hello-nrfcloud-backend
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Log in to the Container registry
-        if: github.ref == 'refs/heads/saga'
+      - name: Get credentials for ECR
+        id: token
+        run: |
+          CREDS=$(aws ecr get-authorization-token | jq -r '.authorizationData[0].authorizationToken')
+          echo "::add-mask::$CREDS"
+          PARTS=($(echo $CREDS | tr ':' '\n'))
+          TOKEN=${PARTS[1]}
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Get repository on ECR
+        id: repositoryUri
+        run: |
+          REPO_URI=$(aws ecr describe-repositories --repository-names ${{ env.STACK_NAME }}-${{ matrix.image }} | jq -r '.repositories[0].repositoryUri')
+          echo "repositoryUri=$REPO_URI" >> $GITHUB_OUTPUT
+
+      - name: Log in to the repo's container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ steps.repositoryUri.outputs.repositoryUri }}
+          username: AWS
+          password: ${{ steps.token.outputs.token }}
 
-      - name: Pull Docker images from repository registry
+      - name: Push Docker image to ECR
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ github.event.inputs.mqtt_bridge_tag }}
-          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ github.event.inputs.coap_simulator_tag }}
-          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ github.event.inputs.openssl_layer_tag }}
-
-      - name: Tag Docker images for ECR
-        run: |
-          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ github.event.inputs.mqtt_bridge_tag }} ${{ env.STACK_NAME }}-coap-simulator:${{ github.event.inputs.mqtt_bridge_tag }}
-          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ github.event.inputs.coap_simulator_tag }} ${{ env.STACK_NAME }}-openssl-layer:${{ github.event.inputs.coap_simulator_tag }}
-          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ github.event.inputs.openssl_layer_tag }} ${{ env.STACK_NAME }}-mqtt-bridge:${{ github.event.inputs.openssl_layer_tag }}
-
-      - name: Push Docker images to ECR
-        run: |
-          docker push ${{ env.STACK_NAME }}-coap-simulator:${{ github.event.inputs.mqtt_bridge_tag }}
-          docker push ${{ env.STACK_NAME }}-openssl-layer:${{ github.event.inputs.coap_simulator_tag }}
-          docker push ${{ env.STACK_NAME }}-mqtt-bridge:${{ github.event.inputs.openssl_layer_tag }}
+          docker push ${{ env.STACK_NAME }}-${{ matrix.image }}:${{ matrix.tag }}
 
   deploy:
     runs-on: ubuntu-22.04
