@@ -34,4 +34,8 @@ export const packMapBackendLambdas = async (): Promise<MapBackendLambdas> => ({
 		'queryHistory',
 		'lambda/map/queryHistory.ts',
 	),
+	registerCustomDevice: await packLambdaFromPath(
+		'registerCustomDevice',
+		'lambda/map/registerCustomDevice.ts',
+	),
 })
