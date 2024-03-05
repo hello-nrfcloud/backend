@@ -172,9 +172,9 @@ jobs:
         run: |
           gh workflow run cleanup.yaml \
             -F stackName=${{ env.STACK_NAME }} \
-            -F mqtt_bridge_tag=${{ needs.e2e-tests.outputs.mqtt_bridge_tag }} \
-            -F coap_simulator_tag=${{ needs.e2e-tests.outputs.coap_simulator_tag }} \
-            -F openssl_layer_tag=${{ needs.e2e-tests.outputs.openssl_layer_tag }}
+            -F mqtt_bridge_tag=${{ steps.mqtt-bridge-container.outputs.tag }} \
+            -F coap_simulator_tag=${{ steps.coap-simulator-container.outputs.tag }} \
+            -F openssl_layer_tag=${{ steps.openssl-layer-container.outputs.tag }}
 
   release:
     needs:
