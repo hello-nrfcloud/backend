@@ -169,12 +169,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - run: docker image ls
+
       - name: Push Docker images to repository registry
         if: github.ref == 'refs/heads/saga'
         run: |
-          docker tag ${{ env.STACK_NAME }}-mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker tag ${{ env.STACK_NAME }}-coap-simulator:${{ steps.coap-simulator-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker tag ${{ env.STACK_NAME }}-openssl-layer:${{ steps.openssl-layer-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker tag ${{ steps.mqtt-bridge-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker tag ${{ steps.coap-simulator-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker tag ${{ steps.openssl-layer-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.mqtt-bridge-container.outputs.tag }}
 
   release:
     needs:
