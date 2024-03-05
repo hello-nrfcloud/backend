@@ -72,6 +72,14 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		logsCommand({ stackName: STACK_NAME, cf, logs }),
 		cleanBackupCertificates({ ssm }),
 		listnRFCloudAccountsCommand({ ssm, stackName: STACK_NAME }),
+		configureCoAPHealthCheckCommand({
+			ssm,
+			stackName: STACK_NAME,
+		}),
+		buildContainersCommand({
+			ecr,
+			ssm,
+		}),
 	]
 
 	if (isCI) {
@@ -83,14 +91,6 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 			}),
 			createFakeNrfCloudHealthCheckDevice({
 				iot,
-				ssm,
-			}),
-			configureCoAPHealthCheckCommand({
-				ssm,
-				stackName: STACK_NAME,
-			}),
-			buildContainersCommand({
-				ecr,
 				ssm,
 			}),
 		)

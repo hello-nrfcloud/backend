@@ -15,7 +15,7 @@ on:
       coap_simulator_tag:
         description: "CoAP simulator container tag to deploy"
         required: true
-      openssl_layer_tag:
+      openssl_lambda_tag:
         description: "OpenSSL lambda container tag to deploy"
         required: true
 env:
@@ -25,7 +25,7 @@ env:
   STACK_NAME: ${{ github.event.inputs.stackName }}
   MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
   COAP_SIMULATOR_CONTAINER_TAG: ${{ github.event.inputs.coap_simulator_tag }}
-  OPENSSL_LAMBDA_CONTAINER_TAG: ${{ github.event.inputs.openssl_layer_tag }}
+  OPENSSL_LAMBDA_CONTAINER_TAG: ${{ github.event.inputs.openssl_lambda_tag }}
 
 jobs:
   cleanup:

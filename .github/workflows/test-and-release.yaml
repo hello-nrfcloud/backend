@@ -28,7 +28,7 @@ jobs:
     outputs:
       mqtt_bridge_tag: ${{ steps.mqtt-bridge-container.outputs.tag }}
       coap_simulator_tag: ${{ steps.coap-simulator-container.outputs.tag }}
-      openssl_layer_tag: ${{ steps.openssl-lambda-container.outputs.tag }}
+      openssl_lambda_tag: ${{ steps.openssl-lambda-container.outputs.tag }}
       ref: ${{ steps.ref.outputs.ref }}
 
     env:
@@ -183,7 +183,7 @@ jobs:
             -F stackName=${{ env.STACK_NAME }} \
             -F mqtt_bridge_tag=${{ steps.mqtt-bridge-container.outputs.tag }} \
             -F coap_simulator_tag=${{ steps.coap-simulator-container.outputs.tag }} \
-            -F openssl_layer_tag=${{ steps.openssl-lambda-container.outputs.tag }}
+            -F openssl_lambda_tag=${{ steps.openssl-lambda-container.outputs.tag }}
 
   release:
     needs:
@@ -228,4 +228,4 @@ jobs:
             -F ref=${{ needs.e2e-tests.outputs.ref }} \
             -F mqtt_bridge_tag=${{ needs.e2e-tests.outputs.mqtt_bridge_tag }} \
             -F coap_simulator_tag=${{ needs.e2e-tests.outputs.coap_simulator_tag }} \
-            -F openssl_layer_tag=${{ needs.e2e-tests.outputs.openssl_layer_tag }}
+            -F openssl_lambda_tag=${{ needs.e2e-tests.outputs.openssl_lambda_tag }}

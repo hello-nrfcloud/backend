@@ -12,7 +12,7 @@ on:
       coap_simulator_tag:
         description: "CoAP simulator container tag to deploy"
         required: true
-      openssl_layer_tag:
+      openssl_lambda_tag:
         description: "OpenSSL lambda container tag to deploy"
         required: true
 
@@ -37,7 +37,7 @@ jobs:
           echo ref=${{ github.event.inputs.ref }}
           echo mqtt_bridge_tag=${{ github.event.inputs.mqtt_bridge_tag }}
           echo coap_simulator_tag=${{ github.event.inputs.coap_simulator_tag }}
-          echo openssl_layer_tag=${{ github.event.inputs.openssl_layer_tag }}
+          echo openssl_lambda_tag=${{ github.event.inputs.openssl_lambda_tag }}
 
   docker:
     name: Push Docker images to ECR
@@ -58,7 +58,7 @@ jobs:
           - image: coap-simulator
             tag: ${{ github.event.inputs.coap_simulator_tag }}
           - image: openssl-lambda
-            tag: ${{ github.event.inputs.openssl_layer_tag }}
+            tag: ${{ github.event.inputs.openssl_lambda_tag }}
 
     steps:
       - name: Log in to the repo's container registry
@@ -129,7 +129,8 @@ jobs:
       MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
       COAP_SIMULATOR_CONTAINER_TAG:
         ${{ github.event.inputs.coap_simulator_tag }}
-      OPENSSL_LAMBDA_CONTAINER_TAG: ${{ github.event.inputs.openssl_layer_tag }}
+      OPENSSL_LAMBDA_CONTAINER_TAG:
+        ${{ github.event.inputs.openssl_lambda_tag }}
 
     steps:
       - uses: actions/checkout@v4
