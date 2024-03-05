@@ -4,6 +4,7 @@ import { type logFn } from '../../../cli/log.js'
 import { getMosquittoLatestTag } from '../../../docker/getMosquittoLatestTag.js'
 import { checkSumOfStrings } from '../../helpers/lambdas/checksumOfFiles.js'
 import { hashFolder } from '../../../docker/hashFolder.js'
+import { ContainerRepositoryId } from '../../../aws/getOrCreateRepository.js'
 
 export const buildMQTTBridgeImage = async (
 	builder: ImageBuilder,
@@ -34,6 +35,7 @@ export const buildMQTTBridgeImage = async (
 		return tag
 
 	await builder({
+		id: ContainerRepositoryId.MQTTBridge,
 		tag,
 		dockerFilePath,
 		buildArgs: {

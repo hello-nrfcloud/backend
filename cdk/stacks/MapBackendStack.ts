@@ -1,4 +1,10 @@
-import { App, CfnOutput, aws_lambda as Lambda, Stack } from 'aws-cdk-lib'
+import {
+	App,
+	CfnOutput,
+	aws_lambda as Lambda,
+	Stack,
+	aws_ecr as ECR,
+} from 'aws-cdk-lib'
 import type { MapBackendLambdas } from '../MapBackendLambdas.js'
 import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
@@ -9,6 +15,11 @@ import { ShareAPI } from '../resources/map/ShareAPI.js'
 import { MAP_BACKEND_STACK_NAME } from './stackConfig.js'
 import { DevicesAPI } from '../resources/map/DevicesAPI.js'
 import { LwM2MObjectsHistory } from '../resources/map/LwM2MObjectsHistory.js'
+import { CustomDevicesAPI } from '../resources/map/CustomDevicesAPI.js'
+import {
+	ContainerRepositoryId,
+	repositoryName,
+} from '../../aws/getOrCreateRepository.js'
 
 /**
  * Provides resources for the backend serving data to hello.nrfcloud.com/map
@@ -19,10 +30,11 @@ export class MapBackendStack extends Stack {
 		{
 			layer,
 			lambdaSources,
+			openSSLLambdaContainerTag,
 		}: {
 			layer: PackedLayer
 			lambdaSources: MapBackendLambdas
-			openSSLLayerContainerTag: string
+			openSSLLambdaContainerTag: string
 		},
 	) {
 		super(parent, MAP_BACKEND_STACK_NAME)
@@ -68,6 +80,19 @@ export class MapBackendStack extends Stack {
 			lambdaSources,
 		})
 
+		const customDevicesAPI = new CustomDevicesAPI(this, {
+			baseLayer,
+			lambdaSources,
+			openSSLContainerImage: {
+				repo: ECR.Repository.fromRepositoryName(
+					this,
+					'openssl-lambda-ecr',
+					repositoryName(ContainerRepositoryId.OpenSSLLambda),
+				),
+				tag: openSSLLambdaContainerTag,
+			},
+		})
+
 		// Outputs
 		new CfnOutput(this, 'shareAPIURL', {
 			exportName: `${this.stackName}:shareAPI`,
@@ -93,6 +118,11 @@ export class MapBackendStack extends Stack {
 			exportName: `${this.stackName}:queryHistoryAPI`,
 			description: 'API endpoint for querying device history',
 			value: lwm2mObjectHistory.historyURL.url,
+		})
+		new CfnOutput(this, 'registerCustomDeviceAPIURL', {
+			exportName: `${this.stackName}:registerCustomDeviceAPIURL`,
+			description: 'API endpoint for registering custom devices',
+			value: customDevicesAPI.registerURL.url,
 		})
 	}
 }

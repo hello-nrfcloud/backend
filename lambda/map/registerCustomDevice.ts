@@ -1,14 +1,9 @@
 import { models } from '@hello.nrfcloud.com/proto-lwm2m'
-import { randomWords } from '@nordicsemiconductor/random-words'
-import { randomUUID } from 'node:crypto'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { run } from '../../util/run.js'
-import fs from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
@@ -16,8 +11,13 @@ import type {
 import { aProblem } from '../util/aProblem.js'
 import { corsHeaders } from '../util/corsHeaders.js'
 import { aResponse } from '../util/aResponse.js'
+import { randomUUID } from 'node:crypto'
+import { devices as devicesApi } from '../../nrfcloud/devices.js'
 
-const { stackName } = fromEnv({ stackName: 'STACK_NAME' })({
+const { stackName, openSslLambdaFunctionName } = fromEnv({
+	stackName: 'STACK_NAME',
+	openSslLambdaFunctionName: 'OPENSSL_LAMBDA_FUNCTION_NAME',
+})({
 	STACK_NAME,
 	...process.env,
 })
@@ -29,11 +29,17 @@ const { apiKey, apiEndpoint } = await getAPISettings({
 	account: 'nordic',
 })()
 
-console.log(`apiKey`, `${apiKey.slice(0, 3)}***`)
-console.log(`apiEndpoint`, apiEndpoint.toString())
+const client = devicesApi({
+	endpoint: apiEndpoint,
+	apiKey,
+})
+
+const lambda = new LambdaClient({})
 
 /**
  * This registers a custom device, which allows arbitrary users to showcase their products on the map.
+ *
+ * TODO: add email validation step
  */
 export const handler = async (
 	event: APIGatewayProxyEventV2,
@@ -48,72 +54,65 @@ export const handler = async (
 
 	const { model, email } = JSON.parse(event.body ?? '{}')
 
+	const deviceId = `map-${randomUUID()}`
+	const { key, cert } = JSON.parse(
+		(
+			await lambda.send(
+				new InvokeCommand({
+					FunctionName: openSslLambdaFunctionName,
+					Payload: JSON.stringify({
+						id: deviceId,
+						email,
+					}),
+				}),
+			)
+		).Payload?.transformToString() ?? '',
+	)
+
 	if (!Object.keys(models).includes(model))
 		return aProblem(cors, {
 			title: `Unknown model: ${model}`,
 			status: 400,
 		})
 
-	const id = randomWords().join('-')
-	const deviceId = `map-${randomUUID()}`
-	const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), path.sep))
-	console.log(tempDir)
+	const registration = await client.register([
+		{
+			deviceId,
+			subType: 'map-custom',
+			tags: ['map', 'map-custom'],
+			certPem: cert,
+		},
+	])
 
-	await run({
-		command: 'openssl',
-		args: [
-			'ecparam',
-			'-name',
-			'prime256v1',
-			'-genkey',
-			'-param_enc',
-			'explicit',
-			'-out',
-			path.join(tempDir, `${deviceId}.key`),
-		],
-	})
+	if ('error' in registration) {
+		console.error(
+			deviceId,
+			`registration failed`,
+			JSON.stringify(registration.error),
+		)
+		return aProblem(cors, {
+			title: `Registration failed: ${registration.error.message}`,
+			status: 500,
+		})
+	}
 
-	await run({
-		command: 'openssl',
-		args: [
-			'req',
-			'-new',
-			'-days',
-			'10957',
-			'-x509',
-			'-subj',
-			`/C=NO/ST=Trondelag/L=Trondheim/O=Nordic Semiconductor ASA/OU=hello.nrfcloud.com/emailAddress=${email}/CN=${deviceId}`,
-			'-key',
-			path.join(tempDir, `${deviceId}.key`),
-			'-out',
-			path.join(tempDir, `${deviceId}.pem`),
-		],
-	})
+	console.log(deviceId, `Registered devices with nRF Cloud`)
+	console.log(deviceId, `Bulk ops ID:`, registration.bulkOpsRequestId)
 
-	const key = await fs.readFile(path.join(tempDir, `${deviceId}.key`), 'utf-8')
-
-	const cert = await fs.readFile(path.join(tempDir, `${deviceId}.pem`), 'utf-8')
-
-	console.log(
-		await run({
-			command: 'openssl',
-			args: [
-				'x509',
-				'-in',
-				path.join(tempDir, `${deviceId}.pem`),
-				'-text',
-				'-noout',
-			],
-		}),
+	return aResponse(
+		cors,
+		200,
+		{
+			'@context': new URL(
+				'https://github.com/hello-nrfcloud/proto/map/device-credentials',
+			),
+			deviceId,
+			key,
+			cert,
+		},
+		0,
+		{
+			'X-bulkOpsRequestId': registration.bulkOpsRequestId,
+		},
 	)
-
-	return aResponse(cors, 200, {
-		'@context': new URL(
-			'https://github.com/hello-nrfcloud/proto/map/device-credentials',
-		),
-		id,
-		deviceId,
-		key,
-		cert,
-	})
 }

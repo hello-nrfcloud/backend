@@ -108,11 +108,11 @@ await Promise.all(
 const {
 	mqttBridgeContainerTag,
 	coapSimulatorContainerTag,
-	openSSLLayerContainerTag,
+	openSSLLambdaContainerTag,
 } = fromEnv({
 	mqttBridgeContainerTag: 'MQTT_BRIDGE_CONTAINER_TAG',
 	coapSimulatorContainerTag: 'COAP_SIMULATOR_CONTAINER_TAG',
-	openSSLLayerContainerTag: 'OPENSSL_LAYER_CONTAINER_TAG',
+	openSSLLambdaContainerTag: 'OPENSSL_LAMBDA_CONTAINER_TAG',
 })(process.env)
 
 // Fetch all the configured nRF Cloud Accounts
@@ -141,6 +141,6 @@ new BackendApp({
 	map: {
 		lambdaSources: await packMapBackendLambdas(),
 		layer: await packMapLayer(),
-		openSSLLayerContainerTag,
+		openSSLLambdaContainerTag,
 	},
 })

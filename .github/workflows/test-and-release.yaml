@@ -28,7 +28,7 @@ jobs:
     outputs:
       mqtt_bridge_tag: ${{ steps.mqtt-bridge-container.outputs.tag }}
       coap_simulator_tag: ${{ steps.coap-simulator-container.outputs.tag }}
-      openssl_layer_tag: ${{ steps.openssl-layer-container.outputs.tag }}
+      openssl_layer_tag: ${{ steps.openssl-lambda-container.outputs.tag }}
       ref: ${{ steps.ref.outputs.ref }}
 
     env:
@@ -109,12 +109,12 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "COAP_SIMULATOR_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
 
-      - name: Build OpenSSL layer container
-        id: openssl-layer-container
+      - name: Build OpenSSL lambda container
+        id: openssl-lambda-container
         run: |
-          TAG=$(./cli.sh build-container openssl-layer)
+          TAG=$(./cli.sh build-container openssl-lambda)
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "OPENSSL_LAYER_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
+          echo "OPENSSL_LAMBDA_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
 
       - name: Deploy test resources stack
         run: |
@@ -167,12 +167,12 @@ jobs:
       - name: Push Docker images to repository registry
         if: github.ref == 'refs/heads/saga'
         run: |
-          docker tag ${{ steps.mqtt-bridge-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker tag ${{ steps.coap-simulator-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
-          docker tag ${{ steps.openssl-layer-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.openssl-layer-container.outputs.tag }}
+          docker tag mqtt-bridge:latest ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker tag coap-simulator:latest ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
+          docker tag openssl-lambda:latest ${{ env.REGISTRY }}/${{ github.repository }}/openssl-lambda:${{ steps.openssl-lambda-container.outputs.tag }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.openssl-layer-container.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/openssl-lambda:${{ steps.openssl-lambda-container.outputs.tag }}
 
       - name: Trigger cleanup workflow
         if: always()
@@ -183,7 +183,7 @@ jobs:
             -F stackName=${{ env.STACK_NAME }} \
             -F mqtt_bridge_tag=${{ steps.mqtt-bridge-container.outputs.tag }} \
             -F coap_simulator_tag=${{ steps.coap-simulator-container.outputs.tag }} \
-            -F openssl_layer_tag=${{ steps.openssl-layer-container.outputs.tag }}
+            -F openssl_layer_tag=${{ steps.openssl-lambda-container.outputs.tag }}
 
   release:
     needs:

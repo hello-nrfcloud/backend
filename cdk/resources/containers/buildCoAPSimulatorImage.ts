@@ -3,6 +3,7 @@ import { type ImageBuilder, type ImageChecker } from '../../../aws/ecrImages.js'
 import { hashFolder } from '../../../docker/hashFolder.js'
 import { checkSumOfStrings } from '../../helpers/lambdas/checksumOfFiles.js'
 import { type logFn } from '../../../cli/log.js'
+import { ContainerRepositoryId } from '../../../aws/getOrCreateRepository.js'
 
 export const buildCoAPSimulatorImage = async (
 	builder: ImageBuilder,
@@ -36,6 +37,7 @@ export const buildCoAPSimulatorImage = async (
 	if (await checker({ tag, debug })) return tag
 
 	await builder({
+		id: ContainerRepositoryId.CoAPSimulator,
 		tag,
 		dockerFilePath: coapDockerfilePath,
 		buildArgs: {

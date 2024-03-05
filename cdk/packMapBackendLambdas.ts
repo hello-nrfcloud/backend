@@ -38,4 +38,5 @@ export const packMapBackendLambdas = async (): Promise<MapBackendLambdas> => ({
 		'registerCustomDevice',
 		'lambda/map/registerCustomDevice.ts',
 	),
+	openSSL: await packLambdaFromPath('openSSL', 'lambda/map/openSSL.ts'),
 })

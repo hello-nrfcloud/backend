@@ -16,7 +16,7 @@ on:
         description: "CoAP simulator container tag to deploy"
         required: true
       openssl_layer_tag:
-        description: "OpenSSL layer container tag to deploy"
+        description: "OpenSSL lambda container tag to deploy"
         required: true
 env:
   CI: 1
@@ -25,7 +25,7 @@ env:
   STACK_NAME: ${{ github.event.inputs.stackName }}
   MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
   COAP_SIMULATOR_CONTAINER_TAG: ${{ github.event.inputs.coap_simulator_tag }}
-  OPENSSL_LAYER_CONTAINER_TAG: ${{ github.event.inputs.openssl_layer_tag }}
+  OPENSSL_LAMBDA_CONTAINER_TAG: ${{ github.event.inputs.openssl_layer_tag }}
 
 jobs:
   cleanup:
@@ -75,5 +75,5 @@ jobs:
           ./cli.sh configure-nrfcloud-account elite apiKey -X
           ./cli.sh clean-backup-certificates
           aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-coap-simulator
-          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-openssl-layer
+          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-openssl-lambda
           aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-mqtt-bridge

@@ -2,6 +2,7 @@ import {
 	Duration,
 	aws_iam as IAM,
 	aws_lambda as Lambda,
+	aws_ecr as ECR,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -16,15 +17,38 @@ export class CustomDevicesAPI extends Construct {
 		{
 			baseLayer,
 			lambdaSources,
+			openSSLContainerImage,
 		}: {
 			baseLayer: Lambda.ILayerVersion
-			openSSLLayer: Lambda.ILayerVersion
 			lambdaSources: {
 				registerCustomDevice: PackedLambda
+				openSSL: PackedLambda
+			}
+			openSSLContainerImage: {
+				repo: ECR.IRepository
+				tag: string
 			}
 		},
 	) {
 		super(parent, 'customDevicesAPI')
+
+		const openSSLFn = new Lambda.Function(this, 'openSSLFn', {
+			handler: Lambda.Handler.FROM_IMAGE,
+			architecture: Lambda.Architecture.X86_64,
+			runtime: Lambda.Runtime.FROM_IMAGE,
+			timeout: Duration.seconds(10),
+			memorySize: 1792,
+			code: Lambda.Code.fromEcrImage(openSSLContainerImage.repo, {
+				tagOrDigest: openSSLContainerImage.tag,
+				cmd: [lambdaSources.openSSL.handler],
+			}),
+			description: 'Allows to invoke OpenSSL',
+			environment: {
+				VERSION: this.node.tryGetContext('version'),
+				NODE_NO_WARNINGS: '1',
+			},
+			...new LambdaLogGroup(this, 'openSSLFnLogs'),
+		})
 
 		const registerFn = new Lambda.Function(this, 'registerFn', {
 			handler: lambdaSources.registerCustomDevice.handler,
@@ -39,6 +63,7 @@ export class CustomDevicesAPI extends Construct {
 				VERSION: this.node.tryGetContext('version'),
 				NODE_NO_WARNINGS: '1',
 				STACK_NAME: Stack.of(this).stackName,
+				OPENSSL_LAMBDA_FUNCTION_NAME: openSSLFn.functionName,
 			},
 			...new LambdaLogGroup(this, 'registerFnLogs'),
 			initialPolicy: [
@@ -58,5 +83,6 @@ export class CustomDevicesAPI extends Construct {
 		this.registerURL = registerFn.addFunctionUrl({
 			authType: Lambda.FunctionUrlAuthType.NONE,
 		})
+		openSSLFn.grantInvoke(registerFn)
 	}
 }

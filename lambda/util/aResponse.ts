@@ -17,7 +17,8 @@ export const aResponse = (
 	statusCode: status,
 	headers: {
 		'content-type': 'application/json',
-		'Cache-Control': `public, max-age=${cacheForSeconds}`,
+		'Cache-Control':
+			cacheForSeconds > 0 ? `public, max-age=${cacheForSeconds}` : 'no-store',
 		...(headers ?? {}),
 		...cors,
 	},

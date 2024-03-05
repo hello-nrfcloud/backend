@@ -13,7 +13,7 @@ on:
         description: "CoAP simulator container tag to deploy"
         required: true
       openssl_layer_tag:
-        description: "OpenSSL layer container tag to deploy"
+        description: "OpenSSL lambda container tag to deploy"
         required: true
 
 permissions:
@@ -51,13 +51,13 @@ jobs:
         image:
           - mqtt-bridge
           - coap-simulator
-          - openssl-layer
+          - openssl-lambda
         include:
           - image: mqtt-bridge
             tag: ${{ github.event.inputs.mqtt_bridge_tag }}
           - image: coap-simulator
             tag: ${{ github.event.inputs.coap_simulator_tag }}
-          - image: openssl-layer
+          - image: openssl-lambda
             tag: ${{ github.event.inputs.openssl_layer_tag }}
 
     steps:
@@ -129,7 +129,7 @@ jobs:
       MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
       COAP_SIMULATOR_CONTAINER_TAG:
         ${{ github.event.inputs.coap_simulator_tag }}
-      OPENSSL_LAYER_CONTAINER_TAG: ${{ github.event.inputs.openssl_layer_tag }}
+      OPENSSL_LAMBDA_CONTAINER_TAG: ${{ github.event.inputs.openssl_layer_tag }}
 
     steps:
       - uses: actions/checkout@v4

@@ -1,5 +1,5 @@
 import { Construct } from 'constructs'
-import { aws_logs as Logs, Names, Stack } from 'aws-cdk-lib'
+import { aws_logs as Logs, Names, RemovalPolicy, Stack } from 'aws-cdk-lib'
 
 export class LambdaLogGroup extends Construct {
 	public readonly logGroup: Logs.LogGroup
@@ -13,6 +13,10 @@ export class LambdaLogGroup extends Construct {
 			retention,
 			logGroupName: `/${Stack.of(this).stackName}/fn/${id}-${Names.uniqueId(this)}`,
 			logGroupClass: Logs.LogGroupClass.STANDARD, // INFREQUENT_ACCESS does not support custom metrics
+			removalPolicy:
+				this.node.tryGetContext('isTest') === true
+					? RemovalPolicy.DESTROY
+					: RemovalPolicy.RETAIN,
 		})
 	}
 }

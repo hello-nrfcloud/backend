@@ -54,10 +54,12 @@ export const checkIfImageExists =
 	}
 
 export type ImageBuilder = (args: {
+	id: string
 	dockerFilePath: string
 	tag: string
 	buildArgs?: Record<string, string>
 	debug?: logFn
+	cwd?: string
 }) => Promise<void>
 
 export const buildAndPublishImage =
@@ -68,9 +70,9 @@ export const buildAndPublishImage =
 		ecr: ECRClient
 		repo: ContainerRepository
 	}): ImageBuilder =>
-	async ({ dockerFilePath, tag, buildArgs, debug }) => {
+	async ({ id, dockerFilePath, tag, buildArgs, debug, cwd }) => {
 		// Create a docker image
-		debug?.(`Building docker image with tag ${tag}`)
+		debug?.(`Building docker image ${id}`)
 		const baseArgs = ['buildx', 'build', '--platform', 'linux/amd64']
 		const extraArgs =
 			buildArgs !== undefined
@@ -81,16 +83,36 @@ export const buildAndPublishImage =
 				: []
 		await run({
 			command: 'docker',
-			args: [...baseArgs, ...extraArgs, '-t', tag, dockerFilePath],
+			args: [
+				...baseArgs,
+				...extraArgs,
+				'-t',
+				id,
+				cwd ?? dockerFilePath,
+				'-f',
+				`${dockerFilePath}/Dockerfile`,
+			],
+			log: { debug, stderr: debug, stdout: debug },
+		})
+
+		await run({
+			command: 'docker',
+			args: ['tag', id, `${id}:latest`],
 			log: { debug },
 		})
 
-		await pushToECR({ ecr, repo })(tag, debug)
+		await run({
+			command: 'docker',
+			args: ['tag', id, `${id}:${tag}`],
+			log: { debug },
+		})
+
+		await pushToECR({ ecr, repo })(id, tag, debug)
 	}
 
 const pushToECR =
 	({ ecr, repo }: { ecr: ECRClient; repo: ContainerRepository }) =>
-	async (tag: string, debug?: logFn): Promise<void> => {
+	async (id: string, tag: string, debug?: logFn): Promise<void> => {
 		const tokenResult = await ecr.send(new GetAuthorizationTokenCommand({}))
 		const authorizationToken =
 			tokenResult?.authorizationData?.[0]?.authorizationToken
@@ -114,9 +136,10 @@ const pushToECR =
 			log: { debug },
 		})
 
+		// Tag in ECR format (one registry per container)
 		await run({
 			command: 'docker',
-			args: ['tag', `${tag}:latest`, `${repo.uri}:${tag}`],
+			args: ['tag', `${id}:${tag}`, `${repo.uri}:${tag}`],
 			log: { debug },
 		})
 
