@@ -61,10 +61,6 @@ jobs:
         run: |
           docker pull ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}:${{ matrix.tag }}
 
-      - name: Tag Docker image for ECR
-        run: |
-          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}:${{ matrix.tag }} ${{ env.STACK_NAME }}-${{ matrix.image }}:${{ matrix.tag }}
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -95,9 +91,13 @@ jobs:
           username: AWS
           password: ${{ steps.token.outputs.token }}
 
+      - name: Tag Docker image for ECR
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}:${{ matrix.tag }} ${{ steps.repositoryUri.outputs.repositoryUri }}:${{ matrix.tag }}
+
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ env.STACK_NAME }}-${{ matrix.image }}:${{ matrix.tag }}
+          docker push ${{ steps.repositoryUri.outputs.repositoryUri }}:${{ matrix.tag }}
 
   deploy:
     runs-on: ubuntu-22.04
