@@ -177,6 +177,9 @@ jobs:
           docker tag ${{ steps.mqtt-bridge-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
           docker tag ${{ steps.coap-simulator-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.mqtt-bridge-container.outputs.tag }}
           docker tag ${{ steps.openssl-layer-container.outputs.tag }}:latest ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.mqtt-bridge-container.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/openssl-layer:${{ steps.mqtt-bridge-container.outputs.tag }}
 
   release:
     needs:
