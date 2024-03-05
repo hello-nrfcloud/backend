@@ -28,6 +28,17 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  print-inputs:
+    name: Print inputs
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Print inputs
+        run: |
+          echo ref=${{ github.event.inputs.ref }}
+          echo mqtt_bridge_tag=${{ github.event.inputs.mqtt_bridge_tag }}
+          echo coap_simulator_tag=${{ github.event.inputs.coap_simulator_tag }}
+          echo openssl_layer_tag=${{ github.event.inputs.openssl_layer_tag }}
+
   docker:
     name: Push Docker images to ECR
 
@@ -72,11 +83,10 @@ jobs:
         id: token
         run: |
           CREDS=$(aws ecr get-authorization-token | jq -r '.authorizationData[0].authorizationToken')
-          echo "::add-mask::$CREDS"
           PARTS=($(echo $CREDS | tr ':' '\n'))
           TOKEN=${PARTS[1]}
-          echo "::add-mask::$TOKEN"
           echo "token=$TOKEN" >> $GITHUB_OUTPUT
+          echo "::add-mask::$TOKEN"
 
       - name: Get repository on ECR
         id: repositoryUri
@@ -95,7 +105,14 @@ jobs:
         run: |
           docker tag ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}:${{ matrix.tag }} ${{ steps.repositoryUri.outputs.repositoryUri }}:${{ matrix.tag }}
 
+      - name: Check if Docker image exists on ECR
+        id: check-docker-image
+        continue-on-error: true
+        run: |
+          docker manifest inspect ${{ steps.repositoryUri.outputs.repositoryUri }}:${{ matrix.tag }}
+
       - name: Push Docker image to ECR
+        if: steps.check-docker-image.outcome == 'failure'
         run: |
           docker push ${{ steps.repositoryUri.outputs.repositoryUri }}:${{ matrix.tag }}
 
