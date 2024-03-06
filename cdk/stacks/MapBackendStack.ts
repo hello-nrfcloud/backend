@@ -20,6 +20,7 @@ import {
 	ContainerRepositoryId,
 	repositoryName,
 } from '../../aws/getOrCreateRepository.js'
+import { SenMLMessages } from '../resources/map/SenMLMessage.js'
 
 /**
  * Provides resources for the backend serving data to hello.nrfcloud.com/map
@@ -53,6 +54,12 @@ export class MapBackendStack extends Stack {
 		const publicDevices = new PublicDevices(this)
 
 		new LwM2MShadow(this, {
+			baseLayer,
+			lambdaSources,
+			publicDevices,
+		})
+
+		new SenMLMessages(this, {
 			baseLayer,
 			lambdaSources,
 			publicDevices,

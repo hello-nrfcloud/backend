@@ -11,4 +11,5 @@ type MapBackendLambdas = {
 	queryHistory: PackedLambda
 	createCredentials: PackedLambda
 	openSSL: PackedLambda
+	senMLToLwM2M: PackedLambda
 }

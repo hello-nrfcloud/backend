@@ -39,4 +39,8 @@ export const packMapBackendLambdas = async (): Promise<MapBackendLambdas> => ({
 		'lambda/map/createCredentials.ts',
 	),
 	openSSL: await packLambdaFromPath('openSSL', 'lambda/map/openSSL.ts'),
+	senMLToLwM2M: await packLambdaFromPath(
+		'senMLToLwM2M',
+		'lambda/map/senMLToLwM2M.ts',
+	),
 })
