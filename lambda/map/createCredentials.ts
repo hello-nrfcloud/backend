@@ -1,4 +1,3 @@
-import { models } from '@hello.nrfcloud.com/proto-lwm2m'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
@@ -11,17 +10,21 @@ import type {
 import { aProblem } from '../util/aProblem.js'
 import { corsHeaders } from '../util/corsHeaders.js'
 import { aResponse } from '../util/aResponse.js'
-import { randomUUID } from 'node:crypto'
 import { devices as devicesApi } from '../../nrfcloud/devices.js'
 import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
+import { publicDevicesRepo } from '../../map/publicDevicesRepo.js'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 
-const { backendStackName, openSslLambdaFunctionName } = fromEnv({
-	backendStackName: 'BACKEND_STACK_NAME',
-	openSslLambdaFunctionName: 'OPENSSL_LAMBDA_FUNCTION_NAME',
-})({
-	STACK_NAME,
-	...process.env,
-})
+const { backendStackName, openSslLambdaFunctionName, publicDevicesTableName } =
+	fromEnv({
+		backendStackName: 'BACKEND_STACK_NAME',
+		openSslLambdaFunctionName: 'OPENSSL_LAMBDA_FUNCTION_NAME',
+
+		publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
+	})({
+		STACK_NAME,
+		...process.env,
+	})
 const ssm = new SSMClient({})
 
 const { apiKey, apiEndpoint } = await getAPISettings({
@@ -39,7 +42,10 @@ const client = devicesApi({
 
 const lambda = new LambdaClient({})
 
-const knownModels = Object.keys(models)
+const repo = publicDevicesRepo({
+	db: new DynamoDBClient({}),
+	TableName: publicDevicesTableName,
+})
 
 /**
  * This registers a custom device, which allows arbitrary users to showcase their products on the map.
@@ -55,13 +61,6 @@ export const handler = async (
 			headers: cors,
 		}
 
-	const { model, email } = JSON.parse(event.body ?? '{}')
-	if (!knownModels.includes(model))
-		return aProblem(cors, {
-			title: `Unknown model: ${model}. Valid models are: ${knownModels.join(', ')}.`,
-			status: 400,
-		})
-
 	const accountInfo = await accountInfoPromise
 	if ('error' in accountInfo)
 		return aProblem(cors, {
@@ -69,7 +68,25 @@ export const handler = async (
 			title: 'Missing nRF Cloud Account information',
 		})
 
-	const deviceId = `map-${randomUUID()}`
+	const { deviceId } = JSON.parse(event.body ?? '{}')
+
+	if (deviceId.startsWith('map-') === false)
+		return aProblem(cors, {
+			status: 400,
+			title: 'Credentials can only be created for custom devices.',
+		})
+
+	const maybePublicDevice = await repo.getPrivateRecordByDeviceId(deviceId)
+
+	if ('error' in maybePublicDevice) {
+		return aProblem(cors, {
+			status: 400,
+			title: `Invalid device ID ${deviceId}: ${maybePublicDevice.error}`,
+		})
+	}
+
+	const { ownerEmail: email } = maybePublicDevice.device
+
 	const { privateKey, certificate } = JSON.parse(
 		(
 			await lambda.send(
@@ -115,16 +132,6 @@ export const handler = async (
 			'@context': new URL(
 				'https://github.com/hello-nrfcloud/proto/map/device-credentials',
 			),
-			device: {
-				deviceId,
-				model,
-			},
-			mqtt: {
-				endpoint: accountInfo.mqttEndpoint,
-				topic: {
-					senML: `${accountInfo.mqttTopicPrefix}m/senml/${deviceId}`,
-				},
-			},
 			credentials: {
 				privateKey,
 				certificate,

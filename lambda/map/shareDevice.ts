@@ -17,6 +17,7 @@ import {
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
 import { corsHeaders } from '../util/corsHeaders.js'
+import { randomUUID } from 'node:crypto'
 
 const { publicDevicesTableName, fromEmail, isTestString } = fromEnv({
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
@@ -38,7 +39,9 @@ const sendEmail = sendOwnershipVerificationEmail(ses, fromEmail)
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
-		deviceId: DeviceId,
+		// If no deviceID is provided a new deviceID is generated.
+		// This is useful in case a custom device needs to be published.
+		deviceId: Type.Optional(DeviceId),
 		model: Model,
 		email: Type.RegExp(/.+@.+/, {
 			title: 'Email',
@@ -69,7 +72,10 @@ export const handler = async (
 		})
 	}
 
-	const { deviceId, model, email } = maybeValidInput.value
+	const { deviceId: maybeDeviceId, model, email } = maybeValidInput.value
+
+	// TODO: limit the amount of devices that can be created
+	const deviceId = maybeDeviceId ?? `map-${randomUUID()}`
 
 	const maybePublished = await publicDevice.share({
 		deviceId,
@@ -103,5 +109,6 @@ export const handler = async (
 	return aResponse(cors, 200, {
 		'@context': Context.map.shareDevice.request,
 		id: maybePublished.publicDevice.id,
+		deviceId,
 	})
 }

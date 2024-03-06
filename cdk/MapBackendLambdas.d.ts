@@ -9,6 +9,6 @@ type MapBackendLambdas = {
 	devicesData: PackedLambda
 	storeObjectsInTimestream: PackedLambda
 	queryHistory: PackedLambda
-	registerCustomDevice: PackedLambda
+	createCredentials: PackedLambda
 	openSSL: PackedLambda
 }

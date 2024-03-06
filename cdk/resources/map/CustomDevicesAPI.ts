@@ -10,25 +10,28 @@ import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
 import { LambdaLogGroup } from '../LambdaLogGroup.js'
 import { Scope } from '../../../util/settings.js'
 import { STACK_NAME } from '../../stacks/stackConfig.js'
+import type { PublicDevices } from './PublicDevices.js'
 
 export class CustomDevicesAPI extends Construct {
-	public readonly registerURL: Lambda.FunctionUrl
+	public readonly createCredentialsURL: Lambda.FunctionUrl
 	constructor(
 		parent: Construct,
 		{
 			baseLayer,
 			lambdaSources,
 			openSSLContainerImage,
+			publicDevices,
 		}: {
 			baseLayer: Lambda.ILayerVersion
 			lambdaSources: {
-				registerCustomDevice: PackedLambda
+				createCredentials: PackedLambda
 				openSSL: PackedLambda
 			}
 			openSSLContainerImage: {
 				repo: ECR.IRepository
 				tag: string
 			}
+			publicDevices: PublicDevices
 		},
 	) {
 		super(parent, 'customDevicesAPI')
@@ -51,22 +54,23 @@ export class CustomDevicesAPI extends Construct {
 			...new LambdaLogGroup(this, 'openSSLFnLogs'),
 		})
 
-		const registerFn = new Lambda.Function(this, 'registerFn', {
-			handler: lambdaSources.registerCustomDevice.handler,
+		const createCredentials = new Lambda.Function(this, 'createCredentialsFn', {
+			handler: lambdaSources.createCredentials.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(10),
 			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.registerCustomDevice.zipFile),
-			description: 'Allows users to register custom devices',
+			code: Lambda.Code.fromAsset(lambdaSources.createCredentials.zipFile),
+			description: 'Allows users to create credentials for custom',
 			layers: [baseLayer],
 			environment: {
 				VERSION: this.node.tryGetContext('version'),
 				NODE_NO_WARNINGS: '1',
 				BACKEND_STACK_NAME: STACK_NAME,
 				OPENSSL_LAMBDA_FUNCTION_NAME: openSSLFn.functionName,
+				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 			},
-			...new LambdaLogGroup(this, 'registerFnLogs'),
+			...new LambdaLogGroup(this, 'createCredentialsFnLogs'),
 			initialPolicy: [
 				new IAM.PolicyStatement({
 					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
@@ -81,9 +85,10 @@ export class CustomDevicesAPI extends Construct {
 				}),
 			],
 		})
-		this.registerURL = registerFn.addFunctionUrl({
+		this.createCredentialsURL = createCredentials.addFunctionUrl({
 			authType: Lambda.FunctionUrlAuthType.NONE,
 		})
-		openSSLFn.grantInvoke(registerFn)
+		openSSLFn.grantInvoke(createCredentials)
+		publicDevices.publicDevicesTable.grantReadData(createCredentials)
 	}
 }

@@ -91,6 +91,7 @@ export class MapBackendStack extends Stack {
 				),
 				tag: openSSLLambdaContainerTag,
 			},
+			publicDevices,
 		})
 
 		// Outputs
@@ -119,10 +120,10 @@ export class MapBackendStack extends Stack {
 			description: 'API endpoint for querying device history',
 			value: lwm2mObjectHistory.historyURL.url,
 		})
-		new CfnOutput(this, 'registerCustomDeviceAPIURL', {
-			exportName: `${this.stackName}:registerCustomDeviceAPIURL`,
-			description: 'API endpoint for registering custom devices',
-			value: customDevicesAPI.registerURL.url,
+		new CfnOutput(this, 'createCredentialsAPIURL', {
+			exportName: `${this.stackName}:createCredentialsAPIURL`,
+			description: 'API endpoint for creating credentials for custom devices',
+			value: customDevicesAPI.createCredentialsURL.url,
 		})
 	}
 }
