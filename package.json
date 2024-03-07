@@ -118,7 +118,7 @@
     "@hello.nrfcloud.com/proto-lwm2m": "2.8.0",
     "@middy/core": "5.2.6",
     "@nordicsemiconductor/from-env": "3.0.1",
-    "@nordicsemiconductor/random-words": "8.0.0",
+    "@nordicsemiconductor/random-words": "8.0.1",
     "@nordicsemiconductor/timestream-helpers": "6.0.2",
     "@sinclair/typebox": "0.32.15",
     "lodash-es": "4.17.21",
