@@ -132,12 +132,20 @@ export class MapBackendStack extends Stack {
 			description: 'API endpoint for creating credentials for custom devices',
 			value: customDevicesAPI.createCredentialsURL.url,
 		})
+		new CfnOutput(this, 'publicDevicesTableName', {
+			exportName: `${this.stackName}:publicDevicesTableName`,
+			description: 'name of the public devices table',
+			value: publicDevices.publicDevicesTable.tableName,
+		})
 	}
 }
 
 export type StackOutputs = {
-	sharingStatusAPIURL: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
-	confirmOwnershipAPIURL: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
-	devicesAPIURL: string // e.g. 'https://a2udxgawcxd5tbmmfagi726jsm0obxov.lambda-url.eu-west-1.on.aws/'
 	shareAPIURL: string // e.g. 'https://iiet67bnlmbtuhiblik4wcy4ni0oujot.lambda-url.eu-west-1.on.aws/'
+	confirmOwnershipAPIURL: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
+	sharingStatusAPIURL: string // e.g. 'https://aqt7qs3nzyo4uh2v74quysvmxe0ubeth.lambda-url.eu-west-1.on.aws/'
+	devicesAPIURL: string // e.g. 'https://a2udxgawcxd5tbmmfagi726jsm0obxov.lambda-url.eu-west-1.on.aws/'
+	queryHistoryAPIURL: string
+	createCredentialsAPIURL: string
+	publicDevicesTableName: string
 }

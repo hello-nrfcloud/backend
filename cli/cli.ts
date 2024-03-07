@@ -9,7 +9,11 @@ import chalk from 'chalk'
 import { program } from 'commander'
 import { env } from '../cdk/helpers/env.js'
 import type { StackOutputs } from '../cdk/stacks/BackendStack.js'
-import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
+import type { StackOutputs as MapBackendStackOutputs } from '../cdk/stacks/MapBackendStack.js'
+import {
+	MAP_BACKEND_STACK_NAME,
+	STACK_NAME,
+} from '../cdk/stacks/stackConfig.js'
 import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition'
 import { configureDeviceCommand } from './commands/configure-device.js'
@@ -36,6 +40,7 @@ import { listDevicesCommand } from './commands/list-devices.js'
 import { configureCoAPHealthCheckCommand } from './commands/configure-coap-health-check.js'
 import { ECRClient } from '@aws-sdk/client-ecr'
 import { buildContainersCommand } from './commands/build-container.js'
+import { registerCustomMapDevice } from './commands/register-custom-device.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -110,9 +115,10 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 			}),
 		)
 		try {
-			const outputs = await stackOutput(
-				new CloudFormationClient({}),
-			)<StackOutputs>(STACK_NAME)
+			const [outputs, mapOutputs] = await Promise.all([
+				stackOutput(cf)<StackOutputs>(STACK_NAME),
+				stackOutput(cf)<MapBackendStackOutputs>(MAP_BACKEND_STACK_NAME),
+			])
 			commands.push(
 				showDeviceCommand({
 					ssm,
@@ -177,6 +183,13 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				}),
 				listDevicesCommand({
 					ssm,
+					stackName: STACK_NAME,
+				}),
+				registerCustomMapDevice({
+					db,
+					publicDevicesTableName: mapOutputs.publicDevicesTableName,
+					ssm,
+					env: accountEnv,
 					stackName: STACK_NAME,
 				}),
 			)
