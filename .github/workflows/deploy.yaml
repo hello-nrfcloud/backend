@@ -140,6 +140,7 @@ jobs:
       - name: Determine released version
         id: version
         run: |
+          git pull --tags
           VERSION=`git describe --abbrev=0 --tags --always | tr -d '\n'`
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
