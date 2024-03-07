@@ -21,6 +21,9 @@ import { corsOPTIONS } from '../util/corsOPTIONS.js'
 import { aResponse } from '../util/aResponse.js'
 import { aProblem } from '../util/aProblem.js'
 import { addVersionHeader } from '../util/addVersionHeader.js'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { metricsForComponent } from '../metrics/metrics.js'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 
 const { publicDevicesTableName, fromEmail, isTestString, version } = fromEnv({
 	version: 'VERSION',
@@ -40,6 +43,11 @@ const publicDevice = publicDevicesRepo({
 })
 
 const sendEmail = sendOwnershipVerificationEmail(ses, fromEmail)
+
+const { track, metrics } = metricsForComponent(
+	'shareDevice',
+	'hello-nrfcloud-map',
+)
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
@@ -93,6 +101,9 @@ const h = async (
 			status: 500,
 		})
 	}
+
+	track('deviceShared', MetricUnit.Count, 1)
+
 	if (!isTest)
 		await sendEmail({
 			email,
@@ -113,4 +124,5 @@ const h = async (
 export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('POST'))
+	.use(logMetrics(metrics))
 	.handler(h)

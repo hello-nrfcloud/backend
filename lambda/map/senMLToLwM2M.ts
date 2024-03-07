@@ -8,6 +8,10 @@ import {
 } from '../../map/publicDevicesRepo.js'
 import { updateLwM2MShadow } from './updateLwM2MShadow.js'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
+import { metricsForComponent } from '../metrics/metrics.js'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import middy from '@middy/core'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 
 const { TableName } = fromEnv({
 	TableName: 'PUBLIC_DEVICES_TABLE_NAME',
@@ -23,15 +27,22 @@ const devicesInfoCache = new Map<string, { id: string; model: string } | null>()
 
 const isValid = validateWithTypeBox(SenML)
 
+const { track, metrics } = metricsForComponent(
+	'deviceMessage',
+	'hello-nrfcloud-map',
+)
+
 /**
  * Store SenML messages as LwM2M objects in a named shadow.
  */
-export const handler = async (event: {
+const h = async (event: {
 	message: Record<string, unknown>
 	deviceId: string
 }): Promise<void> => {
 	console.debug(JSON.stringify({ event }))
 	const { deviceId, message } = event
+
+	track('message', MetricUnit.Count, 1)
 
 	if (!devicesInfoCache.has(deviceId)) {
 		const maybeDevice = await devicesRepo.getByDeviceId(deviceId)
@@ -64,3 +75,5 @@ export const handler = async (event: {
 
 	await updateShadow(deviceInfo.id, objects)
 }
+
+export const handler = middy().use(logMetrics(metrics)).handler(h)

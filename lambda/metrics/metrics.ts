@@ -11,13 +11,14 @@ console.debug(`[Metrics]`, metricsEnabled ? `Enabled` : `Disabled`)
  */
 export const metricsForComponent = (
 	component: string,
+	namespace = 'hello-nrfcloud-backend',
 ): {
 	metrics: Metrics
 	track: AddMetricsFn
 } => {
 	if (registry[component] === undefined) {
 		registry[component] = new Metrics({
-			namespace: 'hello-nrfcloud-backend',
+			namespace,
 			serviceName: component,
 		})
 	}

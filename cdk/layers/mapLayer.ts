@@ -13,5 +13,6 @@ export const pack = async (): Promise<PackedLayer> =>
 			'lodash-es',
 			'@nordicsemiconductor/random-words',
 			'@nordicsemiconductor/timestream-helpers',
+			'@aws-lambda-powertools/metrics',
 		],
 	})

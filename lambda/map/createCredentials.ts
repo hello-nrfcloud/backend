@@ -15,6 +15,9 @@ import middy from '@middy/core'
 import { corsOPTIONS } from '../util/corsOPTIONS.js'
 import { aProblem } from '../util/aProblem.js'
 import { aResponse } from '../util/aResponse.js'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
+import { metricsForComponent } from '../metrics/metrics.js'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
 
 const { backendStackName, openSslLambdaFunctionName, publicDevicesTableName } =
 	fromEnv({
@@ -46,6 +49,11 @@ const repo = publicDevicesRepo({
 	db: new DynamoDBClient({}),
 	TableName: publicDevicesTableName,
 })
+
+const { track, metrics } = metricsForComponent(
+	'createCredentials',
+	'hello-nrfcloud-map',
+)
 
 /**
  * This registers a custom device, which allows arbitrary users to showcase their products on the map.
@@ -119,6 +127,8 @@ const h = async (
 	console.log(deviceId, `Registered devices with nRF Cloud`)
 	console.log(deviceId, `Bulk ops ID:`, registration.bulkOpsRequestId)
 
+	track('credentialsCreated', MetricUnit.Count, 1)
+
 	return aResponse(
 		200,
 		{
@@ -137,4 +147,7 @@ const h = async (
 	)
 }
 
-export const handler = middy().use(corsOPTIONS('POST')).handler(h)
+export const handler = middy()
+	.use(corsOPTIONS('POST'))
+	.use(logMetrics(metrics))
+	.handler(h)
