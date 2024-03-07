@@ -40,10 +40,10 @@ export class KPIs extends Construct {
 			code: new LambdaSource(this, lambdaSources.kpis).code,
 			description: 'Collect KPIs and publish them as metrics',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				STACK_NAME: Stack.of(this).stackName,

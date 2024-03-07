@@ -24,16 +24,22 @@ import type {
 } from 'aws-lambda'
 import { shadowToObjects } from '../../lwm2m/shadowToObjects.js'
 import { consentDurationMS } from '../../map/consentDuration.js'
-import { aProblem } from '../util/aProblem.js'
+import middy from '@middy/core'
+import { corsOPTIONS } from '../util/corsOPTIONS.js'
 import { aResponse } from '../util/aResponse.js'
-import { corsHeaders } from '../util/corsHeaders.js'
+import { aProblem } from '../util/aProblem.js'
+import { addVersionHeader } from '../util/addVersionHeader.js'
 
-const { publicDevicesTableName, publicDevicesTableModelOwnerConfirmedIndex } =
-	fromEnv({
-		publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
-		publicDevicesTableModelOwnerConfirmedIndex:
-			'PUBLIC_DEVICES_TABLE_MODEL_OWNER_CONFIRMED_INDEX_NAME',
-	})(process.env)
+const {
+	publicDevicesTableName,
+	publicDevicesTableModelOwnerConfirmedIndex,
+	version,
+} = fromEnv({
+	version: 'VERSION',
+	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
+	publicDevicesTableModelOwnerConfirmedIndex:
+		'PUBLIC_DEVICES_TABLE_MODEL_OWNER_CONFIRMED_INDEX_NAME',
+})(process.env)
 
 const db = new DynamoDBClient({})
 const iotData = new IoTDataPlaneClient({})
@@ -46,17 +52,10 @@ const validateInput = validateWithTypeBox(
 	}),
 )
 
-export const handler = async (
+const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify({ event }))
-
-	const cors = corsHeaders(event, ['POST'])
-	if (event.requestContext.http.method === 'OPTIONS')
-		return {
-			statusCode: 200,
-			headers: cors,
-		}
 
 	const devicesToFetch: { id: string; model: string }[] = []
 	const minConfirmTime = Date.now() - consentDurationMS
@@ -66,7 +65,7 @@ export const handler = async (
 	const maybeValidQuery = validateInput(qs)
 
 	if ('errors' in maybeValidQuery) {
-		return aProblem(cors, {
+		return aProblem({
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidQuery.errors),
@@ -150,7 +149,6 @@ export const handler = async (
 	console.log(JSON.stringify(devices))
 
 	return aResponse(
-		cors,
 		200,
 		{
 			'@context': Context.map.devices,
@@ -162,3 +160,8 @@ export const handler = async (
 		60 * 10,
 	)
 }
+
+export const handler = middy()
+	.use(addVersionHeader(version))
+	.use(corsOPTIONS('POST'))
+	.handler(h)

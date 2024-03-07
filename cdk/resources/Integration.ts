@@ -188,7 +188,7 @@ export class Integration extends Construct {
 			MOSQUITTO__BRIDGE01__CLEANSESSION: `true`,
 			MOSQUITTO__BRIDGE01__TOPIC: `# out 1`,
 		}
-		if (this.node.tryGetContext('isTest') === true) {
+		if (this.node.getContext('isTest') === true) {
 			initEnvironment.MOSQUITTO__DEFAULT__LISTENER = `1883`
 			initEnvironment.MOSQUITTO__SECURITY__ALLOW_ANONYMOUS = `true`
 		}

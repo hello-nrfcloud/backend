@@ -14,7 +14,7 @@ export class LambdaLogGroup extends Construct {
 			logGroupName: `/${Stack.of(this).stackName}/fn/${id}-${Names.uniqueId(this)}`,
 			logGroupClass: Logs.LogGroupClass.STANDARD, // INFREQUENT_ACCESS does not support custom metrics
 			removalPolicy:
-				this.node.tryGetContext('isTest') === true
+				this.node.getContext('isTest') === true
 					? RemovalPolicy.DESTROY
 					: RemovalPolicy.RETAIN,
 		})

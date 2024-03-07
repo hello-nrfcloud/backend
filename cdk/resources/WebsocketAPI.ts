@@ -70,12 +70,12 @@ export class WebsocketAPI extends Construct {
 			code: new LambdaSource(this, lambdaSources.onConnect).code,
 			description: 'Registers new clients',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
 				DEVICE_SHADOW_TABLE_NAME: deviceShadow.deviceShadowTable.tableName,
 			},
@@ -97,12 +97,12 @@ export class WebsocketAPI extends Construct {
 			code: new LambdaSource(this, lambdaSources.onMessage).code,
 			description: 'Handles messages sent by clients',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 			layers,
 			...new LambdaLogGroup(this, 'onMessageLogs'),
@@ -120,12 +120,12 @@ export class WebsocketAPI extends Construct {
 			code: new LambdaSource(this, lambdaSources.onDisconnect).code,
 			description: 'De-registers clients',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 			layers,
 			...new LambdaLogGroup(this, 'onDisconnectLogs'),
@@ -145,12 +145,12 @@ export class WebsocketAPI extends Construct {
 			layers,
 			...new LambdaLogGroup(this, 'authorizerLambdaLogs'),
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 		})
 		deviceStorage.devicesTable.grantReadWriteData(authorizerLambda)
@@ -276,7 +276,7 @@ export class WebsocketAPI extends Construct {
 		}.amazonaws.com/${prodStage.stageName}`
 
 		// Logging
-		if (this.node.tryGetContext('isTest') === true) {
+		if (this.node.getContext('isTest') === true) {
 			new ApiLogging(this, api, prodStage)
 		}
 
@@ -294,14 +294,13 @@ export class WebsocketAPI extends Construct {
 					.code,
 				description: 'Publish event to web socket clients',
 				environment: {
-					VERSION: this.node.tryGetContext('version'),
+					VERSION: this.node.getContext('version'),
 					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 					WEBSOCKET_MANAGEMENT_API_URL: this.websocketManagementAPIURL,
 					EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					NODE_NO_WARNINGS: '1',
-					DISABLE_METRICS:
-						this.node.tryGetContext('isTest') === true ? '1' : '0',
+					DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				},
 				initialPolicy: [
 					new IAM.PolicyStatement({

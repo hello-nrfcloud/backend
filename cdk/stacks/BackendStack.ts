@@ -154,7 +154,7 @@ export class BackendStack extends Stack {
 			lambdaSources,
 		})
 
-		if (this.node.tryGetContext('isTest') !== true) {
+		if (this.node.getContext('isTest') !== true) {
 			new HealthCheckCoAP(this, {
 				websocketAPI,
 				deviceStorage,

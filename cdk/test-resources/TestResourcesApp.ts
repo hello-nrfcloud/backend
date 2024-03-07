@@ -17,7 +17,12 @@ export class TestResources extends App {
 		context?: Record<string, any>
 		env: Required<Environment>
 	}) {
-		super({ context })
+		super({
+			context: {
+				...context,
+				isTest: true,
+			},
+		})
 		new TestResourcesStack(this, { lambdaSources, layer, env })
 	}
 }

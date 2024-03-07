@@ -8,18 +8,22 @@ import { Type } from '@sinclair/typebox'
 import { publicDevicesRepo } from '../../map/publicDevicesRepo.js'
 import { SESClient } from '@aws-sdk/client-ses'
 import { sendOwnershipVerificationEmail } from './sendOwnershipVerificationEmail.js'
-import { aResponse } from '../util/aResponse.js'
-import { aProblem } from '../util/aProblem.js'
 import { DeviceId, Model } from '@hello.nrfcloud.com/proto/hello/map'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
-import { corsHeaders } from '../util/corsHeaders.js'
 import { randomUUID } from 'node:crypto'
 
-const { publicDevicesTableName, fromEmail, isTestString } = fromEnv({
+import middy from '@middy/core'
+import { corsOPTIONS } from '../util/corsOPTIONS.js'
+import { aResponse } from '../util/aResponse.js'
+import { aProblem } from '../util/aProblem.js'
+import { addVersionHeader } from '../util/addVersionHeader.js'
+
+const { publicDevicesTableName, fromEmail, isTestString, version } = fromEnv({
+	version: 'VERSION',
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
 	fromEmail: 'FROM_EMAIL',
 	isTestString: 'IS_TEST',
@@ -51,21 +55,14 @@ const validateInput = validateWithTypeBox(
 	}),
 )
 
-export const handler = async (
+const h = async (
 	event: lambda.APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify(event))
 
-	const cors = corsHeaders(event, ['POST'])
-	if (event.requestContext.http.method === 'OPTIONS')
-		return {
-			statusCode: 200,
-			headers: cors,
-		}
-
 	const maybeValidInput = validateInput(JSON.parse(event.body ?? '{}'))
 	if ('errors' in maybeValidInput) {
-		return aProblem(cors, {
+		return aProblem({
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidInput.errors),
@@ -85,13 +82,13 @@ export const handler = async (
 	})
 	if ('error' in maybePublished) {
 		if (maybePublished.error instanceof ConditionalCheckFailedException) {
-			return aProblem(cors, {
+			return aProblem({
 				title: `Failed to share device: ${maybePublished.error.message}`,
 				status: 409,
 			})
 		}
 		console.error(maybePublished.error)
-		return aProblem(cors, {
+		return aProblem({
 			title: `Failed to share device: ${maybePublished.error.message}`,
 			status: 500,
 		})
@@ -106,9 +103,14 @@ export const handler = async (
 
 	console.debug(JSON.stringify({ deviceId, model, email }))
 
-	return aResponse(cors, 200, {
+	return aResponse(200, {
 		'@context': Context.map.shareDevice.request,
 		id: maybePublished.publicDevice.id,
 		deviceId,
 	})
 }
+
+export const handler = middy()
+	.use(addVersionHeader(version))
+	.use(corsOPTIONS('POST'))
+	.handler(h)

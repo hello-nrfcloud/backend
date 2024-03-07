@@ -31,7 +31,7 @@ export class ShareAPI extends Construct {
 	) {
 		super(parent, 'shareAPI')
 
-		const domain = this.node.tryGetContext('domain')
+		const domain = this.node.getContext('domain')
 
 		const shareFn = new Lambda.Function(this, 'shareFn', {
 			handler: lambdaSources.shareDevice.handler,
@@ -43,11 +43,11 @@ export class ShareAPI extends Construct {
 			description: 'Invoked by a user that wants to share a device',
 			layers: [baseLayer],
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 				FROM_EMAIL: `notification@${domain}`,
 				NODE_NO_WARNINGS: '1',
-				IS_TEST: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				IS_TEST: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 			...new LambdaLogGroup(this, 'shareFnLogs'),
 			initialPolicy: [
@@ -82,7 +82,7 @@ export class ShareAPI extends Construct {
 				'Invoked by a user that wants confirm their device ownership.',
 			layers: [baseLayer],
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 				NODE_NO_WARNINGS: '1',
 			},
@@ -103,7 +103,7 @@ export class ShareAPI extends Construct {
 			description: 'Returns the sharing status of a device.',
 			layers: [baseLayer],
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 				NODE_NO_WARNINGS: '1',
 			},

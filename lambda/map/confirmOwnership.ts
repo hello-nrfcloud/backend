@@ -3,17 +3,20 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import lambda, { type APIGatewayProxyResultV2 } from 'aws-lambda'
 import { Type } from '@sinclair/typebox'
 import { publicDevicesRepo } from '../../map/publicDevicesRepo.js'
-import { aResponse } from '../util/aResponse.js'
-import { aProblem } from '../util/aProblem.js'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import { DeviceId } from '@hello.nrfcloud.com/proto/hello/map'
 import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
-import { corsHeaders } from '../util/corsHeaders.js'
+import middy from '@middy/core'
+import { corsOPTIONS } from '../util/corsOPTIONS.js'
+import { aResponse } from '../util/aResponse.js'
+import { aProblem } from '../util/aProblem.js'
+import { addVersionHeader } from '../util/addVersionHeader.js'
 
-const { publicDevicesTableName } = fromEnv({
+const { publicDevicesTableName, version } = fromEnv({
+	version: 'VERSION',
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
 })(process.env)
 
@@ -35,21 +38,14 @@ const validateInput = validateWithTypeBox(
 	}),
 )
 
-export const handler = async (
+const h = async (
 	event: lambda.APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify(event))
 
-	const cors = corsHeaders(event, ['POST'])
-	if (event.requestContext.http.method === 'OPTIONS')
-		return {
-			statusCode: 200,
-			headers: cors,
-		}
-
 	const maybeValidInput = validateInput(JSON.parse(event.body ?? '{}'))
 	if ('errors' in maybeValidInput) {
-		return aProblem(cors, {
+		return aProblem({
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidInput.errors),
@@ -63,7 +59,7 @@ export const handler = async (
 		ownershipConfirmationToken: token,
 	})
 	if ('error' in maybeConfirmed) {
-		return aProblem(cors, {
+		return aProblem({
 			title: `Failed to confirm your ownership: ${maybeConfirmed.error.message}`,
 			status: 400,
 		})
@@ -71,8 +67,13 @@ export const handler = async (
 
 	console.debug(JSON.stringify({ deviceId }))
 
-	return aResponse(cors, 200, {
+	return aResponse(200, {
 		'@context': Context.map.shareDevice.ownershipConfirmed,
 		id: maybeConfirmed.publicDevice.id,
 	})
 }
+
+export const handler = middy()
+	.use(addVersionHeader(version))
+	.use(corsOPTIONS('POST'))
+	.handler(h)

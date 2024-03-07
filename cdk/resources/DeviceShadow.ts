@@ -95,12 +95,11 @@ export class DeviceShadow extends Construct {
 				code: new LambdaSource(this, lambdaSources.prepareDeviceShadow).code,
 				description: 'Generate queue to fetch the shadow data',
 				environment: {
-					VERSION: this.node.tryGetContext('version'),
+					VERSION: this.node.getContext('version'),
 					QUEUE_URL: shadowQueue.queueUrl,
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					NODE_NO_WARNINGS: '1',
-					DISABLE_METRICS:
-						this.node.tryGetContext('isTest') === true ? '1' : '0',
+					DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				},
 				initialPolicy: [],
 				layers,
@@ -119,7 +118,7 @@ export class DeviceShadow extends Construct {
 			code: new LambdaSource(this, lambdaSources.fetchDeviceShadow).code,
 			description: `Fetch devices' shadow from nRF Cloud`,
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				WEBSOCKET_CONNECTIONS_TABLE_NAME:
 					websocketConnectionsTable.table.tableName,
@@ -129,7 +128,7 @@ export class DeviceShadow extends Construct {
 				NODE_NO_WARNINGS: '1',
 				PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED: 'FALSE',
 				PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				DEVICE_SHADOW_TABLE_NAME: this.deviceShadowTable.tableName,
 			},
 			initialPolicy: [

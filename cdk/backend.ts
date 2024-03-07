@@ -143,4 +143,11 @@ new BackendApp({
 		layer: await packMapLayer(),
 		openSSLLambdaContainerTag,
 	},
+	version: (() => {
+		const v = process.env.VERSION
+		const defaultVersion = '0.0.0-development'
+		if (v === undefined)
+			console.warn(`VERSION is not defined, using ${defaultVersion}!`)
+		return v ?? defaultVersion
+	})(),
 })

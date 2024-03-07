@@ -11,12 +11,15 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { aProblem } from '../util/aProblem.js'
-import { aResponse } from '../util/aResponse.js'
-import { corsHeaders } from '../util/corsHeaders.js'
 import { publicDevicesRepo } from '../../map/publicDevicesRepo.js'
+import middy from '@middy/core'
+import { corsOPTIONS } from '../util/corsOPTIONS.js'
+import { aResponse } from '../util/aResponse.js'
+import { aProblem } from '../util/aProblem.js'
+import { addVersionHeader } from '../util/addVersionHeader.js'
 
-const { publicDevicesTableName } = fromEnv({
+const { publicDevicesTableName, version } = fromEnv({
+	version: 'VERSION',
 	publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
 })(process.env)
 
@@ -29,22 +32,15 @@ const validateInput = validateWithTypeBox(
 	}),
 )
 
-export const handler = async (
+const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify({ event }))
 
-	const cors = corsHeaders(event, ['GET'])
-	if (event.requestContext.http.method === 'OPTIONS')
-		return {
-			statusCode: 200,
-			headers: cors,
-		}
-
 	const maybeValidQuery = validateInput(event.queryStringParameters)
 
 	if ('errors' in maybeValidQuery) {
-		return aProblem(cors, {
+		return aProblem({
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidQuery.errors),
@@ -56,14 +52,13 @@ export const handler = async (
 	console.log(JSON.stringify(maybeDevice))
 
 	if ('error' in maybeDevice) {
-		return aProblem(cors, {
+		return aProblem({
 			title: `Device ${maybeValidQuery.value.id} not shared: ${maybeDevice.error}`,
 			status: 404,
 		})
 	}
 
 	return aResponse(
-		cors,
 		200,
 		{
 			'@context': Context.map.device,
@@ -72,3 +67,8 @@ export const handler = async (
 		60 * 60 * 24,
 	)
 }
+
+export const handler = middy()
+	.use(addVersionHeader(version))
+	.use(corsOPTIONS('GET'))
+	.handler(h)

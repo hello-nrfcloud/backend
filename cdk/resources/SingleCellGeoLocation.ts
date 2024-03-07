@@ -59,11 +59,11 @@ export class SingleCellGeoLocation extends Construct {
 				.code,
 			description: 'Resolve device geo location based on network information',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				STACK_NAME: Stack.of(this).stackName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				CACHE_TABLE_NAME: table.tableName,

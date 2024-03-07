@@ -3,10 +3,8 @@ import type {
 	APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda'
 import type { HttpStatusCode } from '@hello.nrfcloud.com/proto/hello/errors/StatusCode'
-import { corsHeaders } from './corsHeaders.js'
 
 export const aResponse = (
-	cors: ReturnType<typeof corsHeaders>,
 	status: HttpStatusCode,
 	result: {
 		'@context': URL
@@ -20,7 +18,6 @@ export const aResponse = (
 		'Cache-Control':
 			cacheForSeconds > 0 ? `public, max-age=${cacheForSeconds}` : 'no-store',
 		...(headers ?? {}),
-		...cors,
 	},
 	body: JSON.stringify(result),
 })

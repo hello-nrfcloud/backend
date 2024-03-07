@@ -46,7 +46,7 @@ export class HistoricalData extends Construct {
 		})
 
 		db.applyRemovalPolicy(
-			this.node.tryGetContext('isTest') === true
+			this.node.getContext('isTest') === true
 				? RemovalPolicy.DESTROY
 				: RemovalPolicy.RETAIN,
 		)
@@ -64,12 +64,11 @@ export class HistoricalData extends Construct {
 					.code,
 				description: 'Save converted messages into Timestream database',
 				environment: {
-					VERSION: this.node.tryGetContext('version'),
+					VERSION: this.node.getContext('version'),
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 					NODE_NO_WARNINGS: '1',
-					DISABLE_METRICS:
-						this.node.tryGetContext('isTest') === true ? '1' : '0',
+					DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				},
 				layers,
 				initialPolicy: [
@@ -106,7 +105,7 @@ export class HistoricalData extends Construct {
 				code: new LambdaSource(this, lambdaSources.historicalDataRequest).code,
 				description: 'Handle historical data request',
 				environment: {
-					VERSION: this.node.tryGetContext('version'),
+					VERSION: this.node.getContext('version'),
 					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,

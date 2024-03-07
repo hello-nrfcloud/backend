@@ -57,7 +57,7 @@ export class HealthCheckCoAP extends Construct {
 			code: new LambdaSource(this, lambdaSources.healthCheckForCoAP).code,
 			description: 'End to end test for CoAP to mqtt bridge',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				STACK_NAME: Stack.of(this).stackName,

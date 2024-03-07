@@ -41,7 +41,7 @@ export class LwM2MShadow extends Construct {
 				'Store shadow updates asset_tracker_v2 shadow format as LwM2M objects in a named shadow.',
 			layers: [baseLayer],
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 			},
 			initialPolicy: [

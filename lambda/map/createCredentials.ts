@@ -7,19 +7,19 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { aProblem } from '../util/aProblem.js'
-import { corsHeaders } from '../util/corsHeaders.js'
-import { aResponse } from '../util/aResponse.js'
 import { devices as devicesApi } from '../../nrfcloud/devices.js'
 import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
 import { publicDevicesRepo } from '../../map/publicDevicesRepo.js'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import middy from '@middy/core'
+import { corsOPTIONS } from '../util/corsOPTIONS.js'
+import { aProblem } from '../util/aProblem.js'
+import { aResponse } from '../util/aResponse.js'
 
 const { backendStackName, openSslLambdaFunctionName, publicDevicesTableName } =
 	fromEnv({
 		backendStackName: 'BACKEND_STACK_NAME',
 		openSslLambdaFunctionName: 'OPENSSL_LAMBDA_FUNCTION_NAME',
-
 		publicDevicesTableName: 'PUBLIC_DEVICES_TABLE_NAME',
 	})({
 		STACK_NAME,
@@ -50,20 +50,14 @@ const repo = publicDevicesRepo({
 /**
  * This registers a custom device, which allows arbitrary users to showcase their products on the map.
  */
-export const handler = async (
+const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify({ event }))
-	const cors = corsHeaders(event, ['POST'], 60)
-	if (event.requestContext.http.method === 'OPTIONS')
-		return {
-			statusCode: 200,
-			headers: cors,
-		}
 
 	const accountInfo = await accountInfoPromise
 	if ('error' in accountInfo)
-		return aProblem(cors, {
+		return aProblem({
 			status: 500,
 			title: 'Missing nRF Cloud Account information',
 		})
@@ -71,7 +65,7 @@ export const handler = async (
 	const { deviceId } = JSON.parse(event.body ?? '{}')
 
 	if (deviceId.startsWith('map-') === false)
-		return aProblem(cors, {
+		return aProblem({
 			status: 400,
 			title: 'Credentials can only be created for custom devices.',
 		})
@@ -79,7 +73,7 @@ export const handler = async (
 	const maybePublicDevice = await repo.getPrivateRecordByDeviceId(deviceId)
 
 	if ('error' in maybePublicDevice) {
-		return aProblem(cors, {
+		return aProblem({
 			status: 400,
 			title: `Invalid device ID ${deviceId}: ${maybePublicDevice.error}`,
 		})
@@ -116,7 +110,7 @@ export const handler = async (
 			`registration failed`,
 			JSON.stringify(registration.error),
 		)
-		return aProblem(cors, {
+		return aProblem({
 			title: `Registration failed: ${registration.error.message}`,
 			status: 500,
 		})
@@ -126,7 +120,6 @@ export const handler = async (
 	console.log(deviceId, `Bulk ops ID:`, registration.bulkOpsRequestId)
 
 	return aResponse(
-		cors,
 		200,
 		{
 			'@context': new URL(
@@ -143,3 +136,5 @@ export const handler = async (
 		},
 	)
 }
+
+export const handler = middy().use(corsOPTIONS('POST')).handler(h)

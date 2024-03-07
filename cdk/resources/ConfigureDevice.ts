@@ -43,7 +43,7 @@ export class ConfigureDevice extends Construct {
 			code: new LambdaSource(this, lambdaSources.configureDevice).code,
 			description: 'Handle device configuration request',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				NODE_NO_WARNINGS: '1',

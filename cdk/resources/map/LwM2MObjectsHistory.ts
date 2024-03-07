@@ -43,7 +43,7 @@ export class LwM2MObjectsHistory extends Construct {
 		})
 
 		db.applyRemovalPolicy(
-			this.node.tryGetContext('isTest') === true
+			this.node.getContext('isTest') === true
 				? RemovalPolicy.DESTROY
 				: RemovalPolicy.RETAIN,
 		)
@@ -57,11 +57,11 @@ export class LwM2MObjectsHistory extends Construct {
 			code: new LambdaSource(this, lambdaSources.storeObjectsInTimestream).code,
 			description: 'Save LwM2M objects into Timestream database',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 			layers: [baseLayer],
 			initialPolicy: [
@@ -140,10 +140,10 @@ export class LwM2MObjectsHistory extends Construct {
 			description: 'Queries the LwM2M object history',
 			layers: [baseLayer],
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				NODE_NO_WARNINGS: '1',
 				HISTORICAL_DATA_TABLE_INFO: this.table.ref,
-				DISABLE_METRICS: this.node.tryGetContext('isTest') === true ? '1' : '0',
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 			...new LambdaLogGroup(this, 'historyFnLogs'),
 			initialPolicy: [

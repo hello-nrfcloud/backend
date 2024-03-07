@@ -41,7 +41,7 @@ export class SenMLMessages extends Construct {
 				'Convert incoming SenML to LwM2M and store as objects in a named shadow.',
 			layers: [baseLayer],
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 			},
 			initialPolicy: [

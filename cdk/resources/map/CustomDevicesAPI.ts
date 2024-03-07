@@ -48,7 +48,7 @@ export class CustomDevicesAPI extends Construct {
 			}),
 			description: 'Allows to invoke OpenSSL',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				NODE_NO_WARNINGS: '1',
 			},
 			...new LambdaLogGroup(this, 'openSSLFnLogs'),
@@ -64,7 +64,7 @@ export class CustomDevicesAPI extends Construct {
 			description: 'Allows users to create credentials for custom',
 			layers: [baseLayer],
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				NODE_NO_WARNINGS: '1',
 				BACKEND_STACK_NAME: STACK_NAME,
 				OPENSSL_LAMBDA_FUNCTION_NAME: openSSLFn.functionName,

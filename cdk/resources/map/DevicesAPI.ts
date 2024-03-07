@@ -33,7 +33,7 @@ export class DevicesAPI extends Construct {
 				'Provides the data of the public devices to the map frontend',
 			layers: [baseLayer],
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				PUBLIC_DEVICES_TABLE_NAME: publicDevices.publicDevicesTable.tableName,
 				PUBLIC_DEVICES_TABLE_MODEL_OWNER_CONFIRMED_INDEX_NAME:
 					publicDevices.publicDevicesTableModelOwnerConfirmedIndex,

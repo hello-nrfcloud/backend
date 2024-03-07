@@ -58,7 +58,7 @@ export class ConnectionInformationGeoLocation extends Construct {
 			description:
 				'Resolve device geo location based on connection information',
 			environment: {
-				VERSION: this.node.tryGetContext('version'),
+				VERSION: this.node.getContext('version'),
 				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				BACKEND_STACK_NAME: STACK_NAME,

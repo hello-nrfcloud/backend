@@ -14,7 +14,7 @@ export class DeviceStorage extends Construct {
 				type: DynamoDB.AttributeType.STRING,
 			},
 			removalPolicy:
-				this.node.tryGetContext('isTest') === true
+				this.node.getContext('isTest') === true
 					? RemovalPolicy.DESTROY
 					: RemovalPolicy.RETAIN,
 			pointInTimeRecovery: true,

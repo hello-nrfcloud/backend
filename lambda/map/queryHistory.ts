@@ -20,12 +20,15 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
+import { isNumeric } from './isNumeric.js'
+import middy from '@middy/core'
+import { corsOPTIONS } from '../util/corsOPTIONS.js'
 import { aProblem } from '../util/aProblem.js'
 import { aResponse } from '../util/aResponse.js'
-import { corsHeaders } from '../util/corsHeaders.js'
-import { isNumeric } from './isNumeric.js'
+import { addVersionHeader } from '../util/addVersionHeader.js'
 
-const { tableInfo } = fromEnv({
+const { tableInfo, version } = fromEnv({
+	version: 'VERSION',
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
 })(process.env)
 
@@ -50,20 +53,14 @@ const validateInput = validateWithTypeBox(
 	}),
 )
 
-export const handler = async (
+const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify(event))
-	const cors = corsHeaders(event, ['GET'], binIntervalMinutes * 60)
-	if (event.requestContext.http.method === 'OPTIONS')
-		return {
-			statusCode: 200,
-			headers: cors,
-		}
 
 	const maybeValidQuery = validateInput(event.queryStringParameters)
 	if ('errors' in maybeValidQuery) {
-		return aProblem(cors, {
+		return aProblem({
 			title: 'Validation failed',
 			status: 400,
 			detail: formatTypeBoxErrors(maybeValidQuery.errors),
@@ -76,7 +73,7 @@ export const handler = async (
 		?.split('/')
 		.map((s) => parseInt(s, 10)) ?? [-1, -1]) as [number, number]
 	if (!isLwM2MObjectID(ObjectID))
-		return aProblem(cors, {
+		return aProblem({
 			title: `Unknown LwM2M ObjectID: ${ObjectID}`,
 			status: 400,
 		})
@@ -90,7 +87,6 @@ export const handler = async (
 			deviceId,
 		})
 		return aResponse(
-			cors,
 			200,
 			{
 				'@context': new URL(
@@ -119,7 +115,7 @@ export const handler = async (
 				)
 			}
 		}
-		return aProblem(cors, {
+		return aProblem({
 			title: 'Query failed',
 			status: 500,
 		})
@@ -178,3 +174,8 @@ const queryResourceHistory = async ({
 		),
 	)
 }
+
+export const handler = middy()
+	.use(addVersionHeader(version))
+	.use(corsOPTIONS('GET'))
+	.handler(h)
