@@ -2,10 +2,10 @@ import jsonata from 'jsonata'
 import {
 	senMLtoLwM2M,
 	type LwM2MObjectInstance,
-	type Transformer,
+	type Transform,
 } from '@hello.nrfcloud.com/proto-lwm2m'
 
-export type MessageTransformer = (
+export type MessageTransform = (
 	message: Record<string, unknown>,
 ) => Promise<ReturnType<typeof senMLtoLwM2M>>
 
@@ -13,10 +13,10 @@ export type MessageTransformer = (
  * Very simple implementation of a converter.
  */
 export const transformMessageToLwM2M = (
-	transformers: Readonly<Array<Transformer>>,
-): MessageTransformer => {
-	// Turn the JSONata in the transformers into executable functions
-	const transformerFns = transformers.map(({ match, transform }) => ({
+	transforms: Readonly<Array<Transform>>,
+): MessageTransform => {
+	// Turn the JSONata in the transforms into executable functions
+	const transformFns = transforms.map(({ match, transform }) => ({
 		match: jsonata(match),
 		transform: jsonata(transform),
 	}))
@@ -25,7 +25,7 @@ export const transformMessageToLwM2M = (
 		input: Record<string, unknown>,
 	): Promise<Array<LwM2MObjectInstance>> =>
 		Promise.all(
-			transformerFns.map(async ({ match, transform }) => {
+			transformFns.map(async ({ match, transform }) => {
 				// Check if the `matched` JSONata returns `true`.
 				const matched = await match.evaluate(input)
 				if (typeof matched !== 'boolean' || matched !== true) return null
@@ -34,7 +34,7 @@ export const transformMessageToLwM2M = (
 			}),
 		)
 			.then((result) => result.flat())
-			// Ignore unmatched transformers
+			// Ignore unmatched transforms
 			.then((result) => result.filter((item) => item !== null))
 			// Convert it to LwM2M
 			.then(senMLtoLwM2M)

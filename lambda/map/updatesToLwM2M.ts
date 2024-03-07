@@ -4,7 +4,7 @@ import { models } from '@hello.nrfcloud.com/proto-lwm2m'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import {
 	transformMessageToLwM2M,
-	type MessageTransformer,
+	type MessageTransform,
 } from '../../lwm2m/transformMessageToLwM2M.js'
 import {
 	publicDevicesRepo,
@@ -18,13 +18,13 @@ const { TableName } = fromEnv({
 
 const updateShadow = updateLwM2MShadow(new IoTDataPlaneClient({}))
 
-const transformers = Object.entries(models).reduce(
-	(transformers, [model, transforms]) => ({
-		...transformers,
-		[model]: transformMessageToLwM2M(transforms.transforms),
+const transforms = Object.entries(models).reduce(
+	(transforms, [modelID, model]) => ({
+		...transforms,
+		[modelID]: transformMessageToLwM2M(model.transforms),
 	}),
 	{},
-) as Record<keyof typeof models, MessageTransformer>
+) as Record<keyof typeof models, MessageTransform>
 
 const devicesRepo = publicDevicesRepo({
 	db: new DynamoDBClient({}),
@@ -59,13 +59,13 @@ export const handler = async (event: {
 		return
 	}
 
-	const transformer = transformers[deviceInfo.model]
-	if (transformer === undefined) {
+	const transform = transforms[deviceInfo.model]
+	if (transform === undefined) {
 		console.debug(`[${deviceId}]`, 'unknown model', deviceInfo.model)
 		return
 	}
 
-	const objects = await transformer(message)
+	const objects = await transform(message)
 
 	console.debug(`[${deviceId}]`, deviceInfo.model, objects)
 
