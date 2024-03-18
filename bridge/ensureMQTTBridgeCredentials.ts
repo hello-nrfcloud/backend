@@ -1,6 +1,6 @@
 import { IoTClient } from '@aws-sdk/client-iot'
 import { mkdir, stat } from 'node:fs/promises'
-import type { logFn } from '../cli/log'
+import type { logFn } from '../cli/log.js'
 import { run } from '../util/run.js'
 import { ulid } from '../util/ulid.js'
 import { ensureCA } from './ensureCA.js'

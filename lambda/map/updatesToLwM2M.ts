@@ -1,6 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
-import { models } from '@hello.nrfcloud.com/proto-lwm2m'
+import { models } from '@hello.nrfcloud.com/proto-map'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import {
 	transformMessageToLwM2M,

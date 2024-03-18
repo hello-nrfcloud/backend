@@ -3,7 +3,7 @@ import { updateLwM2MShadow } from './updateLwM2MShadow.js'
 import { randomUUID } from 'node:crypto'
 import { assertCall } from '../../util/test/assertCall.js'
 import { objectsToShadow } from '../../lwm2m/objectsToShadow.js'
-import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-lwm2m'
+import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map'
 
 void describe('updateLwM2MShadow()', () => {
 	void it("should update a device's LwM2M shadow", async () => {

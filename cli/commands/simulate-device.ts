@@ -1,6 +1,6 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import type { ipShadow } from '@hello.nrfcloud.com/proto/nrfCloud/types/types.js'
+import type { ipShadow } from '@hello.nrfcloud.com/proto/nrfCloud'
 import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
 import { merge } from 'lodash-es'

@@ -8,13 +8,13 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '../helpers/lambdas/packLambda'
+import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { ApiLogging } from './ApiLogging.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
 import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { LambdaSource } from './LambdaSource.js'
-import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable'
+import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
 

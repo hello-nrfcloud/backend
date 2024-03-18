@@ -3,7 +3,7 @@ import {
 	senMLtoLwM2M,
 	type LwM2MObjectInstance,
 	type Transform,
-} from '@hello.nrfcloud.com/proto-lwm2m'
+} from '@hello.nrfcloud.com/proto-map'
 
 export type MessageTransform = (
 	message: Record<string, unknown>,

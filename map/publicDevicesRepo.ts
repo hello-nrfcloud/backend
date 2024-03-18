@@ -5,7 +5,7 @@ import {
 	UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
-import { models } from '@hello.nrfcloud.com/proto-lwm2m'
+import { models } from '@hello.nrfcloud.com/proto-map'
 import { consentDurationMS, consentDurationSeconds } from './consentDuration.js'
 import { generateCode } from '../cli/devices/generateCode.js'
 import { randomWords } from '@nordicsemiconductor/random-words'

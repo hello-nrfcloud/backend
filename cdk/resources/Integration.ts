@@ -11,7 +11,7 @@ import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 import { Construct } from 'constructs'
 import { readFileSync } from 'node:fs'
 import { type CAFiles } from '../../bridge/caLocation.js'
-import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation'
+import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import {
 	parameterName,
 	type Settings as nRFCloudSettings,

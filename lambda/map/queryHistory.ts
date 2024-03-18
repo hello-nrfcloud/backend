@@ -11,7 +11,7 @@ import {
 	definitions,
 	isLwM2MObjectID,
 	type LWM2MObjectInfo,
-} from '@hello.nrfcloud.com/proto-lwm2m'
+} from '@hello.nrfcloud.com/proto-map'
 import { PublicDeviceId } from '@hello.nrfcloud.com/proto/hello/map'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
