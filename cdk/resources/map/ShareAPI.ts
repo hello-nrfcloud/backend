@@ -5,7 +5,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '../../helpers/lambdas/packLambda'
+import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
 import type { PublicDevices } from './PublicDevices.js'
 import { LambdaLogGroup } from '../LambdaLogGroup.js'
 

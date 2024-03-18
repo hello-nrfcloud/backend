@@ -3,7 +3,7 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
 import { convertMessageToTimestreamRecords } from '../historicalData/convertMessageToTimestreamRecords.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import type { WebsocketPayload } from './publishToWebsocketClients'
+import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
 
 type ConvertedMessage = Pick<WebsocketPayload, 'deviceId'> & {

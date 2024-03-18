@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { isNumeric } from './isNumeric.js'
-import { ResourceType } from '@hello.nrfcloud.com/proto-lwm2m'
+import { ResourceType } from '@hello.nrfcloud.com/proto-map'
 
 void describe('isNumeric', () => {
 	void it('should return true for numeric types', () => {

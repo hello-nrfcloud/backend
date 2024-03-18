@@ -6,7 +6,7 @@ export const pack = async (): Promise<PackedLayer> =>
 		dependencies: [
 			'@nordicsemiconductor/from-env',
 			'@sinclair/typebox',
-			'@hello.nrfcloud.com/proto-lwm2m',
+			'@hello.nrfcloud.com/proto-map',
 			'@hello.nrfcloud.com/proto',
 			'@middy/core',
 			'id128',

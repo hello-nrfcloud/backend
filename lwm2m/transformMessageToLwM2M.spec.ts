@@ -5,7 +5,7 @@ import {
 	models,
 	LwM2MObjectID,
 	type LwM2MObjectInstance,
-} from '@hello.nrfcloud.com/proto-lwm2m'
+} from '@hello.nrfcloud.com/proto-map'
 
 void describe('transformMessageToLwM2M()', () => {
 	void it('should convert a shadow update', async () => {

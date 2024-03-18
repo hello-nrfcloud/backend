@@ -3,7 +3,7 @@ import {
 	type ConnectionInformation_14203,
 	type Geolocation_14201,
 	type LwM2MObjectInstance,
-} from '@hello.nrfcloud.com/proto-lwm2m'
+} from '@hello.nrfcloud.com/proto-map'
 import { cellId } from '../../cellGeoLocation/cellId.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'

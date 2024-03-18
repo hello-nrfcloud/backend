@@ -15,7 +15,7 @@ import {
 	STACK_NAME,
 } from '../cdk/stacks/stackConfig.js'
 import psjon from '../package.json'
-import type { CommandDefinition } from './commands/CommandDefinition'
+import type { CommandDefinition } from './commands/CommandDefinition.js'
 import { configureDeviceCommand } from './commands/configure-device.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/create-fake-nrfcloud-account-device-credentials.js'
 import { createFakeNrfCloudHealthCheckDevice } from './commands/create-fake-nrfcloud-health-check-device.js'
