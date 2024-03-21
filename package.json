@@ -49,7 +49,7 @@
     "@bifravst/eslint-config-typescript": "6.0.15",
     "@bifravst/prettier-config": "1.0.0",
     "@commitlint/config-conventional": "19.1.0",
-    "@nordicsemiconductor/bdd-markdown": "8.0.11",
+    "@nordicsemiconductor/bdd-markdown": "8.0.13",
     "@nordicsemiconductor/cloudformation-helpers": "9.0.3",
     "@nordicsemiconductor/firmware-ci-device-helpers": "14.0.201",
     "@swc/cli": "0.3.10",
