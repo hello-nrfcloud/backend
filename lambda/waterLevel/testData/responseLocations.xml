@@ -1,0 +1,10 @@
+<tide xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="http://api.sehavniva.no/stationinfo.xsd">
+<meta licenseurl="http://kartverket.no/data/lisens/"/>
+<stationinfo>
+<location name="Andenes" code="ANX" latitude="69.326067" longitude="16.134848" type="PERM"/>
+<location name="Bergen" code="BGO" latitude="60.398046" longitude="5.320487" type="PERM"/>
+<location name="Bodø" code="BOO" latitude="67.292330" longitude="14.399770" type="PERM"/>
+<location name="Bruravik" code="BRJ" latitude="60.492094" longitude="6.893949" type="PERM"/>
+</stationinfo>
+</tide>

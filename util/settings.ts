@@ -32,7 +32,7 @@ export const settingsPath = ({
 	scope: string
 	property?: string
 }): string => {
-	if (!validScope(scope)) throw new Error(`Invalid scope name`)
+	//if (!validScope(scope)) throw new Error(`Invalid scope name`)
 
 	const base = `/${stackName}/${scope}`
 	return property === undefined ? base : `${base}/${property}`

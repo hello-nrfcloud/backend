@@ -1,0 +1,86 @@
+{
+  "tide": {
+    "locationdata": [
+      {
+        "location": [
+          {
+            "$": {
+              "name": "Bergen",
+              "code": "BGO",
+              "latitude": "60.398046",
+              "longitude": "5.320487",
+              "delay": "0",
+              "factor": "1.00",
+              "obsname": "Bergen",
+              "obscode": "BGO",
+              "descr": "Tides and observed water level from Bergen"
+            }
+          }
+        ],
+        "reflevelcode": ["CD"],
+        "data": [
+          {
+            "$": {
+              "type": "prediction",
+              "unit": "cm",
+              "qualityFlag": "1",
+              "qualityClass": "Quality High",
+              "qualityDescription": "High quality data: It has been verified against measurements that the data represents physical conditions."
+            },
+            "waterlevel": [
+              {
+                "$": {
+                  "value": "70.7",
+                  "time": "2024-03-01T09:00:00+01:00",
+                  "flag": "pre"
+                }
+              },
+              {
+                "$": {
+                  "value": "71.1",
+                  "time": "2024-03-01T09:10:00+01:00",
+                  "flag": "pre"
+                }
+              },
+              {
+                "$": {
+                  "value": "72.2",
+                  "time": "2024-03-01T09:20:00+01:00",
+                  "flag": "pre"
+                }
+              },
+              {
+                "$": {
+                  "value": "75.6",
+                  "time": "2024-03-01T09:30:00+01:00",
+                  "flag": "pre"
+                }
+              },
+              {
+                "$": {
+                  "value": "77.5",
+                  "time": "2024-03-01T09:40:00+01:00",
+                  "flag": "pre"
+                }
+              },
+              {
+                "$": {
+                  "value": "80.9",
+                  "time": "2024-03-01T09:50:00+01:00",
+                  "flag": "pre"
+                }
+              },
+              {
+                "$": {
+                  "value": "82.7",
+                  "time": "2024-03-01T10:00:00+01:00",
+                  "flag": "pre"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
