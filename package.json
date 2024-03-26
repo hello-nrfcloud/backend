@@ -123,6 +123,6 @@
     "@sinclair/typebox": "0.32.18",
     "lodash-es": "4.17.21",
     "p-limit": "5.0.0",
-    "table": "6.8.1"
+    "table": "6.8.2"
   }
 }
