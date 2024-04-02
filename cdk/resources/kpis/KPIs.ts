@@ -11,7 +11,7 @@ import type { BackendLambdas } from '../../BackendLambdas.js'
 import type { DeviceLastSeen } from '../DeviceLastSeen.js'
 import type { DeviceStorage } from '../DeviceStorage.js'
 import { LambdaSource } from '../LambdaSource.js'
-import { Scope } from '../../../util/settings.js'
+import { Scope } from '../../../settings/settings.js'
 import { LambdaLogGroup } from '../LambdaLogGroup.js'
 
 export class KPIs extends Construct {

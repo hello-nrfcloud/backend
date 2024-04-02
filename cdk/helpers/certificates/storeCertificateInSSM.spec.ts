@@ -1,7 +1,7 @@
 import { describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { ParameterType, type SSMClient } from '@aws-sdk/client-ssm'
-import { Scope } from '../../../util/settings.js'
+import { Scope } from '../../../settings/settings.js'
 import { caLocation } from '../../../bridge/caLocation.js'
 import path from 'node:path'
 import os from 'node:os'

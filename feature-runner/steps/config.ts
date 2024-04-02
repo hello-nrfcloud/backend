@@ -8,7 +8,7 @@ import {
 	deleteSettings,
 	getSettings,
 	type putSettings,
-} from '../../util/settings.js'
+} from '../../settings/settings.js'
 
 const createConfigStepRunners = ({
 	configWriter,

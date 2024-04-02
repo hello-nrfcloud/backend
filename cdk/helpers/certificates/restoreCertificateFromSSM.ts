@@ -1,6 +1,6 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { type logFn } from '../../../cli/log.js'
-import { Scope, getSettingsOptional } from '../../../util/settings.js'
+import { Scope, getSettingsOptional } from '../../../settings/settings.js'
 import { writeFilesFromMap } from './writeFilesFromMap.js'
 
 export const restoreCertificateFromSSM =

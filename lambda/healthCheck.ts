@@ -7,7 +7,7 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import mqtt from 'mqtt'
 import assert from 'node:assert/strict'
 import { registerDevice } from '../devices/registerDevice.js'
-import { defer } from '../util/defer.js'
+import { defer } from './health-check/defer.js'
 import { metricsForComponent } from './metrics/metrics.js'
 import { logger } from './util/logger.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
@@ -15,7 +15,7 @@ import type { Settings } from '../nrfcloud/settings.js'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
-} from '../util/checkMessageFromWebsocket.js'
+} from './health-check/checkMessageFromWebsocket.js'
 
 const { DevicesTableName, stackName, websocketUrl } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',

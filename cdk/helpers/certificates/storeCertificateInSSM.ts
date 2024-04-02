@@ -1,6 +1,6 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { type logFn } from '../../../cli/log.js'
-import { Scope, putSettings } from '../../../util/settings.js'
+import { Scope, putSettings } from '../../../settings/settings.js'
 import { readFilesFromMap } from './readFilesFromMap.js'
 
 export const storeCertificateInSSM =

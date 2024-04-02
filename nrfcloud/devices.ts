@@ -1,7 +1,8 @@
 import { Type, type TSchema, type Static } from '@sinclair/typebox'
 import { slashless } from '../util/slashless.js'
-import type { Nullable } from '../util/types.js'
 import { ValidationError, validatedFetch } from './validatedFetch.js'
+
+type Nullable<T> = { [K in keyof T]: T[K] | null }
 
 export const DeviceConfig = Type.Partial(
 	Type.Object({

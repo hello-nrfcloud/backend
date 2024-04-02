@@ -5,7 +5,7 @@ import {
 	settingsPath,
 	deleteSettings as deleteSSMSettings,
 	Scope,
-} from '../util/settings.js'
+} from '../settings/settings.js'
 
 export const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
 export const defaultCoAPEndpoint = new URL('coaps://coap.nrfcloud.com')

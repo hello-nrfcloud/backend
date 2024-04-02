@@ -2,7 +2,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { hashSHA1 } from '../../util/hashSHA1.js'
-import { Scope, deleteSettings, putSettings } from '../../util/settings.js'
+import { Scope, deleteSettings, putSettings } from '../../settings/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const setShadowFetcherCommand = ({

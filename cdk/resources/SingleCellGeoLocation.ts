@@ -8,7 +8,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { Scope } from '../../util/settings.js'
+import { Scope } from '../../settings/settings.js'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { IoTActionRole } from './IoTActionRole.js'

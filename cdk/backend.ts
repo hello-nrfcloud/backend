@@ -13,7 +13,7 @@ import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLo
 import { debug, type logFn } from '../cli/log.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import pJSON from '../package.json'
-import { Scope } from '../util/settings.js'
+import { Scope } from '../settings/settings.js'
 import { BackendApp } from './BackendApp.js'
 import { ensureGitHubOIDCProvider } from './ensureGitHubOIDCProvider.js'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'

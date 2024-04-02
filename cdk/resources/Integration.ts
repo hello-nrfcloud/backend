@@ -16,7 +16,7 @@ import {
 	parameterName,
 	type Settings as nRFCloudSettings,
 } from '../../nrfcloud/settings.js'
-import { Scope, settingsPath } from '../../util/settings.js'
+import { Scope, settingsPath } from '../../settings/settings.js'
 import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 
 export class Integration extends Construct {

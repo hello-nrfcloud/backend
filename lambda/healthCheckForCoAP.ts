@@ -14,9 +14,9 @@ import type { Settings } from '../nrfcloud/settings.js'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
-} from '../util/checkMessageFromWebsocket.js'
+} from './health-check/checkMessageFromWebsocket.js'
 import { createPublicKey, createPrivateKey } from 'node:crypto'
-import { parseDateTimeFromLogToTimestamp } from '../util/parseDateTimeFromLogToTimestamp.js'
+import { parseDateTimeFromLog } from './health-check/parseDateTimeFromLog.js'
 
 const { DevicesTableName, stackName, websocketUrl, coapLambda } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -67,7 +67,7 @@ const publishDeviceMessageOnCoAP =
 			privateKey: string
 		}
 	}) =>
-	async (message: Record<string, unknown>): Promise<number | null> => {
+	async (message: Record<string, unknown>): Promise<Date | null> => {
 		const timeout = setTimeout(() => {
 			throw new Error('CoAP simulator timeout')
 		}, 25000)
@@ -100,7 +100,7 @@ const publishDeviceMessageOnCoAP =
 			const coapStart = (result.body as string[])?.[0]
 			if (coapStart === undefined) return null
 
-			return parseDateTimeFromLogToTimestamp(coapStart)
+			return parseDateTimeFromLog(coapStart)
 		}
 	}
 
@@ -175,7 +175,7 @@ const h = async (): Promise<void> => {
 							ts: data.ts,
 							data: `${data.temperature}`,
 						})
-						store.set(account, { ...data, coapTs })
+						store.set(account, { ...data, coapTs: coapTs?.getTime() ?? null })
 					},
 					validate: async (message) => {
 						try {

@@ -22,7 +22,7 @@ import {
 	deleteSettings,
 	getSettings,
 	putSettings,
-} from '../util/settings.js'
+} from '../settings/settings.js'
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'

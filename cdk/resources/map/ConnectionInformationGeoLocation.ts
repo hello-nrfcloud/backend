@@ -11,7 +11,7 @@ import {
 import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
 import { IoTActionRole } from '../IoTActionRole.js'
 import { LambdaSource } from '../LambdaSource.js'
-import { Scope } from '../../../util/settings.js'
+import { Scope } from '../../../settings/settings.js'
 import { STACK_NAME } from '../../stacks/stackConfig.js'
 import { LambdaLogGroup } from '../LambdaLogGroup.js'
 

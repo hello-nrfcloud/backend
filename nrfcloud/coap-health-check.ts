@@ -4,7 +4,7 @@ import {
 	deleteSettings,
 	getSettings,
 	putSettings,
-} from '../util/settings.js'
+} from '../settings/settings.js'
 
 export type Settings = {
 	simulatorDownloadURL: URL

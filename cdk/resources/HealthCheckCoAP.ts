@@ -11,7 +11,7 @@ import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from './LambdaSource.js'
-import { Scope } from '../../util/settings.js'
+import { Scope } from '../../settings/settings.js'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
 
 export class HealthCheckCoAP extends Construct {

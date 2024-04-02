@@ -5,7 +5,7 @@ import {
 	type GetParametersByPathCommandOutput,
 } from '@aws-sdk/client-ssm'
 import { restoreCertificateFromSSM } from './restoreCertificateFromSSM.js'
-import { Scope } from '../../../util/settings.js'
+import { Scope } from '../../../settings/settings.js'
 import { caLocation } from '../../../bridge/caLocation.js'
 import path from 'node:path'
 import os from 'node:os'

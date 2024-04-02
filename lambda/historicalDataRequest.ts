@@ -8,7 +8,7 @@ import type { EventBridgeEvent } from 'aws-lambda'
 import { metricsForComponent } from './metrics/metrics.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from './util/logger.js'
-import { createTrailOfCoordinates } from '../util/createTrailOfCoordinates.js'
+import { createTrailOfCoordinates } from './historical-data/createTrailOfCoordinates.js'
 import type { Static } from '@sinclair/typebox'
 import type {
 	CommonAggregatedRequest,

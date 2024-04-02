@@ -1,11 +1,11 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { Scope } from '../util/settings.js'
+import { Scope } from '../settings/settings.js'
 import { type Settings } from './settings.js'
 import {
 	type Settings as HealthCheckSettings,
 	getSettings as getHealthCheckSettings,
 } from './healthCheckSettings.js'
-import { getSettings } from '../util/settings.js'
+import { getSettings } from '../settings/settings.js'
 import { getSettings as getnRFCloudSettings } from './settings.js'
 
 export type AllNRFCloudSettings = {

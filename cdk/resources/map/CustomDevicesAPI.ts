@@ -8,7 +8,7 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
 import { LambdaLogGroup } from '../LambdaLogGroup.js'
-import { Scope } from '../../../util/settings.js'
+import { Scope } from '../../../settings/settings.js'
 import { STACK_NAME } from '../../stacks/stackConfig.js'
 import type { PublicDevices } from './PublicDevices.js'
 

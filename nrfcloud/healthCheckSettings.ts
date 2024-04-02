@@ -3,7 +3,7 @@ import {
 	Scope,
 	getSettings as getSSMSettings,
 	putSettings,
-} from '../util/settings.js'
+} from '../settings/settings.js'
 
 export type Settings = {
 	healthCheckClientCert: string

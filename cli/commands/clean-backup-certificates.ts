@@ -6,7 +6,7 @@ import {
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
-import { Scope, settingsPath } from '../../util/settings.js'
+import { Scope, settingsPath } from '../../settings/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const cleanBackupCertificates = ({

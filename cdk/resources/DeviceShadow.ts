@@ -13,7 +13,7 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from './LambdaSource.js'
-import { Scope } from '../../util/settings.js'
+import { Scope } from '../../settings/settings.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import { LambdaLogGroup } from './LambdaLogGroup.js'
