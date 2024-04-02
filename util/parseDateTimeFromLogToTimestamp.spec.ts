@@ -5,8 +5,8 @@ import { parseDateTimeFromLogToTimestamp } from './parseDateTimeFromLogToTimesta
 
 void describe('parseDateTimeFromLogToTimestamp', () => {
 	void it('should return a timestamp when a valid log string is provided', () => {
-		const dateUTCStr = `2023-11-15 01:53:06.148Z`
-		const expected = Date.parse(dateUTCStr) + -60 * 60 * 1000
+		const dateStr = `2023-11-15 01:53:06.148`
+		const expected = Date.parse(dateStr)
 
 		const logString =
 			'2023-11-15 01:53:06,148 INFO [coap.nrfcloud.com/3.84.64.178:5684] Reconnected [CID:, peerCID:cdf04e555d32fa5cbb5d, peer-cert:CN=coap.nrfcloud.com, cipher-suite:TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384]'
