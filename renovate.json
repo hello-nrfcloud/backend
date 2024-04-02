@@ -1,3 +1,14 @@
 {
-  "extends": ["github>bifravst/renovate-config"]
+  "extends": ["github>bifravst/renovate-config"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": [
+        "@hello.nrfcloud.com/proto",
+        "@hello.nrfcloud.com/proto-map",
+        "@nordicsemiconductor/bdd-markdown",
+        "@sinclair/typebox"
+      ],
+      "groupName": "proto"
+    }
+  ]
 }
