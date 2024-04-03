@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto'
 import { unlink } from 'fs/promises'
 import path from 'path'
 import { type logFn } from '../cli/log.js'
-import { run } from '../util/run.js'
+import run from '@bifravst/run'
 import { caLocation } from './caLocation.js'
 
 export const createCAVerificationCert = async ({

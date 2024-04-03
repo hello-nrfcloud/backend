@@ -14,7 +14,7 @@ import path from 'node:path'
 import { registerDevice } from '../../devices/registerDevice.js'
 import { devices } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
-import { run } from '../../util/run.js'
+import run from '@bifravst/run'
 import {
 	deviceCertificateLocations,
 	ensureCertificateDir,

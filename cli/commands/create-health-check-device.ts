@@ -10,7 +10,7 @@ import {
 	type Settings,
 } from '../../nrfcloud/healthCheckSettings.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
-import { run } from '../../util/run.js'
+import run from '@bifravst/run'
 import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import type { CommandDefinition } from './CommandDefinition.js'

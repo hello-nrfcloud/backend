@@ -4,7 +4,7 @@ import {
 	GetAuthorizationTokenCommand,
 } from '@aws-sdk/client-ecr'
 import type { logFn } from '../cli/log.js'
-import { run } from '../util/run.js'
+import run from '@bifravst/run'
 import type { ContainerRepository } from './getOrCreateRepository.js'
 
 export type ImageChecker = (args: {

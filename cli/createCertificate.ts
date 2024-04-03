@@ -1,5 +1,5 @@
 import { stat } from 'node:fs/promises'
-import { run } from '../util/run.js'
+import run from '@bifravst/run'
 import {
 	deviceCertificateLocations,
 	simulatorCALocations,

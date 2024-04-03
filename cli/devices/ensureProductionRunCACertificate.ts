@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { stat } from 'node:fs/promises'
-import { run } from '../../util/run.js'
+import run from '@bifravst/run'
 import { productionRunCALocations } from '../certificates.js'
 
 export const ensureProductionRunCACertificate = async (
