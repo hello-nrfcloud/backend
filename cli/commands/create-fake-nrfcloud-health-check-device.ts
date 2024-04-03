@@ -13,7 +13,7 @@ import {
 } from '../../nrfcloud/healthCheckSettings.js'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { generateCode } from '../devices/generateCode.js'
+import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 
 export const createFakeNrfCloudHealthCheckDevice = ({
 	iot,

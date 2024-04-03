@@ -70,12 +70,10 @@ and published before deploying the solutions.
 ```bash
 export MQTT_BRIDGE_CONTAINER_TAG=$(./cli.sh build-container mqtt-bridge)
 export COAP_SIMULATOR_CONTAINER_TAG=$(./cli.sh build-container coap-simulator)
-export OPENSSL_LAMBDA_CONTAINER_TAG=$(./cli.sh build-container openssl-lambda)
 
 # You can add these outputs to your .env file
 echo MQTT_BRIDGE_CONTAINER_TAG=$MQTT_BRIDGE_CONTAINER_TAG
 echo COAP_SIMULATOR_CONTAINER_TAG=$COAP_SIMULATOR_CONTAINER_TAG
-echo OPENSSL_LAMBDA_CONTAINER_TAG=$OPENSSL_LAMBDA_CONTAINER_TAG
 ```
 
 ### Deploy

@@ -20,7 +20,7 @@ import {
 	ensureCertificateDir,
 } from '../certificates.js'
 import { ensureProductionRunCACertificate } from '../devices/ensureProductionRunCACertificate.js'
-import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
+import { fingerprintGenerator } from '@hello.nrfcloud.com/proto/fingerprint'
 import { signDeviceCertificate } from '../devices/signDeviceCertificate.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 

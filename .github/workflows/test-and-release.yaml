@@ -28,7 +28,6 @@ jobs:
     outputs:
       mqtt_bridge_tag: ${{ steps.mqtt-bridge-container.outputs.tag }}
       coap_simulator_tag: ${{ steps.coap-simulator-container.outputs.tag }}
-      openssl_lambda_tag: ${{ steps.openssl-lambda-container.outputs.tag }}
       ref: ${{ steps.ref.outputs.ref }}
 
     env:
@@ -104,13 +103,6 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "COAP_SIMULATOR_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
 
-      - name: Build OpenSSL lambda container
-        id: openssl-lambda-container
-        run: |
-          TAG=$(./cli.sh build-container openssl-lambda)
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "OPENSSL_LAMBDA_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
-
       - name: Deploy test resources stack
         run: |
           npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never
@@ -164,21 +156,24 @@ jobs:
         run: |
           docker tag mqtt-bridge:latest ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
           docker tag coap-simulator:latest ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
-          docker tag openssl-lambda:latest ${{ env.REGISTRY }}/${{ github.repository }}/openssl-lambda:${{ steps.openssl-lambda-container.outputs.tag }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/${{ github.repository }}/openssl-lambda:${{ steps.openssl-lambda-container.outputs.tag }}
+
+      - run: echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
+        if: github.ref != 'refs/heads/saga'
+
+      - run: echo "BRANCH_NAME=saga" >> $GITHUB_ENV
+        if: github.ref == 'refs/heads/saga'
 
       - name: Trigger cleanup workflow
         if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run cleanup.yaml \
+          gh workflow run cleanup.yaml --ref ${{ env.BRANCH_NAME }} \
             -F stackName=${{ env.STACK_NAME }} \
             -F mqtt_bridge_tag=${{ steps.mqtt-bridge-container.outputs.tag }} \
-            -F coap_simulator_tag=${{ steps.coap-simulator-container.outputs.tag }} \
-            -F openssl_lambda_tag=${{ steps.openssl-lambda-container.outputs.tag }}
+            -F coap_simulator_tag=${{ steps.coap-simulator-container.outputs.tag }}
 
   release:
     needs:
@@ -217,5 +212,4 @@ jobs:
           gh workflow run deploy.yaml \
             -F ref=${{ needs.e2e-tests.outputs.ref }} \
             -F mqtt_bridge_tag=${{ needs.e2e-tests.outputs.mqtt_bridge_tag }} \
-            -F coap_simulator_tag=${{ needs.e2e-tests.outputs.coap_simulator_tag }} \
-            -F openssl_lambda_tag=${{ needs.e2e-tests.outputs.openssl_lambda_tag }}
+            -F coap_simulator_tag=${{ needs.e2e-tests.outputs.coap_simulator_tag }}

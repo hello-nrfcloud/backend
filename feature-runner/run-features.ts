@@ -8,9 +8,7 @@ import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
-import type { StackOutputs as MapBackendStackOutputs } from '../cdk/stacks/MapBackendStack.js'
 import {
-	MAP_BACKEND_STACK_NAME,
 	STACK_NAME,
 	TEST_RESOURCES_STACK_NAME,
 } from '../cdk/stacks/stackConfig.js'
@@ -44,10 +42,6 @@ const ssm = new SSMClient({})
 const backendConfig = await stackOutput(
 	new CloudFormationClient({}),
 )<BackendStackOutputs>(STACK_NAME)
-
-const mapBackendConfig = await stackOutput(
-	new CloudFormationClient({}),
-)<MapBackendStackOutputs>(MAP_BACKEND_STACK_NAME)
 
 const testConfig = await stackOutput(
 	new CloudFormationClient({}),
@@ -173,12 +167,7 @@ runner
 	.addStepRunners(...userSteps)
 	.addStepRunners(...RESTSteps)
 
-const res = await runner.run({
-	shareDeviceAPI: new URL(mapBackendConfig.shareAPIURL),
-	confirmOwnershipAPI: new URL(mapBackendConfig.confirmOwnershipAPIURL),
-	sharingStatusAPI: new URL(mapBackendConfig.sharingStatusAPIURL),
-	devicesAPI: new URL(mapBackendConfig.devicesAPIURL),
-})
+const res = await runner.run({})
 
 await Promise.all(cleaners.map(async (fn) => fn()))
 
