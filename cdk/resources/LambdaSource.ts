@@ -5,7 +5,7 @@ import {
 	aws_s3_assets as S3Assets,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
+import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 
 export class LambdaSource extends Construct {
 	public readonly code: Lambda.S3Code

@@ -5,7 +5,7 @@ import {
 	aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
+import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { IoTActionRole } from './IoTActionRole.js'
 import { LambdaSource } from './LambdaSource.js'

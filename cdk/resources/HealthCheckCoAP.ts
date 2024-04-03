@@ -7,7 +7,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
+import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from './LambdaSource.js'

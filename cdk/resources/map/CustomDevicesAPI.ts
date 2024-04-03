@@ -6,7 +6,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
+import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import { LambdaLogGroup } from '../LambdaLogGroup.js'
 import { Scope } from '../../../settings/settings.js'
 import { STACK_NAME } from '../../stacks/stackConfig.js'

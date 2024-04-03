@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { type ImageBuilder, type ImageChecker } from '../../../aws/ecrImages.js'
 import { hashFolder } from '../../../docker/hashFolder.js'
-import { checkSumOfStrings } from '../../helpers/lambdas/checksumOfFiles.js'
+import { checkSumOfStrings } from '@bifravst/aws-cdk-lambda-helpers/util'
 import { type logFn } from '../../../cli/log.js'
 import { ContainerRepositoryId } from '../../../aws/getOrCreateRepository.js'
 

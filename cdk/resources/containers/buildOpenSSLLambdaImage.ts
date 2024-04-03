@@ -2,12 +2,12 @@ import path from 'node:path'
 import { type ImageBuilder, type ImageChecker } from '../../../aws/ecrImages.js'
 import { hashFolder } from '../../../docker/hashFolder.js'
 import type { LogFN } from '@nordicsemiconductor/firmware-ci-device-helpers'
-import { checkSumOfStrings } from '../../helpers/lambdas/checksumOfFiles.js'
 import fs from 'node:fs/promises'
 import { run } from '../../../util/run.js'
 import os from 'node:os'
-import { packLambdaFromPath } from '../../helpers/lambdas/packLambdaFromPath.js'
 import { ContainerRepositoryId } from '../../../aws/getOrCreateRepository.js'
+import { packLambdaFromPath } from '@bifravst/aws-cdk-lambda-helpers'
+import { checkSumOfStrings } from '@bifravst/aws-cdk-lambda-helpers/util'
 
 export const buildOpenSSLLambdaImage = async (
 	builder: ImageBuilder,

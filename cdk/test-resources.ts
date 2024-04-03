@@ -1,7 +1,7 @@
 import { STSClient } from '@aws-sdk/client-sts'
 import { env } from './helpers/env.js'
-import { packLambdaFromPath } from './helpers/lambdas/packLambdaFromPath.js'
-import { packLayer } from './helpers/lambdas/packLayer.js'
+import { packLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
+import { packLambdaFromPath } from '@bifravst/aws-cdk-lambda-helpers'
 import { TestResources } from './test-resources/TestResourcesApp.js'
 
 const awsEnv = await env({ sts: new STSClient({}) })
