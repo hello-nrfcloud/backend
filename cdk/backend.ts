@@ -21,9 +21,7 @@ import { storeCertificateInSSM } from './helpers/certificates/storeCertificateIn
 import { env } from './helpers/env.js'
 import { pack as packBaseLayer } from './layers/baseLayer.js'
 import { pack as packHealthCheckLayer } from './layers/healthCheckLayer.js'
-import { pack as packMapLayer } from './layers/mapLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
-import { packMapBackendLambdas } from './packMapBackendLambdas.js'
 import { STACK_NAME } from './stacks/stackConfig.js'
 
 const repoUrl = new URL(pJSON.repository.url)
@@ -105,14 +103,9 @@ await Promise.all(
 )
 
 // Ensure needed container images exist
-const {
-	mqttBridgeContainerTag,
-	coapSimulatorContainerTag,
-	openSSLLambdaContainerTag,
-} = fromEnv({
+const { mqttBridgeContainerTag, coapSimulatorContainerTag } = fromEnv({
 	mqttBridgeContainerTag: 'MQTT_BRIDGE_CONTAINER_TAG',
 	coapSimulatorContainerTag: 'COAP_SIMULATOR_CONTAINER_TAG',
-	openSSLLambdaContainerTag: 'OPENSSL_LAMBDA_CONTAINER_TAG',
 })(process.env)
 
 // Fetch all the configured nRF Cloud Accounts
@@ -138,11 +131,6 @@ new BackendApp({
 	env: accountEnv,
 	isTest: process.env.IS_TEST === '1',
 	domain: 'hello.nrfcloud.com',
-	map: {
-		lambdaSources: await packMapBackendLambdas(),
-		layer: await packMapLayer(),
-		openSSLLambdaContainerTag,
-	},
 	version: (() => {
 		const v = process.env.VERSION
 		const defaultVersion = '0.0.0-development'

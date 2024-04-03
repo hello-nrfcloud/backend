@@ -10,7 +10,7 @@ import { getAPISettings } from '../../nrfcloud/settings.js'
 import { ulid } from '../../util/ulid.js'
 import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
-import { fingerprintGenerator } from '../devices/fingerprintGenerator.js'
+import { fingerprintGenerator } from '@hello.nrfcloud.com/proto/fingerprint'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { run } from '../../util/run.js'
 

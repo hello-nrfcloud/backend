@@ -14,7 +14,7 @@ import { run } from '../../util/run.js'
 import { ensureCertificateDir } from '../certificates.js'
 import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { generateCode } from '../devices/generateCode.js'
+import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 
 export const createHealthCheckDevice = ({
 	ssm,

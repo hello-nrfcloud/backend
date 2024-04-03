@@ -3,7 +3,7 @@ import {
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
-import { generateCode } from '../../cli/devices/generateCode.js'
+import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 
 export const user = regExpMatchedStep(
 	{

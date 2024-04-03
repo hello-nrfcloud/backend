@@ -16,7 +16,6 @@ export type ContainerRepository = {
 export enum ContainerRepositoryId {
 	MQTTBridge = 'mqtt-bridge',
 	CoAPSimulator = 'coap-simulator',
-	OpenSSLLambda = 'openssl-lambda',
 }
 
 export const repositoryName = (id: ContainerRepositoryId): string =>
