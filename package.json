@@ -29,7 +29,7 @@
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "3.540.0",
-    "@aws-sdk/client-cloudformation": "3.540.0",
+    "@aws-sdk/client-cloudformation": "3.548.0",
     "@aws-sdk/client-cloudwatch-logs": "3.540.0",
     "@aws-sdk/client-dynamodb": "3.540.0",
     "@aws-sdk/client-ecr": "3.540.0",
@@ -38,7 +38,7 @@
     "@aws-sdk/client-iam": "3.540.0",
     "@aws-sdk/client-iot": "3.540.0",
     "@aws-sdk/client-iot-data-plane": "3.540.0",
-    "@aws-sdk/client-lambda": "3.540.0",
+    "@aws-sdk/client-lambda": "3.548.0",
     "@aws-sdk/client-ses": "3.540.0",
     "@aws-sdk/client-sqs": "3.547.0",
     "@aws-sdk/client-ssm": "3.540.0",
