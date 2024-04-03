@@ -6,7 +6,7 @@ import {
 	aws_ecr as ECR,
 } from 'aws-cdk-lib'
 import type { MapBackendLambdas } from '../MapBackendLambdas.js'
-import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
+import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
 import { LambdaSource } from '../resources/LambdaSource.js'
 import { ConnectionInformationGeoLocation } from '../resources/map/ConnectionInformationGeoLocation.js'
 import { LwM2MShadow } from '../resources/map/LwM2MShadow.js'

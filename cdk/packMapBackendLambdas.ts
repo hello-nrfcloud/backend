@@ -1,5 +1,5 @@
 import type { MapBackendLambdas } from './MapBackendLambdas.js'
-import { packLambdaFromPath } from './helpers/lambdas/packLambdaFromPath.js'
+import { packLambdaFromPath } from '@bifravst/aws-cdk-lambda-helpers'
 
 export const packMapBackendLambdas = async (): Promise<MapBackendLambdas> => ({
 	updatesToLwM2M: await packLambdaFromPath(

@@ -8,7 +8,7 @@ import {
 	RemovalPolicy,
 	Stack,
 } from 'aws-cdk-lib'
-import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
+import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import { IoTActionRole } from '../IoTActionRole.js'
 import { LambdaSource } from '../LambdaSource.js'
 import { Scope } from '../../../settings/settings.js'

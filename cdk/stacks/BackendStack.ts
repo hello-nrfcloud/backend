@@ -10,7 +10,7 @@ import {
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from '../BackendLambdas.js'
-import type { PackedLayer } from '../helpers/lambdas/packLayer.js'
+import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
 import { ContinuousDeployment } from '../resources/ContinuousDeployment.js'
 import { ConvertDeviceMessages } from '../resources/ConvertDeviceMessages.js'
 import { DeviceLastSeen } from '../resources/DeviceLastSeen.js'

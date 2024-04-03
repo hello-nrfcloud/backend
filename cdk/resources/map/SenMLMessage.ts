@@ -5,7 +5,7 @@ import {
 	aws_iot as IoT,
 	Duration,
 } from 'aws-cdk-lib'
-import type { PackedLambda } from '../../helpers/lambdas/packLambda.js'
+import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import type { PublicDevices } from './PublicDevices.js'
 import { IoTActionRole } from '../IoTActionRole.js'
 import { LambdaLogGroup } from '../LambdaLogGroup.js'

@@ -1,5 +1,5 @@
 import type { BackendLambdas } from './BackendLambdas.js'
-import { packLambdaFromPath } from './helpers/lambdas/packLambdaFromPath.js'
+import { packLambdaFromPath } from '@bifravst/aws-cdk-lambda-helpers'
 
 export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	authorizer: await packLambdaFromPath('authorizer', 'lambda/authorizer.ts'),

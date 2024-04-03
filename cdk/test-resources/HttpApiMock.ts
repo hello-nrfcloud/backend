@@ -9,9 +9,9 @@ import {
 	Resource,
 } from 'aws-cdk-lib'
 import type { Construct } from 'constructs'
-import type { PackedLambda } from '../helpers/lambdas/packLambda.js'
 import { LambdaSource } from '../resources/LambdaSource.js'
 import { LambdaLogGroup } from '../resources/LambdaLogGroup.js'
+import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 
 export class HttpApiMock extends Resource {
 	public readonly api: ApiGateway.RestApi

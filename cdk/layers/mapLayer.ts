@@ -1,4 +1,7 @@
-import { packLayer, type PackedLayer } from '../helpers/lambdas/packLayer.js'
+import {
+	packLayer,
+	type PackedLayer,
+} from '@bifravst/aws-cdk-lambda-helpers/layer'
 
 export const pack = async (): Promise<PackedLayer> =>
 	packLayer({
