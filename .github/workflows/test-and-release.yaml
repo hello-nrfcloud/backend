@@ -364,8 +364,8 @@ jobs:
         run: |
           docker pull ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ needs.mqtt-bridge-container.outputs.tag }}
           docker pull ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ needs.coap-simulator-container.outputs.tag }}
-          docker tag mqtt-bridge:${{ steps.version.outputs.version }} ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ needs.mqtt-bridge-container.outputs.tag }}
-          docker tag coap-simulator:${{ steps.version.outputs.version }} ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ needs.coap-simulator-container.outputs.tag }}
+          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ needs.mqtt-bridge-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.version.outputs.version }}
+          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ needs.coap-simulator-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.version.outputs.version }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.version.outputs.version }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.version.outputs.version }}
 
