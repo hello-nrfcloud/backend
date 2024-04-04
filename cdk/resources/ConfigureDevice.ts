@@ -10,9 +10,9 @@ import {
 import { Construct } from 'constructs'
 import { Scope } from '../../settings/settings.js'
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
-import { LambdaSource } from './LambdaSource.js'
+import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { LambdaLogGroup } from './LambdaLogGroup.js'
+import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 
 /**
  * Handles device configuration requests

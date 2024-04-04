@@ -8,11 +8,7 @@ import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
-import {
-	STACK_NAME,
-	TEST_RESOURCES_STACK_NAME,
-} from '../cdk/stacks/stackConfig.js'
-import type { StackOutputs as TestStackOutputs } from '../cdk/test-resources/TestResourcesStack.js'
+import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import {
@@ -29,6 +25,12 @@ import { steps as storageSteps } from './steps/storage.js'
 import { websocketStepRunners } from './steps/websocket.js'
 import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from './steps/REST.js'
+import { fromEnv } from '@nordicsemiconductor/from-env'
+
+const { responsesTableName, requestsTableName } = fromEnv({
+	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',
+	requestsTableName: 'HTTP_API_MOCK_REQUESTS_TABLE_NAME',
+})(process.env)
 
 const ssm = new SSMClient({})
 
@@ -43,9 +45,6 @@ const backendConfig = await stackOutput(
 	new CloudFormationClient({}),
 )<BackendStackOutputs>(STACK_NAME)
 
-const testConfig = await stackOutput(
-	new CloudFormationClient({}),
-)<TestStackOutputs>(TEST_RESOURCES_STACK_NAME)
 const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
@@ -151,8 +150,8 @@ runner
 			db,
 			ssm,
 			stackName: STACK_NAME,
-			responsesTableName: testConfig.responsesTableName,
-			requestsTableName: testConfig.requestsTableName,
+			responsesTableName,
+			requestsTableName,
 		}),
 	)
 	.addStepRunners(

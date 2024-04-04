@@ -15,6 +15,9 @@ on:
       coap_simulator_tag:
         description: "CoAP simulator container tag to deploy"
         required: true
+      http_api_mock_stack_name:
+        description: "Stack name of the HTTP API mock instance"
+        required: true
 env:
   CI: 1
   FORCE_COLOR: 3
@@ -34,14 +37,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: store checkout out version
-        id: ref
-        run: echo "ref=${{ github.sha }}" >> $GITHUB_OUTPUT
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20.x"
           cache: "npm"
+
       - name: Install dependencies
         run: npm ci --no-audit
 
@@ -52,11 +52,14 @@ jobs:
           role-session-name: github-action-hello-nrfcloud-backend
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Clean up End-to-End test resources
+      - name: Delete logs
+        run: ./cli.sh logs -X
+
+      - name: Destroy stack
+        run: npx cdk destroy --all -f
+
+      - name: Clean up SSM parameters
         run: |
-          ./cli.sh logs -X
-          npx cdk destroy --all -f
-          npx cdk --app 'npx tsx --no-warnings cdk/test-resources.ts' destroy -f
           ./cli.sh fake-nrfcloud-account-device nordic --remove
           ./cli.sh configure-nrfcloud-account nordic apiEndpoint -X
           ./cli.sh configure-nrfcloud-account nordic apiKey -X
@@ -64,5 +67,34 @@ jobs:
           ./cli.sh configure-nrfcloud-account elite apiEndpoint -X
           ./cli.sh configure-nrfcloud-account elite apiKey -X
           ./cli.sh clean-backup-certificates
+
+      - name: Delete ECR repositories
+        run: |
           aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-coap-simulator
           aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-mqtt-bridge
+
+  cleanup-http-api-mock:
+    runs-on: ubuntu-22.04
+
+    environment: ci
+
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: github-action-hello-nrfcloud-backend
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Delete HTTP API mock
+        run: |
+          npx @hello.nrfcloud.com/http-api-mock destroy ${{ inputs.http_api_mock_stack_name }}
