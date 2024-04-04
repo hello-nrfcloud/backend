@@ -16,29 +16,14 @@ env:
   FORCE_COLOR: 3
   JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: 1
   COAP_SIMULATOR_DOWNLOAD_URL: ${{ secrets.COAP_SIMULATOR_DOWNLOAD_URL }}
+  REGISTRY: ghcr.io
 
 jobs:
-  e2e-tests:
+  unit-tests:
     runs-on: ubuntu-22.04
-
-    environment: ci
-
-    timeout-minutes: 30
-
-    outputs:
-      mqtt_bridge_tag: ${{ steps.mqtt-bridge-container.outputs.tag }}
-      coap_simulator_tag: ${{ steps.coap-simulator-container.outputs.tag }}
-      ref: ${{ steps.ref.outputs.ref }}
-
-    env:
-      REGISTRY: ghcr.io
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: store checkout out version
-        id: ref
-        run: echo "ref=${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-node@v4
         with:
@@ -60,6 +45,30 @@ jobs:
       - name: Run Unit Tests
         run: npm test
 
+  http-api-mock:
+    runs-on: ubuntu-22.04
+
+    environment: ci
+
+    timeout-minutes: 5
+
+    outputs:
+      stackName: ${{ steps.create.outputs.stackName }}
+      responsesTableName: ${{ steps.create.outputs.responsesTableName }}
+      apiURL: ${{ steps.create.outputs.apiURL }}
+      requestsTableName: ${{ steps.create.outputs.requestsTableName }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -67,10 +76,177 @@ jobs:
           role-session-name: github-action-hello-nrfcloud-backend
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Create HTTP API mock
+        id: create
+        run: |
+          npx @hello.nrfcloud.com/http-api-mock > http-api-mock.json
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "stackName=`jq -r '.stackName' http-api-mock.json`" >> $GITHUB_OUTPUT
+          echo "responsesTableName=`jq -r '.responsesTableName' http-api-mock.json`" >> $GITHUB_OUTPUT
+          echo "apiURL=`jq -r '.apiURL' http-api-mock.json`" >> $GITHUB_OUTPUT
+          echo "requestsTableName=`jq -r '.requestsTableName' http-api-mock.json`" >> $GITHUB_OUTPUT
+
+  stack-name:
+    runs-on: ubuntu-22.04
+
+    outputs:
+      stackName: ${{ steps.stackName.outputs.stackName }}
+
+    steps:
       - name: Generate Stack ID
+        id: stackName
         run: |
           RANDOM_STRING=`node -e "const crypto = require('crypto'); process.stdout.write(crypto.randomBytes(Math.ceil(8 * 0.5)).toString('hex').slice(0, 8));"`
-          echo "STACK_NAME=hni-${RANDOM_STRING}" >> $GITHUB_ENV
+          echo "stackName=hni-${RANDOM_STRING}" >> $GITHUB_OUTPUT
+
+  # Containers are rebuilt for every run, this ensures that they can actually
+  # be built. If we were to use a pre-built version here we could run into
+  # the risk that they are no longer buildable.
+
+  mqtt-bridge-container:
+    needs: [stack-name]
+
+    runs-on: ubuntu-22.04
+
+    environment: ci
+
+    timeout-minutes: 5
+
+    env:
+      STACK_NAME: ${{ needs.stack-name.outputs.stackName }}
+
+    outputs:
+      tag: ${{ steps.build.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: github-action-hello-nrfcloud-backend
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Build MQTT bridge container
+        id: build
+        run: |
+          TAG=$(./cli.sh build-container mqtt-bridge)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Publish Docker image to repository registry
+        run: |
+          docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+          docker tag mqtt-bridge:${{ steps.build.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.build.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.build.outputs.tag }}
+
+  coap-simulator-container:
+    needs: [stack-name]
+
+    runs-on: ubuntu-22.04
+
+    environment: ci
+
+    timeout-minutes: 5
+
+    env:
+      STACK_NAME: ${{ needs.stack-name.outputs.stackName }}
+
+    outputs:
+      tag: ${{ steps.build.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: github-action-hello-nrfcloud-backend
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # The health check does not run, but this will test at least that the image can be generated
+      - name: Configure CoAP Health Check Simulator Download URL
+        run: |
+          ./cli.sh configure-coap-health-check simulatorDownloadURL ${{ env.COAP_SIMULATOR_DOWNLOAD_URL }}
+
+      - name: Build CoAP simulator container
+        id: build
+        run: |
+          TAG=$(./cli.sh build-container coap-simulator)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Publish Docker image to repository registry
+        run: |
+          docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+          docker tag coap-simulator:${{ steps.build.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.build.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.build.outputs.tag }}
+
+  e2e-tests:
+    needs:
+      - http-api-mock
+      - unit-tests
+      - stack-name
+      - mqtt-bridge-container
+      - coap-simulator-container
+
+    runs-on: ubuntu-22.04
+
+    environment: ci
+
+    timeout-minutes: 30
+
+    outputs:
+      ref: ${{ steps.ref.outputs.ref }}
+
+    env:
+      STACK_NAME: ${{ needs.stack-name.outputs.stackName }}
+      MQTT_BRIDGE_CONTAINER_TAG: ${{ needs.mqtt-bridge-container.outputs.tag }}
+      COAP_SIMULATOR_CONTAINER_TAG:
+        ${{ needs.coap-simulator-container.outputs.tag }}
+      HTTP_API_MOCK_RESPONSES_TABLE_NAME:
+        ${{ needs.http-api-mock.outputs.responsesTableName }}
+      HTTP_API_MOCK_REQUESTS_TABLE_NAME:
+        ${{ needs.http-api-mock.outputs.requestsTableName }}
+      HTTP_API_MOCK_API_URL: ${{ needs.http-api-mock.outputs.apiURL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: store checkout out version
+        id: ref
+        run: echo "ref=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: github-action-hello-nrfcloud-backend
+          aws-region: ${{ vars.AWS_REGION }}
 
       # During e2e test the MQTT bridge will connect to the AWS IoT broker
       - name: Fake nRF Cloud account device
@@ -80,36 +256,11 @@ jobs:
           ./cli.sh fake-nrfcloud-account-device elite
           ./cli.sh create-fake-nrfcloud-health-check-device elite
 
-      # The health check does not run, but this will test at least that the image can be generated
-      - name: Configure CoAP Health Check Simulator Download URL
+      - name: Use HTTP API mock
         run: |
-          ./cli.sh configure-coap-health-check simulatorDownloadURL ${{ env.COAP_SIMULATOR_DOWNLOAD_URL }}
-
-      - name: Build MQTT bridge container
-        id: mqtt-bridge-container
-        run: |
-          TAG=$(./cli.sh build-container mqtt-bridge)
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "MQTT_BRIDGE_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
-
-      # Containers are rebuilt for every run, this ensures that they can actually
-      # be built. If we were to use a pre-built version here we could run into
-      # the risk that they are no longer buildable.
-
-      - name: Build CoAP simulator container
-        id: coap-simulator-container
-        run: |
-          TAG=$(./cli.sh build-container coap-simulator)
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "COAP_SIMULATOR_CONTAINER_TAG=${TAG}" >> $GITHUB_ENV
-
-      - name: Deploy test resources stack
-        run: |
-          npx cdk --app "npx tsx --no-warnings cdk/test-resources.ts" deploy --require-approval never
-          MOCK_HTTP_API_ENDPOINT=`aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }}-test | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "apiURL") | .OutputValue' | sed -E 's/\/$//g'`
-          ./cli.sh configure-nrfcloud-account nordic apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          ./cli.sh configure-nrfcloud-account nordic apiEndpoint ${{ env.HTTP_API_MOCK_API_URL }}
           ./cli.sh configure-nrfcloud-account nordic apiKey apiKey_Nordic
-          ./cli.sh configure-nrfcloud-account elite apiEndpoint ${MOCK_HTTP_API_ENDPOINT}
+          ./cli.sh configure-nrfcloud-account elite apiEndpoint ${{ env.HTTP_API_MOCK_API_URL }}
           ./cli.sh configure-nrfcloud-account elite apiKey apiKey_Elite
 
       - name: Deploy solution stack
@@ -136,29 +287,6 @@ jobs:
         if: failure()
         run: ./cli.sh logs -f ERROR
 
-      - name: Log in to the Container registry
-        if: github.ref == 'refs/heads/saga'
-        uses: docker/login-action@5f4866a30a54f16a52d2ecb4a3898e9e424939cf
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - run: docker image ls
-
-      # The Docker images that were used successfully in this test run are shared
-      # on the projects' container registry. The deploy workflow will pull them and
-      # use copy them to the product instance's container registry.
-      # This ensures that exactly the container that was verified to work is used
-      # in production.
-      - name: Push Docker images to repository registry
-        if: github.ref == 'refs/heads/saga'
-        run: |
-          docker tag mqtt-bridge:latest ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker tag coap-simulator:latest ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.mqtt-bridge-container.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.coap-simulator-container.outputs.tag }}
-
       - run: echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/saga'
 
@@ -172,18 +300,24 @@ jobs:
         run: |
           gh workflow run cleanup.yaml --ref ${{ env.BRANCH_NAME }} \
             -F stackName=${{ env.STACK_NAME }} \
-            -F mqtt_bridge_tag=${{ steps.mqtt-bridge-container.outputs.tag }} \
-            -F coap_simulator_tag=${{ steps.coap-simulator-container.outputs.tag }}
+            -F mqtt_bridge_tag=${{ needs.mqtt-bridge-container.outputs.tag }} \
+            -F coap_simulator_tag=${{ needs.coap-simulator-container.outputs.tag }} \
+            -F http_api_mock_stack_name=${{ needs.http-api-mock.outputs.stackName }}
 
   release:
     needs:
       - e2e-tests
+      - mqtt-bridge-container
+      - coap-simulator-container
 
     runs-on: ubuntu-22.04
 
     if: github.ref == 'refs/heads/saga'
 
     environment: ci
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -204,6 +338,37 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
+      - name: Determine released version
+        id: version
+        run: |
+          VERSION=`git describe --abbrev=0 --tags --always | tr -d '\n'`
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Log in to the Container registry
+        if: github.ref == 'refs/heads/saga'
+        uses: docker/login-action@5f4866a30a54f16a52d2ecb4a3898e9e424939cf
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: docker image ls
+
+      # The Docker images that were used successfully in this test run are shared
+      # on the projects' container registry. The deploy workflow will pull them and
+      # use copy them to the product instance's container registry.
+      # This ensures that exactly the container that was verified to work is used
+      # in production.
+      - name: Tag docker images with release version
+        if: github.ref == 'refs/heads/saga'
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ needs.mqtt-bridge-container.outputs.tag }}
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ needs.coap-simulator-container.outputs.tag }}
+          docker tag mqtt-bridge:${{ steps.version.outputs.version }} ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ needs.mqtt-bridge-container.outputs.tag }}
+          docker tag coap-simulator:${{ steps.version.outputs.version }} ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ needs.coap-simulator-container.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.version.outputs.version }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.version.outputs.version }}
+
       - name: Trigger deployment workflow
         if: steps.semantic-release.outcome == 'success'
         env:
@@ -211,5 +376,5 @@ jobs:
         run: |
           gh workflow run deploy.yaml \
             -F ref=${{ needs.e2e-tests.outputs.ref }} \
-            -F mqtt_bridge_tag=${{ needs.e2e-tests.outputs.mqtt_bridge_tag }} \
-            -F coap_simulator_tag=${{ needs.e2e-tests.outputs.coap_simulator_tag }}
+            -F mqtt_bridge_tag=${{ needs.mqtt-bridge-container.outputs.tag }} \
+            -F coap_simulator_tag=${{ needs.coap-simulator-container.outputs.tag }}

@@ -13,10 +13,10 @@ import { ApiLogging } from './ApiLogging.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
 import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { LambdaSource } from './LambdaSource.js'
+import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { LambdaLogGroup } from './LambdaLogGroup.js'
+import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 
 export const integrationUri = (
 	parent: Construct,

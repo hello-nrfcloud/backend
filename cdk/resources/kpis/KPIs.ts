@@ -10,9 +10,9 @@ import { Construct } from 'constructs'
 import type { BackendLambdas } from '../../BackendLambdas.js'
 import type { DeviceLastSeen } from '../DeviceLastSeen.js'
 import type { DeviceStorage } from '../DeviceStorage.js'
-import { LambdaSource } from '../LambdaSource.js'
+import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { Scope } from '../../../settings/settings.js'
-import { LambdaLogGroup } from '../LambdaLogGroup.js'
+import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 
 export class KPIs extends Construct {
 	constructor(

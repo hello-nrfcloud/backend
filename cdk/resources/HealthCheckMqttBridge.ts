@@ -11,9 +11,9 @@ import { type ECRImage as BridgeSettings } from '@bifravst/aws-cdk-ecr-helpers/i
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
-import { LambdaSource } from './LambdaSource.js'
+import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { Scope } from '../../settings/settings.js'
-import { LambdaLogGroup } from './LambdaLogGroup.js'
+import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 
 export type BridgeImageSettings = BridgeSettings
 
