@@ -30,10 +30,8 @@ import { SingleCellGeoLocation } from '../resources/SingleCellGeoLocation.js'
 import { WebsocketConnectionsTable } from '../resources/WebsocketConnectionsTable.js'
 import { WebsocketEventBus } from '../resources/WebsocketEventBus.js'
 import { HealthCheckCoAP } from '../resources/HealthCheckCoAP.js'
-import {
-	ContainerRepositoryId,
-	repositoryName,
-} from '../../aws/getOrCreateRepository.js'
+import { ContainerRepositoryId } from '../../aws/ecr.js'
+import { repositoryName } from '@bifravst/aws-cdk-ecr-helpers/repository'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -140,7 +138,10 @@ export class BackendStack extends Stack {
 				ECR.Repository.fromRepositoryName(
 					this,
 					'mqtt-bridge-ecr',
-					repositoryName(ContainerRepositoryId.MQTTBridge),
+					repositoryName({
+						stackName: Stack.of(this).stackName,
+						id: ContainerRepositoryId.MQTTBridge,
+					}),
 				),
 				mqttBridgeContainerTag,
 			),
@@ -162,7 +163,10 @@ export class BackendStack extends Stack {
 					ECR.Repository.fromRepositoryName(
 						this,
 						'coap-simulator-ecr',
-						repositoryName(ContainerRepositoryId.CoAPSimulator),
+						repositoryName({
+							stackName: Stack.of(this).stackName,
+							id: ContainerRepositoryId.CoAPSimulator,
+						}),
 					),
 					{
 						tagOrDigest: coapSimulatorContainerTag,

@@ -1,10 +1,13 @@
 import path from 'node:path'
-import { type ImageBuilder, type ImageChecker } from '../../../aws/ecrImages.js'
+import {
+	type ImageBuilder,
+	type ImageChecker,
+} from '@bifravst/aws-cdk-ecr-helpers/image'
 import { type logFn } from '../../../cli/log.js'
 import { getMosquittoLatestTag } from '../../../docker/getMosquittoLatestTag.js'
 import { checkSumOfStrings } from '@bifravst/aws-cdk-lambda-helpers/util'
 import { hashFolder } from '../../../docker/hashFolder.js'
-import { ContainerRepositoryId } from '../../../aws/getOrCreateRepository.js'
+import { ContainerRepositoryId } from '../../../aws/ecr.js'
 
 export const buildMQTTBridgeImage = async (
 	builder: ImageBuilder,

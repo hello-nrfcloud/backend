@@ -7,7 +7,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { type ECRImage as BridgeSettings } from './containers/ECRImage.js'
+import { type ECRImage as BridgeSettings } from '@bifravst/aws-cdk-ecr-helpers/image'
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'

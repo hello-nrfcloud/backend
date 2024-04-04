@@ -1,9 +1,12 @@
 import path from 'node:path'
-import { type ImageBuilder, type ImageChecker } from '../../../aws/ecrImages.js'
+import {
+	type ImageBuilder,
+	type ImageChecker,
+} from '@bifravst/aws-cdk-ecr-helpers/image'
 import { hashFolder } from '../../../docker/hashFolder.js'
 import { checkSumOfStrings } from '@bifravst/aws-cdk-lambda-helpers/util'
 import { type logFn } from '../../../cli/log.js'
-import { ContainerRepositoryId } from '../../../aws/getOrCreateRepository.js'
+import { ContainerRepositoryId } from '../../../aws/ecr.js'
 
 export const buildCoAPSimulatorImage = async (
 	builder: ImageBuilder,

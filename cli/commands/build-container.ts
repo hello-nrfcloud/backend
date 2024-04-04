@@ -1,19 +1,17 @@
 import { ECRClient } from '@aws-sdk/client-ecr'
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import {
-	ContainerRepositoryId,
-	getOrCreateRepository,
-} from '../../aws/getOrCreateRepository.js'
+import { getOrCreateRepository } from '@bifravst/aws-cdk-ecr-helpers/repository'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { debug as debugFn } from '../log.js'
 import { buildMQTTBridgeImage } from '../../cdk/resources/containers/buildMQTTBridgeImage.js'
 import {
 	buildAndPublishImage,
 	checkIfImageExists,
-} from '../../aws/ecrImages.js'
+} from '@bifravst/aws-cdk-ecr-helpers/image'
 import { buildCoAPSimulatorImage } from '../../cdk/resources/containers/buildCoAPSimulatorImage.js'
 import { getCoAPHealthCheckSettings } from '../../nrfcloud/coap-health-check.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { ContainerRepositoryId } from '../../aws/ecr.js'
 
 export const buildContainersCommand = ({
 	ecr,
@@ -33,10 +31,11 @@ export const buildContainersCommand = ({
 
 		const debug = (debugEnabled as boolean) ? debugFn : undefined
 		if (id === ContainerRepositoryId.MQTTBridge) {
-			const mqttBridgeRepo = await ensureRepo(
-				ContainerRepositoryId.MQTTBridge,
+			const mqttBridgeRepo = await ensureRepo({
+				stackName: STACK_NAME,
+				id: ContainerRepositoryId.MQTTBridge,
 				debug,
-			)
+			})
 			process.stdout.write(
 				await buildMQTTBridgeImage(
 					buildAndPublishImage({
@@ -51,10 +50,11 @@ export const buildContainersCommand = ({
 				),
 			)
 		} else if (id === ContainerRepositoryId.CoAPSimulator) {
-			const coapSimulatorRepo = await ensureRepo(
-				ContainerRepositoryId.CoAPSimulator,
+			const coapSimulatorRepo = await ensureRepo({
+				stackName: STACK_NAME,
+				id: ContainerRepositoryId.CoAPSimulator,
 				debug,
-			)
+			})
 			process.stdout.write(
 				await buildCoAPSimulatorImage(
 					buildAndPublishImage({
