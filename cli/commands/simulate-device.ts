@@ -11,12 +11,12 @@ import path from 'node:path'
 import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { version } from '../../package.json'
+import type { CommandDefinition } from './CommandDefinition.js'
+import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
 import {
 	deviceCertificateLocations,
 	ensureCertificateDir,
-} from '../certificates.js'
-import type { CommandDefinition } from './CommandDefinition.js'
-import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
+} from '@hello.nrfcloud.com/certificate-helpers/locations'
 
 export const simulateDeviceCommand = ({
 	ssm,

@@ -8,11 +8,12 @@ import { registerDevice } from '../../devices/registerDevice.js'
 import { devices } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import { ulid } from '../../util/ulid.js'
-import { ensureCertificateDir } from '../certificates.js'
-import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import { fingerprintGenerator } from '@hello.nrfcloud.com/proto/fingerprint'
 import type { CommandDefinition } from './CommandDefinition.js'
-import run from '@bifravst/run'
+import { inspectCert } from '@hello.nrfcloud.com/certificate-helpers/inspect'
+import { createDeviceCertificate } from '@hello.nrfcloud.com/certificate-helpers/device'
+import { createCA } from '@hello.nrfcloud.com/certificate-helpers/ca'
+import { ensureCertificateDir } from '@hello.nrfcloud.com/certificate-helpers/locations'
 
 export const registerSimulatorDeviceCommand = ({
 	ssm,
@@ -68,12 +69,7 @@ export const registerSimulatorDeviceCommand = ({
 				chalk.blue(deviceCertificates.certificate),
 			),
 		)
-		console.log(
-			await run({
-				command: 'openssl',
-				args: ['x509', '-text', '-noout', '-in', deviceCertificates.signedCert],
-			}),
-		)
+		console.log(await inspectCert(deviceCertificates.signedCert))
 
 		const registration = await client.register([
 			{

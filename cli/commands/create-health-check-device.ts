@@ -10,11 +10,12 @@ import {
 	type Settings,
 } from '../../nrfcloud/healthCheckSettings.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
-import run from '@bifravst/run'
-import { ensureCertificateDir } from '../certificates.js'
-import { createCA, createDeviceCertificate } from '../createCertificate.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
+import { ensureCertificateDir } from '@hello.nrfcloud.com/certificate-helpers/locations'
+import { createCA } from '@hello.nrfcloud.com/certificate-helpers/ca'
+import { createDeviceCertificate } from '@hello.nrfcloud.com/certificate-helpers/device'
+import { inspectCert } from '@hello.nrfcloud.com/certificate-helpers/inspect'
 
 export const createHealthCheckDevice = ({
 	ssm,
@@ -74,12 +75,7 @@ export const createHealthCheckDevice = ({
 				chalk.blue(deviceCertificates.signedCert),
 			),
 		)
-		console.log(
-			await run({
-				command: 'openssl',
-				args: ['x509', '-text', '-noout', '-in', deviceCertificates.signedCert],
-			}),
-		)
+		console.log(await inspectCert(deviceCertificates.signedCert))
 
 		const registration = await client.register([
 			{

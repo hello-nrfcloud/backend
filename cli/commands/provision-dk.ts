@@ -14,15 +14,15 @@ import path from 'node:path'
 import { registerDevice } from '../../devices/registerDevice.js'
 import { devices } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
-import run from '@bifravst/run'
+import { fingerprintGenerator } from '@hello.nrfcloud.com/proto/fingerprint'
+import type { CommandDefinition } from './CommandDefinition.js'
+import { toPEM } from '@hello.nrfcloud.com/certificate-helpers/der'
 import {
 	deviceCertificateLocations,
 	ensureCertificateDir,
-} from '../certificates.js'
-import { ensureProductionRunCACertificate } from '../devices/ensureProductionRunCACertificate.js'
-import { fingerprintGenerator } from '@hello.nrfcloud.com/proto/fingerprint'
-import { signDeviceCertificate } from '../devices/signDeviceCertificate.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+} from '@hello.nrfcloud.com/certificate-helpers/locations'
+import { signDeviceCertificate } from '@hello.nrfcloud.com/certificate-helpers/device'
+import { ensureProductionRunCACertificate } from '@hello.nrfcloud.com/certificate-helpers/production'
 
 export const defaultPort = '/dev/ttyACM0'
 
@@ -111,18 +111,7 @@ export const provisionDkCommand = ({
 		const deviceCSRLocationDer = `${deviceCSRLocation}.der`
 		await writeFile(deviceCSRLocationDer, csr)
 
-		await run({
-			command: 'openssl',
-			args: [
-				'req',
-				'-inform',
-				'DER',
-				'-in',
-				deviceCSRLocationDer,
-				'-out',
-				deviceCSRLocation,
-			],
-		})
+		await toPEM(deviceCSRLocationDer, deviceCSRLocation)
 
 		console.log(chalk.gray('CSR written to'), chalk.blue(deviceCSRLocation))
 

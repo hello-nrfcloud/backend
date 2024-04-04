@@ -2,7 +2,6 @@ import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { isFingerprint } from '@hello.nrfcloud.com/proto/fingerprint'
 import chalk from 'chalk'
-import { execSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import os from 'node:os'
 import { table } from 'table'
@@ -10,6 +9,7 @@ import { registerDevice } from '../../devices/registerDevice.js'
 import { devices as devicesApi } from '../../nrfcloud/devices.js'
 import { getAPISettings } from '../../nrfcloud/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { inspectString } from '@hello.nrfcloud.com/certificate-helpers/inspect'
 
 export const importDevicesCommand = ({
 	ssm,
@@ -37,7 +37,8 @@ export const importDevicesCommand = ({
 				s.split(';').map((s) => s.replace(/^"/, '').replace(/"$/, '')),
 			)
 			.slice(1)
-		const devices: [imei: string, fingerprint: string, publicKey: string][] =
+
+		let devices: [imei: string, fingerprint: string, publicKey: string][] =
 			devicesList
 				.map(
 					([imei, fingerprint, publicKey]) =>
@@ -47,7 +48,7 @@ export const importDevicesCommand = ({
 							string,
 						],
 				)
-				.filter(([imei, fingerprint, publicKey]) => {
+				.filter(([imei]) => {
 					if (!isIMEI(imei)) {
 						console.error(
 							chalk.yellow('⚠️'),
@@ -56,6 +57,9 @@ export const importDevicesCommand = ({
 						)
 						return false
 					}
+					return true
+				})
+				.filter(([, fingerprint]) => {
 					if (!isFingerprint(fingerprint)) {
 						console.error(
 							chalk.yellow('⚠️'),
@@ -64,19 +68,37 @@ export const importDevicesCommand = ({
 						)
 						return false
 					}
-					try {
-						execSync('openssl x509 -text -noout', { input: publicKey })
-					} catch (err) {
-						console.error(err)
-						console.error(
-							chalk.yellow('⚠️'),
-							chalk.yellow(`Not a public key:`),
-							chalk.red(publicKey),
-						)
-						return false
-					}
 					return true
 				})
+
+		// Filter out invalid keys
+		devices = (
+			await Promise.all(
+				devices.map(async (device) => [
+					...device,
+					await (async (publicKey: string) => {
+						try {
+							await inspectString(publicKey)
+						} catch (err) {
+							console.error(err)
+							console.error(
+								chalk.yellow('⚠️'),
+								chalk.yellow(`Not a public key:`),
+								chalk.red(publicKey),
+							)
+							return false
+						}
+						return true
+					})(device[2]),
+				]),
+			)
+		)
+			.filter(([, , , valid]) => valid === true)
+			.map<[string, string, string]>(([imei, fingerprint, publicKey]) => [
+				imei as string,
+				fingerprint as string,
+				publicKey as string,
+			])
 
 		if (devices.length === 0) {
 			console.error(chalk.red(`No devices found in`))
