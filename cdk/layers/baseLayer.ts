@@ -15,5 +15,6 @@ export const pack = async (): Promise<PackedLayer> =>
 			'@aws-lambda-powertools/metrics',
 			'lodash-es',
 			'@middy/core',
+			'@hello.nrfcloud.com/lambda-helpers',
 		],
 	})

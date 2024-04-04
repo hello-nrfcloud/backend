@@ -5,9 +5,9 @@ import {
 } from '@aws-sdk/client-eventbridge'
 import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import { type DeviceShadowType } from '../../nrfcloud/DeviceShadow.js'
-import type { AddMetricsFn } from '../metrics/metrics.js'
 import type { WebsocketPayload } from '../publishToWebsocketClients.js'
-import type { Logger } from '../util/logger.js'
+import type { AddMetricsFn } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import type { Logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 
 export const sendShadowToConnection =
 	({

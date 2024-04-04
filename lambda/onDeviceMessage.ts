@@ -5,9 +5,9 @@ import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { metricsForComponent } from './metrics/metrics.js'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { logger } from './util/logger.js'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
 
 const { EventBusName, DevicesTableName } = fromEnv({

@@ -18,8 +18,8 @@ import {
 } from '../websocket/connectionsRepository.js'
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
-import { metricsForComponent } from './metrics/metrics.js'
-import { logger } from './util/logger.js'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import { loggingFetch } from './loggingFetch.js'
 

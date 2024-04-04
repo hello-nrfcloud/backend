@@ -15,11 +15,11 @@ import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { JSONPayload, validatedFetch } from '../nrfcloud/validatedFetch.js'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
 import { loggingFetch } from './loggingFetch.js'
-import { metricsForComponent } from './metrics/metrics.js'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { GroundFix } from './nrfcloud/groundFix.js'
 import { serviceToken } from './nrfcloud/serviceToken.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { logger } from './util/logger.js'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 
 const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',

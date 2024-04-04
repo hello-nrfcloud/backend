@@ -11,7 +11,7 @@ import type {
 	Context,
 } from 'aws-lambda'
 import { URLSearchParams } from 'url'
-import { logger } from '../../lambda/util/logger.js'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { checkMatchingQueryParams } from './checkMatchingQueryParams.js'
 import { splitMockResponse } from './splitMockResponse.js'
 

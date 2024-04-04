@@ -1,6 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { getAttributesForDevice } from '../devices/getAttributesForDevice.js'
-import { logger } from './util/logger.js'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 
 const log = logger('deviceModelCache')
 

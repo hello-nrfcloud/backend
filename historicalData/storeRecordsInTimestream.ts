@@ -4,7 +4,7 @@ import {
 	WriteRecordsCommand,
 	type _Record,
 } from '@aws-sdk/client-timestream-write'
-import type { Logger } from '../lambda/util/logger.js'
+import type { Logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 
 export const storeRecordsInTimestream =
 	({

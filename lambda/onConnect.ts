@@ -7,11 +7,11 @@ import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
 import { lastSeenRepo } from '../lastSeen/lastSeenRepo.js'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { logger } from './util/logger.js'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 import { get } from '../nrfcloud/deviceShadowRepo.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
-import { metricsForComponent } from './metrics/metrics.js'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 
 const { EventBusName, TableName, LastSeenTableName, deviceShadowTableName } =
 	fromEnv({

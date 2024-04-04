@@ -1,8 +1,8 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
-import { logger } from '../lambda/util/logger.js'
 import { hashSHA1 } from '../util/hashSHA1.js'
 import { Scope, getSettingsOptional } from '../settings/settings.js'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 
 // Format:
 //   'model name': 'interval'

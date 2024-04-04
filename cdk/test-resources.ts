@@ -15,7 +15,11 @@ new TestResources({
 	},
 	layer: await packLayer({
 		id: 'testResources',
-		dependencies: ['@aws-sdk/client-dynamodb', '@nordicsemiconductor/from-env'],
+		dependencies: [
+			'@aws-sdk/client-dynamodb',
+			'@nordicsemiconductor/from-env',
+			'@hello.nrfcloud.com/lambda-helpers',
+		],
 	}),
 	env: awsEnv,
 })

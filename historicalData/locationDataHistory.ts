@@ -12,7 +12,7 @@ import { normalizedData } from './normalizedData.js'
 import { getLocationQueryStatement } from './getLocationQueryStatement.js'
 import { HistoricalDataTimeSpans } from './HistoricalDataTimeSpans.js'
 import { paginateTimestreamQuery } from './paginateTimestreamQuery.js'
-import type { Logger } from '../lambda/util/logger.js'
+import type { Logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 
 export const getHistoricalLocationData = ({
 	timestream,

@@ -11,7 +11,7 @@ import {
 	CommonAggregatedResponse,
 } from '@hello.nrfcloud.com/proto/hello/history'
 import { paginateTimestreamQuery } from './paginateTimestreamQuery.js'
-import type { Logger } from '../lambda/util/logger.js'
+import type { Logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 
 export const getHistoricalSensorData = ({
 	timestream,

@@ -6,5 +6,5 @@ import {
 export const pack = async (): Promise<PackedLayer> =>
 	packLayer({
 		id: 'healthCheckLayer',
-		dependencies: ['mqtt', 'ws'],
+		dependencies: ['mqtt', 'ws', '@hello.nrfcloud.com/lambda-helpers'],
 	})
