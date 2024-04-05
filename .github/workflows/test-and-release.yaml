@@ -82,7 +82,7 @@ jobs:
       - name: Create HTTP API mock
         id: create
         run: |
-          npx @hello.nrfcloud.com/http-api-mock > http-api-mock.json
+          npx @bifravst/http-api-mock > http-api-mock.json
           echo "stackName=`jq -r '.stackName' http-api-mock.json`" >> $GITHUB_OUTPUT
           echo "responsesTableName=`jq -r '.responsesTableName' http-api-mock.json`" >> $GITHUB_OUTPUT
           echo "apiURL=`jq -r '.apiURL' http-api-mock.json`" >> $GITHUB_OUTPUT

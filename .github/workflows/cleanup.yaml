@@ -99,4 +99,4 @@ jobs:
 
       - name: Delete HTTP API mock
         run: |
-          npx @hello.nrfcloud.com/http-api-mock destroy ${{ inputs.http_api_mock_stack_name }}
+          npx @bifravst/http-api-mock destroy ${{ inputs.http_api_mock_stack_name }}
