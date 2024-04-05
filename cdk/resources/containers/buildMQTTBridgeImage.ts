@@ -13,6 +13,7 @@ export const buildMQTTBridgeImage = async (
 	builder: ImageBuilder,
 	checker: ImageChecker,
 	debug?: logFn,
+	pull?: boolean,
 ): Promise<string> => {
 	const mosquittoVersion = await getMosquittoLatestTag()
 	debug?.(`mosquittoLatestTag: ${mosquittoVersion}`)
@@ -33,6 +34,7 @@ export const buildMQTTBridgeImage = async (
 		await checker({
 			tag,
 			debug,
+			pull,
 		})
 	)
 		return tag

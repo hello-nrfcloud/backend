@@ -143,7 +143,7 @@ jobs:
       - name: Build MQTT bridge container
         id: build
         run: |
-          TAG=$(./cli.sh build-container mqtt-bridge)
+          TAG=$(./cli.sh build-container --pull mqtt-bridge)
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Publish Docker image to repository registry
@@ -193,7 +193,7 @@ jobs:
       - name: Build CoAP simulator container
         id: build
         run: |
-          TAG=$(./cli.sh build-container coap-simulator)
+          TAG=$(./cli.sh build-container --pull coap-simulator)
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Publish Docker image to repository registry

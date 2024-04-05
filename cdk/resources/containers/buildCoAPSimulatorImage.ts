@@ -13,6 +13,7 @@ export const buildCoAPSimulatorImage = async (
 	checker: ImageChecker,
 	getSimulatorDownloadURL: () => Promise<URL>,
 	debug?: logFn,
+	pull?: boolean,
 ): Promise<string> => {
 	const coapDockerfilePath = path.join(
 		process.cwd(),
@@ -37,7 +38,7 @@ export const buildCoAPSimulatorImage = async (
 		coapSimulatorBinaryHash,
 	])
 
-	if (await checker({ tag, debug })) return tag
+	if (await checker({ tag, debug, pull })) return tag
 
 	await builder({
 		id: ContainerRepositoryId.CoAPSimulator,

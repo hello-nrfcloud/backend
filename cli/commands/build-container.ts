@@ -25,8 +25,11 @@ export const buildContainersCommand = ({
 		{
 			flags: '-d, --debug',
 		},
+		{
+			flags: '-p, --pull',
+		},
 	],
-	action: async (id, { debug: debugEnabled }) => {
+	action: async (id, { debug: debugEnabled, pull }) => {
 		const ensureRepo = getOrCreateRepository({ ecr })
 
 		const debug = (debugEnabled as boolean) ? debugFn : undefined
@@ -47,6 +50,7 @@ export const buildContainersCommand = ({
 						repo: mqttBridgeRepo,
 					}),
 					debugFn('MQTT bridge image'),
+					pull as undefined | boolean,
 				),
 			)
 		} else if (id === ContainerRepositoryId.CoAPSimulator) {
@@ -73,6 +77,7 @@ export const buildContainersCommand = ({
 							})
 						).simulatorDownloadURL,
 					debugFn('CoAP simulator image'),
+					pull as undefined | boolean,
 				),
 			)
 		} else {
