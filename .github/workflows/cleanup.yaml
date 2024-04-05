@@ -30,8 +30,6 @@ jobs:
   cleanup:
     runs-on: ubuntu-22.04
 
-    environment: ci
-
     timeout-minutes: 30
 
     steps:
@@ -48,9 +46,12 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: github-action-hello-nrfcloud-backend
-          aws-region: ${{ vars.AWS_REGION }}
+          # The role is set up via https://github.com/hello-nrfcloud/ci
+          # secrets.AWS_ACCOUNT_ID_CI is an organization secret
+          role-to-assume: |
+            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/hello-nrfcloud-ci-${{ github.event.repository.name }}
+          # vars.AWS_REGION_CI is an organization variable
+          aws-region: ${{ vars.AWS_REGION_CI }}
 
       - name: Delete logs
         run: ./cli.sh logs -X
@@ -76,8 +77,6 @@ jobs:
   cleanup-http-api-mock:
     runs-on: ubuntu-22.04
 
-    environment: ci
-
     timeout-minutes: 5
 
     steps:
@@ -91,9 +90,12 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: github-action-hello-nrfcloud-backend
-          aws-region: ${{ vars.AWS_REGION }}
+          # The role is set up via https://github.com/hello-nrfcloud/ci
+          # secrets.AWS_ACCOUNT_ID_CI is an organization secret
+          role-to-assume: |
+            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/hello-nrfcloud-ci-${{ github.event.repository.name }}
+          # vars.AWS_REGION_CI is an organization variable
+          aws-region: ${{ vars.AWS_REGION_CI }}
 
       - name: Delete HTTP API mock
         run: |
