@@ -18,11 +18,11 @@ import { BackendApp } from './BackendApp.js'
 import { ensureGitHubOIDCProvider } from '@hello.nrfcloud.com/ci/ensureGitHubOIDCProvider'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'
 import { storeCertificateInSSM } from './helpers/certificates/storeCertificateInSSM.js'
-import { env } from './helpers/env.js'
 import { pack as packBaseLayer } from './layers/baseLayer.js'
 import { pack as packHealthCheckLayer } from './layers/healthCheckLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { STACK_NAME } from './stacks/stackConfig.js'
+import { env } from './helpers/env.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -128,7 +128,6 @@ new BackendApp({
 	gitHubOICDProviderArn: await ensureGitHubOIDCProvider({
 		iam,
 	}),
-	env: accountEnv,
 	isTest: process.env.IS_TEST === '1',
 	domain: 'hello.nrfcloud.com',
 	version: (() => {

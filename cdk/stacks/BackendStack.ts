@@ -3,7 +3,6 @@ import {
 	CfnOutput,
 	aws_lambda as Lambda,
 	Stack,
-	type Environment,
 	aws_ecr as ECR,
 	aws_ecs as ECS,
 } from 'aws-cdk-lib'
@@ -48,7 +47,6 @@ export class BackendStack extends Stack {
 			coapSimulatorContainerTag,
 			repository,
 			gitHubOICDProviderArn,
-			env,
 		}: {
 			lambdaSources: BackendLambdas
 			layer: PackedLayer
@@ -64,12 +62,9 @@ export class BackendStack extends Stack {
 				owner: string
 				repo: string
 			}
-			env: Required<Environment>
 		},
 	) {
-		super(parent, STACK_NAME, {
-			env,
-		})
+		super(parent, STACK_NAME)
 
 		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
 			layerVersionName: `${Stack.of(this).stackName}-baseLayer`,
