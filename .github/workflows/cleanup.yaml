@@ -49,7 +49,7 @@ jobs:
           # The role is set up via https://github.com/hello-nrfcloud/ci
           # secrets.AWS_ACCOUNT_ID_CI is an organization secret
           role-to-assume: |
-            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/hello-nrfcloud-ci-${{ github.event.repository.name }}
+            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/${{ github.repository_owner }}-ci-${{ github.event.repository.name }}
           # vars.AWS_REGION_CI is an organization variable
           aws-region: ${{ vars.AWS_REGION_CI }}
 
@@ -93,7 +93,7 @@ jobs:
           # The role is set up via https://github.com/hello-nrfcloud/ci
           # secrets.AWS_ACCOUNT_ID_CI is an organization secret
           role-to-assume: |
-            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/hello-nrfcloud-ci-${{ github.event.repository.name }}
+            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/${{ github.repository_owner }}-ci-${{ github.event.repository.name }}
           # vars.AWS_REGION_CI is an organization variable
           aws-region: ${{ vars.AWS_REGION_CI }}
 
