@@ -46,6 +46,8 @@ jobs:
         run: npm test
 
   http-api-mock:
+    needs: [unit-tests]
+
     runs-on: ubuntu-22.04
 
     environment: ci
@@ -87,6 +89,8 @@ jobs:
           echo "requestsTableName=`jq -r '.requestsTableName' http-api-mock.json`" >> $GITHUB_OUTPUT
 
   stack-name:
+    needs: [unit-tests]
+
     runs-on: ubuntu-22.04
 
     outputs:
@@ -104,7 +108,7 @@ jobs:
   # the risk that they are no longer buildable.
 
   mqtt-bridge-container:
-    needs: [stack-name]
+    needs: [stack-name, unit-tests]
 
     runs-on: ubuntu-22.04
 
@@ -149,7 +153,7 @@ jobs:
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.build.outputs.tag }}
 
   coap-simulator-container:
-    needs: [stack-name]
+    needs: [stack-name, unit-tests]
 
     runs-on: ubuntu-22.04
 
