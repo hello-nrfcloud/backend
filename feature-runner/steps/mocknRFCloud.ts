@@ -26,6 +26,7 @@ import {
 import { parseMockResponse } from './parseMockResponse.js'
 import { toPairs } from './toPairs.js'
 import pRetry from 'p-retry'
+import { sortQueryString } from '@bifravst/http-api-mock/sortQueryString'
 
 export const steps = ({
 	db,
@@ -224,7 +225,7 @@ ${data}
 					TableName: responsesTableName,
 					Item: {
 						methodPathQuery: {
-							S: `${method} ${resource.slice(1)}`,
+							S: `${method} ${sortQueryString(resource.slice(1))}`,
 						},
 						timestamp: {
 							S: new Date().toISOString(),
@@ -262,7 +263,7 @@ ${data}
 				expectedBody = JSON.stringify(JSON.parse(expectedBody))
 			}
 
-			const methodPathQuery = `${request.method} ${request.resource.slice(1)}`
+			const methodPathQuery = `${request.method} ${sortQueryString(request.resource.slice(1))}`
 			progress(`expected resource: ${methodPathQuery}`)
 
 			const result = await db.send(
