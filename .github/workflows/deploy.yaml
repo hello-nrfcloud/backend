@@ -68,12 +68,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # The role is set up via https://github.com/hello-nrfcloud/ci
-          # secrets.AWS_ACCOUNT_ID_CI is an organization secret
-          role-to-assume: |
-            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/${{ github.repository_owner }}-ci-${{ github.event.repository.name }}
-          # vars.AWS_REGION_CI is an organization variable
-          aws-region: ${{ vars.AWS_REGION_CI }}
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: github-action-hello-nrfcloud-backend
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Get credentials for ECR
         id: token
@@ -149,12 +146,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # The role is set up via https://github.com/hello-nrfcloud/ci
-          # secrets.AWS_ACCOUNT_ID_CI is an organization secret
-          role-to-assume: |
-            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/${{ github.repository_owner }}-ci-${{ github.event.repository.name }}
-          # vars.AWS_REGION_CI is an organization variable
-          aws-region: ${{ vars.AWS_REGION_CI }}
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: github-action-hello-nrfcloud-backend
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Show nRF Cloud Account
         run: ./cli.sh show-nrfcloud-account nordic
