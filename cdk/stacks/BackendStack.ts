@@ -237,6 +237,11 @@ export class BackendStack extends Stack {
 				'DB and Name of the Timestream table that stores historical device messages',
 			value: historicalData.table.ref,
 		})
+		new CfnOutput(this, 'lastSeenTableName', {
+			exportName: `${this.stackName}:lastSeenTableName`,
+			description: 'Last seen table name',
+			value: lastSeen.table.tableName,
+		})
 		new CfnOutput(this, 'cdRoleArn', {
 			exportName: `${this.stackName}:cdRoleArn`,
 			description: 'Role ARN to use in the deploy GitHub Actions Workflow',
@@ -248,6 +253,7 @@ export class BackendStack extends Stack {
 export type StackOutputs = {
 	webSocketURI: string
 	devicesTableName: string
+	lastSeenTableName: string
 	devicesTableFingerprintIndexName: string
 	historicalDataTableInfo: string
 	bridgePolicyName: string

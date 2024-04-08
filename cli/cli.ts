@@ -176,6 +176,8 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				listDevicesCommand({
 					ssm,
 					stackName: STACK_NAME,
+					db,
+					lastSeenTableName: outputs.lastSeenTableName,
 				}),
 			)
 		} catch (error) {
