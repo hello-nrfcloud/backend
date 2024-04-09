@@ -4,16 +4,12 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import { hashSHA1 } from '../../util/hashSHA1.js'
-import {
-	deleteSettings,
-	getSettings,
-	type putSettings,
-} from '../../settings/settings.js'
+import { remove, get, type put } from '@bifravst/aws-ssm-settings-helpers'
 
 const createConfigStepRunners = ({
 	configWriter,
 }: {
-	configWriter: ReturnType<typeof putSettings>
+	configWriter: ReturnType<ReturnType<typeof put>>
 }): StepRunner<Record<string, any>>[] => {
 	const setupDeviceShadowFetchingConfiguration = regExpMatchedStep(
 		{
@@ -42,9 +38,9 @@ export const configStepRunners = ({
 	configRemover,
 	configSettings,
 }: {
-	configWriter: ReturnType<typeof putSettings>
-	configRemover: ReturnType<typeof deleteSettings>
-	configSettings: ReturnType<typeof getSettings>
+	configWriter: ReturnType<ReturnType<typeof put>>
+	configRemover: ReturnType<ReturnType<typeof remove>>
+	configSettings: ReturnType<ReturnType<typeof get>>
 }): {
 	steps: StepRunner<Record<string, any>>[]
 	cleanup: () => Promise<void>

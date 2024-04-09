@@ -3,16 +3,15 @@ import {
 	Duration,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
-	aws_iam as IAM,
 	aws_lambda as Lambda,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { Scope } from '../../settings/settings.js'
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from './settings.js'
 
 /**
  * Handles device configuration requests
@@ -51,29 +50,7 @@ export class ConfigureDevice extends Construct {
 			},
 			layers,
 			...new LambdaLogGroup(this, 'configureDeviceLogs'),
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}/*`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
-					],
-				}),
-			],
+			initialPolicy: [SettingsPermissions(Stack.of(this))],
 		})
 		new Events.Rule(this, 'configureDeviceRule', {
 			eventPattern: {

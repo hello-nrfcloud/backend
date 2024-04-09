@@ -1,9 +1,6 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import {
-	Scope,
-	getSettings as getSSMSettings,
-	putSettings,
-} from '../settings/settings.js'
+import { nrfCloudAccount } from '../settings/scope.js'
+import { get, put } from '@bifravst/aws-ssm-settings-helpers'
 
 export type Settings = {
 	healthCheckClientCert: string
@@ -22,10 +19,9 @@ export const updateSettings = ({
 	stackName: string
 	account: string
 }): ((settings: Partial<Settings>) => Promise<void>) => {
-	const settingsWriter = putSettings({
-		ssm,
+	const settingsWriter = put(ssm)({
 		stackName,
-		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
+		...nrfCloudAccount(account),
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(
@@ -48,11 +44,9 @@ export const getSettings = ({
 	stackName: string
 	account: string
 }): (() => Promise<Settings>) => {
-	const scope = `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`
-	const settingsReader = getSSMSettings({
-		ssm,
+	const settingsReader = get(ssm)({
 		stackName,
-		scope,
+		...nrfCloudAccount(account),
 	})
 	return async (): Promise<Settings> => {
 		const p = await settingsReader()

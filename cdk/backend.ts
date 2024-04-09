@@ -13,7 +13,7 @@ import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLo
 import { debug, type logFn } from '../cli/log.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import pJSON from '../package.json'
-import { Scope } from '../settings/settings.js'
+import { ScopeContexts, type ScopeContext } from '../settings/scope.js'
 import { BackendApp } from './BackendApp.js'
 import { ensureGitHubOIDCProvider } from '@bifravst/ci/ensureGitHubOIDCProvider'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'
@@ -56,19 +56,19 @@ const caDebug = debug('CA certificate')
 const certificates = [
 	// MQTT certificate
 	[
-		Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+		ScopeContexts.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
 		mqttBridgeCertificateFiles,
 		mqttBridgeDebug,
 	],
 	// CA certificate
-	[Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA, caCertificateFiles, caDebug],
-] as [Scope, Record<string, string>, logFn][]
+	[ScopeContexts.NRFCLOUD_BRIDGE_CERTIFICATE_CA, caCertificateFiles, caDebug],
+] as [ScopeContext, Record<string, string>, logFn][]
 
 // Restore message bridge certificates from SSM
 const restoredCertificates = await Promise.all(
-	certificates.map(async ([scope, certsMap, debug]) =>
+	certificates.map(async ([scopeContext, certsMap, debug]) =>
 		restoreCertificateFromSSM({ ssm, stackName: STACK_NAME })(
-			scope,
+			scopeContext,
 			certsMap,
 			debug,
 		),

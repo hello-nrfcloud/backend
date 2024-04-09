@@ -24,8 +24,9 @@ import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { putSettings, type Settings } from '../../nrfcloud/settings.js'
 import { isString } from '../../util/isString.js'
-import { Scope, settingsPath } from '../../settings/settings.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
+import { nrfCloudAccount } from '../../settings/scope.js'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot,
@@ -42,7 +43,6 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 		},
 	],
 	action: async (account, { remove }) => {
-		const scope = `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`
 		const fakeTenantParameter = `/${STACK_NAME}/${account}/fakeTenant`
 		if (remove === true) {
 			// check if has fake device
@@ -108,7 +108,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				new GetParametersByPathCommand({
 					Path: settingsPath({
 						stackName: STACK_NAME,
-						scope,
+						...nrfCloudAccount(account),
 					}),
 				}),
 			)

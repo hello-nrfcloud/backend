@@ -1,7 +1,7 @@
 import { describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { ParameterType, type SSMClient } from '@aws-sdk/client-ssm'
-import { Scope } from '../../../settings/settings.js'
+import { ScopeContexts } from '../../../settings/scope.js'
 import { caLocation } from '../../../bridge/caLocation.js'
 import path from 'node:path'
 import os from 'node:os'
@@ -30,7 +30,7 @@ void describe('storeCertificateInSSM()', () => {
 		})
 
 		await storeCertificateInSSM({ ssm, stackName: 'hello-nrfcloud' })(
-			Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT, // 'nRFCloudBridgeCertificate/MQTT',
+			ScopeContexts.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT, // 'nRFCloudBridgeCertificate/MQTT',
 			certsMap,
 		)
 

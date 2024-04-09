@@ -1,12 +1,12 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { Scope } from '../settings/settings.js'
+import { Scopes } from '../settings/scope.js'
 import { type Settings } from './settings.js'
 import {
 	type Settings as HealthCheckSettings,
 	getSettings as getHealthCheckSettings,
 } from './healthCheckSettings.js'
-import { getSettings } from '../settings/settings.js'
-import { getSettings as getnRFCloudSettings } from './settings.js'
+import { get } from '@bifravst/aws-ssm-settings-helpers'
+import { getSettings as getnRFCloudSettings } from '../nrfcloud/settings.js'
 
 export type AllNRFCloudSettings = {
 	nrfCloudSettings: Settings
@@ -22,10 +22,9 @@ export const getAllnRFCloudAccounts = async ({
 }): Promise<string[]> => [
 	...new Set(
 		Object.keys(
-			await getSettings({
-				ssm,
+			await get(ssm)({
 				stackName,
-				scope: Scope.NRFCLOUD_ACCOUNT_PREFIX,
+				scope: Scopes.NRFCLOUD_ACCOUNT_PREFIX,
 			})(),
 		).map((key) => key.split('/')[0] as string),
 	),

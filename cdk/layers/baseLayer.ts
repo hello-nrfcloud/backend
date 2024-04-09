@@ -16,5 +16,6 @@ export const pack = async (): Promise<PackedLayer> =>
 			'lodash-es',
 			'@middy/core',
 			'@hello.nrfcloud.com/lambda-helpers',
+			'@bifravst/aws-ssm-settings-helpers',
 		],
 	})

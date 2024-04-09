@@ -3,7 +3,6 @@ import {
 	aws_events_targets as EventTargets,
 	aws_events as Events,
 	aws_lambda as Lambda,
-	aws_iam as IAM,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -11,8 +10,8 @@ import type { BackendLambdas } from '../../BackendLambdas.js'
 import type { DeviceLastSeen } from '../DeviceLastSeen.js'
 import type { DeviceStorage } from '../DeviceStorage.js'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Scope } from '../../../settings/settings.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from '../settings.js'
 
 export class KPIs extends Construct {
 	constructor(
@@ -48,29 +47,7 @@ export class KPIs extends Construct {
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				STACK_NAME: Stack.of(this).stackName,
 			},
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}/*`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
-					],
-				}),
-			],
+			initialPolicy: [SettingsPermissions(Stack.of(this))],
 			layers,
 			...new LambdaLogGroup(this, 'lambdaLogs'),
 		})

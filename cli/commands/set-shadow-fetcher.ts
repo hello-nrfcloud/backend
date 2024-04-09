@@ -2,7 +2,8 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import { hashSHA1 } from '../../util/hashSHA1.js'
-import { Scope, deleteSettings, putSettings } from '../../settings/settings.js'
+import { ScopeContexts } from '../../settings/scope.js'
+import { remove, put } from '@bifravst/aws-ssm-settings-helpers'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const setShadowFetcherCommand = ({
@@ -22,10 +23,9 @@ export const setShadowFetcherCommand = ({
 		const modelHash = model === 'default' ? model : hashSHA1(model)
 		if (deleteFetcherConfig !== undefined) {
 			// Delete
-			const { name } = await deleteSettings({
-				ssm,
+			const { name } = await remove(ssm)({
 				stackName: STACK_NAME,
-				scope: Scope.STACK_CONFIG,
+				...ScopeContexts.STACK_CONFIG,
 			})({
 				property: modelHash,
 			})
@@ -47,10 +47,9 @@ export const setShadowFetcherCommand = ({
 			)
 		}
 
-		const { name } = await putSettings({
-			ssm,
+		const { name } = await put(ssm)({
 			stackName: STACK_NAME,
-			scope: Scope.STACK_CONFIG,
+			...ScopeContexts.STACK_CONFIG,
 		})({
 			property: modelHash,
 			value,

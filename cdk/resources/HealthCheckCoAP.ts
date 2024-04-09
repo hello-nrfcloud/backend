@@ -2,7 +2,6 @@ import {
 	Duration,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
-	aws_iam as IAM,
 	aws_lambda as Lambda,
 	Stack,
 } from 'aws-cdk-lib'
@@ -11,8 +10,8 @@ import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Scope } from '../../settings/settings.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from './settings.js'
 
 export class HealthCheckCoAP extends Construct {
 	public constructor(
@@ -65,29 +64,7 @@ export class HealthCheckCoAP extends Construct {
 				WEBSOCKET_URL: websocketAPI.websocketURI,
 				COAP_LAMBDA: coapLambda.functionName,
 			},
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}/*`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
-					],
-				}),
-			],
+			initialPolicy: [SettingsPermissions(Stack.of(this))],
 			layers,
 			...new LambdaLogGroup(this, 'healthCheckCoAPLogs'),
 		})

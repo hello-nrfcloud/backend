@@ -1,11 +1,10 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
+import { nrfCloudAccount } from '../settings/scope.js'
 import {
-	getSettings as getSSMSettings,
-	putSettings as putSSMSettings,
-	settingsPath,
-	deleteSettings as deleteSSMSettings,
-	Scope,
-} from '../settings/settings.js'
+	get as getSSMSettings,
+	put as putSSMSettings,
+	remove as deleteSSMSettings,
+} from '@bifravst/aws-ssm-settings-helpers'
 
 export const defaultApiEndpoint = new URL('https://api.nrfcloud.com')
 export const defaultCoAPEndpoint = new URL('coaps://coap.nrfcloud.com')
@@ -31,11 +30,9 @@ export const getSettings = ({
 	stackName: string
 	account: string
 }): (() => Promise<Settings>) => {
-	const scope = `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`
-	const settingsReader = getSSMSettings({
-		ssm,
+	const settingsReader = getSSMSettings(ssm)({
 		stackName,
-		scope,
+		...nrfCloudAccount(account),
 	})
 	return async (): Promise<Settings> => {
 		const p = await settingsReader()
@@ -90,10 +87,9 @@ export const getAPISettings = ({
 	stackName: string
 	account: string
 }): (() => Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>>) => {
-	const settingsReader = getSSMSettings({
-		ssm,
+	const settingsReader = getSSMSettings(ssm)({
 		stackName,
-		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
+		...nrfCloudAccount(account),
 	})
 	return async (): Promise<Pick<Settings, 'apiKey' | 'apiEndpoint'>> => {
 		const p = await settingsReader()
@@ -118,10 +114,9 @@ export const putSettings = ({
 	stackName: string
 	account: string
 }): ((settings: Partial<Settings>) => Promise<void>) => {
-	const settingsWriter = putSSMSettings({
-		ssm,
+	const settingsWriter = putSSMSettings(ssm)({
 		stackName,
-		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
+		...nrfCloudAccount(account),
 	})
 	return async (settings): Promise<void> => {
 		await Promise.all(
@@ -148,10 +143,9 @@ export const putSetting = ({
 	value: string,
 	deleteBeforeUpdate: boolean,
 ) => ReturnType<typeof settingsWriter>) => {
-	const settingsWriter = putSSMSettings({
-		ssm,
+	const settingsWriter = putSSMSettings(ssm)({
 		stackName,
-		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
+		...nrfCloudAccount(account),
 	})
 	return async (property, value, deleteBeforeUpdate) =>
 		settingsWriter({
@@ -160,17 +154,6 @@ export const putSetting = ({
 			deleteBeforeUpdate,
 		})
 }
-
-export const parameterName = (
-	stackName: string,
-	scope: string,
-	parameterName: keyof Settings,
-): string =>
-	settingsPath({
-		stackName,
-		scope,
-		property: parameterName,
-	})
 
 export const deleteSettings = ({
 	ssm,
@@ -181,10 +164,9 @@ export const deleteSettings = ({
 	stackName: string
 	account: string
 }): ((property: string) => ReturnType<typeof settingsDeleter>) => {
-	const settingsDeleter = deleteSSMSettings({
-		ssm,
+	const settingsDeleter = deleteSSMSettings(ssm)({
 		stackName,
-		scope: `${Scope.NRFCLOUD_ACCOUNT_PREFIX}/${account}`,
+		...nrfCloudAccount(account),
 	})
 	return async (property) => settingsDeleter({ property })
 }

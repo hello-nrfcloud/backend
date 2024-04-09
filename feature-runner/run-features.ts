@@ -11,12 +11,8 @@ import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendS
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
 import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import {
-	Scope,
-	deleteSettings,
-	getSettings,
-	putSettings,
-} from '../settings/settings.js'
+import { ScopeContexts } from '../settings/scope.js'
+import { remove, get, put } from '@bifravst/aws-ssm-settings-helpers'
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
@@ -49,20 +45,17 @@ const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
 })()
-const configWriter = putSettings({
-	ssm,
+const configWriter = put(ssm)({
 	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
+	...ScopeContexts.STACK_CONFIG,
 })
-const configRemover = deleteSettings({
-	ssm,
+const configRemover = remove(ssm)({
 	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
+	...ScopeContexts.STACK_CONFIG,
 })
-const configSettings = getSettings({
-	ssm,
+const configSettings = get(ssm)({
 	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
+	...ScopeContexts.STACK_CONFIG,
 })
 
 const db = new DynamoDBClient({})
