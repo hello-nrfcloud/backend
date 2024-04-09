@@ -294,18 +294,12 @@ jobs:
         if: failure()
         run: ./cli.sh logs -f ERROR
 
-      - run: echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
-        if: github.ref != 'refs/heads/saga'
-
-      - run: echo "BRANCH_NAME=saga" >> $GITHUB_ENV
-        if: github.ref == 'refs/heads/saga'
-
       - name: Trigger cleanup workflow
         if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run cleanup.yaml --ref ${{ env.BRANCH_NAME }} \
+          gh workflow run cleanup.yaml --ref ${{ github.ref_name }} \
             -F stackName=${{ env.STACK_NAME }} \
             -F mqtt_bridge_tag=${{ needs.mqtt-bridge-container.outputs.tag }} \
             -F coap_simulator_tag=${{ needs.coap-simulator-container.outputs.tag }} \
