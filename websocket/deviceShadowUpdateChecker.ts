@@ -1,7 +1,8 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { hashSHA1 } from '../util/hashSHA1.js'
-import { Scope, getSettingsOptional } from '../settings/settings.js'
+import { ScopeContexts } from '../settings/scope.js'
+import { maybe } from '@bifravst/aws-ssm-settings-helpers'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 
 // Format:
@@ -25,14 +26,7 @@ const log = logger('deviceShadowUpdateChecker')
 
 const jitter = 200 // The time we compensate for execution time
 const ssm = new SSMClient({})
-const stackConfig = getSettingsOptional<
-	ParameterConfig,
-	{ [k: string]: string }
->({
-	ssm,
-	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
-})
+const stackConfig = maybe(ssm)
 
 const notNull = <T>(value: T | null): value is T => {
 	return value !== null
@@ -84,11 +78,14 @@ export const parseConfig = (config: ParameterConfig): ScheduleConfig => {
 }
 
 const getScheduleConfig = async (): Promise<ScheduleConfig> => {
-	const parameterConfig = await stackConfig({})
+	const parameterConfig = await stackConfig<ParameterConfig>({
+		stackName: STACK_NAME,
+		...ScopeContexts.STACK_CONFIG,
+	})
 	log.info(`Fetching configuration from parameter store`, {
 		parameterConfig,
 	})
-	return parseConfig(parameterConfig)
+	return parseConfig(parameterConfig ?? {})
 }
 
 export const createDeviceUpdateChecker = async (

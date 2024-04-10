@@ -10,7 +10,7 @@ import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
 import {
 	updateSettings,
 	type Settings,
-} from '../../nrfcloud/healthCheckSettings.js'
+} from '../../settings/health-check/device.js'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'

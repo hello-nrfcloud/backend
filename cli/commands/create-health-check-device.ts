@@ -4,12 +4,12 @@ import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { devices } from '../../nrfcloud/devices.js'
+import { devices } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	updateSettings,
 	type Settings,
-} from '../../nrfcloud/healthCheckSettings.js'
-import { getAPISettings } from '../../nrfcloud/settings.js'
+} from '../../settings/health-check/device.js'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 import { ensureCertificateDir } from '@hello.nrfcloud.com/certificate-helpers/locations'

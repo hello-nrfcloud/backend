@@ -1,8 +1,7 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { getAPISettings } from '../../nrfcloud/settings.js'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { validatedFetch } from '../../nrfcloud/validatedFetch.js'
-import { Type } from '@sinclair/typebox'
+import { bulkOpsRequests } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import chalk from 'chalk'
 
 export const getNRFCloudBulkOpsStatus = ({
@@ -20,17 +19,10 @@ export const getNRFCloudBulkOpsStatus = ({
 			account,
 		})()
 
-		const vf = validatedFetch({
+		const maybeRequest = await bulkOpsRequests({
 			endpoint: apiEndpoint,
 			apiKey,
-		})
-
-		const maybeRequest = await vf(
-			{
-				resource: `bulk-ops-requests/${encodeURIComponent(bulkOpsId)}`,
-			},
-			BulkOpsRequest,
-		)
+		})(bulkOpsId)
 
 		if ('error' in maybeRequest) {
 			console.error(maybeRequest.error)
@@ -46,14 +38,4 @@ export const getNRFCloudBulkOpsStatus = ({
 		console.log(JSON.stringify(request, null, 2))
 	},
 	help: 'Check the status of a bulk operation',
-})
-
-const BulkOpsRequest = Type.Object({
-	bulkOpsRequestId: Type.String(), // e.g. '01EZZJVDQJPWT7V4FWNVDHNMM5'
-	status: Type.Union([
-		Type.Literal('PENDING'),
-		Type.Literal('IN_PROGRESS'),
-		Type.Literal('FAILED'),
-		Type.Literal('SUCCEEDED'),
-	]),
 })

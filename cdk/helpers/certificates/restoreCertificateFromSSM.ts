@@ -1,21 +1,22 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { type logFn } from '../../../cli/log.js'
-import { Scope, getSettingsOptional } from '../../../settings/settings.js'
 import { writeFilesFromMap } from './writeFilesFromMap.js'
+import { maybe } from '@bifravst/aws-ssm-settings-helpers'
+import { type ScopeContext } from '../../../settings/scope.js'
 
 export const restoreCertificateFromSSM =
 	({ ssm, stackName }: { ssm: SSMClient; stackName: string }) =>
 	async (
-		scope: Scope,
+		{ scope, context }: ScopeContext,
 		certificateLocations: Record<string, string>,
 		debug?: logFn,
 	): Promise<boolean> => {
-		debug?.(`Getting settings`, scope)
-		const settings = await getSettingsOptional<Record<string, string>, null>({
-			ssm,
+		debug?.(`Getting settings`, `${scope}/${context}`)
+		const settings = await maybe(ssm)({
 			stackName,
 			scope,
-		})(null)
+			context,
+		})
 		if (settings === null) {
 			debug?.(`No certificate stored in settings.`)
 			return false

@@ -8,13 +8,13 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { Scope } from '../../settings/settings.js'
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import type { DeviceStorage } from './DeviceStorage.js'
 import { IoTActionRole } from './IoTActionRole.js'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from './settings.js'
 
 /**
  * Resolve device geo location based on network information
@@ -70,29 +70,7 @@ export class SingleCellGeoLocation extends Construct {
 			},
 			layers,
 			...new LambdaLogGroup(this, 'fnLogs'),
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}/*`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
-					],
-				}),
-			],
+			initialPolicy: [SettingsPermissions(Stack.of(this))],
 		})
 		websocketEventBus.eventBus.grantPutEventsTo(fn)
 		deviceStorage.devicesTable.grantReadData(fn)

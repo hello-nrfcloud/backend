@@ -1,9 +1,9 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { table } from 'table'
-import { getAPISettings } from '../../nrfcloud/settings.js'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
+import { getAccountInfo } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 
 export const showNRFCloudAccount = ({
 	ssm,

@@ -9,17 +9,21 @@ import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { type Static } from '@sinclair/typebox'
 import { once } from 'lodash-es'
-import { get, store } from '../cellGeoLocation/SingleCellGeoLocationCache.js'
-import { cellId } from '../cellGeoLocation/cellId.js'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import { JSONPayload, validatedFetch } from '../nrfcloud/validatedFetch.js'
+import {
+	get,
+	store,
+	cellId,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/cellGeoLocation'
+import {
+	groundFix,
+	serviceToken,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
 import { loggingFetch } from './loggingFetch.js'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { GroundFix } from './nrfcloud/groundFix.js'
-import { serviceToken } from './nrfcloud/serviceToken.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -48,12 +52,12 @@ const cache = store({
 	TableName: cacheTableName,
 })
 
-const allAccountsSettings = once(getAllAccountsSettings({ ssm, stackName }))
-const fetchToken = serviceToken(trackFetch, (error) => {
-	log.error(`Acquiring service token failed`, {
-		error,
-	})
-})
+const allAccountsSettings = once(async () =>
+	getAllAccountsSettings({ ssm, stackName }),
+)
+const fetchToken = once(async (args: Parameters<typeof serviceToken>[0]) =>
+	serviceToken(args)(),
+)
 
 /**
  * Handle configure device request
@@ -86,9 +90,18 @@ const h = async (event: {
 	if (settings === undefined) {
 		throw new Error(`nRF Cloud settings(${account}) are not configured`)
 	}
-
-	const { apiEndpoint, apiKey } = settings.nrfCloudSettings
-	const locationServiceToken = await fetchToken({ apiEndpoint, apiKey })
+	const { apiEndpoint, apiKey } = settings
+	const locationServiceToken = await fetchToken({
+		endpoint: apiEndpoint,
+		apiKey,
+	})
+	if ('error' in locationServiceToken) {
+		throw new Error(`Acquiring service token failed.`)
+	}
+	const fetchLocation = groundFix({
+		apiKey: locationServiceToken.token,
+		endpoint: apiEndpoint,
+	})
 
 	const {
 		ts,
@@ -114,26 +127,13 @@ const h = async (event: {
 		}
 		track('single-cell:cached', MetricUnit.Count, 1)
 	} else {
-		const body = {
-			lte: [
-				{
-					mcc: parseInt(mccmnc.toString().slice(0, -2), 10),
-					mnc: mccmnc.toString().slice(-2),
-					eci: cellID,
-					tac: areaCode,
-					rsrp,
-				},
-			],
-		}
-
-		const vf = validatedFetch(
-			{ endpoint: apiEndpoint, apiKey: locationServiceToken },
-			trackFetch,
-		)
-		const maybeResult = await vf(
-			{ resource: 'location/ground-fix', payload: JSONPayload(body) },
-			GroundFix,
-		)
+		const maybeResult = await fetchLocation({
+			mcc: parseInt(mccmnc.toString().slice(0, -2), 10),
+			mnc: mccmnc.toString().slice(-2),
+			eci: cellID,
+			tac: areaCode,
+			rsrp,
+		})
 
 		if ('error' in maybeResult) {
 			track('single-cell:error', MetricUnit.Count, 1)

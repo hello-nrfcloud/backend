@@ -7,9 +7,12 @@ import { dailyActiveDevices } from '../kpis/dailyActiveDevices.js'
 import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { getAllnRFCloudAccounts } from '../nrfcloud/allAccounts.js'
-import { getCurrentMonthlyCosts } from '../nrfcloud/getCurrentMonthlyCosts.js'
-import { getAPISettings, type Settings } from '../nrfcloud/settings.js'
+import { getAllAccounts } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { getCurrentMonthlyCosts } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import {
+	getAPISettings,
+	type Settings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',
@@ -48,30 +51,28 @@ const h = async () => {
 			},
 		),
 		// Current month's nRF Cloud costs
-		...(await getAllnRFCloudAccounts({ ssm, stackName })).map(
-			async (account) => {
-				const settingsPromise =
-					accountSettings[account] ??
-					getAPISettings({
-						ssm,
-						stackName,
-						account,
-					})()
-				accountSettings[account] = settingsPromise
-				const { apiKey, apiEndpoint } = await settingsPromise
-				const maybeCosts = await getCurrentMonthlyCosts({
-					apiKey,
-					endpoint: apiEndpoint,
+		...(await getAllAccounts({ ssm, stackName })).map(async (account) => {
+			const settingsPromise =
+				accountSettings[account] ??
+				getAPISettings({
+					ssm,
+					stackName,
+					account,
 				})()
-				if ('error' in maybeCosts) {
-					console.error(maybeCosts.error)
-				} else {
-					const costs = maybeCosts.currentMonthTotalCost
-					console.log({ [`${account}:costs`]: costs })
-					track(`nrfCloudMonthlyCosts:${account}`, MetricUnit.Count, costs)
-				}
-			},
-		),
+			accountSettings[account] = settingsPromise
+			const { apiKey, apiEndpoint } = await settingsPromise
+			const maybeCosts = await getCurrentMonthlyCosts({
+				apiKey,
+				endpoint: apiEndpoint,
+			})()
+			if ('error' in maybeCosts) {
+				console.error(maybeCosts.error)
+			} else {
+				const costs = maybeCosts.currentMonthTotalCost
+				console.log({ [`${account}:costs`]: costs })
+				track(`nrfCloudMonthlyCosts:${account}`, MetricUnit.Count, costs)
+			}
+		}),
 	])
 }
 

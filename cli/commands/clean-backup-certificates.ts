@@ -6,8 +6,9 @@ import {
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
-import { Scope, settingsPath } from '../../settings/settings.js'
+import { ScopeContexts } from '../../settings/scope.js'
 import type { CommandDefinition } from './CommandDefinition.js'
+import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
 
 export const cleanBackupCertificates = ({
 	ssm,
@@ -17,15 +18,15 @@ export const cleanBackupCertificates = ({
 	command: 'clean-backup-certificates',
 	action: async () => {
 		console.debug(chalk.magenta(`Deleting backup certificates`))
-		for (const scope of [
-			Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
-			Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+		for (const scopeContext of [
+			ScopeContexts.NRFCLOUD_BRIDGE_CERTIFICATE_CA,
+			ScopeContexts.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
 		]) {
 			const parameters = await ssm.send(
 				new GetParametersByPathCommand({
 					Path: settingsPath({
 						stackName: STACK_NAME,
-						scope,
+						...scopeContext,
 					}),
 					Recursive: true,
 				}),

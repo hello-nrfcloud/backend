@@ -9,14 +9,17 @@ import assert from 'node:assert/strict'
 import { registerDevice } from '../devices/registerDevice.js'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import type { Settings } from '../nrfcloud/settings.js'
+import {
+	getAllAccountsSettings,
+	type Settings as NrfCloudSettings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
 } from './health-check/checkMessageFromWebsocket.js'
 import { createPublicKey, createPrivateKey } from 'node:crypto'
 import { parseDateTimeFromLog } from './health-check/parseDateTimeFromLog.js'
+import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.js'
 
 const { DevicesTableName, stackName, websocketUrl, coapLambda } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -35,24 +38,27 @@ const { track, metrics } = metricsForComponent('healthCheckForCoAP')
 const allAccountsSettings = await getAllAccountsSettings({
 	ssm,
 	stackName,
-})()
+})
+
+const allAccountsHealthCheckSettings = await getAllAccountsHealthCheckSettings({
+	ssm,
+	stackName,
+})
 
 await Promise.all(
-	Object.entries(allAccountsSettings).map(async ([account, settings]) => {
-		if ('healthCheckSettings' in settings) {
+	Object.entries(allAccountsHealthCheckSettings).map(
+		async ([account, settings]) => {
 			await registerDevice({
 				db,
 				devicesTableName: DevicesTableName,
 			})({
-				id: settings.healthCheckSettings.healthCheckClientId,
-				model: settings.healthCheckSettings.healthCheckModel,
-				fingerprint: settings.healthCheckSettings.healthCheckFingerPrint,
+				id: settings.healthCheckClientId,
+				model: settings.healthCheckModel,
+				fingerprint: settings.healthCheckFingerPrint,
 				account,
 			})
-		} else {
-			log.error(`${account} does not have health check settings`)
-		}
-	}),
+		},
+	),
 )
 
 const publishDeviceMessageOnCoAP =
@@ -60,7 +66,7 @@ const publishDeviceMessageOnCoAP =
 		nrfCloudSettings,
 		deviceProperties,
 	}: {
-		nrfCloudSettings: Settings
+		nrfCloudSettings: NrfCloudSettings
 		deviceProperties: {
 			deviceId: string
 			publicKey: string
@@ -117,103 +123,101 @@ const h = async (): Promise<void> => {
 	>()
 	track('checkMessageFromWebsocket', MetricUnit.Count, 1)
 	await Promise.all(
-		Object.entries(allAccountsSettings).map(async ([account, settings]) => {
-			try {
-				if (
-					!('healthCheckSettings' in settings) ||
-					!('nrfCloudSettings' in settings)
-				)
-					throw new Error(`No health check settings for ${account}`)
-
-				const {
-					nrfCloudSettings,
-					healthCheckSettings: {
+		Object.entries(allAccountsHealthCheckSettings).map(
+			async ([account, healthCheckSettings]) => {
+				try {
+					const {
 						healthCheckFingerPrint: fingerprint,
 						healthCheckClientId: deviceId,
 						healthCheckClientCert,
 						healthCheckPrivateKey,
-					},
-				} = settings
+					} = healthCheckSettings
 
-				let certificates: KeyPair
-				if (cacheAccountCertificates.has(account) === false) {
-					const publicKey = createPublicKey(healthCheckClientCert)
-						.export({
-							format: 'pem',
-							type: 'spki',
-						})
-						.toString()
-					const privateKey = createPrivateKey(healthCheckPrivateKey)
-						.export({
-							format: 'pem',
-							type: 'pkcs8',
-						})
-						.toString()
-					certificates = { publicKey, privateKey }
-					cacheAccountCertificates.set(account, certificates)
-				} else {
-					certificates = cacheAccountCertificates.get(account) as KeyPair
-				}
+					let certificates: KeyPair
+					if (cacheAccountCertificates.has(account) === false) {
+						const publicKey = createPublicKey(healthCheckClientCert)
+							.export({
+								format: 'pem',
+								type: 'spki',
+							})
+							.toString()
+						const privateKey = createPrivateKey(healthCheckPrivateKey)
+							.export({
+								format: 'pem',
+								type: 'pkcs8',
+							})
+							.toString()
+						certificates = { publicKey, privateKey }
+						cacheAccountCertificates.set(account, certificates)
+					} else {
+						certificates = cacheAccountCertificates.get(account) as KeyPair
+					}
 
-				await checkMessageFromWebsocket({
-					endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
-					timeoutMS: 25000,
-					onConnect: async () => {
-						const data = {
-							ts: Date.now(),
-							temperature: Number((Math.random() * 20).toFixed(1)),
-						}
-						const coapTs = await publishDeviceMessageOnCoAP({
-							nrfCloudSettings,
-							deviceProperties: {
-								deviceId,
-								...certificates,
-							},
-						})({
-							appId: 'TEMP',
-							messageType: 'DATA',
-							ts: data.ts,
-							data: `${data.temperature}`,
-						})
-						store.set(account, { ...data, coapTs: coapTs?.getTime() ?? null })
-					},
-					validate: async (message) => {
-						try {
-							const data = store.get(account)
-							if (data === undefined) return ValidateResponse.skip
-
-							const messageObj = JSON.parse(message)
-							log.debug(`ws incoming message`, { messageObj })
-							const expectedMessage = {
-								'@context':
-									'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/airTemperature',
-								ts: data.ts,
-								c: data.temperature,
+					await checkMessageFromWebsocket({
+						endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
+						timeoutMS: 25000,
+						onConnect: async () => {
+							const data = {
+								ts: Date.now(),
+								temperature: Number((Math.random() * 20).toFixed(1)),
 							}
+							const coapTs = await publishDeviceMessageOnCoAP({
+								nrfCloudSettings: allAccountsSettings[
+									account
+								] as NrfCloudSettings,
+								deviceProperties: {
+									deviceId,
+									...certificates,
+								},
+							})({
+								appId: 'TEMP',
+								messageType: 'DATA',
+								ts: data.ts,
+								data: `${data.temperature}`,
+							})
+							store.set(account, { ...data, coapTs: coapTs?.getTime() ?? null })
+						},
+						validate: async (message) => {
+							try {
+								const data = store.get(account)
+								if (data === undefined) return ValidateResponse.skip
 
-							if (messageObj['@context'] !== expectedMessage['@context'])
-								return ValidateResponse.skip
+								const messageObj = JSON.parse(message)
+								log.debug(`ws incoming message`, { messageObj })
+								const expectedMessage = {
+									'@context':
+										'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/airTemperature',
+									ts: data.ts,
+									c: data.temperature,
+								}
 
-							track(
-								`receivingMessageDuration`,
-								MetricUnit.Seconds,
-								(Date.now() - (data.coapTs ?? data.ts)) / 1000,
-							)
-							assert.deepEqual(messageObj, expectedMessage)
-							return ValidateResponse.valid
-						} catch (error) {
-							log.error(`validate error`, { error, account })
+								if (messageObj['@context'] !== expectedMessage['@context'])
+									return ValidateResponse.skip
 
-							return ValidateResponse.invalid
-						}
-					},
-				})
-				track(`success`, MetricUnit.Count, 1)
-			} catch (error) {
-				log.error(`health check error`, { error, account })
-				track('fail', MetricUnit.Count, 1)
-			}
-		}),
+								track(
+									`receivingMessageDuration`,
+									MetricUnit.Seconds,
+									(Date.now() - (data.coapTs ?? data.ts)) / 1000,
+								)
+								assert.deepEqual(messageObj, expectedMessage)
+								return ValidateResponse.valid
+							} catch (error) {
+								log.error(`validate error`, { error, account })
+
+								return ValidateResponse.invalid
+							}
+						},
+					})
+					track(`success`, MetricUnit.Count, 1)
+				} catch (error) {
+					log.error(`health check error`, {
+						error: (error as Error).message,
+						account,
+					})
+					track('fail', MetricUnit.Count, 1)
+				}
+			},
+		),
 	)
 }
 

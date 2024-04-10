@@ -25,7 +25,6 @@ import { WebsocketAPI } from '../resources/WebsocketAPI.js'
 import { KPIs } from '../resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
 import { ConfigureDevice } from '../resources/ConfigureDevice.js'
-import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
 import { SingleCellGeoLocation } from '../resources/SingleCellGeoLocation.js'
 import { WebsocketConnectionsTable } from '../resources/WebsocketConnectionsTable.js'
 import { WebsocketEventBus } from '../resources/WebsocketEventBus.js'
@@ -56,7 +55,7 @@ export class BackendStack extends Stack {
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
-			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
+			nRFCloudAccounts: Array<string>
 			mqttBridgeContainerTag: string
 			coapSimulatorContainerTag: string
 			gitHubOICDProviderArn: string

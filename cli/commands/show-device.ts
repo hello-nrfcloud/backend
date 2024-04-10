@@ -3,11 +3,13 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { table } from 'table'
 import { getDevice } from '../../devices/getDevice.js'
-import { devices } from '../../nrfcloud/devices.js'
-import { getAPISettings } from '../../nrfcloud/settings.js'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
-import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
+import {
+	getAccountInfo,
+	devices,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 
 export const showDeviceCommand = ({
 	ssm,

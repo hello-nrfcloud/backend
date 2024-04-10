@@ -14,8 +14,8 @@ import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 import { getDevice as getDeviceFromIndex } from '../../devices/getDevice.js'
 import { getAttributesForDevice } from '../../devices/getAttributesForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
-import type { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
 import { registerUnsupportedDevice } from '../../devices/registerUnsupportedDevice.js'
+import type { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 const createDeviceForModel = ({
 	db,
@@ -163,9 +163,7 @@ const createUnsupportedDevice = ({
 	)
 
 const publishDeviceMessage = (
-	allAccountSettings: Awaited<
-		ReturnType<Awaited<ReturnType<typeof getAllAccountsSettings>>>
-	>,
+	allAccountSettings: Awaited<ReturnType<typeof getAllAccountsSettings>>,
 ) =>
 	regExpMatchedStep(
 		{
@@ -179,7 +177,7 @@ const publishDeviceMessage = (
 		async ({ match: { id, topic }, log: { progress, error }, step }) => {
 			const message = JSON.parse(codeBlockOrThrow(step).code)
 
-			const nRFCloudSettings = allAccountSettings['nordic']?.nrfCloudSettings
+			const nRFCloudSettings = allAccountSettings['nordic']
 			if (nRFCloudSettings === undefined) {
 				throw new Error('No default nRF Cloud settings (nordic)')
 			}
@@ -221,9 +219,7 @@ const publishDeviceMessage = (
 	)
 
 export const steps = (
-	allAccountSettings: Awaited<
-		ReturnType<Awaited<ReturnType<typeof getAllAccountsSettings>>>
-	>,
+	allAccountSettings: Awaited<ReturnType<typeof getAllAccountsSettings>>,
 	db: DynamoDBClient,
 	{
 		devicesTableFingerprintIndexName,

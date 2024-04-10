@@ -4,7 +4,7 @@ import {
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
-import type { DeviceShadowType } from './DeviceShadow.js'
+import type { DeviceShadowType } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 
 /**
  * Store the updated shadow in DynamoDB for sending it right after a client connects

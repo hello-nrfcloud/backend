@@ -13,10 +13,10 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Scope } from '../../settings/settings.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from './settings.js'
 
 export class DeviceShadow extends Construct {
 	public readonly deviceShadowTable: DynamoDB.ITable
@@ -131,29 +131,7 @@ export class DeviceShadow extends Construct {
 				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				DEVICE_SHADOW_TABLE_NAME: this.deviceShadowTable.tableName,
 			},
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['ssm:GetParametersByPath', 'ssm:GetParameter'],
-					resources: [
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/${
-							Scope.NRFCLOUD_ACCOUNT_PREFIX
-						}/*`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts`,
-						`arn:aws:ssm:${Stack.of(this).region}:${
-							Stack.of(this).account
-						}:parameter/${Stack.of(this).stackName}/nRFCloud/accounts/*`,
-					],
-				}),
-			],
+			initialPolicy: [SettingsPermissions(Stack.of(this))],
 			layers,
 			...new LambdaLogGroup(this, 'fetchDeviceShadowLogs'),
 		})

@@ -11,7 +11,6 @@ import {
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
-import { getAllAccountsSettings } from '../../nrfcloud/allAccounts.js'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 
 import { parseMockRequest } from './parseMockRequest.js'
@@ -27,6 +26,7 @@ import { parseMockResponse } from './parseMockResponse.js'
 import { toPairs } from './toPairs.js'
 import pRetry from 'p-retry'
 import { sortQueryString } from '@bifravst/http-api-mock/sortQueryString'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 export const steps = ({
 	db,
@@ -322,17 +322,13 @@ ${data}
 			const allNRFCloudSettings = await getAllAccountsSettings({
 				ssm,
 				stackName,
-			})()
+			})
 			const allAccountsAPKeys = Object.entries(allNRFCloudSettings).reduce(
 				(result, [account, settings]) => {
-					if ('nrfCloudSettings' in settings) {
-						return {
-							...result,
-							[account]: settings['nrfCloudSettings'].apiKey,
-						}
+					return {
+						...result,
+						[account]: settings.apiKey,
 					}
-
-					return result
 				},
 				{} as Record<string, string>,
 			)

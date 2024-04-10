@@ -10,13 +10,7 @@ import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import {
-	Scope,
-	deleteSettings,
-	getSettings,
-	putSettings,
-} from '../settings/settings.js'
+import { remove, get, put } from '@bifravst/aws-ssm-settings-helpers'
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
@@ -26,6 +20,8 @@ import { websocketStepRunners } from './steps/websocket.js'
 import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from './steps/REST.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { ScopeContexts } from '../settings/scope.js'
 
 const { responsesTableName, requestsTableName } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',
@@ -48,21 +44,18 @@ const backendConfig = await stackOutput(
 const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
-})()
-const configWriter = putSettings({
-	ssm,
-	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
 })
-const configRemover = deleteSettings({
-	ssm,
+const configWriter = put(ssm)({
 	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
+	...ScopeContexts.STACK_CONFIG,
 })
-const configSettings = getSettings({
-	ssm,
+const configRemover = remove(ssm)({
 	stackName: STACK_NAME,
-	scope: Scope.STACK_CONFIG,
+	...ScopeContexts.STACK_CONFIG,
+})
+const configSettings = get(ssm)({
+	stackName: STACK_NAME,
+	...ScopeContexts.STACK_CONFIG,
 })
 
 const db = new DynamoDBClient({})

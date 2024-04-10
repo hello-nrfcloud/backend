@@ -7,7 +7,7 @@ import {
 	deleteSettings,
 	putSetting,
 	type Settings,
-} from '../../nrfcloud/settings.js'
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 export const configureRFCloudAccountCommand = ({
 	ssm,

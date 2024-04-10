@@ -11,9 +11,8 @@ import { ensureCA } from '../bridge/ensureCA.js'
 import { ensureMQTTBridgeCredentials } from '../bridge/ensureMQTTBridgeCredentials.js'
 import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
 import { debug, type logFn } from '../cli/log.js'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import pJSON from '../package.json'
-import { Scope } from '../settings/settings.js'
+import { getAllAccounts } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { BackendApp } from './BackendApp.js'
 import { ensureGitHubOIDCProvider } from '@bifravst/ci/ensureGitHubOIDCProvider'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'
@@ -23,6 +22,7 @@ import { pack as packBaseLayer } from './layers/baseLayer.js'
 import { pack as packHealthCheckLayer } from './layers/healthCheckLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { STACK_NAME } from './stacks/stackConfig.js'
+import { ScopeContexts, type ScopeContext } from '../settings/scope.js'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -56,19 +56,19 @@ const caDebug = debug('CA certificate')
 const certificates = [
 	// MQTT certificate
 	[
-		Scope.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
+		ScopeContexts.NRFCLOUD_BRIDGE_CERTIFICATE_MQTT,
 		mqttBridgeCertificateFiles,
 		mqttBridgeDebug,
 	],
 	// CA certificate
-	[Scope.NRFCLOUD_BRIDGE_CERTIFICATE_CA, caCertificateFiles, caDebug],
-] as [Scope, Record<string, string>, logFn][]
+	[ScopeContexts.NRFCLOUD_BRIDGE_CERTIFICATE_CA, caCertificateFiles, caDebug],
+] as [ScopeContext, Record<string, string>, logFn][]
 
 // Restore message bridge certificates from SSM
 const restoredCertificates = await Promise.all(
-	certificates.map(async ([scope, certsMap, debug]) =>
+	certificates.map(async ([scopeContext, certsMap, debug]) =>
 		restoreCertificateFromSSM({ ssm, stackName: STACK_NAME })(
-			scope,
+			scopeContext,
 			certsMap,
 			debug,
 		),
@@ -109,16 +109,16 @@ const { mqttBridgeContainerTag, coapSimulatorContainerTag } = fromEnv({
 })(process.env)
 
 // Fetch all the configured nRF Cloud Accounts
-const nRFCloudAccounts = await getAllAccountsSettings({
+const nRFCloudAccounts = await getAllAccounts({
 	ssm,
 	stackName: STACK_NAME,
-})()
+})
 
 new BackendApp({
 	lambdaSources: await packBackendLambdas(),
 	layer: await packBaseLayer(),
 	healthCheckLayer: await packHealthCheckLayer(),
-	iotEndpoint: await getIoTEndpoint({ iot })(),
+	iotEndpoint: await getIoTEndpoint({ iot }),
 	mqttBridgeCertificate,
 	caCertificate,
 	nRFCloudAccounts,

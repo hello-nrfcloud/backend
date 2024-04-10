@@ -1,10 +1,6 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import {
-	Scope,
-	deleteSettings,
-	getSettings,
-	putSettings,
-} from '../settings/settings.js'
+import { ScopeContexts } from '../scope.js'
+import { remove, get, put } from '@bifravst/aws-ssm-settings-helpers'
 
 export type Settings = {
 	simulatorDownloadURL: URL
@@ -18,9 +14,9 @@ export const getCoAPHealthCheckSettings = async ({
 }): Promise<Settings> => ({
 	simulatorDownloadURL: new URL(
 		(
-			await getSettings<{
+			await get(ssm)<{
 				simulatorDownloadURL: string
-			}>({ ssm, stackName, scope: Scope.STACK_COAP_HEALTH_CHECK })()
+			}>({ stackName, ...ScopeContexts.STACK_COAP_HEALTH_CHECK })()
 		).simulatorDownloadURL,
 	),
 })
@@ -35,7 +31,7 @@ export const setCoAPHealthCheckSettings =
 		 */
 		deleteBeforeUpdate?: boolean,
 	): Promise<{ name: string }> =>
-		putSettings({ ssm, stackName, scope: Scope.STACK_COAP_HEALTH_CHECK })({
+		put(ssm)({ stackName, ...ScopeContexts.STACK_COAP_HEALTH_CHECK })({
 			property,
 			value: value.toString(),
 			deleteBeforeUpdate,
@@ -44,6 +40,9 @@ export const setCoAPHealthCheckSettings =
 export const deleteCoAPHealthCheckSettings =
 	({ ssm, stackName }: { ssm: SSMClient; stackName: string }) =>
 	async (property: keyof Settings): Promise<{ name: string }> =>
-		deleteSettings({ ssm, stackName, scope: Scope.STACK_COAP_HEALTH_CHECK })({
+		remove(ssm)({
+			stackName,
+			...ScopeContexts.STACK_COAP_HEALTH_CHECK,
+		})({
 			property,
 		})
