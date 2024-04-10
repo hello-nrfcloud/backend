@@ -9,7 +9,7 @@ import { connectionsRepository } from '../websocket/connectionsRepository.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
-import { get } from '../nrfcloud/deviceShadowRepo.js'
+import { get } from '../devices/deviceShadowRepo.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 

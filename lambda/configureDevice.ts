@@ -15,11 +15,11 @@ import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { Static } from '@sinclair/typebox'
 import { once } from 'lodash-es'
-import { slashless } from '../util/slashless.js'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { loggingFetch } from './loggingFetch.js'
 import type { Configuration } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { updateDeviceShadow } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 
 type Request = Omit<WebsocketPayload, 'message'> & {
 	message: {
@@ -51,24 +51,17 @@ const getAllNRFCloudAPIConfigs: () => Promise<
 	const allAccountsSettings = await getAllAccountsSettings({
 		ssm,
 		stackName,
-	})()
+	})
 	return Object.entries(allAccountsSettings).reduce(
-		(result, [account, settings]) => {
-			if ('nrfCloudSettings' in settings) {
-				return {
-					...result,
-					[account]: {
-						apiKey: settings.nrfCloudSettings.apiKey,
-						apiEndpoint: new URL(
-							settings.nrfCloudSettings.apiEndpoint ??
-								'https://api.nrfcloud.com/',
-						),
-					},
-				}
-			}
-
-			return result
-		},
+		(result, [account, settings]) => ({
+			...result,
+			[account]: {
+				apiKey: settings.apiKey,
+				apiEndpoint: new URL(
+					settings.apiEndpoint ?? 'https://api.nrfcloud.com/',
+				),
+			},
+		}),
 		{},
 	)
 })
@@ -119,27 +112,20 @@ const h = async (
 		config.activeWaitTime = updateIntervalSeconds
 	}
 
-	const res = await trackFetch(
-		new URL(
-			`${slashless(apiEndpoint)}/v1/devices/${encodeURIComponent(
-				deviceId,
-			)}/state`,
-		),
+	const update = updateDeviceShadow(
 		{
-			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${apiKey}`,
-			},
-			body: JSON.stringify({
-				desired: {
-					config,
-				},
-			}),
+			endpoint: apiEndpoint,
+			apiKey,
 		},
+		trackFetch,
 	)
+	const res = await update(deviceId, {
+		desired: {
+			config,
+		},
+	})
 
-	if (res.ok) {
+	if ('ok' in res) {
 		log.debug(`Accepted`)
 		const message: Static<typeof DeviceConfigured> = {
 			...event.detail.message.request,
@@ -163,7 +149,7 @@ const h = async (
 		const error = BadRequestError({
 			id: event.detail.message.request['@id'],
 			title: `Configuration update failed`,
-			detail: `${res.status}: ${await res.text()}`,
+			detail: res.error.message,
 		})
 		log.error(`Update failed`, error)
 		await eventBus.putEvents({

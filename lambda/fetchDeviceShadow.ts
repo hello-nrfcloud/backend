@@ -8,10 +8,13 @@ import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, groupBy, once, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import { store } from '../nrfcloud/deviceShadowRepo.js'
-import { deviceShadowFetcher } from '../nrfcloud/getDeviceShadowFromnRFCloud.js'
-import { defaultApiEndpoint } from '../nrfcloud/settings.js'
+import { store } from '../devices/deviceShadowRepo.js'
+import { getDeviceShadow } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import {
+	defaultApiEndpoint,
+	getAllAccountsSettings as getAllNRFCloudAccountSettings,
+	type Settings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
@@ -22,6 +25,7 @@ import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import { loggingFetch } from './loggingFetch.js'
+import { getAllAccountsSettings } from '../settings/health-check/device.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
@@ -57,17 +61,15 @@ const connectionsRepo = connectionsRepository(
 const ssm = new SSMClient({})
 
 // Make sure to call it in the handler, so the AWS Parameters and Secrets Lambda Extension is ready.
-const getAllNRFCloudAccountSettings = once(
-	getAllAccountsSettings({
+const allNRFCloudAccountSettings = once(async () =>
+	getAllNRFCloudAccountSettings({
 		ssm,
 		stackName,
 	}),
 )
-const getAllHealthCheckClientIds = once(async () => {
-	const settings = await getAllNRFCloudAccountSettings()
-	return Object.values(settings)
-		.map((settings) => settings?.healthCheckSettings?.healthCheckClientId)
-		.filter((x) => x !== undefined)
+const allHealthCheckClientIds = once(async () => {
+	const settings = await getAllAccountsSettings({ ssm, stackName })
+	return Object.values(settings).map((settings) => settings.healthCheckClientId)
 })
 
 const send = sendShadowToConnection({
@@ -88,8 +90,8 @@ const h = async (): Promise<void> => {
 			return
 		}
 
-		const allNRFCloudSettings = await getAllNRFCloudAccountSettings()
-		const healthCheckClientIds = await getAllHealthCheckClientIds()
+		const allNRFCloudSettings = await allNRFCloudAccountSettings()
+		const healthCheckClientIds = await allHealthCheckClientIds()
 
 		const executionTime = new Date()
 
@@ -140,11 +142,12 @@ const h = async (): Promise<void> => {
 				Object.entries(
 					groupBy(devicesToCheckShadowUpdate, (device) => device.account),
 				).map(async ([account, devices]) => {
-					const { apiKey, apiEndpoint } =
-						allNRFCloudSettings[account]?.nrfCloudSettings ?? {}
+					const { apiKey, apiEndpoint } = allNRFCloudSettings[
+						account
+					] as Settings
 					if (apiKey === undefined) return []
 
-					const deviceShadow = deviceShadowFetcher(
+					const deviceShadow = getDeviceShadow(
 						{
 							endpoint:
 								apiEndpoint !== undefined

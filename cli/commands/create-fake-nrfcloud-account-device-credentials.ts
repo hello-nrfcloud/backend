@@ -22,11 +22,15 @@ import { chunk } from 'lodash-es'
 import { randomUUID } from 'node:crypto'
 import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
-import { putSettings, type Settings } from '../../nrfcloud/settings.js'
+import {
+	NRFCLOUD_ACCOUNT_SCOPE,
+	putSettings,
+	type Settings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
-import { nrfCloudAccount } from '../../settings/scope.js'
+import { nrfCloudAccount } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot,
@@ -108,7 +112,8 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 				new GetParametersByPathCommand({
 					Path: settingsPath({
 						stackName: STACK_NAME,
-						...nrfCloudAccount(account),
+						scope: NRFCLOUD_ACCOUNT_SCOPE,
+						context: nrfCloudAccount(account),
 					}),
 				}),
 			)
@@ -170,7 +175,7 @@ export const createFakeNrfCloudAccountDeviceCredentials = ({
 			accountDeviceClientCert: credentials.certificatePem,
 			accountDevicePrivateKey: pk,
 			accountDeviceClientId: `account-${tenantId}`,
-			mqttEndpoint: await getIoTEndpoint({ iot })(),
+			mqttEndpoint: await getIoTEndpoint({ iot }),
 			mqttTopicPrefix: `prod/${tenantId}/`,
 		}
 		await putSettings({

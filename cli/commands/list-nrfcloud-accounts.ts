@@ -2,7 +2,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { table } from 'table'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { getAllnRFCloudAccounts } from '../../nrfcloud/allAccounts.js'
+import { getAllAccounts } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 export const listnRFCloudAccountsCommand = ({
 	ssm,
@@ -13,7 +13,7 @@ export const listnRFCloudAccountsCommand = ({
 }): CommandDefinition => ({
 	command: 'list-nrfcloud-accounts',
 	action: async () => {
-		const accounts = await getAllnRFCloudAccounts({
+		const accounts = await getAllAccounts({
 			ssm,
 			stackName,
 		})

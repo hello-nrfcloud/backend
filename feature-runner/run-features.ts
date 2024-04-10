@@ -10,8 +10,6 @@ import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import { ScopeContexts } from '../settings/scope.js'
 import { remove, get, put } from '@bifravst/aws-ssm-settings-helpers'
 import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
@@ -22,6 +20,8 @@ import { websocketStepRunners } from './steps/websocket.js'
 import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from './steps/REST.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { ScopeContexts } from '../settings/scope.js'
 
 const { responsesTableName, requestsTableName } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',
@@ -44,7 +44,7 @@ const backendConfig = await stackOutput(
 const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
-})()
+})
 const configWriter = put(ssm)({
 	stackName: STACK_NAME,
 	...ScopeContexts.STACK_CONFIG,

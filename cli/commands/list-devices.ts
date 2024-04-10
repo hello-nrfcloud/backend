@@ -1,6 +1,6 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { devices as devicesApi } from '../../nrfcloud/devices.js'
-import { getAPISettings } from '../../nrfcloud/settings.js'
+import { devices as devicesApi } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { table } from 'table'
 import { lastSeenRepo } from '../../lastSeen/lastSeenRepo.js'

@@ -122,6 +122,7 @@
     "@bifravst/run": "1.2.0",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
     "@hello.nrfcloud.com/lambda-helpers": "1.0.0",
+    "@hello.nrfcloud.com/nrfcloud-api-helpers": "1.2.1",
     "@hello.nrfcloud.com/proto": "6.5.0",
     "@middy/core": "5.3.2",
     "@nordicsemiconductor/from-env": "3.0.1",

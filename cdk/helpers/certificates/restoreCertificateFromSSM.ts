@@ -2,7 +2,7 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import { type logFn } from '../../../cli/log.js'
 import { writeFilesFromMap } from './writeFilesFromMap.js'
 import { maybe } from '@bifravst/aws-ssm-settings-helpers'
-import type { ScopeContext } from '../../../settings/scope.js'
+import { type ScopeContext } from '../../../settings/scope.js'
 
 export const restoreCertificateFromSSM =
 	({ ssm, stackName }: { ssm: SSMClient; stackName: string }) =>

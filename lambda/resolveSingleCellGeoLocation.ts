@@ -11,8 +11,10 @@ import { type Static } from '@sinclair/typebox'
 import { once } from 'lodash-es'
 import { get, store } from '../cellGeoLocation/SingleCellGeoLocationCache.js'
 import { cellId } from '../cellGeoLocation/cellId.js'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import { JSONPayload, validatedFetch } from '../nrfcloud/validatedFetch.js'
+import {
+	JSONPayload,
+	validatedFetch,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
 import { loggingFetch } from './loggingFetch.js'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
@@ -20,6 +22,7 @@ import { GroundFix } from './nrfcloud/groundFix.js'
 import { serviceToken } from './nrfcloud/serviceToken.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 const { EventBusName, stackName, DevicesTableName, cacheTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -48,7 +51,9 @@ const cache = store({
 	TableName: cacheTableName,
 })
 
-const allAccountsSettings = once(getAllAccountsSettings({ ssm, stackName }))
+const allAccountsSettings = once(async () =>
+	getAllAccountsSettings({ ssm, stackName }),
+)
 const fetchToken = serviceToken(trackFetch, (error) => {
 	log.error(`Acquiring service token failed`, {
 		error,
@@ -87,7 +92,7 @@ const h = async (event: {
 		throw new Error(`nRF Cloud settings(${account}) are not configured`)
 	}
 
-	const { apiEndpoint, apiKey } = settings.nrfCloudSettings
+	const { apiEndpoint, apiKey } = settings
 	const locationServiceToken = await fetchToken({ apiEndpoint, apiKey })
 
 	const {

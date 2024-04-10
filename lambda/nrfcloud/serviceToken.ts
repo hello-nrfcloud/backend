@@ -1,5 +1,5 @@
 import { once } from 'lodash-es'
-import { validatedFetch } from '../../nrfcloud/validatedFetch.js'
+import { validatedFetch } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { Type } from '@sinclair/typebox'
 
 /**

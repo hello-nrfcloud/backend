@@ -17,5 +17,6 @@ export const pack = async (): Promise<PackedLayer> =>
 			'@middy/core',
 			'@hello.nrfcloud.com/lambda-helpers',
 			'@bifravst/aws-ssm-settings-helpers',
+			'@hello.nrfcloud.com/nrfcloud-api-helpers',
 		],
 	})

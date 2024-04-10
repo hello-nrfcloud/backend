@@ -1,7 +1,6 @@
 export enum Scopes {
 	STACK = 'stack',
 	NRFCLOUD_BRIDGE_CERTIFICATE = 'nRFCloudBridgeCertificate',
-	NRFCLOUD_ACCOUNT_PREFIX = 'thirdParty',
 }
 
 export type ScopeContext = {
@@ -28,13 +27,3 @@ export const ScopeContexts = {
 		context: 'CA',
 	},
 } as const
-
-const nameRx = /^[a-zA-Z0-9_.-]+$/
-
-export const nrfCloudAccount = (account: string): ScopeContext => {
-	if (!nameRx.test(account)) throw new Error(`Invalid account name: ${account}`)
-	return {
-		scope: Scopes.NRFCLOUD_ACCOUNT_PREFIX,
-		context: account,
-	}
-}

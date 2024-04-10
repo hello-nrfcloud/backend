@@ -5,7 +5,7 @@ import {
 	deleteCoAPHealthCheckSettings as deleteSettings,
 	setCoAPHealthCheckSettings as putSetting,
 	type Settings,
-} from '../../nrfcloud/coap-health-check.js'
+} from '../../settings/health-check/coap.js'
 
 export const configureCoAPHealthCheckCommand = ({
 	ssm,

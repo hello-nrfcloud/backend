@@ -1,5 +1,5 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { ScopeContexts } from '../settings/scope.js'
+import { ScopeContexts } from '../scope.js'
 import { remove, get, put } from '@bifravst/aws-ssm-settings-helpers'
 
 export type Settings = {

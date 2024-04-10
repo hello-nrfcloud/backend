@@ -4,7 +4,7 @@ import {
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
 import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
-import { type DeviceShadowType } from '../../nrfcloud/DeviceShadow.js'
+import type { DeviceShadowType } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import type { WebsocketPayload } from '../publishToWebsocketClients.js'
 import type { AddMetricsFn } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import type { Logger } from '@hello.nrfcloud.com/lambda-helpers/logger'

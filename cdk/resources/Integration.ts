@@ -12,10 +12,13 @@ import { Construct } from 'constructs'
 import { readFileSync } from 'node:fs'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
-import { type Settings as nRFCloudSettings } from '../../nrfcloud/settings.js'
-import { ScopeContexts, nrfCloudAccount } from '../../settings/scope.js'
-import type { AllNRFCloudSettings } from '../../nrfcloud/allAccounts.js'
+import {
+	NRFCLOUD_ACCOUNT_SCOPE,
+	type Settings as nRFCloudSettings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { nrfCloudAccount } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
+import { ScopeContexts } from '../../settings/scope.js'
 
 export class Integration extends Construct {
 	public readonly bridgeCertificate: IoT.CfnCertificate
@@ -32,7 +35,7 @@ export class Integration extends Construct {
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
 			bridgeImage: ContainerImage
-			nRFCloudAccounts: Record<string, AllNRFCloudSettings>
+			nRFCloudAccounts: Array<string>
 		},
 	) {
 		super(parent, 'Integration')
@@ -134,25 +137,23 @@ export class Integration extends Construct {
 
 		const nrfCloudSetting = (
 			property: keyof nRFCloudSettings,
-			scope: string,
-			context: string,
+			account: string,
 		) =>
 			StringParameter.fromStringParameterName(
 				this,
-				`${property}_${context}Parameter`,
+				`${property}_${account}Parameter`,
 				settingsPath({
 					stackName: Stack.of(this).stackName,
-					scope,
-					context,
+					scope: NRFCLOUD_ACCOUNT_SCOPE,
+					context: account,
 					property,
 				}),
 			)
 
 		const nrfCloudSettingSecret = (
 			property: keyof nRFCloudSettings,
-			scope: string,
-			context: string,
-		) => ECS.Secret.fromSsmParameter(nrfCloudSetting(property, scope, context))
+			account: string,
+		) => ECS.Secret.fromSsmParameter(nrfCloudSetting(property, account))
 
 		const initEnvironment: Record<string, string> = {
 			ENV__FILE__NRFCLOUD_CA_CRT:
@@ -210,10 +211,9 @@ export class Integration extends Construct {
 			),
 		}
 
-		const { environment, secrets } = Object.entries(nRFCloudAccounts).reduce(
-			(result, [account], index) => {
+		const { environment, secrets } = nRFCloudAccounts.reduce(
+			(result, account, index) => {
 				const bridgeNo = String(index + 2).padStart(2, '0')
-				const { scope, context } = nrfCloudAccount(account)
 				const accountEnvironmentIdentifier = account.replace(/[^0-9a-z]/gi, '_')
 				const bridgePrefix = `MOSQUITTO__BRIDGE${bridgeNo}`
 
@@ -227,8 +227,9 @@ export class Integration extends Construct {
 				result.environment[`${bridgePrefix}__CLEANSESSION`] = `true`
 				result.environment[`${bridgePrefix}__CONNECTION`] =
 					`nrfcloud-${account}-bridge`
+				const acc = nrfCloudAccount(account)
 				result.environment[`${bridgePrefix}__ADDRESS`] = `${
-					nrfCloudSetting('mqttEndpoint', scope, context).stringValue
+					nrfCloudSetting('mqttEndpoint', acc).stringValue
 				}:8883`
 				result.environment[`${bridgePrefix}__BRIDGE_CAFILE`] =
 					`/mosquitto/security/nrfcloud_ca.crt`
@@ -239,17 +240,17 @@ export class Integration extends Construct {
 				result.environment[`${bridgePrefix}__LOCAL_CLIENTID`] =
 					`nrfcloud-${account}-bridge-local`
 				result.environment[`${bridgePrefix}__REMOTE_CLIENTID`] =
-					nrfCloudSetting('accountDeviceClientId', scope, context).stringValue
+					nrfCloudSetting('accountDeviceClientId', acc).stringValue
 				result.environment[`${bridgePrefix}__TOPIC`] = `m/# in 1 data/ ${
-					nrfCloudSetting('mqttTopicPrefix', scope, context).stringValue
+					nrfCloudSetting('mqttTopicPrefix', acc).stringValue
 				}`
 
 				result.secrets[
 					`ENV__FILE__NRFCLOUD_${accountEnvironmentIdentifier.toUpperCase()}_CLIENT_CRT`
-				] = nrfCloudSettingSecret('accountDeviceClientCert', scope, context)
+				] = nrfCloudSettingSecret('accountDeviceClientCert', acc)
 				result.secrets[
 					`ENV__FILE__NRFCLOUD_${accountEnvironmentIdentifier.toUpperCase()}_CLIENT_KEY`
-				] = nrfCloudSettingSecret('accountDevicePrivateKey', scope, context)
+				] = nrfCloudSettingSecret('accountDevicePrivateKey', acc)
 
 				return result
 			},

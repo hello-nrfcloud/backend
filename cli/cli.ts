@@ -36,6 +36,7 @@ import { listDevicesCommand } from './commands/list-devices.js'
 import { configureCoAPHealthCheckCommand } from './commands/configure-coap-health-check.js'
 import { ECRClient } from '@aws-sdk/client-ecr'
 import { buildContainersCommand } from './commands/build-container.js'
+import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -82,6 +83,8 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		}),
 	]
 
+	const iotEndpoint = await getIoTEndpoint({ iot })
+
 	if (isCI) {
 		console.error('Running on CI...')
 		commands.push(
@@ -98,7 +101,7 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		commands.push(
 			initializeNRFCloudAccountCommand({
 				ssm,
-				iot,
+				iotEndpoint,
 				stackName: STACK_NAME,
 			}),
 		)

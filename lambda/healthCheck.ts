@@ -10,12 +10,15 @@ import { registerDevice } from '../devices/registerDevice.js'
 import { defer } from './health-check/defer.js'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import { getAllAccountsSettings } from '../nrfcloud/allAccounts.js'
-import type { Settings } from '../nrfcloud/settings.js'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
 } from './health-check/checkMessageFromWebsocket.js'
+import {
+	getAllAccountsSettings,
+	type Settings as NrfCloudSettings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.js'
 
 const { DevicesTableName, stackName, websocketUrl } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -54,24 +57,31 @@ const amazonRootCA1 =
 const allAccountsSettings = await getAllAccountsSettings({
 	ssm,
 	stackName,
-})()
+})
+
+const allAccountsHealthCheckSettings = await getAllAccountsHealthCheckSettings({
+	ssm,
+	stackName,
+})
 
 await Promise.all(
-	Object.entries(allAccountsSettings).map(async ([account, settings]) => {
-		if ('healthCheckSettings' in settings) {
-			await registerDevice({
-				db,
-				devicesTableName: DevicesTableName,
-			})({
-				id: settings.healthCheckSettings.healthCheckClientId,
-				model: settings.healthCheckSettings.healthCheckModel,
-				fingerprint: settings.healthCheckSettings.healthCheckFingerPrint,
-				account,
-			})
-		} else {
-			log.warn(`${account} does not have health check settings`)
-		}
-	}),
+	Object.entries(allAccountsHealthCheckSettings).map(
+		async ([account, settings]) => {
+			if ('healthCheckSettings' in settings) {
+				await registerDevice({
+					db,
+					devicesTableName: DevicesTableName,
+				})({
+					id: settings.healthCheckClientId,
+					model: settings.healthCheckModel,
+					fingerprint: settings.healthCheckFingerPrint,
+					account,
+				})
+			} else {
+				log.warn(`${account} does not have health check settings`)
+			}
+		},
+	),
 )
 
 const publishDeviceMessage =
@@ -81,7 +91,7 @@ const publishDeviceMessage =
 		deviceCert,
 		devicePrivateKey,
 	}: {
-		nrfCloudSettings: Settings
+		nrfCloudSettings: NrfCloudSettings
 		deviceId: string
 		deviceCert: string
 		devicePrivateKey: string
@@ -127,84 +137,82 @@ const h = async (): Promise<void> => {
 	const store = new Map<string, { ts: number; gain: number }>()
 	track('checkMessageFromWebsocket', MetricUnit.Count, 1)
 	await Promise.all(
-		Object.entries(allAccountsSettings).map(async ([account, settings]) => {
-			try {
-				if (
-					!('healthCheckSettings' in settings) ||
-					!('nrfCloudSettings' in settings)
-				)
-					return
-
-				const {
-					nrfCloudSettings,
-					healthCheckSettings: {
+		Object.entries(allAccountsHealthCheckSettings).map(
+			async ([account, healthCheckSettings]) => {
+				try {
+					const {
 						healthCheckFingerPrint: fingerprint,
 						healthCheckClientId: deviceId,
 						healthCheckClientCert: deviceCert,
 						healthCheckPrivateKey: devicePrivateKey,
-					},
-				} = settings
+					} = healthCheckSettings
 
-				await checkMessageFromWebsocket({
-					endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
-					timeoutMS: 10000,
-					log: (...args) => {
-						const [first, ...rest] = args
-						log.debug(first, ...rest)
-					},
-					onConnect: async () => {
-						const data = {
-							ts: Date.now(),
-							gain: 3 + Number(Math.random().toFixed(5)),
-						}
-						store.set(account, data)
-						await publishDeviceMessage({
-							nrfCloudSettings,
-							deviceId,
-							deviceCert,
-							devicePrivateKey,
-						})({
-							appId: 'SOLAR',
-							messageType: 'DATA',
-							ts: data.ts,
-							data: `${data.gain}`,
-						})
-					},
-					validate: async (message) => {
-						try {
-							const data = store.get(account)
-							const messageObj = JSON.parse(message)
-							log.debug(`ws incoming message`, { messageObj })
-							const expectedMessage = {
-								'@context':
-									'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain',
-								ts: data?.ts,
-								mA: data?.gain,
+					await checkMessageFromWebsocket({
+						endpoint: `${websocketUrl}?fingerprint=${fingerprint}`,
+						timeoutMS: 10000,
+						log: (...args) => {
+							const [first, ...rest] = args
+							log.debug(first, ...rest)
+						},
+						onConnect: async () => {
+							const data = {
+								ts: Date.now(),
+								gain: 3 + Number(Math.random().toFixed(5)),
 							}
+							store.set(account, data)
+							await publishDeviceMessage({
+								nrfCloudSettings: allAccountsSettings[
+									account
+								] as NrfCloudSettings,
+								deviceId,
+								deviceCert,
+								devicePrivateKey,
+							})({
+								appId: 'SOLAR',
+								messageType: 'DATA',
+								ts: data.ts,
+								data: `${data.gain}`,
+							})
+						},
+						validate: async (message) => {
+							try {
+								const data = store.get(account)
+								const messageObj = JSON.parse(message)
+								log.debug(`ws incoming message`, { messageObj })
+								const expectedMessage = {
+									'@context':
+										'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain',
+									ts: data?.ts,
+									mA: data?.gain,
+								}
 
-							if (messageObj['@context'] !== expectedMessage['@context'])
-								return ValidateResponse.skip
+								if (messageObj['@context'] !== expectedMessage['@context'])
+									return ValidateResponse.skip
 
-							track(
-								`receivingMessageDuration`,
-								MetricUnit.Seconds,
-								(Date.now() - (data?.ts ?? 0)) / 1000,
-							)
-							assert.deepEqual(messageObj, expectedMessage)
-							return ValidateResponse.valid
-						} catch (error) {
-							log.error(`validate error`, { error, account })
+								track(
+									`receivingMessageDuration`,
+									MetricUnit.Seconds,
+									(Date.now() - (data?.ts ?? 0)) / 1000,
+								)
+								assert.deepEqual(messageObj, expectedMessage)
+								return ValidateResponse.valid
+							} catch (error) {
+								log.error(`validate error`, { error, account })
 
-							return ValidateResponse.invalid
-						}
-					},
-				})
-				track(`success`, MetricUnit.Count, 1)
-			} catch (error) {
-				log.error(`health check error`, { error, account })
-				track('fail', MetricUnit.Count, 1)
-			}
-		}),
+								return ValidateResponse.invalid
+							}
+						},
+					})
+					track(`success`, MetricUnit.Count, 1)
+				} catch (error) {
+					log.error(`health check error`, {
+						error: (error as Error).message,
+						account,
+					})
+					track('fail', MetricUnit.Count, 1)
+				}
+			},
+		),
 	)
 }
 

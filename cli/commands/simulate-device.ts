@@ -9,10 +9,10 @@ import { EventEmitter } from 'node:events'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.js'
-import { getAPISettings } from '../../nrfcloud/settings.js'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { version } from '../../package.json'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { getAccountInfo } from '../../nrfcloud/getAccountInfo.js'
+import { getAccountInfo } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	deviceCertificateLocations,
 	ensureCertificateDir,
