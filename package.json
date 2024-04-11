@@ -50,7 +50,7 @@
     "@bifravst/aws-cdk-lambda-helpers": "1.3.1",
     "@bifravst/ci": "2.0.1",
     "@bifravst/eslint-config-typescript": "6.0.22",
-    "@bifravst/http-api-mock": "1.1.5",
+    "@bifravst/http-api-mock": "1.1.7",
     "@bifravst/prettier-config": "1.0.0",
     "@commitlint/config-conventional": "19.1.0",
     "@hello.nrfcloud.com/bdd-markdown-steps": "2.1.0",
