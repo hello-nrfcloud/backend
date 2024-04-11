@@ -154,7 +154,7 @@ runner
 			historicalDataTableInfo: backendConfig.historicalDataTableInfo,
 		}),
 	)
-	.addStepRunners(...storageSteps())
+	.addStepRunners(...storageSteps)
 	.addStepRunners(...configSteps)
 	.addStepRunners(...userSteps)
 	.addStepRunners(...RESTSteps)
