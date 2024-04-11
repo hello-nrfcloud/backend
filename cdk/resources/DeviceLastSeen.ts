@@ -4,7 +4,7 @@ import {
 	RemovalPolicy,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { IoTActionRole } from './IoTActionRole.js'
+import { IoTActionRole } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 
 /**
  * Record the timestamp when the device was last seen

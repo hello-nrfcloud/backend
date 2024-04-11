@@ -11,7 +11,7 @@ import type { DeviceLastSeen } from '../DeviceLastSeen.js'
 import type { DeviceStorage } from '../DeviceStorage.js'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '../settings.js'
+import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 
 export class KPIs extends Construct {
 	constructor(

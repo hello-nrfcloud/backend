@@ -11,7 +11,7 @@ import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from './settings.js'
+import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 
 export class HealthCheckCoAP extends Construct {
 	public constructor(

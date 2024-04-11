@@ -10,11 +10,11 @@ import {
 import { Construct } from 'constructs'
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { IoTActionRole } from './IoTActionRole.js'
+import { IoTActionRole } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from './settings.js'
+import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 
 /**
  * Resolve device geo location based on network information
