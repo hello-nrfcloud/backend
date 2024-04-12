@@ -69,7 +69,6 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: github-action-hello-nrfcloud-backend
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Get credentials for ECR
@@ -147,7 +146,6 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: github-action-hello-nrfcloud-backend
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Show nRF Cloud Account
