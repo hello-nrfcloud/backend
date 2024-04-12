@@ -1,4 +1,8 @@
 import {
+	LambdaLogGroup,
+	LambdaSource,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import {
 	aws_apigatewayv2 as ApiGatewayV2,
 	Duration,
 	aws_events as Events,
@@ -8,15 +12,13 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
+import type { BackendLambdas } from '../BackendLambdas.js'
 import { ApiLogging } from './ApiLogging.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
 import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 
 export const integrationUri = (
 	parent: Construct,
@@ -45,13 +47,14 @@ export class WebsocketAPI extends Construct {
 		}: {
 			deviceStorage: DeviceStorage
 			deviceShadow: DeviceShadow
-			lambdaSources: {
-				authorizer: PackedLambda
-				onConnect: PackedLambda
-				onMessage: PackedLambda
-				onDisconnect: PackedLambda
-				publishToWebsocketClients: PackedLambda
-			}
+			lambdaSources: Pick<
+				BackendLambdas,
+				| 'authorizer'
+				| 'onConnect'
+				| 'onMessage'
+				| 'onDisconnect'
+				| 'publishToWebsocketClients'
+			>
 			layers: Lambda.ILayerVersion[]
 			lastSeen: DeviceLastSeen
 			eventBus: WebsocketEventBus

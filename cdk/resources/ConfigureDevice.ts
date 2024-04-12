@@ -1,3 +1,8 @@
+import {
+	LambdaLogGroup,
+	LambdaSource,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
@@ -7,11 +12,8 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import type { BackendLambdas } from '../BackendLambdas.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 
 /**
  * Handles device configuration requests
@@ -25,9 +27,7 @@ export class ConfigureDevice extends Construct {
 			websocketEventBus,
 		}: {
 			websocketEventBus: WebsocketEventBus
-			lambdaSources: {
-				configureDevice: PackedLambda
-			}
+			lambdaSources: Pick<BackendLambdas, 'configureDevice'>
 			layers: Lambda.ILayerVersion[]
 		},
 	) {

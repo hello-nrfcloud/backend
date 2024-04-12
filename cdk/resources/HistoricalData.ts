@@ -1,3 +1,7 @@
+import {
+	LambdaLogGroup,
+	LambdaSource,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
@@ -9,10 +13,8 @@ import {
 	aws_timestream as Timestream,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import type { BackendLambdas } from '../BackendLambdas.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 
 /**
  * Store devices messages in their converted format
@@ -27,10 +29,10 @@ export class HistoricalData extends Construct {
 			websocketEventBus,
 		}: {
 			websocketEventBus: WebsocketEventBus
-			lambdaSources: {
-				storeMessagesInTimestream: PackedLambda
-				historicalDataRequest: PackedLambda
-			}
+			lambdaSources: Pick<
+				BackendLambdas,
+				'storeMessagesInTimestream' | 'historicalDataRequest'
+			>
 			layers: Lambda.ILayerVersion[]
 		},
 	) {

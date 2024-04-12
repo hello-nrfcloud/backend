@@ -1,3 +1,9 @@
+import { type ECRImage as BridgeSettings } from '@bifravst/aws-cdk-ecr-helpers/image'
+import {
+	LambdaLogGroup,
+	LambdaSource,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 import {
 	Duration,
 	aws_events_targets as EventTargets,
@@ -6,13 +12,9 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { type ECRImage as BridgeSettings } from '@bifravst/aws-cdk-ecr-helpers/image'
-import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
+import type { BackendLambdas } from '../BackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 
 export type BridgeImageSettings = BridgeSettings
 
@@ -28,10 +30,7 @@ export class HealthCheckMqttBridge extends Construct {
 			websocketAPI: WebsocketAPI
 			deviceStorage: DeviceStorage
 			layers: Lambda.ILayerVersion[]
-			lambdaSources: {
-				healthCheck: PackedLambda
-				healthCheckForCoAP: PackedLambda
-			}
+			lambdaSources: Pick<BackendLambdas, 'healthCheck' | 'healthCheckForCoAP'>
 		},
 	) {
 		super(parent, 'healthCheckMqttBridge')

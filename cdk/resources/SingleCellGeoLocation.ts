@@ -1,4 +1,10 @@
 import {
+	IoTActionRole,
+	LambdaLogGroup,
+	LambdaSource,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
+import {
 	Duration,
 	aws_dynamodb as DynamoDB,
 	aws_iam as IAM,
@@ -8,13 +14,9 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
+import type { BackendLambdas } from '../BackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { IoTActionRole } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 
 /**
  * Resolve device geo location based on network information
@@ -30,9 +32,7 @@ export class SingleCellGeoLocation extends Construct {
 		}: {
 			websocketEventBus: WebsocketEventBus
 			deviceStorage: DeviceStorage
-			lambdaSources: {
-				resolveSingleCellGeoLocation: PackedLambda
-			}
+			lambdaSources: Pick<BackendLambdas, 'resolveSingleCellGeoLocation'>
 			layers: Lambda.ILayerVersion[]
 		},
 	) {

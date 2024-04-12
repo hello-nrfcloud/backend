@@ -1,4 +1,9 @@
 import {
+	LambdaLogGroup,
+	LambdaSource,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
+import {
 	Duration,
 	aws_dynamodb as DynamoDB,
 	aws_lambda_event_sources as EventSources,
@@ -11,12 +16,9 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import type { BackendLambdas } from '../BackendLambdas.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 export class DeviceShadow extends Construct {
 	public readonly deviceShadowTable: DynamoDB.ITable
@@ -30,10 +32,10 @@ export class DeviceShadow extends Construct {
 		}: {
 			websocketEventBus: WebsocketEventBus
 			websocketConnectionsTable: WebsocketConnectionsTable
-			lambdaSources: {
-				prepareDeviceShadow: PackedLambda
-				fetchDeviceShadow: PackedLambda
-			}
+			lambdaSources: Pick<
+				BackendLambdas,
+				'prepareDeviceShadow' | 'fetchDeviceShadow'
+			>
 			layers: Lambda.ILayerVersion[]
 		},
 	) {

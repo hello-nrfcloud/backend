@@ -1,4 +1,9 @@
 import {
+	LambdaLogGroup,
+	LambdaSource,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
+import {
 	Duration,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
@@ -6,12 +11,9 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
+import type { BackendLambdas } from '../BackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
 
 export class HealthCheckCoAP extends Construct {
 	public constructor(
@@ -27,9 +29,7 @@ export class HealthCheckCoAP extends Construct {
 			deviceStorage: DeviceStorage
 			code: Lambda.DockerImageCode
 			layers: Lambda.ILayerVersion[]
-			lambdaSources: {
-				healthCheckForCoAP: PackedLambda
-			}
+			lambdaSources: Pick<BackendLambdas, 'healthCheckForCoAP'>
 		},
 	) {
 		super(parent, 'HealthCheckCoAP')
