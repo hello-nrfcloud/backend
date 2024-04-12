@@ -105,16 +105,16 @@ export const steps = ({
 					new ScanCommand({
 						TableName: requestsTableName,
 						FilterExpression:
-							'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
+							'#method = :method AND #path = :path AND #timestamp >= :timestamp',
 						ExpressionAttributeNames: {
 							'#method': 'method',
-							'#resource': 'resource',
+							'#path': 'path',
 							'#query': 'query',
 							'#timestamp': 'timestamp',
 						},
 						ExpressionAttributeValues: {
 							':method': { S: 'GET' },
-							':resource': { S: 'v1/devices' },
+							':path': { S: 'v1/devices' },
 							':timestamp': { S: fiveMinutesAgo.toISOString() },
 						},
 						ProjectionExpression: '#timestamp, #query',
