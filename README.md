@@ -121,6 +121,8 @@ After deploying the stack manually once,
   `arn:aws:iam::<account ID>:role/<stack name>-cd` and a variable (use the
   `cdRoleArn` stack output)
 - create the variable `AWS_REGION` with the value `<region>` (your region)
+- create the variable `STACK_NAME` with the value `<stack name>` (your stack
+  name)
 
 to enable continuous deployment.
 
