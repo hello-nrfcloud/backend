@@ -16,6 +16,7 @@ import { getAttributesForDevice } from '../../devices/getAttributesForDevice.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import { registerUnsupportedDevice } from '../../devices/registerUnsupportedDevice.js'
 import type { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { IMEI } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
 
 const createDeviceForModel = ({
 	db,
@@ -44,7 +45,7 @@ const createDeviceForModel = ({
 		}) => {
 			const account = maybeAccount ?? 'nordic'
 			const fingerprint = `92b.${generateCode()}`
-			const id = randomUUID()
+			const id = `oob-${IMEI()}`
 
 			progress(
 				`Registering device ${id} of ${account} account into table ${devicesTable}`,
