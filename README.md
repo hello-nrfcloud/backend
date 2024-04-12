@@ -112,6 +112,18 @@ List the configured accounts:
 ./cli.sh list-nrfcloud-accounts
 ```
 
+## Continuous Deployment using GitHub Actions
+
+After deploying the stack manually once,
+
+- configure a GitHub Actions environment named `production`
+- create the secret `AWS_ROLE` with the value
+  `arn:aws:iam::<account ID>:role/<stack name>-cd` and a variable (use the
+  `cdRoleArn` stack output)
+- create the variable `AWS_REGION` with the value `<region>` (your region)
+
+to enable continuous deployment.
+
 ## Websocket Protocol
 
 Message received from MQTT bridge will be published to websocket connection that
