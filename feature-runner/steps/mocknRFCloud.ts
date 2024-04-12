@@ -4,7 +4,7 @@ import {
 	QueryCommand,
 	ScanCommand,
 } from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import {
 	codeBlockOrThrow,
 	regExpMatchedStep,
@@ -12,7 +12,6 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import type { SSMClient } from '@aws-sdk/client-ssm'
-
 import { parseMockRequest } from './parseMockRequest.js'
 import {
 	arrayContaining,
@@ -25,7 +24,11 @@ import {
 import { parseMockResponse } from './parseMockResponse.js'
 import { toPairs } from './toPairs.js'
 import pRetry from 'p-retry'
-import { sortQueryString } from '@bifravst/http-api-mock/sortQueryString'
+import {
+	sortQuery,
+	sortQueryString,
+} from '@bifravst/http-api-mock/sortQueryString'
+import { URLSearchParamsToObject } from '@bifravst/http-api-mock/URLSearchParamsToObject'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 export const steps = ({
@@ -52,42 +55,30 @@ export const steps = ({
 		async ({ match: { deviceId }, log: { progress }, step }) => {
 			const data = codeBlockOrThrow(step).code
 
-			const methodPathQuery = `GET v1/devices`
+			const query = new URLSearchParams({
+				includeState: 'true',
+				includeStateMeta: 'true',
+				pageLimit: '100',
+				deviceIds: deviceId,
+			})
+
+			const methodPathQuery = `GET v1/devices?${sortQuery(query)}`
 			progress(`Mock http url: ${methodPathQuery}`)
 			await db.send(
 				new PutItemCommand({
 					TableName: responsesTableName,
-					Item: {
-						methodPathQuery: {
-							S: methodPathQuery,
-						},
-						timestamp: {
-							S: new Date().toISOString(),
-						},
-						statusCode: {
-							N: `200`,
-						},
-						body: {
-							S: `Content-Type: application/json
-
-${data}
-						`,
-						},
+					Item: marshall({
+						methodPathQuery,
+						timestamp: new Date().toISOString(),
+						statusCode: 200,
+						body: [`Content-Type: application/json`, ``, data].join('\n'),
 						queryParams: {
-							M: {
-								includeState: { BOOL: true },
-								includeStateMeta: { BOOL: true },
-								pageLimit: { N: `100` },
-								deviceIds: { S: `/\\b${deviceId}\\b/` },
-							},
+							...URLSearchParamsToObject(query),
+							deviceIds: `/\\b${deviceId}\\b/`, // Check using RegEx
 						},
-						ttl: {
-							N: `${Math.round(Date.now() / 1000) + 5 * 60}`,
-						},
-						keep: {
-							BOOL: true,
-						},
-					},
+						ttl: Math.round(Date.now() / 1000) + 5 * 60,
+						keep: true,
+					}),
 				}),
 			)
 		},
