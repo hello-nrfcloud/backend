@@ -13,16 +13,8 @@ import {
 import { Type } from '@sinclair/typebox'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { parseMockRequest } from './parseMockRequest.js'
-import {
-	arrayContaining,
-	check,
-	objectMatching,
-	stringContaining,
-	greaterThan,
-	lessThan,
-} from 'tsmatchers'
+import { check, objectMatching, stringContaining } from 'tsmatchers'
 import { parseMockResponse } from './parseMockResponse.js'
-import { toPairs } from './toPairs.js'
 import pRetry from 'p-retry'
 import {
 	sortQuery,
@@ -84,112 +76,6 @@ export const steps = ({
 		},
 	)
 
-	const durationBetweenRequests = regExpMatchedStep(
-		{
-			regExp:
-				/^the duration between 2 consecutive device shadow requests for `(?<deviceId>[^`]+)` should be `(?<duration>[^`]+)` seconds?$/,
-			schema: Type.Object({
-				duration: Type.Integer(),
-				deviceId: Type.String(),
-			}),
-			converters: {
-				duration: (s) => parseInt(s, 10),
-			},
-		},
-		async ({ match: { duration, deviceId }, log: { progress } }) => {
-			// We need to use scan here because the query string parameter deviceId may include more deviceIDs than just the one we are looking for.
-			const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-
-			const scanRequests = async (attempt: number) => {
-				const result = await db.send(
-					new ScanCommand({
-						TableName: requestsTableName,
-						FilterExpression:
-							'#method = :method AND #path = :path AND #timestamp >= :timestamp',
-						ExpressionAttributeNames: {
-							'#method': 'method',
-							'#path': 'path',
-							'#query': 'query',
-							'#timestamp': 'timestamp',
-						},
-						ExpressionAttributeValues: {
-							':method': { S: 'GET' },
-							':path': { S: 'v1/devices' },
-							':timestamp': { S: fiveMinutesAgo.toISOString() },
-						},
-						ProjectionExpression: '#timestamp, #query',
-					}),
-				)
-				const resultObj = (result?.Items ?? [])
-					.map(
-						(item) =>
-							unmarshall(item) as {
-								timestamp: string
-								query?: Record<string, any>
-							},
-					)
-					.filter(({ query }) => {
-						progress('query', JSON.stringify(query))
-						try {
-							check(query ?? {}).is(
-								objectMatching({
-									includeState: 'true',
-									includeStateMeta: 'true',
-									pageLimit: '100',
-									deviceIds: stringContaining(deviceId),
-								}),
-							)
-							return true
-						} catch {
-							return false
-						}
-					})
-				progress(
-					`Query mock requests result:`,
-					JSON.stringify(resultObj, null, 2),
-				)
-
-				if (resultObj.length < 2)
-					throw new Error(`Waiting for at least 2 mock requests`)
-
-				const timeDiffBetweenRequests = toPairs(
-					resultObj.sort(({ timestamp: t1 }, { timestamp: t2 }) =>
-						t1.localeCompare(t2),
-					),
-				).map(
-					([i1, i2]) =>
-						new Date(i2.timestamp).getTime() - new Date(i1.timestamp).getTime(),
-				)
-
-				progress(
-					`(Attempt: ${attempt}): time diff`,
-					JSON.stringify(timeDiffBetweenRequests),
-				)
-
-				try {
-					const allowedMarginInMS = 1000
-					check(timeDiffBetweenRequests).is(
-						arrayContaining(
-							greaterThan(duration * 1000).and(
-								lessThan(duration * 1000 + allowedMarginInMS),
-							),
-						),
-					)
-				} catch {
-					throw new Error(
-						`mock requests did not happen within the configured duration (${duration})`,
-					)
-				}
-			}
-
-			await pRetry(scanRequests, {
-				retries: 5,
-				minTimeout: duration * 1000,
-				maxTimeout: duration * 1000 * 2,
-			})
-		},
-	)
-
 	const queueResponse = regExpMatchedStep(
 		{
 			regExp:
@@ -201,7 +87,7 @@ export const steps = ({
 		async ({ match: { methodPathQuery }, log: { progress }, step }) => {
 			const expectedResponse = codeBlockOrThrow(step).code
 			const response = parseMockResponse(expectedResponse)
-			progress(`expected resource: ${methodPathQuery}`)
+			progress(`expected query: ${methodPathQuery}`)
 			const [method, resource] = methodPathQuery.split(' ') as [string, string]
 
 			const body: string[] = [
@@ -255,7 +141,7 @@ export const steps = ({
 			}
 
 			const methodPathQuery = `${request.method} ${sortQueryString(request.resource.slice(1))}`
-			progress(`expected resource: ${methodPathQuery}`)
+			progress(`expected query: ${methodPathQuery}`)
 
 			const result = await db.send(
 				new QueryCommand({
@@ -333,17 +219,17 @@ export const steps = ({
 					new ScanCommand({
 						TableName: requestsTableName,
 						FilterExpression:
-							'#method = :method AND #resource = :resource AND #timestamp >= :timestamp',
+							'#method = :method AND #path = :path AND #timestamp >= :timestamp',
 						ExpressionAttributeNames: {
 							'#method': 'method',
-							'#resource': 'resource',
+							'#path': 'path',
 							'#query': 'query',
 							'#headers': 'headers',
 							'#timestamp': 'timestamp',
 						},
 						ExpressionAttributeValues: {
 							':method': { S: 'GET' },
-							':resource': { S: 'v1/devices' },
+							':path': { S: 'v1/devices' },
 							':timestamp': { S: fiveMinutesAgo.toISOString() },
 						},
 						ProjectionExpression: '#timestamp, #query, #headers',
@@ -397,11 +283,5 @@ export const steps = ({
 		},
 	)
 
-	return [
-		mockShadowData,
-		durationBetweenRequests,
-		expectRequest,
-		queueResponse,
-		checkAPIKeyRequest,
-	]
+	return [mockShadowData, expectRequest, queueResponse, checkAPIKeyRequest]
 }
