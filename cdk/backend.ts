@@ -41,6 +41,7 @@ const certsDir = path.join(
 	process.cwd(),
 	'certificates',
 	`${accountEnv.account}@${accountEnv.region}`,
+	STACK_NAME,
 )
 await mkdir(certsDir, { recursive: true })
 const mqttBridgeCertificateFiles = mqttBridgeCertificateLocation({
