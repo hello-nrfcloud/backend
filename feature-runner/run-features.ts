@@ -10,8 +10,6 @@ import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/stacks/BackendStack.js'
 import { STACK_NAME } from '../cdk/stacks/stackConfig.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import { remove, get, put } from '@bifravst/aws-ssm-settings-helpers'
-import { configStepRunners } from './steps/config.js'
 import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
@@ -21,7 +19,6 @@ import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import { ScopeContexts } from '../settings/scope.js'
 
 const { responsesTableName, requestsTableName } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',
@@ -44,18 +41,6 @@ const backendConfig = await stackOutput(
 const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
-})
-const configWriter = put(ssm)({
-	stackName: STACK_NAME,
-	...ScopeContexts.STACK_CONFIG,
-})
-const configRemover = remove(ssm)({
-	stackName: STACK_NAME,
-	...ScopeContexts.STACK_CONFIG,
-})
-const configSettings = get(ssm)({
-	stackName: STACK_NAME,
-	...ScopeContexts.STACK_CONFIG,
 })
 
 const db = new DynamoDBClient({})
@@ -122,13 +107,6 @@ const { steps: webSocketSteps, cleanup: websocketCleanup } =
 	})
 cleaners.push(websocketCleanup)
 
-const { steps: configSteps, cleanup: configCleanup } = configStepRunners({
-	configWriter,
-	configRemover,
-	configSettings,
-})
-cleaners.push(configCleanup)
-
 runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(
@@ -155,7 +133,6 @@ runner
 		}),
 	)
 	.addStepRunners(...storageSteps)
-	.addStepRunners(...configSteps)
 	.addStepRunners(...userSteps)
 	.addStepRunners(...RESTSteps)
 
