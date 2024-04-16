@@ -31,6 +31,7 @@ import { WebsocketEventBus } from './resources/WebsocketEventBus.js'
 import { HealthCheckCoAP } from './resources/HealthCheckCoAP.js'
 import { ContainerRepositoryId } from '../aws/ecr.js'
 import { repositoryName } from '@bifravst/aws-cdk-ecr-helpers/repository'
+import { API } from './resources/API.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -214,6 +215,12 @@ export class BackendStack extends Stack {
 			deviceStorage,
 		})
 
+		const api = new API(this, {
+			deviceStorage,
+			lambdaSources,
+			layers: lambdaLayers,
+		})
+
 		// Outputs
 		new CfnOutput(this, 'webSocketURI', {
 			exportName: `${this.stackName}:webSocketURI`,
@@ -246,6 +253,11 @@ export class BackendStack extends Stack {
 			description: 'Role ARN to use in the deploy GitHub Actions Workflow',
 			value: cd.role.roleArn,
 		})
+		new CfnOutput(this, 'APIURL', {
+			exportName: `${this.stackName}:APIURL`,
+			description: 'API endpoint',
+			value: api.URL,
+		})
 	}
 }
 
@@ -258,4 +270,5 @@ export type StackOutputs = {
 	bridgePolicyName: string
 	bridgeCertificatePEM: string
 	cdRoleArn: string
+	APIURL: string
 }

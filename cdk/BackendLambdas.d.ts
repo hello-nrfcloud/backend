@@ -16,4 +16,5 @@ type BackendLambdas = {
 	kpis: PackedLambda
 	configureDevice: PackedLambda
 	resolveSingleCellGeoLocation: PackedLambda
+	getDeviceByFingerprint: PackedLambda
 }

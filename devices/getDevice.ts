@@ -1,6 +1,13 @@
 import { QueryCommand, type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 
+export type Device = {
+	id: string
+	fingerprint: string
+	model: string
+	account: string
+}
+
 export const getDevice =
 	({
 		db,
@@ -17,12 +24,7 @@ export const getDevice =
 		fingerprint: string
 	}): Promise<
 		| {
-				device: {
-					id: string
-					fingerprint: string
-					model: string
-					account?: string
-				}
+				device: Device
 		  }
 		| { error: Error }
 	> => {

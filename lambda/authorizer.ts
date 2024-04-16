@@ -1,18 +1,17 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
-import {
-	DynamoDBClient,
-	QueryCommand,
-	UpdateItemCommand,
-} from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { PolicyDocument } from 'aws-lambda'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import type { WebsocketConnectionContext } from './ws/AuthorizedEvent.js'
+import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.js'
 import { UNSUPPORTED_MODEL } from '../devices/registerUnsupportedDevice.js'
+import type { WebsocketConnectionContext } from './ws/AuthorizedEvent.js'
+import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
+import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
+import { Type } from '@sinclair/typebox'
 
 const { DevicesTableName, DevicesIndexName } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -23,6 +22,17 @@ const log = logger('connect')
 const db = new DynamoDBClient({})
 
 const { track, metrics } = metricsForComponent('websocket')
+const getDevice = getDeviceByFingerprint({
+	db,
+	DevicesTableName,
+	DevicesIndexName,
+})
+
+const validateInput = validateWithTypeBox(
+	Type.Object({
+		fingerprint: Type.RegExp(fingerprintRegExp),
+	}),
+)
 
 /**
  * Verifies the fingerprint passed as a query parameter and creates a context for the websocket connect that includes the deviceId and the model.
@@ -54,36 +64,22 @@ const h = async (event: {
 		},
 	}
 
-	const fingerprint = event.queryStringParameters?.fingerprint
-	if (fingerprint === undefined) {
-		log.error(`Fingerprint cannot be empty`)
+	const maybeValidInput = validateInput(event.queryStringParameters ?? {})
+	if ('errors' in maybeValidInput) {
+		log.error(`Invalid fingerprint!`)
 		track('authorizer:badRequest', MetricUnit.Count, 1)
 		return deny
 	}
-	const res = await db.send(
-		new QueryCommand({
-			TableName: DevicesTableName,
-			IndexName: DevicesIndexName,
-			KeyConditionExpression: '#fingerprint = :fingerprint',
-			ExpressionAttributeNames: {
-				'#fingerprint': 'fingerprint',
-			},
-			ExpressionAttributeValues: {
-				':fingerprint': {
-					S: fingerprint,
-				},
-			},
-		}),
-	)
 
-	const device = res.Items?.[0] !== undefined ? unmarshall(res.Items[0]) : null
+	const fingerprint = maybeValidInput.value.fingerprint
+	const device = await getDevice(fingerprint)
 	if (device === null) {
 		log.error(`DeviceId is not found with`, { fingerprint })
 		track('authorizer:badFingerprint', MetricUnit.Count, 1)
 		return deny
 	}
 
-	const { model, deviceId, account } = device
+	const { model, id: deviceId, account } = device
 
 	if (model === undefined || deviceId === undefined) {
 		log.error(`Required information is missing`, {

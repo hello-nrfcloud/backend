@@ -136,7 +136,9 @@ runner
 	.addStepRunners(...userSteps)
 	.addStepRunners(...RESTSteps)
 
-const res = await runner.run({})
+const res = await runner.run({
+	APIURL: backendConfig.APIURL.toString().replace(/\/+$/, ''),
+})
 
 await Promise.all(cleaners.map(async (fn) => fn()))
 
