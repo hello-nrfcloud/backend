@@ -21,7 +21,7 @@ import chalk from 'chalk'
 import { chunk } from 'lodash-es'
 import { randomUUID } from 'node:crypto'
 import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
-import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { STACK_NAME } from '../../cdk/stackConfig.js'
 import {
 	NRFCLOUD_ACCOUNT_SCOPE,
 	putSettings,

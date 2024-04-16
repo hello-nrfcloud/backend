@@ -6,7 +6,7 @@ import {
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
-import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { STACK_NAME } from '../../cdk/stackConfig.js'
 import {
 	updateSettings,
 	type Settings,

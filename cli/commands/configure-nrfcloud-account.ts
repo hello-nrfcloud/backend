@@ -1,7 +1,7 @@
 import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import fs from 'fs'
-import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { STACK_NAME } from '../../cdk/stackConfig.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import {
 	deleteSettings,

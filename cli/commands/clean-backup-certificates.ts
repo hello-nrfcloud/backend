@@ -5,7 +5,7 @@ import {
 } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
-import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { STACK_NAME } from '../../cdk/stackConfig.js'
 import { ScopeContexts } from '../../settings/scope.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'

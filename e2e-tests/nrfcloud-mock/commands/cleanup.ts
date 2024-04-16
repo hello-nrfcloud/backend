@@ -9,7 +9,7 @@ import {
 	UpdateCertificateCommand,
 } from '@aws-sdk/client-iot'
 
-import { STACK_NAME } from '../../../cdk/stacks/stackConfig.js'
+import { STACK_NAME } from '../../../cdk/stackConfig.js'
 
 const Iot = new IoTClient({})
 

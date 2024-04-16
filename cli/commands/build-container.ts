@@ -10,7 +10,7 @@ import {
 } from '@bifravst/aws-cdk-ecr-helpers/image'
 import { buildCoAPSimulatorImage } from '../../cdk/resources/containers/buildCoAPSimulatorImage.js'
 import { getCoAPHealthCheckSettings } from '../../settings/health-check/coap.js'
-import { STACK_NAME } from '../../cdk/stacks/stackConfig.js'
+import { STACK_NAME } from '../../cdk/stackConfig.js'
 import { ContainerRepositoryId } from '../../aws/ecr.js'
 
 export const buildContainersCommand = ({

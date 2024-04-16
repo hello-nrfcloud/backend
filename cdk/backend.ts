@@ -21,7 +21,7 @@ import { env } from '../aws/env.js'
 import { pack as packBaseLayer } from './layers/baseLayer.js'
 import { pack as packHealthCheckLayer } from './layers/healthCheckLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
-import { STACK_NAME } from './stacks/stackConfig.js'
+import { STACK_NAME } from './stackConfig.js'
 import { ScopeContexts, type ScopeContext } from '../settings/scope.js'
 
 const repoUrl = new URL(pJSON.repository.url)
