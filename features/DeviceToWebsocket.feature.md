@@ -1,7 +1,6 @@
 ---
-needs:
-  - Device Info
 exampleContext:
+  fingerprint: 92b.y7i24q
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
 ---
 
@@ -9,6 +8,12 @@ exampleContext:
 
 > Device messages published on nRF Cloud should be delivered to the websocket
 > API
+
+## Background
+
+Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
+
+And I connect to the websocket using fingerprint `${fingerprint}`
 
 ## Verify a device sends a message to nRF Cloud, then I can receive the message via website
 

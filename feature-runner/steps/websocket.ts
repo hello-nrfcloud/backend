@@ -43,7 +43,7 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 				wsClients[wsURL] = createWebsocketClient({
 					id: fingerprint,
 					url: wsURL,
-					debug: (...args) => progress('[ws]', ...args),
+					debug: (...args) => progress(args.join(' ')),
 				})
 				await pRetry(
 					async (attempt: number) => {
@@ -74,29 +74,29 @@ const receive = regExpMatchedStep(
 		}),
 	},
 	async ({ match: { equalOrMatch }, log: { debug }, step, context }) => {
-		const { wsClient } = context
+		const { wsClient } = context as { wsClient: WebSocketClient }
 		const expected = JSON.parse(codeBlockOrThrow(step).code)
 
+		const messagesSeen: Array<string> = []
+
 		const findMessages = async (attempt: number) => {
+			debug(`[${wsClient?.id}] Attempt: ${attempt - 1}`)
 			const found = Object.entries(wsClient?.messages ?? {}).find(
 				([id, message]) => {
-					debug(
-						`(Attempt: ${attempt - 1}) [${wsClient?.id}] Checking if message`,
-						JSON.stringify(message),
-						equalOrMatch,
-						JSON.stringify(expected),
-					)
+					const msgString = JSON.stringify(message)
+					if (messagesSeen.includes(id)) return false
+					messagesSeen.push(id)
 					try {
 						if (equalOrMatch === 'matches') {
 							check(message).is(objectDeepMatching(expected))
 						} else {
 							assert.deepEqual(message, expected)
 						}
-						debug('match', JSON.stringify(message))
+						debug(`match (${equalOrMatch}) ${msgString}`)
 						delete wsClient?.messages[id]
 						return true
 					} catch {
-						debug('no match', JSON.stringify(message))
+						debug(`no match (${equalOrMatch}) ${msgString}`)
 						return false
 					}
 				},

@@ -8,7 +8,6 @@ export type WebSocketClient = {
 	send: (message: Record<string, unknown>) => Promise<void>
 	messages: Record<string, unknown>
 }
-const clients: Record<string, WebSocketClient> = {}
 
 export const createWebsocketClient = ({
 	id,
@@ -19,43 +18,43 @@ export const createWebsocketClient = ({
 	url: string
 	debug?: (...args: string[]) => void
 }): WebSocketClient => {
-	if (clients[id] === undefined) {
-		const client = new WebSocket(url)
-		const messages: Record<string, unknown> = {} as const
-		clients[id] = {
-			id,
-			connect: async () =>
-				new Promise<void>((resolve, reject) =>
-					client
-						.on('open', () => {
-							resolve()
-						})
-						.on('error', (error) => {
-							debug?.(`Connection error: ${error.message}`)
-							reject(new Error(`Connection to ${url} failed.`))
-						})
-						.on('message', async (msg) => {
-							const message = JSON.parse(msg.toString())
-							debug?.('<< ' + msg.toString())
-							messages[ulid()] = message
-						}),
-				),
-			close: () => {
-				client.terminate()
-				delete clients[id]
-			},
-			messages,
-			send: async (message) =>
-				new Promise<void>((resolve, reject) => {
-					const strMessage = JSON.stringify(message)
-					client.send(strMessage, (error) => {
-						if (error) return reject(error)
-						debug?.('>> ' + strMessage)
+	const client = new WebSocket(url)
+	const messages: Record<string, unknown> = {} as const
+
+	const wsClient: WebSocketClient = {
+		id,
+		connect: async () =>
+			new Promise<void>((resolve, reject) =>
+				client
+					.on('open', () => {
+						debug?.(`Connected.`)
 						resolve()
 					})
-				}),
-		}
+					.on('error', (error) => {
+						debug?.(`Connection error: ${error.message}`)
+						reject(new Error(`Connection to ${url} failed.`))
+					})
+					.on('message', async (msg) => {
+						const message = JSON.parse(msg.toString())
+						debug?.(`<< ` + msg.toString())
+						messages[ulid()] = message
+					}),
+			),
+		close: () => {
+			debug?.(`Closing connection`)
+			client.terminate()
+		},
+		messages,
+		send: async (message) =>
+			new Promise<void>((resolve, reject) => {
+				const strMessage = JSON.stringify(message)
+				client.send(strMessage, (error) => {
+					if (error) return reject(error)
+					debug?.(`>> ` + strMessage)
+					resolve()
+				})
+			}),
 	}
 
-	return clients[id] as WebSocketClient
+	return wsClient
 }
