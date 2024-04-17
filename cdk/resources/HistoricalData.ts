@@ -67,7 +67,6 @@ export class HistoricalData extends Construct {
 				description: 'Save converted messages into Timestream database',
 				environment: {
 					VERSION: this.node.getContext('version'),
-					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 					NODE_NO_WARNINGS: '1',
 					DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
@@ -108,7 +107,6 @@ export class HistoricalData extends Construct {
 				description: 'Handle historical data request',
 				environment: {
 					VERSION: this.node.getContext('version'),
-					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 					NODE_NO_WARNINGS: '1',

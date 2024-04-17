@@ -43,7 +43,6 @@ export class ConfigureDevice extends Construct {
 			description: 'Handle device configuration request',
 			environment: {
 				VERSION: this.node.getContext('version'),
-				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				NODE_NO_WARNINGS: '1',
 				STACK_NAME: Stack.of(this).stackName,

@@ -99,7 +99,6 @@ export class DeviceShadow extends Construct {
 				environment: {
 					VERSION: this.node.getContext('version'),
 					QUEUE_URL: shadowQueue.queueUrl,
-					LOG_LEVEL: this.node.tryGetContext('logLevel'),
 					NODE_NO_WARNINGS: '1',
 					DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				},
@@ -125,7 +124,6 @@ export class DeviceShadow extends Construct {
 				WEBSOCKET_CONNECTIONS_TABLE_NAME:
 					websocketConnectionsTable.table.tableName,
 				LOCK_TABLE_NAME: lockTable.tableName,
-				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				STACK_NAME: Stack.of(this).stackName,
 				NODE_NO_WARNINGS: '1',
 				PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED: 'FALSE',

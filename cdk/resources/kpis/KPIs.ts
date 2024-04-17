@@ -40,7 +40,6 @@ export class KPIs extends Construct {
 			description: 'Collect KPIs and publish them as metrics',
 			environment: {
 				VERSION: this.node.getContext('version'),
-				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,

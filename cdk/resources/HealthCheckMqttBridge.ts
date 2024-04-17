@@ -51,7 +51,6 @@ export class HealthCheckMqttBridge extends Construct {
 			description: 'End to end test for mqtt bridge',
 			environment: {
 				VERSION: this.node.getContext('version'),
-				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				NODE_NO_WARNINGS: '1',
 				STACK_NAME: Stack.of(this).stackName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,

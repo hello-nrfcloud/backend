@@ -42,7 +42,6 @@ export class ConvertDeviceMessages extends Construct {
 			description: 'Convert device messages and publish them on the EventBus',
 			environment: {
 				VERSION: this.node.getContext('version'),
-				LOG_LEVEL: this.node.tryGetContext('logLevel'),
 				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
