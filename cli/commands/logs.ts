@@ -42,6 +42,9 @@ export const logsCommand = ({
 			flags: '-a, --age',
 			description: 'age of logs in minutes (defaults to 5 minutes)',
 		},
+		{
+			flags: '-l, --listLogGroups',
+		},
 	],
 	action: async ({
 		numLogGroups,
@@ -49,6 +52,7 @@ export const logsCommand = ({
 		filter,
 		deleteLogGroups,
 		age,
+		listLogGroups,
 	}) => {
 		const logGroups =
 			(
@@ -61,6 +65,13 @@ export const logsCommand = ({
 				),
 			)?.map(({ PhysicalResourceId }) => PhysicalResourceId as string) ??
 			([] as string[])
+
+		if (listLogGroups === true) {
+			for (const logGroup of logGroups) {
+				console.log(chalk.gray('-'), chalk.yellow(logGroup))
+			}
+			return
+		}
 
 		if (deleteLogGroups === true) {
 			await Promise.all(
