@@ -2,7 +2,7 @@ import {
 	LambdaLogGroup,
 	LambdaSource,
 } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cdk'
+import { Permissions as SettingsPermissions } from '@bifravst/aws-ssm-settings-helpers/cdk'
 import {
 	Duration,
 	aws_dynamodb as DynamoDB,
