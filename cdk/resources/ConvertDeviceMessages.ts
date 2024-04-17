@@ -10,7 +10,7 @@ import { IoTActionRole } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import type { BackendLambdas } from '../BackendLambdas.js'
+import type { BackendLambdas } from '../packBackendLambdas.js'
 
 /**
  * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects

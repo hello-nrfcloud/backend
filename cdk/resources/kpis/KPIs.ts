@@ -6,7 +6,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../../BackendLambdas.js'
+import type { BackendLambdas } from '../../packBackendLambdas.js'
 import type { DeviceLastSeen } from '../DeviceLastSeen.js'
 import type { DeviceStorage } from '../DeviceStorage.js'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'

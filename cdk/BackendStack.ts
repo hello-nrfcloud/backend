@@ -9,7 +9,7 @@ import {
 } from 'aws-cdk-lib'
 import { type CAFiles } from '../bridge/caLocation.js'
 import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation.js'
-import type { BackendLambdas } from './BackendLambdas.js'
+import type { BackendLambdas } from './packBackendLambdas.js'
 import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
 import { ContinuousDeployment } from './resources/ContinuousDeployment.js'
 import { ConvertDeviceMessages } from './resources/ConvertDeviceMessages.js'

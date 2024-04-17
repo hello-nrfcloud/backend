@@ -6,7 +6,7 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { DeviceStorage } from './DeviceStorage.js'
-import type { BackendLambdas } from '../BackendLambdas.js'
+import type { BackendLambdas } from '../packBackendLambdas.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { ApiRoute } from './ApiRoute.js'
 

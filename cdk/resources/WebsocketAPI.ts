@@ -12,7 +12,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../BackendLambdas.js'
+import type { BackendLambdas } from '../packBackendLambdas.js'
 import { ApiLogging } from './ApiLogging.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
 import type { DeviceShadow } from './DeviceShadow.js'
