@@ -6,9 +6,7 @@
   "scripts": {
     "test": "npx globstar -- npx tsx --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
     "test:e2e": "npx tsx --no-warnings ./feature-runner/run-features.ts > e2e-test-result.json && cat e2e-test-result.json | npx tsx --no-warnings ./feature-runner/console-reporter.ts --only-failed --with-timestamps",
-    "prepare": "husky && check-node-version --package",
-    "deploy": "cdk deploy",
-    "synth": "cdk synth"
+    "prepare": "husky && check-node-version --package"
   },
   "repository": {
     "type": "git",
