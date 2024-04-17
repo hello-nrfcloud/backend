@@ -53,7 +53,7 @@ export class ConfigureDevice extends Construct {
 		})
 		new Events.Rule(this, 'configureDeviceRule', {
 			eventPattern: {
-				source: ['thingy.ws'],
+				source: ['hello.ws'],
 				detailType: [Context.configureDevice.toString()],
 			},
 			targets: [new EventTargets.LambdaFunction(configureDevice)],

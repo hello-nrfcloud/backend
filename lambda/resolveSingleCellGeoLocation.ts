@@ -176,7 +176,7 @@ const h = async (event: {
 				Entries: [
 					{
 						EventBusName,
-						Source: 'thingy.ws',
+						Source: 'hello.ws',
 						DetailType: 'message',
 						Detail: JSON.stringify(<WebsocketPayload>{
 							deviceId,

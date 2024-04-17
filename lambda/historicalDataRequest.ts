@@ -88,7 +88,7 @@ const onSuccess =
 			Entries: [
 				{
 					EventBusName,
-					Source: 'thingy.ws',
+					Source: 'hello.ws',
 					DetailType: 'message',
 					Detail: JSON.stringify(<WebsocketPayload>{
 						deviceId,
@@ -193,7 +193,7 @@ const h = async (
 			Entries: [
 				{
 					EventBusName,
-					Source: 'thingy.ws',
+					Source: 'hello.ws',
 					DetailType: 'error',
 					Detail: JSON.stringify(<WebsocketPayload>{
 						deviceId: event.detail.deviceId,

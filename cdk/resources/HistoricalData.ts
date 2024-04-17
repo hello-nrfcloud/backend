@@ -87,7 +87,7 @@ export class HistoricalData extends Construct {
 		)
 		new Events.Rule(this, 'messagesRule', {
 			eventPattern: {
-				source: ['thingy.ws'],
+				source: ['hello.ws'],
 				detailType: ['message'],
 			},
 			targets: [new EventTargets.LambdaFunction(storeMessagesInTimestream)],
@@ -135,7 +135,7 @@ export class HistoricalData extends Construct {
 		)
 		new Events.Rule(this, 'historicalDataRequestRule', {
 			eventPattern: {
-				source: ['thingy.ws'],
+				source: ['hello.ws'],
 				detailType: [Context.historicalDataRequest.toString()],
 			},
 			targets: [new EventTargets.LambdaFunction(historicalDataRequest)],

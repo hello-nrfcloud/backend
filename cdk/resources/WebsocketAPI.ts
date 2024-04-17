@@ -318,7 +318,7 @@ export class WebsocketAPI extends Construct {
 		connectionsTable.table.grantReadWriteData(publishToWebsocketClients)
 		new Events.Rule(this, 'publishToWebsocketClientsRule', {
 			eventPattern: {
-				source: ['thingy.ws'],
+				source: ['hello.ws'],
 				detailType: ['message', 'connect', 'error'],
 			},
 			targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],

@@ -63,7 +63,7 @@ const error =
 			Entries: [
 				{
 					EventBusName,
-					Source: 'thingy.ws',
+					Source: 'hello.ws',
 					DetailType: 'error',
 					Detail: JSON.stringify(<WebsocketPayload>{
 						deviceId,
@@ -92,7 +92,7 @@ const success =
 			Entries: [
 				{
 					EventBusName,
-					Source: 'thingy.ws',
+					Source: 'hello.ws',
 					DetailType: request['@context'],
 					Detail: JSON.stringify(<WebsocketPayload>{
 						deviceId,
