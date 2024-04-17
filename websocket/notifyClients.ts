@@ -25,14 +25,21 @@ export const notifyClients =
 	}) =>
 	async (event: WebsocketPayload): Promise<void> => {
 		const { connectionId, deviceId, message } = event
-		const connectionIds: string[] =
-			connectionId !== undefined && connectionId !== ''
-				? [connectionId]
-				: await getActiveConnections(db, connectionsTableName, deviceId)
+		const connectionIds: string[] = []
+		if (connectionId !== undefined) {
+			connectionIds.push(connectionId)
+		} else {
+			connectionIds.push(
+				...(await getActiveConnections(db, connectionsTableName, deviceId)),
+			)
+			log.debug(
+				`${connectionIds.length} active connections found for device ${deviceId}.`,
+			)
+		}
 
-		log.info(`${connectionIds.length} active connections found.`)
-
+		log.info(`Notifying ${connectionIds.length} clients ...`)
 		for (const connectionId of connectionIds) {
+			log.debug(connectionId)
 			try {
 				await apiGwManagementClient.send(
 					new PostToConnectionCommand({

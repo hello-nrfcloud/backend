@@ -15,13 +15,15 @@ export const handler = async (
 	event: AuthorizedEvent,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
 	log.info('onDisconnect event', { event })
+	const { connectionId } = event.requestContext
+	log.debug('ws:disconnect', connectionId)
 
 	await db.send(
 		new DeleteItemCommand({
 			TableName,
 			Key: {
 				connectionId: {
-					S: event.requestContext.connectionId,
+					S: connectionId,
 				},
 			},
 		}),

@@ -43,6 +43,7 @@ export const handler = async (
 	log.debug('event', { event })
 	const context = event.requestContext.authorizer
 	const { connectionId } = event.requestContext
+	log.debug('ws:connect', connectionId)
 	const { deviceId, model } = context
 	if ('account' in context) {
 		const { account } = context

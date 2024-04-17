@@ -122,6 +122,7 @@ const h = async (): Promise<void> => {
 			})
 		})
 		log.info(`Found ${devicesToCheckShadowUpdate.length} devices to get shadow`)
+		log.debug(JSON.stringify(devicesToCheckShadowUpdate))
 		if (devicesToCheckShadowUpdate.length === 0) return
 
 		const deviceConnectionsMap = connections.reduce(

@@ -33,7 +33,7 @@ const notifier = notifyClients({
 export const handler = async (
 	event: EventBridgeEvent<'message' | 'connect' | 'error', WebsocketPayload>,
 ): Promise<void> => {
-	log.info('publishToWebSocketClients event', { event })
+	log.debug({ event })
 
 	await notifier(event.detail)
 }
