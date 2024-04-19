@@ -11,6 +11,7 @@ import { Type } from '@sinclair/typebox'
 import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import middy from '@middy/core'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
+import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 
 const { stackName, version } = fromEnv({
 	version: 'VERSION',
@@ -91,4 +92,7 @@ const h = async (
 	return aResponse(201)
 }
 
-export const handler = middy().use(addVersionHeader(version)).handler(h)
+export const handler = middy()
+	.use(corsOPTIONS('POST'))
+	.use(addVersionHeader(version))
+	.handler(h)
