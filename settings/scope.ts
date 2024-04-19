@@ -9,7 +9,6 @@ export type ScopeContext = {
 }
 
 export const ScopeContexts = {
-	STACK_CONFIG: <ScopeContext>{ scope: Scopes.STACK, context: 'context' },
 	STACK_MQTT_BRIDGE: <ScopeContext>{
 		scope: Scopes.STACK,
 		context: 'mqttBridge',
@@ -25,5 +24,9 @@ export const ScopeContexts = {
 	NRFCLOUD_BRIDGE_CERTIFICATE_CA: <ScopeContext>{
 		scope: Scopes.NRFCLOUD_BRIDGE_CERTIFICATE,
 		context: 'CA',
+	},
+	STACK_FEEDBACK: <ScopeContext>{
+		scope: Scopes.STACK,
+		context: 'feedback',
 	},
 } as const

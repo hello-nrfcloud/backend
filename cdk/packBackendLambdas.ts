@@ -20,6 +20,7 @@ export type BackendLambdas = {
 	configureDevice: PackedLambda
 	resolveSingleCellGeoLocation: PackedLambda
 	getDeviceByFingerprint: PackedLambda
+	feedback: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -41,4 +42,5 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	configureDevice: await pack('configureDevice'),
 	resolveSingleCellGeoLocation: await pack('resolveSingleCellGeoLocation'),
 	getDeviceByFingerprint: await pack('getDeviceByFingerprint'),
+	feedback: await pack('feedback'),
 })

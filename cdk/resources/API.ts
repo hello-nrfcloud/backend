@@ -9,6 +9,7 @@ import type { DeviceStorage } from './DeviceStorage.js'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { ApiRoute } from './ApiRoute.js'
+import { Permissions } from '@bifravst/aws-ssm-settings-helpers/cdk'
 
 export class API extends Construct {
 	public readonly api: HttpApi.CfnApi
@@ -24,7 +25,7 @@ export class API extends Construct {
 			layers,
 		}: {
 			deviceStorage: DeviceStorage
-			lambdaSources: Pick<BackendLambdas, 'getDeviceByFingerprint'>
+			lambdaSources: Pick<BackendLambdas, 'getDeviceByFingerprint' | 'feedback'>
 			layers: Lambda.ILayerVersion[]
 		},
 	) {
@@ -77,6 +78,26 @@ export class API extends Construct {
 		)
 		deviceStorage.devicesTable.grantReadData(getDeviceByFingerprint)
 		this.addRoute('GET /device', getDeviceByFingerprint)
+
+		// Feedback
+		const feedback = new Lambda.Function(this, 'feedbackFn', {
+			handler: lambdaSources.feedback.handler,
+			architecture: Lambda.Architecture.ARM_64,
+			runtime: Lambda.Runtime.NODEJS_20_X,
+			timeout: Duration.seconds(10),
+			memorySize: 1792,
+			code: Lambda.Code.fromAsset(lambdaSources.feedback.zipFile),
+			description: 'Publishes user feedback to teams.',
+			layers,
+			environment: {
+				VERSION: this.node.getContext('version'),
+				NODE_NO_WARNINGS: '1',
+				STACK_NAME: Stack.of(this).stackName,
+			},
+			initialPolicy: [Permissions(Stack.of(this))],
+			...new LambdaLogGroup(this, 'feedbackFnLogs'),
+		})
+		this.addRoute('POST /feedback', feedback)
 	}
 
 	public addRoute(methodAndRoute: string, fn: Lambda.IFunction): void {
