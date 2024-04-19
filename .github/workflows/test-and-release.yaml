@@ -269,6 +269,7 @@ jobs:
           ./cli.sh configure-nrfcloud-account nordic apiKey apiKey_Nordic
           ./cli.sh configure-nrfcloud-account elite apiEndpoint ${{ env.HTTP_API_MOCK_API_URL }}
           ./cli.sh configure-nrfcloud-account elite apiKey apiKey_Elite
+          ./cli.sh configure-feedback webhookURL ${{ env.HTTP_API_MOCK_API_URL }}webhook.office.com/
 
       - name: Deploy solution stack
         env:

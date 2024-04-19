@@ -25,9 +25,7 @@ const settings = await getFeedbackSettings({ ssm, stackName })
 const validateInput = validateWithTypeBox(
 	Type.Object({
 		stars: Type.Integer({ minimum: 1, maximum: 5, title: 'Star rating' }),
-		suggestion: Type.Optional(
-			Type.String({ minLength: 1, title: 'Suggestion' }),
-		),
+		suggestion: Type.String({ minLength: 1, title: 'Suggestion' }),
 		email: Type.RegExp(/.+@.+/, { title: 'Email' }),
 	}),
 )
@@ -70,12 +68,8 @@ const h = async (
 							name: 'Email:',
 							value: email,
 						},
-						{
-							name: 'Created:',
-							value: new Date().toISOString(),
-						},
 					],
-					text: suggestion ?? 'No feedback provided',
+					text: suggestion,
 				},
 			],
 		}),

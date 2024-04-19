@@ -12,14 +12,14 @@ import {
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { parseMockRequest } from './parseMockRequest.js'
 import { check, objectMatching, stringContaining } from 'tsmatchers'
-import { parseMockResponse } from './parseMockResponse.js'
 import pRetry from 'p-retry'
 import {
 	sortQuery,
 	sortQueryString,
 } from '@bifravst/http-api-mock/sortQueryString'
+import { parseMockRequest } from '@bifravst/http-api-mock/parseMockRequest'
+import { parseMockResponse } from '@bifravst/http-api-mock/parseMockResponse'
 import { URLSearchParamsToObject } from '@bifravst/http-api-mock/URLSearchParamsToObject'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 

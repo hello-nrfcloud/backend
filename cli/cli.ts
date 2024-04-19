@@ -36,6 +36,7 @@ import { configureCoAPHealthCheckCommand } from './commands/configure-coap-healt
 import { ECRClient } from '@aws-sdk/client-ecr'
 import { buildContainersCommand } from './commands/build-container.js'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
+import { configureFeedbackCommand } from './commands/configure-feedback.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -75,6 +76,7 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 			ssm,
 			stackName: STACK_NAME,
 		}),
+		configureFeedbackCommand({ ssm, stackName: STACK_NAME }),
 		buildContainersCommand({
 			ecr,
 			ssm,

@@ -14,15 +14,18 @@ import { steps as deviceSteps } from './steps/device.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
+import { steps as httpApiMockSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/httpApiMock'
+import { steps as randomSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
 import { websocketStepRunners } from './steps/websocket.js'
 import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
-const { responsesTableName, requestsTableName } = fromEnv({
+const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',
 	requestsTableName: 'HTTP_API_MOCK_REQUESTS_TABLE_NAME',
+	httpApiMockURL: 'HTTP_API_MOCK_API_URL',
 })(process.env)
 
 const ssm = new SSMClient({})
@@ -135,9 +138,22 @@ runner
 	.addStepRunners(...storageSteps)
 	.addStepRunners(...userSteps)
 	.addStepRunners(...RESTSteps)
+	.addStepRunners(
+		...httpApiMockSteps({
+			db,
+			requestsTableName,
+			responsesTableName,
+			httpMockApiURL: new URL(httpApiMockURL),
+		}),
+	)
+	.addStepRunners(...randomSteps())
 
 const res = await runner.run({
 	APIURL: backendConfig.APIURL.toString().replace(/\/+$/, ''),
+	feedbackWebhookURL: new URL(
+		'./webhook.office.com/',
+		httpApiMockURL,
+	).toString(),
 })
 
 await Promise.all(cleaners.map(async (fn) => fn()))

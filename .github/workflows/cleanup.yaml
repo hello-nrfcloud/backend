@@ -67,6 +67,7 @@ jobs:
           ./cli.sh fake-nrfcloud-account-device elite --remove
           ./cli.sh configure-nrfcloud-account elite apiEndpoint -X
           ./cli.sh configure-nrfcloud-account elite apiKey -X
+          ./cli.sh configure-feedback webhookURL -X
           ./cli.sh clean-backup-certificates
 
       - name: Delete ECR repositories
