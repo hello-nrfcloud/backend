@@ -10,7 +10,8 @@ import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/BackendStack.js'
 import { STACK_NAME } from '../cdk/stackConfig.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import { steps as deviceSteps } from './steps/device.js'
+import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
+import { steps as deviceRegistrySteps } from './steps/device/registry.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
@@ -113,12 +114,13 @@ cleaners.push(websocketCleanup)
 runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(
-		...deviceSteps(allAccountSettings, db, {
+		...deviceRegistrySteps(db, {
 			devicesTableFingerprintIndexName:
 				backendConfig.devicesTableFingerprintIndexName,
 			devicesTable: backendConfig.devicesTableName,
 		}),
 	)
+	.addStepRunners(...MQTTDeviceSteps(allAccountSettings))
 	.addStepRunners(
 		...mocknRFCloudSteps({
 			db,
