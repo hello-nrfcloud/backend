@@ -48,8 +48,8 @@ Content-Type: application/json
 
 Given I store `$millis()` into `ts`
 
-When the device `${fingerprint_deviceId}` publishes this message to the topic
-`m/d/${fingerprint_deviceId}/d2c`
+When the device `${fingerprint_deviceId}` publishes this message to the MQTT
+topic `m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {
@@ -111,8 +111,8 @@ Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzU0NDQ2N
 
 Given I store `$millis()` into `ts`
 
-When the device `${fingerprint_deviceId}` publishes this message to the topic
-`m/d/${fingerprint_deviceId}/d2c`
+When the device `${fingerprint_deviceId}` publishes this message to the MQTT
+topic `m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {

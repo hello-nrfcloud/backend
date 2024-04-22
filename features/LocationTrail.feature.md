@@ -23,8 +23,8 @@ And I store `$millis()` into `ts`
 
 Given I store `ts - ${deductSFromTS}` into `pastTs`
 
-And the device `${trailDevice_deviceId}` publishes this message to the topic
-`m/d/${trailDevice_deviceId}/d2c`
+And the device `${trailDevice_deviceId}` publishes this message to the MQTT
+topic `m/d/${trailDevice_deviceId}/d2c`
 
 ```json
 {

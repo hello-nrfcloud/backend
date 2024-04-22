@@ -22,8 +22,8 @@ And I store `$millis()` into `ts`
 
 And I store `$fromMillis(${ts})` into `tsISO`
 
-And the device `${fingerprint_deviceId}` publishes this message to the topic
-`m/d/${fingerprint_deviceId}/d2c`
+And the device `${fingerprint_deviceId}` publishes this message to the MQTT
+topic `m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {

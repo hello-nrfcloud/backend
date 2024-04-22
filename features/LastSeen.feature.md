@@ -19,8 +19,8 @@ Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
 
 And I store `$floor($millis()/1000)*1000` into `ts`
 
-And the device `${fingerprint_deviceId}` publishes this message to the topic
-`m/d/${fingerprint_deviceId}/d2c`
+And the device `${fingerprint_deviceId}` publishes this message to the MQTT
+topic `m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {

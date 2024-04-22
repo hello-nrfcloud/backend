@@ -169,7 +169,7 @@ const publishDeviceMessage = (
 	regExpMatchedStep(
 		{
 			regExp:
-				/^the device `(?<id>[^`]+)` publishes this message to the topic `(?<topic>[^`]+)`$/,
+				/^the device `(?<id>[^`]+)` publishes this message to the MQTT topic `(?<topic>[^`]+)`$/,
 			schema: Type.Object({
 				id: Type.String(),
 				topic: Type.String(),

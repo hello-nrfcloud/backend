@@ -20,8 +20,8 @@ And I store
 
 Given I store `ts - ${deductMsFromTS}` into `pastTs`
 
-And the device `${fingerprint_deviceId}` publishes this message to the topic
-`m/d/${fingerprint_deviceId}/d2c`
+And the device `${fingerprint_deviceId}` publishes this message to the MQTT
+topic `m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {
@@ -94,8 +94,8 @@ Soon I should receive a message on the websocket that matches
 
 Given I store `ts - ${deductMsFromTS}` into `pastTs`
 
-And the device `${fingerprint_deviceId}` publishes this message to the topic
-`m/d/${fingerprint_deviceId}/d2c`
+And the device `${fingerprint_deviceId}` publishes this message to the MQTT
+topic `m/d/${fingerprint_deviceId}/d2c`
 
 ```json
 {
