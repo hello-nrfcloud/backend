@@ -21,11 +21,9 @@ import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud
 import { logsCommand } from './commands/logs.js'
 import { provisionDkCommand } from './commands/provision-dk.js'
 import { registerDeviceCommand } from './commands/register-device.js'
-import { registerSimulatorDeviceCommand } from './commands/register-simulator-device.js'
 import { showDeviceCommand } from './commands/show-device.js'
 import { showFingerprintCommand } from './commands/show-fingerprint.js'
 import { showNRFCloudAccount } from './commands/show-nrfcloud-account.js'
-import { simulateDeviceCommand } from './commands/simulate-device.js'
 import { cleanBackupCertificates } from './commands/clean-backup-certificates.js'
 import { listnRFCloudAccountsCommand } from './commands/list-nrfcloud-accounts.js'
 import { configureRFCloudAccountCommand } from './commands/configure-nrfcloud-account.js'
@@ -132,20 +130,6 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				registerDeviceCommand({
 					db,
 					devicesTableName: outputs.devicesTableName,
-				}),
-				registerSimulatorDeviceCommand({
-					db,
-					devicesTableName: outputs.devicesTableName,
-					ssm,
-					stackName: STACK_NAME,
-					env: accountEnv,
-				}),
-				simulateDeviceCommand({
-					ssm,
-					stackName: STACK_NAME,
-					db,
-					devicesTableName: outputs.devicesTableName,
-					env: accountEnv,
 				}),
 				importDevicesCommand({
 					db,

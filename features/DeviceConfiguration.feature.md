@@ -2,6 +2,8 @@
 exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+  APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
+  ts: 1694503339523
 ---
 
 # Device configuration
@@ -15,13 +17,7 @@ exampleContext:
 
 Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
-And I connect to the websocket using fingerprint `${fingerprint}`
-
-## Enable GNSS
-
-> GNSS location is disabled by default to allow other data to be acquired faster
-> on the device (because waiting for GNSS) takes quite a long time. Users are
-> allowed to enable it.
+## Turn the LED on
 
 Given this nRF Cloud API is queued for a
 `PATCH /v1/devices/${fingerprint_deviceId}/state` request
@@ -30,17 +26,20 @@ Given this nRF Cloud API is queued for a
 HTTP/1.1 202 Accepted
 ```
 
-When I send this message via the websocket
+And I store `$millis()` into `ts`
+
+When I `PATCH`
+`${APIURL}/device/${fingerprint_deviceId}/state?fingerprint=${fingerprint}` with
 
 ```json
 {
-  "message": "message",
-  "payload": {
-    "@context": "https://github.com/hello-nrfcloud/proto/configure-device",
-    "id": "${fingerprint_deviceId}",
-    "configuration": {
-      "gnss": true
-    }
+  "@context": "https://github.com/hello-nrfcloud/proto/lwm2m/object/update",
+  "ObjectID": 14240,
+  "Resources": {
+    "0": 255,
+    "1": 255,
+    "2": 255,
+    "99": "$number{ts}"
   }
 }
 ```
@@ -51,62 +50,23 @@ Soon I should receive a message on the websocket that matches
 {
   "@context": "https://github.com/hello-nrfcloud/proto/device-configured",
   "id": "${fingerprint_deviceId}",
-  "configuration": { "gnss": true }
-}
-```
-
-Soon the nRF Cloud API should have been called with
-
-```
-PATCH /v1/devices/${fingerprint_deviceId}/state HTTP/1.1
-Content-Type: application/json
-
-{"desired":{"config":{"nod":[]}}}
-```
-
-## Configure update interval
-
-> The default updated interval is optimized for interactivity. Users can change
-> that interval to something that suits their needs in order to extend battery
-> life and reduce data consumption.
-
-Given this nRF Cloud API is queued for a
-`PATCH /v1/devices/${fingerprint_deviceId}/state` request
-
-```
-HTTP/1.1 202 Accepted
-```
-
-When I send this message via the websocket
-
-```json
-{
-  "message": "message",
-  "payload": {
-    "@context": "https://github.com/hello-nrfcloud/proto/configure-device",
-    "id": "${fingerprint_deviceId}",
-    "configuration": {
-      "updateIntervalSeconds": 600
+  "update": {
+    "ObjectID": 14240,
+    "Resources": {
+      "0": 255,
+      "1": 255,
+      "2": 255,
+      "99": "$number{ts}"
     }
   }
 }
 ```
 
-Soon I should receive a message on the websocket that matches
-
-```json
-{
-  "@context": "https://github.com/hello-nrfcloud/proto/device-configured",
-  "id": "${fingerprint_deviceId}",
-  "configuration": { "updateIntervalSeconds": 600 }
-}
-```
-
 Soon the nRF Cloud API should have been called with
 
 ```
 PATCH /v1/devices/${fingerprint_deviceId}/state HTTP/1.1
 Content-Type: application/json
 
-{"desired":{"config":{"activeWaitTime":600}}}
+{"desired":{"14240:1.0":{"0":{"0":255,"1":255,"2":255,"99":"$number{ts}"}}}}
 ```

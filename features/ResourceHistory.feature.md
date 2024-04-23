@@ -42,7 +42,7 @@ When I `GET`
 `${APIURL}/device/${fingerprint_deviceId}/history/14230/0?fingerprint=${fingerprint}`
 
 Then I should receive a
-`https://github.com/hello-nrfcloud/proto-map/history/resource` response
+`https://github.com/hello-nrfcloud/proto/lwm2m/object/history` response
 
 And `$.query` of the last response should match
 

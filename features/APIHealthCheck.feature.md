@@ -11,7 +11,7 @@ exampleContext:
 
 When I `GET` `${APIURL}/health`
 
-Then I should receive a `https://github.com/hello-nrfcloud/proto-map/api/health`
+Then I should receive a `https://github.com/hello-nrfcloud/proto/api/health`
 response
 
 And the last response should match

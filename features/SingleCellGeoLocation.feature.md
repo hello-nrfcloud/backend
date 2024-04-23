@@ -48,8 +48,8 @@ Content-Type: application/json
 
 Given I store `$millis()` into `ts`
 
-When the device `${fingerprint_deviceId}` publishes this message to the MQTT
-topic `m/d/${fingerprint_deviceId}/d2c`
+When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
+`/msg/d2c/raw` with this SenML payload
 
 ```json
 [
@@ -136,38 +136,63 @@ Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzU0NDQ2N
 
 Given I store `$millis()` into `ts`
 
-When the device `${fingerprint_deviceId}` publishes this message to the MQTT
-topic `m/d/${fingerprint_deviceId}/d2c`
+When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
+`/msg/d2c/raw` with this SenML payload
 
 ```json
-{
-  "appId": "DEVICE",
-  "messageType": "DATA",
-  "ts": "$number{ts}",
-  "data": {
-    "networkInfo": {
-      "currentBand": 20,
-      "networkMode": "LTE-M",
-      "rsrp": -102,
-      "areaCode": 2305,
-      "mccmnc": 24202,
-      "cellID": 34237196,
-      "ipAddress": "100.74.127.55",
-      "eest": 7
-    }
+[
+  {
+    "bn": "14203/0/",
+    "n": "0",
+    "vs": "LTE-M",
+    "bt": "$number{ts}"
+  },
+  {
+    "n": "1",
+    "v": 20
+  },
+  {
+    "n": "2",
+    "v": -102
+  },
+  {
+    "n": "3",
+    "v": 2305
+  },
+  {
+    "n": "4",
+    "v": 34237196
+  },
+  {
+    "n": "5",
+    "v": 24202
+  },
+  {
+    "n": "6",
+    "vs": "100.74.127.55"
+  },
+  {
+    "n": "11",
+    "v": 7
   }
-}
+]
 ```
 
 Soon I should receive a message on the websocket that matches
 
 ```json
 {
-  "@context": "https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/location",
-  "lat": 63.41999531,
-  "lng": 10.42999506,
-  "acc": 2420,
-  "ts": "$number{ts}",
-  "src": "SCELL"
+  "@context": "https://github.com/hello-nrfcloud/proto/lwm2m/object/update",
+  "ObjectID": 14203,
+  "Resources": {
+    "0": "LTE-M",
+    "1": 20,
+    "2": -102,
+    "3": 2305,
+    "4": 34237196,
+    "5": 24202,
+    "6": "100.74.127.55",
+    "11": 7
+  }
 }
 ```
