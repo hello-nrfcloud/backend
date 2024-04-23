@@ -14,8 +14,10 @@ import type { BackendLambdas } from '../packBackendLambdas.js'
 
 /**
  * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
+ *
+ * @deprecated See https://github.com/hello-nrfcloud/proto/issues/137
  */
-export class ConvertDeviceMessages extends Construct {
+export class ConvertDeviceMessagesMQTTLegacy extends Construct {
 	public constructor(
 		parent: Construct,
 		{
@@ -26,19 +28,19 @@ export class ConvertDeviceMessages extends Construct {
 		}: {
 			deviceStorage: DeviceStorage
 			websocketEventBus: WebsocketEventBus
-			lambdaSources: Pick<BackendLambdas, 'onDeviceMessage'>
+			lambdaSources: Pick<BackendLambdas, 'onDeviceMessageMQTT'>
 			layers: Lambda.ILayerVersion[]
 		},
 	) {
-		super(parent, 'converter')
+		super(parent, 'converterMQTTLegacy')
 
-		const onDeviceMessage = new Lambda.Function(this, 'onDeviceMessage', {
-			handler: lambdaSources.onDeviceMessage.handler,
+		const fn = new Lambda.Function(this, 'fn', {
+			handler: lambdaSources.onDeviceMessageMQTT.handler,
 			architecture: Lambda.Architecture.ARM_64,
 			runtime: Lambda.Runtime.NODEJS_20_X,
 			timeout: Duration.seconds(5),
 			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.onDeviceMessage).code,
+			code: new LambdaSource(this, lambdaSources.onDeviceMessageMQTT).code,
 			description: 'Convert device messages and publish them on the EventBus',
 			environment: {
 				VERSION: this.node.getContext('version'),
@@ -49,10 +51,10 @@ export class ConvertDeviceMessages extends Construct {
 				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 			layers,
-			...new LambdaLogGroup(this, 'onDeviceMessageLogs'),
+			...new LambdaLogGroup(this, 'fnLogs'),
 		})
-		websocketEventBus.eventBus.grantPutEventsTo(onDeviceMessage)
-		deviceStorage.devicesTable.grantReadData(onDeviceMessage)
+		websocketEventBus.eventBus.grantPutEventsTo(fn)
+		deviceStorage.devicesTable.grantReadData(fn)
 
 		const rule = new IoT.CfnTopicRule(this, 'topicRule', {
 			topicRulePayload: {
@@ -70,7 +72,7 @@ export class ConvertDeviceMessages extends Construct {
 				actions: [
 					{
 						lambda: {
-							functionArn: onDeviceMessage.functionArn,
+							functionArn: fn.functionArn,
 						},
 					},
 				],
@@ -83,7 +85,7 @@ export class ConvertDeviceMessages extends Construct {
 			},
 		})
 
-		onDeviceMessage.addPermission('topicRule', {
+		fn.addPermission('topicRule', {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
 			sourceArn: rule.attrArn,
 		})

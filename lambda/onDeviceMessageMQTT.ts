@@ -7,7 +7,6 @@ import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { getDeviceAttributesById } from './getDeviceAttributes.js'
 
 const { EventBusName, DevicesTableName } = fromEnv({
@@ -15,21 +14,20 @@ const { EventBusName, DevicesTableName } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 })(process.env)
 
-const log = logger('deviceMessage')
 const db = new DynamoDBClient({})
 const eventBus = new EventBridge({})
 
 const deviceFetcher = getDeviceAttributesById({ db, DevicesTableName })
 
-const { track, metrics } = metricsForComponent('onDeviceMessage')
+const { track, metrics } = metricsForComponent('deviceMessage')
 
 const h = async (event: {
 	message: unknown
 	deviceId: string
 	timestamp: number
 }): Promise<void> => {
-	log.debug('event', { event })
-	track('deviceMessage', MetricUnit.Count, 1)
+	console.debug({ event })
+	track('deviceMessageMQTT', MetricUnit.Count, 1)
 	const { deviceId, message } = event
 
 	// Fetch model for device
@@ -37,23 +35,26 @@ const h = async (event: {
 
 	const converted = await proto({
 		onError: (message, model, error) => {
-			log.error('Could not transform message', {
-				payload: message,
-				model,
-				error,
-			})
+			console.error(
+				'Could not transform message',
+				JSON.stringify({
+					payload: message,
+					model,
+					error,
+				}),
+			)
 		},
 	})(model, message)
 
 	if (converted.length === 0) {
-		track('unknownDeviceMessage', MetricUnit.Count, 1)
+		track('unknownDeviceMessageMQTT', MetricUnit.Count, 1)
 	} else {
-		track('convertedDeviceMessage', MetricUnit.Count, converted.length)
+		track('convertedDeviceMessageMQTT', MetricUnit.Count, converted.length)
 	}
 
 	await Promise.all(
 		converted.map(async (message) => {
-			log.debug('websocket message', { payload: message })
+			console.debug('websocket message', JSON.stringify({ payload: message }))
 			return eventBus.putEvents({
 				Entries: [
 					{

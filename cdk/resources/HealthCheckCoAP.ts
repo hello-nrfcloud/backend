@@ -62,6 +62,7 @@ export class HealthCheckCoAP extends Construct {
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				WEBSOCKET_URL: websocketAPI.websocketURI,
 				COAP_LAMBDA: coapLambda.functionName,
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 			initialPolicy: [SettingsPermissions(Stack.of(this))],
 			layers,

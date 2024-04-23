@@ -11,6 +11,7 @@ import type { StackOutputs as BackendStackOutputs } from '../cdk/BackendStack.js
 import { STACK_NAME } from '../cdk/stackConfig.js'
 import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
 import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
+import { steps as CoAPDeviceSteps } from './steps/device/CoAP.js'
 import { steps as deviceRegistrySteps } from './steps/device/registry.js'
 import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
@@ -22,6 +23,7 @@ import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 
 const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',
@@ -30,6 +32,7 @@ const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 })(process.env)
 
 const ssm = new SSMClient({})
+const iotData = new IoTDataPlaneClient({})
 
 /**
  * This file configures the BDD Feature runner
@@ -121,6 +124,7 @@ runner
 		}),
 	)
 	.addStepRunners(...MQTTDeviceSteps(allAccountSettings))
+	.addStepRunners(...CoAPDeviceSteps({ iotData }))
 	.addStepRunners(
 		...mocknRFCloudSteps({
 			db,

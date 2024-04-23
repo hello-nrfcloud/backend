@@ -110,6 +110,7 @@ export class HistoricalData extends Construct {
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 					NODE_NO_WARNINGS: '1',
+					DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				},
 				layers,
 				initialPolicy: [

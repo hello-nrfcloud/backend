@@ -46,6 +46,7 @@ export class ConfigureDevice extends Construct {
 				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				NODE_NO_WARNINGS: '1',
 				STACK_NAME: Stack.of(this).stackName,
+				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
 			layers,
 			...new LambdaLogGroup(this, 'configureDeviceLogs'),

@@ -12,14 +12,13 @@ import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation.j
 import type { BackendLambdas } from './packBackendLambdas.js'
 import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
 import { ContinuousDeployment } from './resources/ContinuousDeployment.js'
-import { ConvertDeviceMessages } from './resources/ConvertDeviceMessages.js'
+import { ConvertDeviceMessagesMQTTLegacy } from './resources/ConvertDeviceMessagesMQTTLegacy.js'
 import { DeviceLastSeen } from './resources/DeviceLastSeen.js'
 import { DeviceShadow } from './resources/DeviceShadow.js'
 import { DeviceStorage } from './resources/DeviceStorage.js'
 import { HealthCheckMqttBridge } from './resources/HealthCheckMqttBridge.js'
 import { HistoricalData } from './resources/HistoricalData.js'
 import { Integration } from './resources/Integration.js'
-import { parameterStoreLayerARN } from './resources/LambdaExtensionLayers.js'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { WebsocketAPI } from './resources/WebsocketAPI.js'
 import { KPIs } from './resources/kpis/KPIs.js'
@@ -32,13 +31,20 @@ import { HealthCheckCoAP } from './resources/HealthCheckCoAP.js'
 import { ContainerRepositoryId } from '../aws/ecr.js'
 import { repositoryName } from '@bifravst/aws-cdk-ecr-helpers/repository'
 import { API } from './resources/API.js'
+import { CoAPSenMLtoLwM2M } from './resources/CoAPSenMLtoLwM2M.js'
+import { SenMLImportLogs } from './resources/SenMLImportLogs.js'
+import { Feedback } from './resources/Feedback.js'
+import { DeviceInfo } from './resources/DeviceInfo.js'
+import { ConnectionInformationGeoLocation } from './resources/ConnectionInformationGeoLocation.js'
+import { APIHealthCheck } from './resources/APIHealthCheck.js'
+import { LwM2MObjectsHistory } from './resources/LwM2MObjectsHistory.js'
 
 export class BackendStack extends Stack {
 	public constructor(
 		parent: App,
 		{
 			lambdaSources,
-			layer,
+			baseLayer,
 			healthCheckLayer,
 			iotEndpoint,
 			mqttBridgeCertificate,
@@ -51,7 +57,7 @@ export class BackendStack extends Stack {
 			env,
 		}: {
 			lambdaSources: BackendLambdas
-			layer: PackedLayer
+			baseLayer: PackedLayer
 			healthCheckLayer: PackedLayer
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
@@ -71,22 +77,17 @@ export class BackendStack extends Stack {
 			env,
 		})
 
-		const baseLayer = new Lambda.LayerVersion(this, 'baseLayer', {
+		const baseLayerVersion = new Lambda.LayerVersion(this, 'baseLayer', {
 			layerVersionName: `${Stack.of(this).stackName}-baseLayer`,
 			code: new LambdaSource(this, {
 				id: 'baseLayer',
-				zipFile: layer.layerZipFile,
-				hash: layer.hash,
+				zipFile: baseLayer.layerZipFile,
+				hash: baseLayer.hash,
 			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
 			compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
 		})
-		const parameterStoreExtensionLayer =
-			Lambda.LayerVersion.fromLayerVersionArn(
-				this,
-				'parameterStoreExtensionLayer',
-				parameterStoreLayerARN[Stack.of(this).region] as string,
-			)
+
 		const healthCheckLayerVersion = new Lambda.LayerVersion(
 			this,
 			'healthCheckLayer',
@@ -101,11 +102,6 @@ export class BackendStack extends Stack {
 			},
 		)
 
-		const lambdaLayers: Lambda.ILayerVersion[] = [
-			baseLayer,
-			parameterStoreExtensionLayer,
-		]
-
 		const deviceStorage = new DeviceStorage(this)
 
 		const lastSeen = new DeviceLastSeen(this)
@@ -116,19 +112,26 @@ export class BackendStack extends Stack {
 		const deviceShadow = new DeviceShadow(this, {
 			websocketEventBus,
 			websocketConnectionsTable,
-			layers: lambdaLayers,
+			layers: [baseLayerVersion],
 			lambdaSources,
 		})
 
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			deviceStorage,
-			layers: lambdaLayers,
+			layers: [baseLayerVersion],
 			lastSeen,
 			deviceShadow,
 			connectionsTable: websocketConnectionsTable,
 			eventBus: websocketEventBus,
 		})
+
+		const api = new API(this)
+		api.addRoute(
+			'GET /health',
+			new APIHealthCheck(this, { layers: [baseLayerVersion], lambdaSources })
+				.fn,
+		)
 
 		new Integration(this, {
 			iotEndpoint,
@@ -151,7 +154,7 @@ export class BackendStack extends Stack {
 		new HealthCheckMqttBridge(this, {
 			websocketAPI,
 			deviceStorage,
-			layers: [...lambdaLayers, healthCheckLayerVersion],
+			layers: [baseLayerVersion, healthCheckLayerVersion],
 			lambdaSources,
 		})
 
@@ -172,22 +175,36 @@ export class BackendStack extends Stack {
 						tagOrDigest: coapSimulatorContainerTag,
 					},
 				),
-				layers: [...lambdaLayers, healthCheckLayerVersion],
+				layers: [baseLayerVersion, healthCheckLayerVersion],
 				lambdaSources,
 			})
 		}
 
-		new ConvertDeviceMessages(this, {
+		new ConvertDeviceMessagesMQTTLegacy(this, {
 			deviceStorage,
 			websocketEventBus,
 			lambdaSources,
-			layers: lambdaLayers,
+			layers: [baseLayerVersion],
 		})
+
+		const convertLwM2M = new CoAPSenMLtoLwM2M(this, {
+			lambdaSources,
+			layers: [baseLayerVersion],
+			websocketEventBus,
+		})
+
+		const senMLImportLogs = new SenMLImportLogs(this, {
+			deviceStorage,
+			lambdaSources,
+			layers: [baseLayerVersion],
+			importLogsTable: convertLwM2M.importLogs,
+		})
+		api.addRoute('GET /device/{id}/senml-imports', senMLImportLogs.fn)
 
 		const historicalData = new HistoricalData(this, {
 			lambdaSources,
 			websocketEventBus,
-			layers: lambdaLayers,
+			layers: [baseLayerVersion],
 		})
 
 		const cd = new ContinuousDeployment(this, {
@@ -197,29 +214,48 @@ export class BackendStack extends Stack {
 
 		new KPIs(this, {
 			lambdaSources,
-			layers: lambdaLayers,
+			layers: [baseLayerVersion],
 			lastSeen,
 			deviceStorage,
 		})
 
 		new ConfigureDevice(this, {
 			lambdaSources,
-			layers: lambdaLayers,
+			layers: [baseLayerVersion],
 			websocketEventBus,
 		})
 
 		new SingleCellGeoLocation(this, {
 			lambdaSources,
-			layers: lambdaLayers,
+			layers: [baseLayerVersion],
 			websocketEventBus,
 			deviceStorage,
 		})
 
-		const api = new API(this, {
+		const feedback = new Feedback(this, {
+			lambdaSources,
+			layers: [baseLayerVersion],
+		})
+		api.addRoute('POST /feedback', feedback.fn)
+
+		const deviceInfo = new DeviceInfo(this, {
 			deviceStorage,
 			lambdaSources,
-			layers: lambdaLayers,
+			layers: [baseLayerVersion],
 		})
+		api.addRoute('GET /device', deviceInfo.fn)
+
+		new ConnectionInformationGeoLocation(this, {
+			layers: [baseLayerVersion],
+			lambdaSources,
+		})
+
+		const lwm2mObjectHistory = new LwM2MObjectsHistory(this, {
+			deviceStorage,
+			layers: [baseLayerVersion],
+			lambdaSources,
+		})
+		api.addRoute('GET /device/{id}/history', lwm2mObjectHistory.historyFn)
 
 		// Outputs
 		new CfnOutput(this, 'webSocketURI', {

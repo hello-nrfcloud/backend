@@ -72,14 +72,14 @@ const h = async (event: {
 	}
 
 	const fingerprint = maybeValidInput.value.fingerprint
-	const device = await getDevice(fingerprint)
-	if (device === null) {
+	const maybeDevice = await getDevice(fingerprint)
+	if ('error' in maybeDevice) {
 		log.error(`DeviceId is not found with`, { fingerprint })
 		track('authorizer:badFingerprint', MetricUnit.Count, 1)
 		return deny
 	}
 
-	const { model, id: deviceId, account } = device
+	const { model, id: deviceId, account } = maybeDevice.device
 
 	if (model === undefined || deviceId === undefined) {
 		log.error(`Required information is missing`, {

@@ -8,6 +8,7 @@ import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { NRF_CLOUD_ACCOUNT } from '../../../settings/account.js'
 
 /**
  * @deprecated See https://github.com/hello-nrfcloud/proto/issues/137
@@ -27,9 +28,9 @@ export const steps = (
 		async ({ match: { id, topic }, log: { progress, error }, step }) => {
 			const message = JSON.parse(codeBlockOrThrow(step).code)
 
-			const nRFCloudSettings = allAccountSettings['nordic']
+			const nRFCloudSettings = allAccountSettings[NRF_CLOUD_ACCOUNT]
 			if (nRFCloudSettings === undefined) {
-				throw new Error('No default nRF Cloud settings (nordic)')
+				throw new Error(`No default nRF Cloud settings (${NRF_CLOUD_ACCOUNT})`)
 			}
 
 			progress(`Device id ${id} publishes to topic ${topic}`)

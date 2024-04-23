@@ -3,7 +3,6 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { isEqual } from 'lodash-es'
 import { table } from 'table'
-import { getDevice } from '../../devices/getDevice.js'
 import {
 	devices,
 	DeviceConfig,
@@ -12,6 +11,7 @@ import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/setting
 import type { CommandDefinition } from './CommandDefinition.js'
 import type { Static } from '@sinclair/typebox'
 import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
+import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.js'
 
 const defaultActiveWaitTimeSeconds = 120
 const defaultLocationTimeoutSeconds = 60
@@ -45,13 +45,11 @@ export const configureDeviceCommand = ({
 		fingerprint,
 		{ activeWaitTime, locationTimeout, disableGNSS },
 	) => {
-		const maybeDevice = await getDevice({
+		const maybeDevice = await getDeviceByFingerprint({
 			db,
-			devicesTableName,
-			devicesIndexName,
-		})({
-			fingerprint,
-		})
+			DevicesTableName: devicesTableName,
+			DevicesIndexName: devicesIndexName,
+		})(fingerprint)
 
 		if ('error' in maybeDevice) {
 			console.error(chalk.red('⚠️'), '', chalk.red(maybeDevice.error.message))

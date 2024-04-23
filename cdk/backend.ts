@@ -117,7 +117,7 @@ const nRFCloudAccounts = await getAllAccounts({
 
 new BackendApp({
 	lambdaSources: await packBackendLambdas(),
-	layer: await packBaseLayer(),
+	baseLayer: await packBaseLayer(),
 	healthCheckLayer: await packHealthCheckLayer(),
 	iotEndpoint: await getIoTEndpoint({ iot }),
 	mqttBridgeCertificate,

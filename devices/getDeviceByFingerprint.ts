@@ -1,6 +1,6 @@
 import { QueryCommand, type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import type { Device } from './getDevice.js'
+import type { Device } from './device.js'
 
 export const getDeviceByFingerprint =
 	({
@@ -12,7 +12,14 @@ export const getDeviceByFingerprint =
 		DevicesTableName: string
 		DevicesIndexName: string
 	}) =>
-	async (fingerprint: string): Promise<null | Device> => {
+	async (
+		fingerprint: string,
+	): Promise<
+		| {
+				device: Device
+		  }
+		| { error: Error }
+	> => {
 		const res = await db.send(
 			new QueryCommand({
 				TableName: DevicesTableName,
@@ -28,12 +35,17 @@ export const getDeviceByFingerprint =
 				},
 			}),
 		)
-		if (res.Items?.[0] === undefined) return null
+		if (res.Items?.[0] === undefined)
+			return {
+				error: new Error(`Device with fingerprint ${fingerprint} not found.`),
+			}
 		const { deviceId: id, model, account } = unmarshall(res.Items[0])
 		return {
-			id,
-			fingerprint,
-			model,
-			account,
+			device: {
+				id,
+				fingerprint,
+				model,
+				account,
+			},
 		}
 	}

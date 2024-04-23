@@ -48,14 +48,15 @@ const h = async (
 		})
 	}
 
-	const device = await getDevice(maybeValidInput.value.fingerprint)
-	if (device === null) {
+	const maybeDevice = await getDevice(maybeValidInput.value.fingerprint)
+	if ('error' in maybeDevice) {
 		return aProblem({
 			title: `No device found for fingerprint!`,
 			detail: maybeValidInput.value.fingerprint,
 			status: 404,
 		})
 	}
+	const device = maybeDevice.device
 
 	return aResponse(
 		200,

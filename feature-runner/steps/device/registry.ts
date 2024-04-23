@@ -7,11 +7,12 @@ import { Type } from '@sinclair/typebox'
 import { randomUUID } from 'node:crypto'
 import pRetry from 'p-retry'
 import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
-import { getDevice as getDeviceFromIndex } from '../../../devices/getDevice.js'
 import { getAttributesForDevice } from '../../../devices/getAttributesForDevice.js'
 import { registerDevice } from '../../../devices/registerDevice.js'
 import { registerUnsupportedDevice } from '../../../devices/registerUnsupportedDevice.js'
 import { IMEI } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
+import { NRF_CLOUD_ACCOUNT } from '../../../settings/account.js'
+import { getDeviceByFingerprint } from '../../../devices/getDeviceByFingerprint.js'
 
 export const createDeviceForModel = ({
 	db,
@@ -37,7 +38,7 @@ export const createDeviceForModel = ({
 			log: { progress },
 			context,
 		}) => {
-			const account = maybeAccount ?? 'nordic'
+			const account = maybeAccount ?? NRF_CLOUD_ACCOUNT
 			const fingerprint = `92b.${generateCode()}`
 			const id = `oob-${IMEI()}`
 
@@ -79,11 +80,11 @@ const waitForDeviceToBeAvailable =
 	async (fingerprint: string) => {
 		await pRetry(
 			async () => {
-				const res = await getDeviceFromIndex({
+				const res = await getDeviceByFingerprint({
 					db,
-					devicesTableName: devicesTable,
-					devicesIndexName: devicesTableFingerprintIndexName,
-				})({ fingerprint })
+					DevicesTableName: devicesTable,
+					DevicesIndexName: devicesTableFingerprintIndexName,
+				})(fingerprint)
 				if ('error' in res)
 					throw new Error(`Failed to resolve fingerprint ${fingerprint}!`)
 			},

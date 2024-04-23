@@ -11,7 +11,12 @@ export type BackendLambdas = {
 	publishToWebsocketClients: PackedLambda
 	prepareDeviceShadow: PackedLambda
 	fetchDeviceShadow: PackedLambda
-	onDeviceMessage: PackedLambda
+	/**
+	 * @deprecated See https://github.com/hello-nrfcloud/proto/issues/137
+	 */
+	onDeviceMessageMQTT: PackedLambda
+	onLwM2MUpdate: PackedLambda
+	senMLImportLogs: PackedLambda
 	storeMessagesInTimestream: PackedLambda
 	healthCheck: PackedLambda
 	healthCheckForCoAP: PackedLambda
@@ -21,6 +26,10 @@ export type BackendLambdas = {
 	resolveSingleCellGeoLocation: PackedLambda
 	getDeviceByFingerprint: PackedLambda
 	feedback: PackedLambda
+	connectionInformationGeoLocation: PackedLambda
+	storeObjectsInTimestream: PackedLambda
+	queryLwM2MHistory: PackedLambda
+	apiHealthCheck: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -33,7 +42,9 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	publishToWebsocketClients: await pack('publishToWebsocketClients'),
 	prepareDeviceShadow: await pack('prepareDeviceShadow'),
 	fetchDeviceShadow: await pack('fetchDeviceShadow'),
-	onDeviceMessage: await pack('onDeviceMessage'),
+	onDeviceMessageMQTT: await pack('onDeviceMessageMQTT'),
+	onLwM2MUpdate: await pack('onLwM2MUpdate'),
+	senMLImportLogs: await pack('senMLImportLogs'),
 	storeMessagesInTimestream: await pack('storeMessagesInTimestream'),
 	healthCheck: await pack('healthCheck'),
 	healthCheckForCoAP: await pack('healthCheckForCoAP'),
@@ -43,4 +54,10 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	resolveSingleCellGeoLocation: await pack('resolveSingleCellGeoLocation'),
 	getDeviceByFingerprint: await pack('getDeviceByFingerprint'),
 	feedback: await pack('feedback'),
+	connectionInformationGeoLocation: await pack(
+		'connectionInformationGeoLocation',
+	),
+	storeObjectsInTimestream: await pack('storeObjectsInTimestream'),
+	queryLwM2MHistory: await pack('queryLwM2MHistory'),
+	apiHealthCheck: await pack('apiHealthCheck'),
 })
