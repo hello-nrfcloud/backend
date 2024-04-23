@@ -1,19 +1,26 @@
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	QueryCommand,
 	TimestreamQueryClient,
 	ValidationException,
 } from '@aws-sdk/client-timestream-query'
+import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
+import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
+import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
+import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
-import { HttpStatusCode, deviceId } from '@hello.nrfcloud.com/proto/hello'
 import {
+	LwM2MObjectIDs,
 	definitions,
-	isLwM2MObjectID,
 	type LWM2MObjectInfo,
 } from '@hello.nrfcloud.com/proto-map'
 import { Context, ResourceHistory } from '@hello.nrfcloud.com/proto-map/api'
+import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
+import { HttpStatusCode, deviceId } from '@hello.nrfcloud.com/proto/hello'
+import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
@@ -21,15 +28,13 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import middy from '@middy/core'
-import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
-import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
-import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
-import { isNumeric } from '../lwm2m/isNumeric.js'
-import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { getDeviceById } from '../devices/getDeviceById.js'
+import { isNumeric } from '../lwm2m/isNumeric.js'
+import {
+	HistoricalDataTimeSpans,
+	LastHour,
+	type HistoricalDataTimeSpan,
+} from '../historicalData/HistoricalDataTimeSpans.js'
 
 const { tableInfo, DevicesTableName, version } = fromEnv({
 	version: 'VERSION',
@@ -43,16 +48,19 @@ if (DatabaseName === undefined || TableName === undefined)
 
 const ts = new TimestreamQueryClient({})
 
-const binIntervalMinutes = 15
-
 const validateInput = validateWithTypeBox(
 	Type.Object({
-		instance: Type.RegExp('^[0-9]+/[0-9]+$', {
-			title: 'Instance',
-			examples: ['14201/1'],
-		}),
-		id: deviceId,
+		deviceId,
+		objectId: Type.Union(LwM2MObjectIDs.map((id) => Type.Literal(id))),
+		instanceId: Type.Integer({ minimum: 0 }),
 		fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
+		timeSpan: Type.Optional(
+			Type.Union(
+				Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
+					Type.Literal(timeSpan),
+				),
+			),
+		),
 	}),
 )
 
@@ -78,8 +86,8 @@ const h = async (
 	console.log(JSON.stringify(event))
 
 	const maybeValidInput = validateInput({
-		...(event.pathParameters ?? {}),
 		...(event.queryStringParameters ?? {}),
+		...(event.pathParameters ?? {}),
 	})
 	if ('errors' in maybeValidInput) {
 		return aProblem({
@@ -89,11 +97,11 @@ const h = async (
 		})
 	}
 
-	const maybeDevice = await getDevice(maybeValidInput.value.id)
+	const maybeDevice = await getDevice(maybeValidInput.value.deviceId)
 	if ('error' in maybeDevice) {
 		return aProblem({
 			title: `No device found with ID!`,
-			detail: maybeValidInput.value.id,
+			detail: maybeValidInput.value.deviceId,
 			status: HttpStatusCode.NOT_FOUND,
 		})
 	}
@@ -106,24 +114,17 @@ const h = async (
 		})
 	}
 
-	const { instance } = maybeValidInput.value
-
-	const [ObjectID, InstanceID] = (instance
-		?.split('/')
-		.map((s) => parseInt(s, 10)) ?? [-1, -1]) as [number, number]
-	if (!isLwM2MObjectID(ObjectID))
-		return aProblem({
-			title: `Unknown LwM2M ObjectID: ${ObjectID}`,
-			status: 400,
-		})
-
+	const { objectId: ObjectID, instanceId: InstanceID } = maybeValidInput.value
 	const def = definitions[ObjectID]
 
 	try {
+		const timeSpan =
+			HistoricalDataTimeSpans[maybeValidInput.value.timeSpan ?? ''] ?? LastHour
 		const history = await queryResourceHistory({
 			def,
 			instance: InstanceID,
 			deviceId: device.id,
+			timeSpan,
 		})
 		const result: Static<typeof ResourceHistory> = {
 			'@context': Context.history.resource.toString(),
@@ -132,7 +133,7 @@ const h = async (
 				ObjectVersion: def.ObjectVersion,
 				ObjectInstanceID: InstanceID,
 				deviceId: device.id,
-				binIntervalMinutes,
+				binIntervalMinutes: timeSpan.binIntervalMinutes,
 			},
 			partialInstances: history,
 		}
@@ -142,7 +143,7 @@ const h = async (
 				...result,
 				'@context': Context.history.resource,
 			},
-			binIntervalMinutes * 60,
+			timeSpan.expiresMinutes * 60,
 		)
 	} catch (err) {
 		console.error(err)
@@ -167,10 +168,12 @@ const queryResourceHistory = async ({
 	def,
 	instance,
 	deviceId,
+	timeSpan: { binIntervalMinutes, durationHours },
 }: {
 	def: LWM2MObjectInfo
 	instance: number
 	deviceId: string
+	timeSpan: HistoricalDataTimeSpan
 }): Promise<
 	Array<Record<number, string | number | boolean> & { ts: string }>
 > => {
@@ -190,7 +193,7 @@ const queryResourceHistory = async ({
 		`bin(time, ${binIntervalMinutes}m) AS ts`,
 		`FROM "${DatabaseName}"."${TableName}"`,
 		`WHERE measure_name = '${def.ObjectID}/${instance}'`,
-		`AND time > date_add('hour', -24, now())`,
+		`AND time > date_add('hour', -${durationHours}, now())`,
 		`AND ObjectID = '${def.ObjectID}'`,
 		`AND ObjectInstanceID = '${instance}'`,
 		`AND ObjectVersion = '${def.ObjectVersion}'`,

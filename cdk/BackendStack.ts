@@ -17,7 +17,6 @@ import { DeviceLastSeen } from './resources/DeviceLastSeen.js'
 import { DeviceShadow } from './resources/DeviceShadow.js'
 import { DeviceStorage } from './resources/DeviceStorage.js'
 import { HealthCheckMqttBridge } from './resources/HealthCheckMqttBridge.js'
-import { HistoricalData } from './resources/HistoricalData.js'
 import { Integration } from './resources/Integration.js'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { WebsocketAPI } from './resources/WebsocketAPI.js'
@@ -201,12 +200,6 @@ export class BackendStack extends Stack {
 		})
 		api.addRoute('GET /device/{id}/senml-imports', senMLImportLogs.fn)
 
-		const historicalData = new HistoricalData(this, {
-			lambdaSources,
-			websocketEventBus,
-			layers: [baseLayerVersion],
-		})
-
 		const cd = new ContinuousDeployment(this, {
 			repository,
 			gitHubOICDProviderArn,
@@ -255,7 +248,10 @@ export class BackendStack extends Stack {
 			layers: [baseLayerVersion],
 			lambdaSources,
 		})
-		api.addRoute('GET /device/{id}/history', lwm2mObjectHistory.historyFn)
+		api.addRoute(
+			'GET /device/{deviceId}/history/{objectId}/{instanceId}',
+			lwm2mObjectHistory.historyFn,
+		)
 
 		// Outputs
 		new CfnOutput(this, 'webSocketURI', {
@@ -273,11 +269,11 @@ export class BackendStack extends Stack {
 			description: 'Device table name fingerprint index name',
 			value: deviceStorage.devicesTableFingerprintIndexName,
 		})
-		new CfnOutput(this, 'historicalDataTableInfo', {
-			exportName: `${this.stackName}:historicalDataTableInfo`,
+		new CfnOutput(this, 'lwm2mObjectHistoryTableInfo', {
+			exportName: `${this.stackName}:lwm2mObjectHistoryTableInfo`,
 			description:
-				'DB and Name of the Timestream table that stores historical device messages',
-			value: historicalData.table.ref,
+				'DB and Name of the Timestream table that stores LwM2M object updates',
+			value: lwm2mObjectHistory.table.ref,
 		})
 		new CfnOutput(this, 'lastSeenTableName', {
 			exportName: `${this.stackName}:lastSeenTableName`,
@@ -302,7 +298,7 @@ export type StackOutputs = {
 	devicesTableName: string
 	lastSeenTableName: string
 	devicesTableFingerprintIndexName: string
-	historicalDataTableInfo: string
+	lwm2mObjectHistoryTableInfo: string
 	bridgePolicyName: string
 	bridgeCertificatePEM: string
 	cdRoleArn: string

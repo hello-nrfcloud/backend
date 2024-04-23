@@ -17,10 +17,8 @@ export type BackendLambdas = {
 	onDeviceMessageMQTT: PackedLambda
 	onLwM2MUpdate: PackedLambda
 	senMLImportLogs: PackedLambda
-	storeMessagesInTimestream: PackedLambda
 	healthCheck: PackedLambda
 	healthCheckForCoAP: PackedLambda
-	historicalDataRequest: PackedLambda
 	kpis: PackedLambda
 	configureDevice: PackedLambda
 	resolveSingleCellGeoLocation: PackedLambda
@@ -45,10 +43,8 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	onDeviceMessageMQTT: await pack('onDeviceMessageMQTT'),
 	onLwM2MUpdate: await pack('onLwM2MUpdate'),
 	senMLImportLogs: await pack('senMLImportLogs'),
-	storeMessagesInTimestream: await pack('storeMessagesInTimestream'),
 	healthCheck: await pack('healthCheck'),
 	healthCheckForCoAP: await pack('healthCheckForCoAP'),
-	historicalDataRequest: await pack('historicalDataRequest'),
 	kpis: await pack('kpis'),
 	configureDevice: await pack('configureDevice'),
 	resolveSingleCellGeoLocation: await pack('resolveSingleCellGeoLocation'),

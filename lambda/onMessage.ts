@@ -29,15 +29,11 @@ import { toBadRequest } from './ws/toBadRequest.js'
 import { validateRequest } from './ws/validateRequest.js'
 import { UNSUPPORTED_MODEL } from '../devices/registerUnsupportedDevice.js'
 
-const validateHistoricalDataRequest = validateWithTypeBox(CommonRequest)
 const validateConfigureDeviceRequest = validateWithTypeBox(ConfigureDevice)
 
 const validRequestContext = validateWithTypeBox(
 	Type.Object({
-		'@context': Type.Union([
-			Type.Literal(Context.historicalDataRequest.toString()),
-			Type.Literal(Context.configureDevice.toString()),
-		]),
+		'@context': Type.Union([Type.Literal(Context.configureDevice.toString())]),
 		'@id': Type.Optional(Type.String()),
 	}),
 )
@@ -191,14 +187,6 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 		  }
 
 	switch (context) {
-		case Context.historicalDataRequest.toString():
-			maybeValidRequest = validateRequest<typeof CommonRequest>(
-				payload,
-				validateHistoricalDataRequest,
-			)
-			if ('request' in maybeValidRequest)
-				track('historicalRequest', MetricUnit.Count, 1)
-			break
 		case Context.configureDevice.toString():
 			maybeValidRequest = validateRequest<typeof ConfigureDevice>(
 				payload,

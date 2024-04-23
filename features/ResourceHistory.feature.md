@@ -39,7 +39,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 ## Fetch the published data
 
 When I `GET`
-`${APIURL}/device/${fingerprint_deviceId}/history?fingerprint=${fingerprint}&instance=14230%2F0`
+`${APIURL}/device/${fingerprint_deviceId}/history/14230/0?fingerprint=${fingerprint}`
 
 Then I should receive a
 `https://github.com/hello-nrfcloud/proto-map/history/resource` response

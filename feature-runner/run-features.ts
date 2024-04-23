@@ -1,19 +1,14 @@
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
-import { TimestreamWriteClient } from '@aws-sdk/client-timestream-write'
 import { runFolder } from '@nordicsemiconductor/bdd-markdown'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/BackendStack.js'
 import { STACK_NAME } from '../cdk/stackConfig.js'
-import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
 import { steps as CoAPDeviceSteps } from './steps/device/CoAP.js'
 import { steps as deviceRegistrySteps } from './steps/device/registry.js'
-import { steps as historicalDataSteps } from './steps/historicalData.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
 import { steps as httpApiMockSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/httpApiMock'
@@ -22,7 +17,6 @@ import { websocketStepRunners } from './steps/websocket.js'
 import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 
 const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
@@ -45,23 +39,7 @@ const backendConfig = await stackOutput(
 	new CloudFormationClient({}),
 )<BackendStackOutputs>(STACK_NAME)
 
-const allAccountSettings = await getAllAccountsSettings({
-	ssm,
-	stackName: STACK_NAME,
-})
-
 const db = new DynamoDBClient({})
-const timestream = new TimestreamQueryClient({})
-const writeTimestream = new TimestreamWriteClient({})
-const [DatabaseName, TableName] =
-	backendConfig.historicalDataTableInfo.split('|')
-if (DatabaseName === undefined || TableName === undefined)
-	throw Error('historicalDataTableInfo is not configured')
-const storeTimestream = storeRecordsInTimestream({
-	timestream: writeTimestream,
-	DatabaseName,
-	TableName,
-})
 
 const print = (arg: unknown) =>
 	typeof arg === 'object' ? JSON.stringify(arg) : arg
@@ -123,7 +101,6 @@ runner
 			devicesTable: backendConfig.devicesTableName,
 		}),
 	)
-	.addStepRunners(...MQTTDeviceSteps(allAccountSettings))
 	.addStepRunners(...CoAPDeviceSteps({ iotData }))
 	.addStepRunners(
 		...mocknRFCloudSteps({
@@ -132,13 +109,6 @@ runner
 			stackName: STACK_NAME,
 			responsesTableName,
 			requestsTableName,
-		}),
-	)
-	.addStepRunners(
-		...historicalDataSteps({
-			timestream,
-			storeTimestream,
-			historicalDataTableInfo: backendConfig.historicalDataTableInfo,
 		}),
 	)
 	.addStepRunners(...storageSteps)

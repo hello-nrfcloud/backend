@@ -7,7 +7,7 @@ exampleContext:
   APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
 ---
 
-# Device to websocket (CoAP)
+# Device to websocket
 
 > LwM2M objects published via CoAP on nRF Cloud should be delivered to the
 > websocket API
