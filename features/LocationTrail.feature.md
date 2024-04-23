@@ -15,7 +15,7 @@ exampleContext:
 
 ## Background
 
-Given I have the fingerprint for a `PCA20035+solar` device in `trailDevice`
+Given I have the fingerprint for a `PCA20065` device in `trailDevice`
 
 And I store `$millis()` into `ts`
 

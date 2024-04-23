@@ -11,7 +11,7 @@ exampleContext:
 
 ## Background
 
-Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
+Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 

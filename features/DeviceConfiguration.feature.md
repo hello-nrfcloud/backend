@@ -13,7 +13,7 @@ exampleContext:
 
 ## Background
 
-Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
+Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 And I connect to the websocket using fingerprint `${fingerprint}`
 

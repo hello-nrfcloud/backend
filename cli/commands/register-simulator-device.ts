@@ -103,7 +103,7 @@ export const registerSimulatorDeviceCommand = ({
 			devicesTableName,
 		})({
 			id: deviceId,
-			model: 'PCA20035+solar',
+			model: 'PCA20065',
 			fingerprint,
 			account,
 		})

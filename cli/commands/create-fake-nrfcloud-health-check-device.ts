@@ -69,7 +69,7 @@ export const createFakeNrfCloudHealthCheckDevice = ({
 			healthCheckClientCert: credentials.certificatePem,
 			healthCheckPrivateKey: pk,
 			healthCheckClientId: deviceId,
-			healthCheckModel: 'PCA20035+solar',
+			healthCheckModel: 'PCA20065',
 			healthCheckFingerPrint: `29a.${generateCode()}`,
 		}
 		await updateSettings({ ssm, stackName: STACK_NAME, account })(settings)

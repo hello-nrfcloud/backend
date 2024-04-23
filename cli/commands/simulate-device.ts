@@ -190,7 +190,7 @@ export const simulateDeviceCommand = ({
 				deviceInfo: {
 					appVersion: version,
 					modemFirmware: `simulator-${version}`,
-					board: 'PCA20035+solar',
+					board: 'PCA20065',
 					imei: generateIMEI(),
 				},
 				simInfo: {

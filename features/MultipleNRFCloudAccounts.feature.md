@@ -14,8 +14,8 @@ variants:
 
 ## Verify the account device sends shadow data to nRF Cloud and there is a shadow request with the associated API key
 
-Given I have the fingerprint for a `PCA20035+solar` device in the
-`${variant.account}` account in `fingerprint`
+Given I have the fingerprint for a `PCA20065` device in the `${variant.account}`
+account in `fingerprint`
 
 And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 

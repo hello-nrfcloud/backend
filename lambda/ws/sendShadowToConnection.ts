@@ -3,7 +3,7 @@ import {
 	EventBridgeClient,
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
-import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
+import { proto } from '@hello.nrfcloud.com/proto/hello/model/PCA20065'
 import type { DeviceShadowType } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import type { WebsocketPayload } from '../publishToWebsocketClients.js'
 import type { AddMetricsFn } from '@hello.nrfcloud.com/lambda-helpers/metrics'

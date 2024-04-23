@@ -13,22 +13,24 @@ exampleContext:
 
 ## Background
 
-Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
+Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 <!-- The device sends in data to the cloud -->
 
 And I store `$floor($millis()/1000)*1000` into `ts`
 
-And the device `${fingerprint_deviceId}` publishes this message to the MQTT
-topic `m/d/${fingerprint_deviceId}/d2c`
+When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
+`/msg/d2c/raw` with this SenML payload
 
 ```json
-{
-  "appId": "SOLAR",
-  "messageType": "DATA",
-  "ts": "$number{ts}",
-  "data": "3.123456"
-}
+[
+  {
+    "bn": "14202/0/",
+    "n": "1",
+    "v": 4.398,
+    "bt": "$number{ts}"
+  }
+]
 ```
 
 ## Retrieve last seen timestamp on connect
@@ -43,7 +45,7 @@ Soon I should receive a message on the websocket that matches
 {
   "@context": "https://github.com/hello-nrfcloud/proto/deviceIdentity",
   "id": "${fingerprint_deviceId}",
-  "model": "PCA20035+solar",
+  "model": "PCA20065",
   "lastSeen": "${tsISO}"
 }
 ```

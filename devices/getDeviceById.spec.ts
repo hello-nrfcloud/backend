@@ -14,7 +14,7 @@ void describe('getDeviceById()', () => {
 			Item: marshall({
 				deviceId,
 				fingerprint,
-				model: 'PCA20035+solar',
+				model: 'PCA20065',
 				account: 'nordic',
 			}),
 		}))
@@ -28,7 +28,7 @@ void describe('getDeviceById()', () => {
 		assert.deepEqual('device' in res && res.device, {
 			id: deviceId,
 			fingerprint,
-			model: 'PCA20035+solar',
+			model: 'PCA20065',
 			account: 'nordic',
 		})
 

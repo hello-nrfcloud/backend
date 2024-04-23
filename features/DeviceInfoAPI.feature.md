@@ -13,7 +13,7 @@ exampleContext:
 
 ## Background
 
-Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
+Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 ## Connect with a valid fingerprint
 
@@ -25,6 +25,6 @@ Then the last response should match
 {
   "@context": "https://github.com/hello-nrfcloud/proto/deviceIdentity",
   "id": "${fingerprint_deviceId}",
-  "model": "PCA20035+solar"
+  "model": "PCA20065"
 }
 ```

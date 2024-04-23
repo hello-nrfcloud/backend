@@ -17,7 +17,7 @@ import type { Static } from '@sinclair/typebox'
 import { once } from 'lodash-es'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { loggingFetch } from './loggingFetch.js'
-import type { Configuration } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
+import type { Configuration } from '@hello.nrfcloud.com/proto/hello/model/PCA20065'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { updateDeviceShadow } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 
