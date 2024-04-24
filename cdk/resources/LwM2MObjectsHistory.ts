@@ -1,3 +1,4 @@
+import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import {
 	Duration,
 	aws_iam as IAM,
@@ -8,10 +9,6 @@ import {
 	aws_timestream as Timestream,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import {
-	LambdaLogGroup,
-	LambdaSource,
-} from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 
@@ -54,33 +51,28 @@ export class LwM2MObjectsHistory extends Construct {
 				: RemovalPolicy.RETAIN,
 		)
 
-		const fn = new Lambda.Function(this, 'fn', {
-			handler: lambdaSources.storeObjectsInTimestream.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(5),
-			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.storeObjectsInTimestream).code,
-			description: 'Save LwM2M objects into Timestream database',
-			environment: {
-				VERSION: this.node.getContext('version'),
-				HISTORICAL_DATA_TABLE_INFO: this.table.ref,
-				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
+		const fn = new PackedLambdaFn(
+			this,
+			'fn',
+			lambdaSources.storeObjectsInTimestream,
+			{
+				description: 'Save LwM2M objects into Timestream database',
+				environment: {
+					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
+				},
+				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['timestream:WriteRecords'],
+						resources: [this.table.attrArn],
+					}),
+					new IAM.PolicyStatement({
+						actions: ['timestream:DescribeEndpoints'],
+						resources: ['*'],
+					}),
+				],
 			},
-			layers,
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['timestream:WriteRecords'],
-					resources: [this.table.attrArn],
-				}),
-				new IAM.PolicyStatement({
-					actions: ['timestream:DescribeEndpoints'],
-					resources: ['*'],
-				}),
-			],
-			...new LambdaLogGroup(this, 'storeObjectsInTimestreamLogs'),
-		})
+		).fn
 
 		const ruleRole = new IAM.Role(this, 'ruleRole', {
 			assumedBy: new IAM.ServicePrincipal(
@@ -135,42 +127,38 @@ export class LwM2MObjectsHistory extends Construct {
 			sourceArn: rule.attrArn,
 		})
 
-		this.historyFn = new Lambda.Function(this, 'historyFn', {
-			handler: lambdaSources.queryLwM2MHistory.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(10),
-			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.queryLwM2MHistory.zipFile),
-			description: 'Queries the LwM2M object history',
-			layers,
-			environment: {
-				VERSION: this.node.getContext('version'),
-				NODE_NO_WARNINGS: '1',
-				HISTORICAL_DATA_TABLE_INFO: this.table.ref,
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
-				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+		this.historyFn = new PackedLambdaFn(
+			this,
+			'historyFn',
+			lambdaSources.queryLwM2MHistory,
+			{
+				timeout: Duration.seconds(10),
+				description: 'Queries the LwM2M object history',
+				layers,
+				environment: {
+					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+				},
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						resources: [this.table.attrArn],
+						actions: [
+							'timestream:Select',
+							'timestream:DescribeTable',
+							'timestream:ListMeasures',
+						],
+					}),
+					new IAM.PolicyStatement({
+						resources: ['*'],
+						actions: [
+							'timestream:DescribeEndpoints',
+							'timestream:SelectValues',
+							'timestream:CancelQuery',
+						],
+					}),
+				],
 			},
-			...new LambdaLogGroup(this, 'historyFnLogs'),
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					resources: [this.table.attrArn],
-					actions: [
-						'timestream:Select',
-						'timestream:DescribeTable',
-						'timestream:ListMeasures',
-					],
-				}),
-				new IAM.PolicyStatement({
-					resources: ['*'],
-					actions: [
-						'timestream:DescribeEndpoints',
-						'timestream:SelectValues',
-						'timestream:CancelQuery',
-					],
-				}),
-			],
-		})
+		).fn
 		deviceStorage.devicesTable.grantReadData(this.historyFn)
 	}
 }

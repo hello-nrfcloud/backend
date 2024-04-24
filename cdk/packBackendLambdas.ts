@@ -21,7 +21,6 @@ export type BackendLambdas = {
 	healthCheckForCoAP: PackedLambda
 	kpis: PackedLambda
 	configureDevice: PackedLambda
-	resolveSingleCellGeoLocation: PackedLambda
 	getDeviceByFingerprint: PackedLambda
 	feedback: PackedLambda
 	connectionInformationGeoLocation: PackedLambda
@@ -47,7 +46,6 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	healthCheckForCoAP: await pack('healthCheckForCoAP'),
 	kpis: await pack('kpis'),
 	configureDevice: await pack('configureDevice'),
-	resolveSingleCellGeoLocation: await pack('resolveSingleCellGeoLocation'),
 	getDeviceByFingerprint: await pack('getDeviceByFingerprint'),
 	feedback: await pack('feedback'),
 	connectionInformationGeoLocation: await pack(

@@ -12,7 +12,6 @@ import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation.j
 import type { BackendLambdas } from './packBackendLambdas.js'
 import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
 import { ContinuousDeployment } from './resources/ContinuousDeployment.js'
-import { ConvertDeviceMessagesMQTTLegacy } from './resources/ConvertDeviceMessagesMQTTLegacy.js'
 import { DeviceLastSeen } from './resources/DeviceLastSeen.js'
 import { DeviceShadow } from './resources/DeviceShadow.js'
 import { DeviceStorage } from './resources/DeviceStorage.js'
@@ -23,7 +22,6 @@ import { WebsocketAPI } from './resources/WebsocketAPI.js'
 import { KPIs } from './resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
 import { ConfigureDevice } from './resources/ConfigureDevice.js'
-import { SingleCellGeoLocation } from './resources/SingleCellGeoLocation.js'
 import { WebsocketConnectionsTable } from './resources/WebsocketConnectionsTable.js'
 import { WebsocketEventBus } from './resources/WebsocketEventBus.js'
 import { HealthCheckCoAP } from './resources/HealthCheckCoAP.js'
@@ -179,13 +177,6 @@ export class BackendStack extends Stack {
 			})
 		}
 
-		new ConvertDeviceMessagesMQTTLegacy(this, {
-			deviceStorage,
-			websocketEventBus,
-			lambdaSources,
-			layers: [baseLayerVersion],
-		})
-
 		const convertLwM2M = new CoAPSenMLtoLwM2M(this, {
 			lambdaSources,
 			layers: [baseLayerVersion],
@@ -212,18 +203,12 @@ export class BackendStack extends Stack {
 			deviceStorage,
 		})
 
-		new ConfigureDevice(this, {
+		const configureDevice = new ConfigureDevice(this, {
 			lambdaSources,
 			layers: [baseLayerVersion],
-			websocketEventBus,
-		})
-
-		new SingleCellGeoLocation(this, {
-			lambdaSources,
-			layers: [baseLayerVersion],
-			websocketEventBus,
 			deviceStorage,
 		})
+		api.addRoute('PATCH /device/{id}/state', configureDevice.fn)
 
 		const feedback = new Feedback(this, {
 			lambdaSources,
@@ -241,6 +226,7 @@ export class BackendStack extends Stack {
 		new ConnectionInformationGeoLocation(this, {
 			layers: [baseLayerVersion],
 			lambdaSources,
+			websocketEventBus,
 		})
 
 		const lwm2mObjectHistory = new LwM2MObjectsHistory(this, {

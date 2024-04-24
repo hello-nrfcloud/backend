@@ -21,10 +21,18 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { once } from 'lodash-es'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { NRF_CLOUD_ACCOUNT } from '../settings/account.js'
+import type { Static } from '@sinclair/typebox'
+import {
+	Context,
+	type SingleCellGeoLocation,
+} from '@hello.nrfcloud.com/proto/hello'
+import { EventBridge } from '@aws-sdk/client-eventbridge'
+import type { WebsocketPayload } from './publishToWebsocketClients.js'
 
-const { TableName, backendStackName } = fromEnv({
+const { TableName, stackName, EventBusName } = fromEnv({
 	TableName: 'CACHE_TABLE_NAME',
-	backendStackName: 'BACKEND_STACK_NAME',
+	stackName: 'STACK_NAME',
+	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
 const db = new DynamoDBClient({})
@@ -39,9 +47,11 @@ const cache = store({
 	TableName,
 })
 
+const eventBus = new EventBridge({})
+
 const updateShadow = updateLwM2MShadow(new IoTDataPlaneClient({}))
 const apiSettings = once(
-	getSettings({ ssm, stackName: backendStackName, account: NRF_CLOUD_ACCOUNT }),
+	getSettings({ ssm, stackName, account: NRF_CLOUD_ACCOUNT }),
 )
 const fetchToken = once(async (args: Parameters<typeof serviceToken>[0]) =>
 	serviceToken(args)(),
@@ -122,5 +132,25 @@ export const handler = async (event: {
 			},
 		}
 		await updateShadow(event.id, [singleCellGeoLocation])
+
+		const message: Static<typeof SingleCellGeoLocation> = {
+			'@context': Context.singleCellGeoLocation.toString(),
+			...geoLocation,
+			ts: event.connectionInformation[99].getTime(),
+		}
+
+		await eventBus.putEvents({
+			Entries: [
+				{
+					EventBusName,
+					Source: 'hello.ws',
+					DetailType: Context.singleCellGeoLocation.toString(),
+					Detail: JSON.stringify(<WebsocketPayload>{
+						deviceId: event.id,
+						message,
+					}),
+				},
+			],
+		})
 	}
 }

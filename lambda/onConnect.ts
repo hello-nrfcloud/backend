@@ -11,7 +11,6 @@ import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 import { get } from '../devices/deviceShadowRepo.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 
 const { EventBusName, TableName, LastSeenTableName, deviceShadowTableName } =
 	fromEnv({
@@ -29,12 +28,10 @@ const repo = connectionsRepository(db, TableName)
 const { getLastSeenOrNull } = lastSeenRepo(db, LastSeenTableName)
 
 const getShadow = get({ db, TableName: deviceShadowTableName })
-const { track } = metricsForComponent('shadowFetcher')
 const sendShadow = sendShadowToConnection({
 	eventBus,
 	eventBusName: EventBusName,
 	log,
-	track,
 })
 
 export const handler = async (

@@ -74,7 +74,6 @@ const allHealthCheckClientIds = once(async () => {
 const send = sendShadowToConnection({
 	eventBus,
 	eventBusName,
-	track,
 	log,
 })
 

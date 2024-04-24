@@ -97,7 +97,7 @@ const h = async (event: {
 						{
 							EventBusName,
 							Source: 'hello.ws',
-							DetailType: 'message',
+							DetailType: Context.lwm2mObjectUpdate.toString(),
 							Detail: JSON.stringify(<WebsocketPayload>{
 								deviceId,
 								message,

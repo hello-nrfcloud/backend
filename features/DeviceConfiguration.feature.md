@@ -44,23 +44,7 @@ When I `PATCH`
 }
 ```
 
-Soon I should receive a message on the websocket that matches
-
-```json
-{
-  "@context": "https://github.com/hello-nrfcloud/proto/device-configured",
-  "id": "${fingerprint_deviceId}",
-  "update": {
-    "ObjectID": 14240,
-    "Resources": {
-      "0": 255,
-      "1": 255,
-      "2": 255,
-      "99": "$number{ts}"
-    }
-  }
-}
-```
+Then the status code of the last response should be `201`
 
 Soon the nRF Cloud API should have been called with
 

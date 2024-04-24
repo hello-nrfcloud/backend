@@ -1,8 +1,8 @@
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import {
 	Duration,
-	aws_lambda as Lambda,
 	aws_dynamodb as DynamoDB,
+	aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
@@ -29,24 +29,16 @@ export class SenMLImportLogs extends Construct {
 	) {
 		super(parent, 'senml-import-logs')
 
-		this.fn = new Lambda.Function(this, 'fn', {
-			handler: lambdaSources.senMLImportLogs.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
+		this.fn = new PackedLambdaFn(this, 'fn', lambdaSources.senMLImportLogs, {
 			timeout: Duration.minutes(1),
-			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.senMLImportLogs.zipFile),
 			description: 'Returns the last senML import results for a device.',
 			layers,
 			environment: {
-				VERSION: this.node.getContext('version'),
 				IMPORT_LOGS_TABLE_NAME: importLogsTable.tableName,
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 			},
-			...new LambdaLogGroup(this, 'fnLogs'),
-		})
+		}).fn
 		importLogsTable.grantReadData(this.fn)
 		deviceStorage.devicesTable.grantReadData(this.fn)
 	}

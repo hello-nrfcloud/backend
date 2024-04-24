@@ -92,7 +92,7 @@ const h = async (
 	if ('errors' in maybeValidInput) {
 		return aProblem({
 			title: 'Validation failed',
-			status: 400,
+			status: HttpStatusCode.BAD_REQUEST,
 			detail: formatTypeBoxErrors(maybeValidInput.errors),
 		})
 	}
@@ -159,7 +159,7 @@ const h = async (
 		}
 		return aProblem({
 			title: 'Query failed',
-			status: 500,
+			status: HttpStatusCode.INTERNAL_SERVER_ERROR,
 		})
 	}
 }

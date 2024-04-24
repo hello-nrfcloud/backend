@@ -1,17 +1,17 @@
 import {
-	Duration,
+	IoTActionRole,
+	PackedLambdaFn,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import {
+	aws_dynamodb as DynamoDB,
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
-	aws_dynamodb as DynamoDB,
 	RemovalPolicy,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { IoTActionRole } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { BackendLambdas } from '../packBackendLambdas.js'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
  * Resources needed to convert LwM2M updates sent by devices via CoAP to nRF Cloud to the format that hello.nrfcloud.com expects
@@ -47,19 +47,10 @@ export class CoAPSenMLtoLwM2M extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 		})
 
-		const fn = new Lambda.Function(this, 'fn', {
-			handler: lambdaSources.onLwM2MUpdate.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(5),
-			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.onLwM2MUpdate).code,
+		const fn = new PackedLambdaFn(this, 'fn', lambdaSources.onLwM2MUpdate, {
 			description: 'Convert LwM2M updates and publish them on the EventBus',
 			environment: {
-				VERSION: this.node.getContext('version'),
 				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
-				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				IMPORT_LOGS_TABLE_NAME: this.importLogs.tableName,
 			},
 			layers,
@@ -69,8 +60,7 @@ export class CoAPSenMLtoLwM2M extends Construct {
 					resources: ['*'],
 				}),
 			],
-			...new LambdaLogGroup(this, 'fnLogs'),
-		})
+		}).fn
 		websocketEventBus.eventBus.grantPutEventsTo(fn)
 		this.importLogs.grantReadWriteData(fn)
 

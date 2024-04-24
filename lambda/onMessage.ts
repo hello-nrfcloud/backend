@@ -8,114 +8,27 @@ import {
 	ConditionalCheckFailedException,
 	DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
-import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import {
-	BadRequestError,
-	ConfigureDevice,
-	Context,
-	ProblemDetail,
-} from '@hello.nrfcloud.com/proto/hello'
-import { CommonRequest } from '@hello.nrfcloud.com/proto/hello/history'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
-import { Type, type Static } from '@sinclair/typebox'
-import { toBadRequest } from './ws/toBadRequest.js'
-import { validateRequest } from './ws/validateRequest.js'
-import { UNSUPPORTED_MODEL } from '../devices/registerUnsupportedDevice.js'
 
-const validateConfigureDeviceRequest = validateWithTypeBox(ConfigureDevice)
-
-const validRequestContext = validateWithTypeBox(
-	Type.Object({
-		'@context': Type.Union([Type.Literal(Context.configureDevice.toString())]),
-		'@id': Type.Optional(Type.String()),
-	}),
-)
-
-const { TableName, EventBusName } = fromEnv({
+const { TableName } = fromEnv({
 	TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
-	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 
 const log = logger('onMessage')
 const db = new DynamoDBClient({})
-const eventBus = new EventBridge({})
 
 const repo = connectionsRepository(db, TableName)
 
 const { track, metrics } = metricsForComponent('onMessage')
 
-const error =
-	(deviceId: string, event: AuthorizedEvent) =>
-	async (problem: Static<typeof ProblemDetail>) => {
-		track('invalidRequest', MetricUnit.Count, 1)
-		await eventBus.putEvents({
-			Entries: [
-				{
-					EventBusName,
-					Source: 'hello.ws',
-					DetailType: 'error',
-					Detail: JSON.stringify(<WebsocketPayload>{
-						deviceId,
-						connectionId: event.requestContext.connectionId,
-						message: problem,
-					}),
-				},
-			],
-		})
-	}
-
-const success =
-	({
-		deviceId,
-		model,
-		connectionId,
-		account,
-	}: {
-		deviceId: string
-		model: string
-		connectionId: string
-		account: string
-	}) =>
-	async (request: { '@context': string; [key: string]: any }) => {
-		await eventBus.putEvents({
-			Entries: [
-				{
-					EventBusName,
-					Source: 'hello.ws',
-					DetailType: request['@context'],
-					Detail: JSON.stringify(<WebsocketPayload>{
-						deviceId,
-						connectionId,
-						nRFCloudAccount: account,
-						message: {
-							request,
-							model,
-						},
-					}),
-				},
-			],
-		})
-	}
-
 const h = async (event: AuthorizedEvent): Promise<void> => {
 	log.info('event', { event })
-	const wsContext = event.requestContext.authorizer
-	const { deviceId, model } = wsContext
 	const { connectionId } = event.requestContext
-	if (model === UNSUPPORTED_MODEL || !('account' in wsContext)) {
-		log.debug(`Unsupported device, ignoring message`, {
-			deviceId,
-			connectionId,
-		})
-		return
-	}
 
 	try {
 		await repo.extendTTL(connectionId)
@@ -127,96 +40,6 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 			track('ConnectionIdMissing', MetricUnit.Count, 1)
 		}
 	}
-
-	const onError = error(deviceId, event)
-	const onSuccess = success({
-		deviceId,
-		model,
-		connectionId,
-		account: wsContext.account,
-	})
-
-	// Handle blank messages
-	if (event.body === undefined) {
-		console.debug(`Empty message received.`)
-		await onError(
-			BadRequestError({
-				title: `Empty message received.`,
-			}),
-		)
-		return
-	}
-
-	// Handle broken JSON
-	let body: Record<string, any> | undefined = undefined
-	try {
-		body = JSON.parse(event.body)
-	} catch (err) {
-		await onError(
-			BadRequestError({
-				title: `Failed to parse messages as JSON.`,
-				detail: JSON.stringify(err),
-			}),
-		)
-		return
-	}
-
-	// Handle PING
-	if (body?.data === 'PING') {
-		return
-	}
-
-	const payload: Record<string, any> = body?.payload ?? {}
-
-	// Extract the @context property of the request
-	const maybeValidRequestContext = validRequestContext(payload)
-	if ('errors' in maybeValidRequestContext) {
-		log.error(`invalid request`, maybeValidRequestContext)
-		await onError(toBadRequest(payload, maybeValidRequestContext.errors))
-		return
-	}
-	const context = maybeValidRequestContext.value['@context']
-
-	// Validate the request based on the context
-	let maybeValidRequest:
-		| {
-				problem: Static<typeof ProblemDetail>
-		  }
-		| {
-				request: Static<typeof CommonRequest> | Static<typeof ConfigureDevice>
-		  }
-
-	switch (context) {
-		case Context.configureDevice.toString():
-			maybeValidRequest = validateRequest<typeof ConfigureDevice>(
-				payload,
-				validateConfigureDeviceRequest,
-			)
-			if ('request' in maybeValidRequest)
-				track('configureDevice', MetricUnit.Count, 1)
-			break
-		default:
-			log.error(`Unexpected request`, maybeValidRequestContext)
-			await onError(
-				BadRequestError({
-					id: payload?.['@id'],
-					title: 'Unexpected request',
-					detail: context,
-				}),
-			)
-			return
-	}
-
-	// The request itself was not valid
-	if ('problem' in maybeValidRequest) {
-		log.error(`Invalid request`, maybeValidRequest)
-		await onError(maybeValidRequest.problem)
-		return
-	}
-
-	// We have a valid request, publish it on EventBridge
-	log.debug('request', maybeValidRequest)
-	await onSuccess(maybeValidRequest.request)
 }
 
 export const handler = middy(h)

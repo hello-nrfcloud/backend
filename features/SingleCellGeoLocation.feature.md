@@ -57,7 +57,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
     "bn": "14203/0/",
     "n": "0",
     "vs": "LTE-M",
-    "bt": "$number{ts}"
+    "bt": "$number{now}"
   },
   {
     "n": "1",
@@ -129,6 +129,18 @@ Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzU0NDQ2N
 }
 ```
 
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/single-cell-geo-location",
+  "lat": 63.41999531,
+  "lng": 10.42999506,
+  "accuracy": 2420,
+  "ts": "$number{now}"
+}
+```
+
 ## Device publishes network information, which is then resolved
 
 > The next message will be resolved without an additional call to the nRF Cloud
@@ -145,7 +157,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
     "bn": "14203/0/",
     "n": "0",
     "vs": "LTE-M",
-    "bt": "$number{ts}"
+    "bt": "$number{now}"
   },
   {
     "n": "1",
@@ -194,5 +206,17 @@ Soon I should receive a message on the websocket that matches
     "6": "100.74.127.55",
     "11": 7
   }
+}
+```
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/single-cell-geo-location",
+  "lat": 63.41999531,
+  "lng": 10.42999506,
+  "accuracy": 2420,
+  "ts": "$number{now}"
 }
 ```

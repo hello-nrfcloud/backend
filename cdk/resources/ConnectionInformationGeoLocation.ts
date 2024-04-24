@@ -1,4 +1,7 @@
-import { Construct } from 'constructs'
+import {
+	IoTActionRole,
+	PackedLambdaFn,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import {
 	Duration,
 	aws_dynamodb as DynamoDB,
@@ -6,16 +9,10 @@ import {
 	aws_iot as IoT,
 	aws_lambda as Lambda,
 	RemovalPolicy,
-	Stack,
 } from 'aws-cdk-lib'
-import { STACK_NAME } from '../stackConfig.js'
-import {
-	LambdaLogGroup,
-	LambdaSource,
-	IoTActionRole,
-} from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@bifravst/aws-ssm-settings-helpers/cdk'
+import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
  * Resources that geo-location devices based on the LwM2M Connection Information
@@ -27,9 +24,11 @@ export class ConnectionInformationGeoLocation extends Construct {
 		{
 			lambdaSources,
 			layers,
+			websocketEventBus,
 		}: {
 			lambdaSources: Pick<BackendLambdas, 'connectionInformationGeoLocation'>
 			layers: Array<Lambda.ILayerVersion>
+			websocketEventBus: WebsocketEventBus
 		},
 	) {
 		super(parent, 'connection-information-geo-location')
@@ -45,36 +44,29 @@ export class ConnectionInformationGeoLocation extends Construct {
 			timeToLiveAttribute: 'ttl',
 		})
 
-		const fn = new Lambda.Function(this, 'fn', {
-			handler: lambdaSources.connectionInformationGeoLocation.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(60),
-			memorySize: 1792,
-			code: new LambdaSource(
-				this,
-				lambdaSources.connectionInformationGeoLocation,
-			).code,
-			description:
-				'Resolve device geo location based on connection information',
-			environment: {
-				VERSION: this.node.getContext('version'),
-				NODE_NO_WARNINGS: '1',
-				BACKEND_STACK_NAME: STACK_NAME,
-				CACHE_TABLE_NAME: this.table.tableName,
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
+		const fn = new PackedLambdaFn(
+			this,
+			'fn',
+			lambdaSources.connectionInformationGeoLocation,
+			{
+				timeout: Duration.seconds(60),
+				description:
+					'Resolve device geo location based on connection information',
+				environment: {
+					CACHE_TABLE_NAME: this.table.tableName,
+					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
+				},
+				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['iot:UpdateThingShadow'],
+						resources: ['*'],
+					}),
+				],
 			},
-			layers,
-			...new LambdaLogGroup(this, 'fnLogs'),
-			initialPolicy: [
-				new IAM.PolicyStatement({
-					actions: ['iot:UpdateThingShadow'],
-					resources: ['*'],
-				}),
-				SettingsPermissions(Stack.of(this)),
-			],
-		})
+		).fn
 		this.table.grantWriteData(fn)
+		websocketEventBus.eventBus.grantPutEventsTo(fn)
 
 		const rule = new IoT.CfnTopicRule(this, 'topicRule', {
 			topicRulePayload: {

@@ -12,7 +12,6 @@ import type { StackOutputs } from '../cdk/BackendStack.js'
 import { STACK_NAME } from '../cdk/stackConfig.js'
 import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition.js'
-import { configureDeviceCommand } from './commands/configure-device.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/create-fake-nrfcloud-account-device-credentials.js'
 import { createFakeNrfCloudHealthCheckDevice } from './commands/create-fake-nrfcloud-health-check-device.js'
 import { createHealthCheckDevice } from './commands/create-health-check-device.js'
@@ -114,13 +113,6 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 			const outputs = await stackOutput(cf)<StackOutputs>(STACK_NAME)
 			commands.push(
 				showDeviceCommand({
-					ssm,
-					stackName: STACK_NAME,
-					db,
-					devicesTableName: outputs.devicesTableName,
-					devicesIndexName: outputs.devicesTableFingerprintIndexName,
-				}),
-				configureDeviceCommand({
 					ssm,
 					stackName: STACK_NAME,
 					db,

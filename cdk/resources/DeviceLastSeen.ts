@@ -60,8 +60,7 @@ export class DeviceLastSeen extends Construct {
 					`parse_time("yyyy-MM-dd'T'HH:mm:ss.S'Z'", ts) as lastSeen,`,
 					// Used for the unique active devices per day KPI
 					`parse_time("yyyy-MM-dd", ts) as day`,
-					`from 'data/+/+/+/+'`,
-					`where messageType = 'DATA'`,
+					`from 'data/m/d/+/d2c/raw'`,
 				].join(' '),
 				actions: [
 					{

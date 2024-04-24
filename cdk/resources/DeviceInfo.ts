@@ -1,5 +1,5 @@
-import { LambdaLogGroup } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Duration, aws_lambda as Lambda } from 'aws-cdk-lib'
+import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { aws_lambda as Lambda } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
@@ -20,25 +20,20 @@ export class DeviceInfo extends Construct {
 	) {
 		super(parent, 'device-info')
 
-		this.fn = new Lambda.Function(this, 'getDeviceByFingerprintFn', {
-			handler: lambdaSources.getDeviceByFingerprint.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(1),
-			memorySize: 1792,
-			code: Lambda.Code.fromAsset(lambdaSources.getDeviceByFingerprint.zipFile),
-			description:
-				'Returns information for a device identified by the fingerprint.',
-			layers,
-			environment: {
-				VERSION: this.node.getContext('version'),
-				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
-				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
+		this.fn = new PackedLambdaFn(
+			this,
+			'getDeviceByFingerprintFn',
+			lambdaSources.getDeviceByFingerprint,
+			{
+				description:
+					'Returns information for a device identified by the fingerprint.',
+				layers,
+				environment: {
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+					DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
+				},
 			},
-			...new LambdaLogGroup(this, 'getDeviceByFingerprintFnLogs'),
-		})
+		).fn
 		deviceStorage.devicesTable.grantReadData(this.fn)
 	}
 }

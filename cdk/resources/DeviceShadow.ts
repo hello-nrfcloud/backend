@@ -1,8 +1,4 @@
-import {
-	LambdaLogGroup,
-	LambdaSource,
-} from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@bifravst/aws-ssm-settings-helpers/cdk'
+import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import {
 	Duration,
 	aws_dynamodb as DynamoDB,
@@ -85,56 +81,40 @@ export class DeviceShadow extends Construct {
 		})
 
 		// Lambda functions
-		const prepareDeviceShadow = new Lambda.Function(
+		const prepareDeviceShadow = new PackedLambdaFn(
 			this,
 			'prepareDeviceShadow',
+			lambdaSources.prepareDeviceShadow,
 			{
-				handler: lambdaSources.prepareDeviceShadow.handler,
-				architecture: Lambda.Architecture.ARM_64,
-				runtime: Lambda.Runtime.NODEJS_20_X,
-				timeout: Duration.seconds(5),
-				memorySize: 1792,
-				code: new LambdaSource(this, lambdaSources.prepareDeviceShadow).code,
 				description: 'Generate queue to fetch the shadow data',
 				environment: {
-					VERSION: this.node.getContext('version'),
 					QUEUE_URL: shadowQueue.queueUrl,
-					NODE_NO_WARNINGS: '1',
-					DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				},
-				initialPolicy: [],
 				layers,
-				...new LambdaLogGroup(this, 'prepareDeviceShadowLogs'),
 			},
-		)
+		).fn
 		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
 		shadowQueue.grantSendMessages(prepareDeviceShadow)
 
-		const fetchDeviceShadow = new Lambda.Function(this, 'fetchDeviceShadow', {
-			handler: lambdaSources.fetchDeviceShadow.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: processDeviceShadowTimeout,
-			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.fetchDeviceShadow).code,
-			description: `Fetch devices' shadow from nRF Cloud`,
-			environment: {
-				VERSION: this.node.getContext('version'),
-				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
-				WEBSOCKET_CONNECTIONS_TABLE_NAME:
-					websocketConnectionsTable.table.tableName,
-				LOCK_TABLE_NAME: lockTable.tableName,
-				STACK_NAME: Stack.of(this).stackName,
-				NODE_NO_WARNINGS: '1',
-				PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED: 'FALSE',
-				PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
-				DEVICE_SHADOW_TABLE_NAME: this.deviceShadowTable.tableName,
+		const fetchDeviceShadow = new PackedLambdaFn(
+			this,
+			'fetchDeviceShadow',
+			lambdaSources.fetchDeviceShadow,
+			{
+				timeout: processDeviceShadowTimeout,
+				description: `Fetch devices' shadow from nRF Cloud`,
+				environment: {
+					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
+					WEBSOCKET_CONNECTIONS_TABLE_NAME:
+						websocketConnectionsTable.table.tableName,
+					LOCK_TABLE_NAME: lockTable.tableName,
+					PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED: 'FALSE',
+					PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
+					DEVICE_SHADOW_TABLE_NAME: this.deviceShadowTable.tableName,
+				},
+				layers,
 			},
-			initialPolicy: [SettingsPermissions(Stack.of(this))],
-			layers,
-			...new LambdaLogGroup(this, 'fetchDeviceShadowLogs'),
-		})
+		).fn
 		const ssmReadPolicy = new IAM.PolicyStatement({
 			effect: IAM.Effect.ALLOW,
 			actions: ['ssm:GetParametersByPath'],
