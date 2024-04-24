@@ -22,12 +22,14 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
       "id": "${fingerprint_deviceId}",
       "state": {
         "desired": {
-          "14240:1.0": {
-            "0": {
-              "0": 0,
-              "1": 162,
-              "2": 198,
-              "99": 1699197208705
+          "lwm2m": {
+            "14240:1.0": {
+              "0": {
+                "0": 0,
+                "1": 162,
+                "2": 198,
+                "99": 1699197208705
+              }
             }
           }
         },
@@ -36,12 +38,14 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
             "status": "connected",
             "keepalive": 1200
           },
-          "14240:1.0": {
-            "0": {
-              "0": 0,
-              "1": 162,
-              "2": 198,
-              "99": 1699197208705
+          "lwm2m": {
+            "14240:1.0": {
+              "0": {
+                "0": 0,
+                "1": 162,
+                "2": 198,
+                "99": 1699197208705
+              }
             }
           }
         },
