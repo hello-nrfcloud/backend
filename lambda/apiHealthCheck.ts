@@ -1,7 +1,7 @@
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
-import { Context } from '@hello.nrfcloud.com/proto-map/api'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { type APIGatewayProxyResultV2 } from 'aws-lambda'
@@ -12,7 +12,7 @@ const { version } = fromEnv({
 
 const h = async (): Promise<APIGatewayProxyResultV2> => {
 	return aResponse(200, {
-		'@context': Context.named('api/health'),
+		'@context': Context.apiHealth,
 		version,
 	})
 }
