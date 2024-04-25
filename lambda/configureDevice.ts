@@ -96,7 +96,10 @@ const h = async (
 	const maybeValidInput = validateInput({
 		...(event.queryStringParameters ?? {}),
 		...(event.pathParameters ?? {}),
-		update: tryAsJSON(event.body),
+		update: {
+			...tryAsJSON(event.body),
+			ts: new Date().toISOString(),
+		},
 	})
 	if ('errors' in maybeValidInput) {
 		return aProblem({

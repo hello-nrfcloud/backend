@@ -143,46 +143,55 @@ export const steps = ({
 			const methodPathQuery = `${request.method} ${sortQueryString(request.resource.slice(1))}`
 			progress(`expected query: ${methodPathQuery}`)
 
-			const result = await db.send(
-				new QueryCommand({
-					TableName: requestsTableName,
-					KeyConditionExpression: '#methodPathQuery = :methodPathQuery',
-					ExpressionAttributeNames: {
-						'#methodPathQuery': 'methodPathQuery',
-						'#body': 'body',
-						'#headers': 'headers',
-					},
-					ExpressionAttributeValues: {
-						':methodPathQuery': { S: methodPathQuery },
-					},
-					ProjectionExpression: '#body, #headers',
-					ScanIndexForward: false,
-				}),
-			)
+			const scanRequests = async () => {
+				const result = await db.send(
+					new QueryCommand({
+						TableName: requestsTableName,
+						KeyConditionExpression: '#methodPathQuery = :methodPathQuery',
+						ExpressionAttributeNames: {
+							'#methodPathQuery': 'methodPathQuery',
+							'#body': 'body',
+							'#headers': 'headers',
+						},
+						ExpressionAttributeValues: {
+							':methodPathQuery': { S: methodPathQuery },
+						},
+						ProjectionExpression: '#body, #headers',
+						ScanIndexForward: false,
+					}),
+				)
 
-			const matchedRequest = (result.Items ?? [])
-				.map((item) => unmarshall(item))
-				.find(({ body, headers }) => {
-					progress(`body: ${body}`)
-					progress(`expected: ${expectedBody}`)
-					progress(`headers: ${headers}`)
-					try {
-						return (
-							body === expectedBody &&
+				const matchedRequest = (result.Items ?? [])
+					.map((item) => unmarshall(item))
+					.find(({ body, headers }) => {
+						try {
+							progress(`body: ${body}`)
+							check(body).is(expectedBody)
+						} catch {
+							return false
+						}
+						try {
+							progress(`headers: ${headers}`)
 							check(JSON.parse(headers)).is(objectMatching(request.headers))
-						)
-					} catch (err) {
-						progress(JSON.stringify(err))
-						return false
-					}
-				})
+						} catch (err) {
+							return false
+						}
+						return true
+					})
 
-			if (matchedRequest !== undefined) {
-				progress(`Matched request`, JSON.stringify(matchedRequest))
-				return
+				if (matchedRequest !== undefined) {
+					progress(`Matched request`, JSON.stringify(matchedRequest))
+					return
+				}
+
+				throw new Error(`No request matched.`)
 			}
 
-			throw new Error(`No request matched.`)
+			await pRetry(scanRequests, {
+				retries: 5,
+				minTimeout: 5000,
+				maxTimeout: 10000,
+			})
 		},
 	}
 
