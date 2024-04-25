@@ -20,6 +20,10 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
   "items": [
     {
       "id": "${fingerprint_deviceId}",
+      "$meta": {
+        "createdAt": "${$fromMillis($millis())}",
+        "updatedAt": "${$fromMillis($millis())}"
+      },
       "state": {
         "desired": {
           "lwm2m": {

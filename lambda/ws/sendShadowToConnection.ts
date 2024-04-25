@@ -32,8 +32,8 @@ export const sendShadowToConnection =
 			'@context': Context.shadow.toString(),
 			connected,
 			version,
-			desired,
-			reported,
+			desired: desired?.lwm2m ?? {},
+			reported: reported?.lwm2m ?? {},
 			updatedAt: shadow.$meta.updatedAt,
 		}
 
