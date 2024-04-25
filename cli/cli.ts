@@ -34,11 +34,14 @@ import { ECRClient } from '@aws-sdk/client-ecr'
 import { buildContainersCommand } from './commands/build-container.js'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { configureFeedbackCommand } from './commands/configure-feedback.js'
+import { updateLambda } from './commands/updateLambda.js'
+import { LambdaClient } from '@aws-sdk/client-lambda'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
 const db = new DynamoDBClient({})
 const cf = new CloudFormationClient({})
+const lambda = new LambdaClient({})
 const logs = new CloudWatchLogsClient({})
 const sts = new STSClient({})
 const ecr = new ECRClient({})
@@ -77,6 +80,11 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		buildContainersCommand({
 			ecr,
 			ssm,
+		}),
+		updateLambda({
+			stackName: STACK_NAME,
+			cf,
+			lambda,
 		}),
 	]
 
