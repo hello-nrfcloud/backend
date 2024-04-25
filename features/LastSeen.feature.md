@@ -45,7 +45,12 @@ Soon I should receive a message on the websocket that matches
 {
   "@context": "https://github.com/hello-nrfcloud/proto/deviceIdentity",
   "id": "${fingerprint_deviceId}",
-  "model": "PCA20065",
-  "lastSeen": "${tsISO}"
+  "model": "PCA20065"
 }
+```
+
+And `lastSeen > "${tsISO}"` of the last websocket message equals
+
+```json
+true
 ```

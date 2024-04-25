@@ -13,6 +13,7 @@ import pRetry from 'p-retry'
 import { setTimeout } from 'timers/promises'
 import { check } from 'tsmatchers'
 import { objectDeepMatching } from '../lib/objectDeepMatching.js'
+import jsonata from 'jsonata'
 
 const wsClients: Record<string, WebSocketClient> = {}
 const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
@@ -126,6 +127,23 @@ const wsSend = <StepRunner>{
 	},
 }
 
+const assertOnLastMessage = regExpMatchedStep(
+	{
+		regExp: /^`(?<exp>[^`]+)` of the last websocket message equals$/,
+		schema: Type.Object({
+			exp: Type.String({ minLength: 1 }),
+		}),
+	},
+	async ({ match: { exp }, log: { debug }, step, context }) => {
+		const { wsClient } = context as { wsClient: WebSocketClient }
+		const expected = JSON.parse(codeBlockOrThrow(step).code)
+		const e = jsonata(exp)
+		const result = await e.evaluate(wsClient.lastMessage())
+		debug(JSON.stringify(wsClient.lastMessage()), result)
+		assert.equal(result, expected)
+	},
+)
+
 export const websocketStepRunners = ({
 	websocketUri,
 }: {
@@ -136,7 +154,7 @@ export const websocketStepRunners = ({
 	}>[]
 	cleanup: () => Promise<void>
 } => ({
-	steps: [wsConnect({ websocketUri }), receive, wsSend],
+	steps: [wsConnect({ websocketUri }), receive, wsSend, assertOnLastMessage],
 	cleanup: async (): Promise<void> => {
 		await Promise.all(Object.values(wsClients).map((client) => client.close()))
 	},
