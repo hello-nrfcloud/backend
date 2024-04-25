@@ -39,16 +39,16 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 			}
 
 			if (wsClients[wsURL] === undefined) {
-				progress(`Connect websocket to ${websocketUri}`)
-				wsClients[wsURL] = createWebsocketClient({
-					id: fingerprint,
-					url: wsURL,
-					debug: (...args) => progress(args.join(' ')),
-				})
-				await pRetry(
+				const conn = await pRetry(
 					async (attempt: number) => {
-						progress(`(Attempt: ${attempt}) Connecting websocket`)
-						await wsClients[wsURL]?.connect()
+						progress(`(Attempt: ${attempt}) websocket to ${websocketUri}`)
+						const conn = createWebsocketClient({
+							id: fingerprint,
+							url: wsURL,
+							debug: (...args) => progress(args.join(' ')),
+						})
+						await conn.connect()
+						return conn
 					},
 					{
 						retries: 5,
@@ -56,6 +56,7 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 						maxTimeout: 1000,
 					},
 				)
+				wsClients[wsURL] = conn
 			}
 
 			context.wsClient = wsClients[wsURL] as WebSocketClient

@@ -49,7 +49,7 @@ export const sendShadowToConnection =
 					{
 						EventBusName: eventBusName,
 						Source: 'hello.ws',
-						DetailType: 'message',
+						DetailType: Context.shadow.toString(),
 						Detail: JSON.stringify(payload),
 					},
 				],

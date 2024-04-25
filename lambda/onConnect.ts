@@ -66,7 +66,7 @@ export const handler = async (
 			{
 				EventBusName,
 				Source: 'hello.ws',
-				DetailType: 'connect',
+				DetailType: Context.deviceIdentity.toString(),
 				Detail: JSON.stringify(<WebsocketPayload>{
 					deviceId,
 					connectionId,

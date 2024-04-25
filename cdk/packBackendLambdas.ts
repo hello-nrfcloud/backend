@@ -14,7 +14,6 @@ export type BackendLambdas = {
 	/**
 	 * @deprecated See https://github.com/hello-nrfcloud/proto/issues/137
 	 */
-	onDeviceMessageMQTT: PackedLambda
 	onLwM2MUpdate: PackedLambda
 	senMLImportLogs: PackedLambda
 	healthCheck: PackedLambda
@@ -39,7 +38,6 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	publishToWebsocketClients: await pack('publishToWebsocketClients'),
 	prepareDeviceShadow: await pack('prepareDeviceShadow'),
 	fetchDeviceShadow: await pack('fetchDeviceShadow'),
-	onDeviceMessageMQTT: await pack('onDeviceMessageMQTT'),
 	onLwM2MUpdate: await pack('onLwM2MUpdate'),
 	senMLImportLogs: await pack('senMLImportLogs'),
 	healthCheck: await pack('healthCheck'),

@@ -15,7 +15,7 @@ import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { Context } from '@hello.nrfcloud.com/proto/hello'
+import { ApiLogging } from './APILogging.js'
 
 export const integrationUri = (
 	parent: Construct,
@@ -132,18 +132,28 @@ export class WebsocketAPI extends Construct {
 
 		// API
 		const api = new ApiGatewayV2.CfnApi(this, 'api', {
-			name: 'websocketGateway',
+			name: 'hello.nrfcloud.com websocket API',
 			protocolType: 'WEBSOCKET',
 			routeSelectionExpression: '$request.body.message',
 		})
-		const authorizer = new ApiGatewayV2.CfnAuthorizer(this, 'authorizer', {
-			apiId: api.ref,
-			authorizerType: 'REQUEST',
-			name: `authorizer`,
-			authorizerUri: integrationUri(this, authorizerLambda),
-		})
+		// Authorization
+		const authorizer = new ApiGatewayV2.CfnAuthorizer(
+			this,
+			'fingerprintAuthorizer',
+			{
+				apiId: api.ref,
+				authorizerType: 'REQUEST',
+				name: `authorizer`,
+				authorizerUri: integrationUri(this, authorizerLambda),
+			},
+		)
 		authorizerLambda.addPermission('invokeByHttpApi', {
-			principal: new IAM.ServicePrincipal('apigateway.amazonaws.com'),
+			principal: new IAM.ServicePrincipal(
+				'apigateway.amazonaws.com',
+			) as IAM.IPrincipal,
+			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
+				Stack.of(this).account
+			}:${api.ref}/authorizers/${authorizer.attrAuthorizerId}`,
 		})
 		// API on connect
 		const connectIntegration = new ApiGatewayV2.CfnIntegration(
@@ -213,7 +223,7 @@ export class WebsocketAPI extends Construct {
 			apiId: api.ref,
 		})
 		this.websocketURI = `${api.attrApiEndpoint}/${prodStage.ref}`
-		// API invoke lambda
+		// API invoke lambda permissions
 		onConnect.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
@@ -281,10 +291,13 @@ export class WebsocketAPI extends Construct {
 		new Events.Rule(this, 'publishToWebsocketClientsRule', {
 			eventPattern: {
 				source: ['hello.ws'],
-				detailType: [Context.lwm2mObjectUpdate.toString()],
 			},
 			targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
 			eventBus: eventBus.eventBus,
 		})
+
+		// Logging
+		if (this.node.tryGetContext('wsAPILogging') !== undefined)
+			new ApiLogging(this, api, prodStage)
 	}
 }
