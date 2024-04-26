@@ -127,6 +127,7 @@
     "@nordicsemiconductor/random-words": "8.0.1",
     "@nordicsemiconductor/timestream-helpers": "6.0.2",
     "@sinclair/typebox": "0.32.29",
+    "cbor-x": "1.5.9",
     "id128": "1.6.6",
     "lodash-es": "4.17.21",
     "mqtt": "5.5.5",
