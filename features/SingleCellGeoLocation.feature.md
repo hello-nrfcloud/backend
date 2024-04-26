@@ -10,8 +10,8 @@ exampleContext:
 
 # Single-cell geo location
 
-> The network information sent by the device as part of the `DEVICE` message
-> should be used to determine the approximate device location.
+> The network information sent by the device should be used to determine the
+> approximate device location.
 
 ## Background
 
