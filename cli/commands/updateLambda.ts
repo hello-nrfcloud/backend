@@ -1,15 +1,45 @@
 import {
 	DescribeStackResourceCommand,
-	DescribeStackResourcesCommand,
+	ListStackResourcesCommand,
 	type CloudFormationClient,
 } from '@aws-sdk/client-cloudformation'
 import {
 	UpdateFunctionCodeCommand,
+	UpdateFunctionConfigurationCommand,
 	type LambdaClient,
+	GetFunctionCommand,
+	LastUpdateStatus,
 } from '@aws-sdk/client-lambda'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { packLambdaFromPath } from '@bifravst/aws-cdk-lambda-helpers'
 import { readFile } from 'node:fs/promises'
+import pRetry from 'p-retry'
+import assert from 'node:assert/strict'
+
+const listStackLambdas = async (
+	cf: CloudFormationClient,
+	stackName: string,
+	lambdas: Array<string> = [],
+	nextToken?: string,
+): Promise<Array<string>> => {
+	const { StackResourceSummaries, NextToken } = await cf.send(
+		new ListStackResourcesCommand({
+			StackName: stackName,
+			NextToken: nextToken,
+		}),
+	)
+
+	lambdas.push(
+		...(StackResourceSummaries ?? [])
+			.filter(({ ResourceType }) => ResourceType === 'AWS::Lambda::Function')
+			.map(({ LogicalResourceId }) => LogicalResourceId as string),
+	)
+
+	if (NextToken !== undefined)
+		return listStackLambdas(cf, stackName, lambdas, NextToken)
+
+	return lambdas
+}
 
 export const updateLambda = ({
 	stackName,
@@ -26,17 +56,13 @@ export const updateLambda = ({
 			flags: '-p, --physical-resource-id <physicalResourceId>',
 			description: `Update the lambda with this physical resource ID`,
 		},
+		{
+			flags: '-v, --version <version>',
+			description: `Set the version environment variable`,
+		},
 	],
-	action: async (id, { physicalResourceId: pId }) => {
-		const { StackResources } = await cf.send(
-			new DescribeStackResourcesCommand({
-				StackName: stackName,
-			}),
-		)
-
-		const stackFunctionIds = (StackResources ?? [])
-			.filter(({ ResourceType }) => ResourceType === 'AWS::Lambda::Function')
-			.map(({ LogicalResourceId }) => LogicalResourceId)
+	action: async (id, { physicalResourceId: pId, version }) => {
+		const stackFunctionIds = await listStackLambdas(cf, stackName)
 
 		const stackFunctions: Array<{
 			PhysicalResourceId: string
@@ -81,7 +107,7 @@ export const updateLambda = ({
 			throw new Error(`No function found for ${id}!`)
 		}
 
-		console.log(`Updating ${id} (${functionToUpdate.PhysicalResourceId}) ...`)
+		console.log(`[${id}] Updating (${functionToUpdate.PhysicalResourceId}) ...`)
 
 		const res = await packLambdaFromPath(id, `lambda/${id}.ts`)
 
@@ -94,6 +120,42 @@ export const updateLambda = ({
 
 		console.log('RevisionId', updateResult.RevisionId)
 		console.log('CodeSha256', updateResult.CodeSha256)
+
+		await pRetry(
+			async () => {
+				assert.equal(
+					(
+						await lambda.send(
+							new GetFunctionCommand({
+								FunctionName: functionToUpdate.PhysicalResourceId,
+							}),
+						)
+					).Configuration?.LastUpdateStatus,
+					LastUpdateStatus.Successful,
+					'Lambda update should have succeeded.',
+				)
+			},
+			{
+				minTimeout: 1000,
+				maxTimeout: 1000,
+				retries: 5,
+			},
+		)
+
+		if (typeof version === 'string') {
+			console.log(`[${id}] updating VERSION to ${version} ...`)
+
+			await lambda.send(
+				new UpdateFunctionConfigurationCommand({
+					FunctionName: functionToUpdate.PhysicalResourceId,
+					Environment: {
+						Variables: {
+							VERSION: version,
+						},
+					},
+				}),
+			)
+		}
 	},
 	help: 'Updates a lambda directly',
 })
