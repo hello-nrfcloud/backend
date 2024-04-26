@@ -13,13 +13,18 @@ import {
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
 import {
+	LwM2MObjectID,
 	LwM2MObjectIDs,
 	definitions,
 	type LWM2MObjectInfo,
 } from '@hello.nrfcloud.com/proto-map'
-import { Context, LwM2MObjectHistory } from '@hello.nrfcloud.com/proto/hello'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
-import { HttpStatusCode, deviceId } from '@hello.nrfcloud.com/proto/hello'
+import {
+	Context,
+	HttpStatusCode,
+	LwM2MObjectHistory,
+	deviceId,
+} from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
@@ -29,12 +34,13 @@ import type {
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { getDeviceById } from '../devices/getDeviceById.js'
-import { isNumeric } from '../lwm2m/isNumeric.js'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
 	type HistoricalDataTimeSpan,
 } from '../historicalData/HistoricalDataTimeSpans.js'
+import { isNumeric } from '../lwm2m/isNumeric.js'
+import { createTrailOfCoordinates } from './historical-data/createTrailOfCoordinates.js'
 
 const { tableInfo, DevicesTableName, version } = fromEnv({
 	version: 'VERSION',
@@ -48,6 +54,18 @@ if (DatabaseName === undefined || TableName === undefined)
 
 const ts = new TimestreamQueryClient({})
 
+const aggregateFns = ['avg', 'min', 'max', 'sum', 'count']
+
+const Aggregate = Type.Union(
+	aggregateFns.map((fn) => Type.Literal(fn)),
+	{
+		title: 'Aggregate',
+		description:
+			'The aggregate function to use. See https://docs.aws.amazon.com/timestream/latest/developerguide/aggregate-functions.html',
+		default: 'avg',
+	},
+)
+
 const validateInput = validateWithTypeBox(
 	Type.Object({
 		deviceId,
@@ -60,6 +78,14 @@ const validateInput = validateWithTypeBox(
 					Type.Literal(timeSpan),
 				),
 			),
+		),
+		aggregate: Type.Optional(Aggregate),
+		trail: Type.Optional(
+			Type.Integer({
+				minimum: 1,
+				description:
+					'Create a location trail with the minimum distance in kilometers. Only applicable with ObjectID 14201.',
+			}),
 		),
 	}),
 )
@@ -86,8 +112,10 @@ const h = async (
 	console.log(JSON.stringify(event))
 
 	const { deviceId, objectId, instanceId } = event.pathParameters ?? {}
+	const { trail } = event.queryStringParameters ?? {}
 	const maybeValidInput = validateInput({
 		...(event.queryStringParameters ?? {}),
+		trail: trail !== undefined ? parseInt(trail, 10) : undefined,
 		deviceId,
 		objectId: parseInt(objectId ?? '-1', 10),
 		instanceId: parseInt(instanceId ?? '-1', 10),
@@ -117,18 +145,16 @@ const h = async (
 		})
 	}
 
-	const { objectId: ObjectID, instanceId: InstanceID } = maybeValidInput.value
+	const {
+		objectId: ObjectID,
+		instanceId: InstanceID,
+		aggregate,
+	} = maybeValidInput.value
 	const def = definitions[ObjectID]
+	const timeSpan =
+		HistoricalDataTimeSpans[maybeValidInput.value.timeSpan ?? ''] ?? LastHour
 
 	try {
-		const timeSpan =
-			HistoricalDataTimeSpans[maybeValidInput.value.timeSpan ?? ''] ?? LastHour
-		const history = await queryResourceHistory({
-			def,
-			instance: InstanceID,
-			deviceId: device.id,
-			timeSpan,
-		})
 		const result: Static<typeof LwM2MObjectHistory> = {
 			'@context': Context.lwm2mObjectHistory.toString(),
 			query: {
@@ -138,8 +164,57 @@ const h = async (
 				deviceId: device.id,
 				binIntervalMinutes: timeSpan.binIntervalMinutes,
 			},
-			partialInstances: history,
+			partialInstances: [],
 		}
+		if (maybeValidInput.value.trail !== undefined) {
+			if (ObjectID !== LwM2MObjectID.Geolocation_14201) {
+				return aProblem({
+					title: `Trail option must only be used with ObjectID ${LwM2MObjectID.Geolocation_14201}!`,
+					detail: `${maybeValidInput.value.objectId}`,
+					status: HttpStatusCode.BAD_REQUEST,
+				})
+			}
+			// Request the location history, but fold similar locations
+			const history = (await getResourceHistory({
+				def,
+				instance: InstanceID,
+				deviceId: device.id,
+				timeSpan,
+				dir: 'ASC',
+			})) as Array<{
+				0: number
+				1: number
+				6: string
+				99: number
+			}>
+
+			const source = history[0]?.[6] ?? 'GNSS'
+
+			result.partialInstances = createTrailOfCoordinates(
+				maybeValidInput.value.trail,
+				history.map(({ '0': lat, '1': lng, '99': ts }) => ({
+					lat,
+					lng,
+					ts: new Date(ts).getTime(),
+				})),
+			).map(({ lat, lng, ts, radiusKm }) => ({
+				'0': lat,
+				'1': lng,
+				'3': radiusKm * 1000,
+				'6': source,
+				'99': ts,
+				ts: new Date(ts).toISOString(),
+			}))
+		} else {
+			result.partialInstances = await binResourceHistory({
+				def,
+				instance: InstanceID,
+				deviceId: device.id,
+				timeSpan,
+				aggregateFn: aggregate ?? 'avg',
+			})
+		}
+
 		return aResponse(
 			200,
 			{
@@ -167,16 +242,18 @@ const h = async (
 	}
 }
 
-const queryResourceHistory = async ({
+const binResourceHistory = async ({
 	def,
 	instance,
 	deviceId,
 	timeSpan: { binIntervalMinutes, durationHours },
+	aggregateFn,
 }: {
 	def: LWM2MObjectInfo
 	instance: number
 	deviceId: string
 	timeSpan: HistoricalDataTimeSpan
+	aggregateFn: string
 }): Promise<
 	Array<Record<number, string | number | boolean> & { ts: string }>
 > => {
@@ -189,11 +266,16 @@ const queryResourceHistory = async ({
 
 	const QueryString = [
 		`SELECT `,
-		...resourceNames
-			// Only select the columns that exist
-			.filter(([name]) => availableColumns.includes(name))
-			.map(([alias, ResourceID]) => `AVG("${alias}") AS "${ResourceID}",`),
-		`bin(time, ${binIntervalMinutes}m) AS ts`,
+		[
+			...resourceNames
+				// Only select the columns that exist
+				.filter(([name]) => availableColumns.includes(name))
+				.map(
+					([alias, ResourceID]) =>
+						`${aggregateFn}("${alias}") AS "${ResourceID}"`,
+				),
+			`bin(time, ${binIntervalMinutes}m) AS ts`,
+		].join(','),
 		`FROM "${DatabaseName}"."${TableName}"`,
 		`WHERE measure_name = '${def.ObjectID}/${instance}'`,
 		`AND time > date_add('hour', -${durationHours}, now())`,
@@ -203,6 +285,55 @@ const queryResourceHistory = async ({
 		`AND deviceId = '${deviceId}'`,
 		`GROUP BY bin(time, ${binIntervalMinutes}m)`,
 		`ORDER BY bin(time, ${binIntervalMinutes}m) DESC`,
+	].join(' ')
+
+	console.log(QueryString)
+
+	return parseResult(
+		await ts.send(
+			new QueryCommand({
+				QueryString,
+			}),
+		),
+	)
+}
+
+const getResourceHistory = async ({
+	def,
+	instance,
+	deviceId,
+	timeSpan: { durationHours },
+	dir,
+}: {
+	def: LWM2MObjectInfo
+	instance: number
+	deviceId: string
+	timeSpan: HistoricalDataTimeSpan
+	dir?: string
+}): Promise<Array<Record<number, string | number | boolean>>> => {
+	const resourceNames = Object.values(def.Resources)
+		.filter(isNumeric)
+		.map<[string, number]>(({ ResourceID }) => [
+			`${def.ObjectID}/${def.ObjectVersion}/${ResourceID}`,
+			ResourceID,
+		])
+
+	const QueryString = [
+		`SELECT `,
+		[
+			...resourceNames
+				// Only select the columns that exist
+				.filter(([name]) => availableColumns.includes(name))
+				.map(([alias, ResourceID]) => `"${alias}" AS "${ResourceID}"`),
+		].join(', '),
+		`FROM "${DatabaseName}"."${TableName}"`,
+		`WHERE measure_name = '${def.ObjectID}/${instance}'`,
+		`AND time > date_add('hour', -${durationHours}, now())`,
+		`AND ObjectID = '${def.ObjectID}'`,
+		`AND ObjectInstanceID = '${instance}'`,
+		`AND ObjectVersion = '${def.ObjectVersion}'`,
+		`AND deviceId = '${deviceId}'`,
+		`ORDER BY time ${dir ?? 'DESC'}`,
 	].join(' ')
 
 	console.log(QueryString)
