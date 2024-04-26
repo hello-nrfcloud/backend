@@ -12,7 +12,12 @@ import { steps as deviceRegistrySteps } from './steps/device/registry.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
 import { steps as httpApiMockSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/httpApiMock'
-import { steps as randomSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
+import {
+	steps as randomSteps,
+	UUIDv4,
+	email,
+	IMEI,
+} from '@hello.nrfcloud.com/bdd-markdown-steps/random'
 import { websocketStepRunners } from './steps/websocket.js'
 import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
@@ -122,7 +127,15 @@ runner
 			httpMockApiURL: new URL(httpApiMockURL),
 		}),
 	)
-	.addStepRunners(...randomSteps())
+	.addStepRunners(
+		...randomSteps({
+			UUIDv4,
+			email,
+			IMEI,
+			cellId: () =>
+				(10000000 + Math.floor(Math.random() * 100000000)).toString(),
+		}),
+	)
 
 const res = await runner.run({
 	APIURL: backendConfig.APIURL.toString().replace(/\/+$/, ''),

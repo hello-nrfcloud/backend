@@ -2,7 +2,10 @@
 exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
-  now: 2023-09-12T00:00:00.000Z
+  tsISO: 2023-09-12T00:00:00.000Z
+  ts: 1694503339523
+  tsISO2: 2023-09-12T00:00:00.000Z
+  ts2: 1694503339523
 ---
 
 # Single-cell geo location
@@ -16,7 +19,11 @@ Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 And I connect to the websocket using fingerprint `${fingerprint}`
 
-And I store `$now()` into `now`
+And I store `$millis()` into `ts`
+
+And I store `$fromMillis(${ts})` into `tsISO`
+
+And I have a random cellId in `cellId`
 
 And this nRF Cloud API is queued for a `GET /v1/account/service-token` request
 
@@ -25,7 +32,7 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-  "createdAt": "${now}",
+  "createdAt": "${tsISO}",
   "token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzU0NDQ2NDAsImlhdCI6MTYzMjg1MjY1NCwic3ViIjoibnJmY2xvdWQtZXZhbHVhdGlvbi1kZXZpY2UtM2JmNTBlY2YtMmY3Zi00NjlmLTg4YTQtMmFhODhiZGMwODNiIn0.ldxPFg7xofD8gxjRkdu8WXl-cD01wVqn-VhvhyeuEXMeAmFpDHbSxEo5rs1DofEougUQnZy31T-e_5EQ8rlNMg"
 }
 ```
@@ -46,8 +53,6 @@ Content-Type: application/json
 
 ## Device publishes network information, which is then resolved
 
-Given I store `$millis()` into `ts`
-
 When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 `/msg/d2c/raw` with this SenML payload
 
@@ -57,7 +62,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
     "bn": "14203/0/",
     "n": "0",
     "vs": "LTE-M",
-    "bt": "$number{now}"
+    "bt": "$number{ts}"
   },
   {
     "n": "1",
@@ -73,7 +78,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
   },
   {
     "n": "4",
-    "v": 34237196
+    "v": "$number{cellId}"
   },
   {
     "n": "5",
@@ -101,10 +106,11 @@ Soon I should receive a message on the websocket that matches
     "1": 20,
     "2": -102,
     "3": 2305,
-    "4": 34237196,
+    "4": "$number{cellId}",
     "5": 24202,
     "6": "100.74.127.55",
-    "11": 7
+    "11": 7,
+    "99": "${tsISO}"
   }
 }
 ```
@@ -121,7 +127,7 @@ Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzU0NDQ2N
     {
       "mcc": 242,
       "mnc": "02",
-      "eci": 34237196,
+      "eci": ${cellId},
       "tac": 2305,
       "rsrp": -102
     }
@@ -137,7 +143,7 @@ Soon I should receive a message on the websocket that matches
   "lat": 63.41999531,
   "lng": 10.42999506,
   "accuracy": 2420,
-  "ts": "$number{now}"
+  "ts": "$number{ts}"
 }
 ```
 
@@ -146,7 +152,9 @@ Soon I should receive a message on the websocket that matches
 > The next message will be resolved without an additional call to the nRF Cloud
 > API.
 
-Given I store `$millis()` into `ts`
+Given I store `$millis()` into `ts2`
+
+And I store `$fromMillis(${ts2})` into `tsISO2`
 
 When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 `/msg/d2c/raw` with this SenML payload
@@ -157,7 +165,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
     "bn": "14203/0/",
     "n": "0",
     "vs": "LTE-M",
-    "bt": "$number{now}"
+    "bt": "$number{ts2}"
   },
   {
     "n": "1",
@@ -173,7 +181,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
   },
   {
     "n": "4",
-    "v": 34237196
+    "v": "$number{cellId}"
   },
   {
     "n": "5",
@@ -181,11 +189,11 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
   },
   {
     "n": "6",
-    "vs": "100.74.127.55"
+    "vs": "100.74.127.45"
   },
   {
     "n": "11",
-    "v": 7
+    "v": 6
   }
 ]
 ```
@@ -201,10 +209,11 @@ Soon I should receive a message on the websocket that matches
     "1": 20,
     "2": -102,
     "3": 2305,
-    "4": 34237196,
+    "4": "$number{cellId}",
     "5": 24202,
-    "6": "100.74.127.55",
-    "11": 7
+    "6": "100.74.127.45",
+    "11": 6,
+    "99": "${tsISO2}"
   }
 }
 ```
@@ -217,6 +226,6 @@ Soon I should receive a message on the websocket that matches
   "lat": 63.41999531,
   "lng": 10.42999506,
   "accuracy": 2420,
-  "ts": "$number{now}"
+  "ts": "$number{ts2}"
 }
 ```

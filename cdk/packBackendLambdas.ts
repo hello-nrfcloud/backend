@@ -11,9 +11,6 @@ export type BackendLambdas = {
 	publishToWebsocketClients: PackedLambda
 	prepareDeviceShadow: PackedLambda
 	fetchDeviceShadow: PackedLambda
-	/**
-	 * @deprecated See https://github.com/hello-nrfcloud/proto/issues/137
-	 */
 	onLwM2MUpdate: PackedLambda
 	senMLImportLogs: PackedLambda
 	healthCheck: PackedLambda

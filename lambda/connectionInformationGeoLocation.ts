@@ -91,7 +91,10 @@ export const handler = async (event: {
 			throw new Error(`Acquiring service token failed.`)
 		}
 
-		const fetchLocation = groundFix({ apiKey, endpoint: apiEndpoint })
+		const fetchLocation = groundFix({
+			apiKey: locationServiceToken.token,
+			endpoint: apiEndpoint,
+		})
 
 		const maybeResult = await fetchLocation({
 			mcc: parseInt(mccmnc.toString().slice(0, -2), 10),
@@ -136,7 +139,7 @@ export const handler = async (event: {
 		const message: Static<typeof SingleCellGeoLocation> = {
 			'@context': Context.singleCellGeoLocation.toString(),
 			...geoLocation,
-			ts: event.connectionInformation[99].getTime(),
+			ts: new Date(event.connectionInformation[99]).getTime(),
 		}
 
 		await eventBus.putEvents({
