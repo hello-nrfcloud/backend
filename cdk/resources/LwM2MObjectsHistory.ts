@@ -53,10 +53,10 @@ export class LwM2MObjectsHistory extends Construct {
 
 		const fn = new PackedLambdaFn(
 			this,
-			'fn',
+			'storeFn',
 			lambdaSources.storeObjectsInTimestream,
 			{
-				description: 'Save LwM2M objects into Timestream database',
+				description: 'Stores LwM2M objects into Timestream database',
 				environment: {
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 				},
@@ -129,7 +129,7 @@ export class LwM2MObjectsHistory extends Construct {
 
 		this.historyFn = new PackedLambdaFn(
 			this,
-			'historyFn',
+			'queryFn',
 			lambdaSources.queryLwM2MHistory,
 			{
 				timeout: Duration.seconds(10),

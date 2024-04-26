@@ -17,7 +17,7 @@ import {
 	definitions,
 	type LWM2MObjectInfo,
 } from '@hello.nrfcloud.com/proto-map'
-import { Context, ResourceHistory } from '@hello.nrfcloud.com/proto-map/api'
+import { Context, LwM2MObjectHistory } from '@hello.nrfcloud.com/proto/hello'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import { HttpStatusCode, deviceId } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
@@ -85,9 +85,12 @@ const h = async (
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify(event))
 
+	const { deviceId, objectId, instanceId } = event.pathParameters ?? {}
 	const maybeValidInput = validateInput({
 		...(event.queryStringParameters ?? {}),
-		...(event.pathParameters ?? {}),
+		deviceId,
+		objectId: parseInt(objectId ?? '-1', 10),
+		instanceId: parseInt(instanceId ?? '-1', 10),
 	})
 	if ('errors' in maybeValidInput) {
 		return aProblem({
@@ -126,8 +129,8 @@ const h = async (
 			deviceId: device.id,
 			timeSpan,
 		})
-		const result: Static<typeof ResourceHistory> = {
-			'@context': Context.history.resource.toString(),
+		const result: Static<typeof LwM2MObjectHistory> = {
+			'@context': Context.lwm2mObjectHistory.toString(),
 			query: {
 				ObjectID,
 				ObjectVersion: def.ObjectVersion,
@@ -141,7 +144,7 @@ const h = async (
 			200,
 			{
 				...result,
-				'@context': Context.history.resource,
+				'@context': Context.lwm2mObjectHistory,
 			},
 			timeSpan.expiresMinutes * 60,
 		)
@@ -201,6 +204,8 @@ const queryResourceHistory = async ({
 		`GROUP BY bin(time, ${binIntervalMinutes}m)`,
 		`ORDER BY bin(time, ${binIntervalMinutes}m) DESC`,
 	].join(' ')
+
+	console.log(QueryString)
 
 	return parseResult(
 		await ts.send(

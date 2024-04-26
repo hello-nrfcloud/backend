@@ -13,7 +13,7 @@ export const LastHour: HistoricalDataTimeSpan = {
 export const HistoricalDataTimeSpans: Record<string, HistoricalDataTimeSpan> = {
 	lastHour: LastHour,
 	lastDay: {
-		binIntervalMinutes: 5,
+		binIntervalMinutes: 15,
 		durationHours: 24,
 		expiresMinutes: 5,
 	},

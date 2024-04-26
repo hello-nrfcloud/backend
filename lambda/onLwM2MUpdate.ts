@@ -58,7 +58,7 @@ const h = async (event: {
 	const maybeObjects = senMLtoLwM2M(senML)
 
 	if ('error' in maybeObjects) {
-		console.error(`[${deviceId}]`, JSON.stringify(maybeObjects))
+		console.error(`[${deviceId}]`, JSON.stringify(maybeObjects.error.message))
 		track('invalidSenML', MetricUnit.Count, 1)
 		await logDb.recordError(deviceId, senML, [maybeObjects.error.message])
 		return

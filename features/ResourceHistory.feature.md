@@ -13,11 +13,13 @@ exampleContext:
 
 Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
-## Device publishes data
-
 Given I store `$millis()` into `ts`
 
 And I store `$fromMillis(${ts})` into `tsISO`
+
+## Scenario Outline: Device publishes data
+
+Given I store `ts - ${deductMsFromTS}` into `pastTs`
 
 When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 `/msg/d2c/raw` with this SenML payload
@@ -25,21 +27,28 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 ```json
 [
   {
-    "bn": "14201/0/",
-    "bt": "$number{ts}",
-    "n": "0",
-    "v": 62.469414
-  },
-  { "n": "1", "v": 6.151946 },
-  { "n": "3", "v": 1 },
-  { "n": "6", "vs": "Fixed" }
+    "bn": "14202/0/",
+    "bt": "$number{pastTs}",
+    "n": "1",
+    "v": "$number{v}"
+  }
 ]
 ```
+
+### Examples
+
+| v       | deductMsFromTS |
+| ------- | -------------- |
+| 3.40141 | 0              |
+| 3.75718 | 30000          |
+| 3.73368 | 60000          |
+| 3.58041 | 90000          |
+| 3.24925 | 120000         |
 
 ## Fetch the published data
 
 When I `GET`
-`${APIURL}/device/${fingerprint_deviceId}/history/14230/0?fingerprint=${fingerprint}`
+`${APIURL}/device/${fingerprint_deviceId}/history/14202/0?fingerprint=${fingerprint}&timeSpan=lastDay`
 
 Then I should receive a
 `https://github.com/hello-nrfcloud/proto/lwm2m/object/history` response
@@ -48,7 +57,7 @@ And `$.query` of the last response should match
 
 ```json
 {
-  "ObjectID": 14230,
+  "ObjectID": 14202,
   "ObjectVersion": "1.0",
   "ObjectInstanceID": 0,
   "deviceId": "${fingerprint_deviceId}",
@@ -60,7 +69,6 @@ And `$.partialInstances[0]` of the last response should match
 
 ```json
 {
-  "0": 225.1,
-  "99": "$number{ts}"
+  "1": 3.5443860000000003
 }
 ```
