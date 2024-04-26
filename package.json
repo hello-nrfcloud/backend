@@ -127,7 +127,7 @@
     "@nordicsemiconductor/timestream-helpers": "6.0.2",
     "@sinclair/typebox": "0.32.24",
     "lodash-es": "4.17.21",
-    "mqtt": "5.5.3",
+    "mqtt": "5.5.4",
     "p-limit": "5.0.0",
     "table": "6.8.2",
     "ws": "8.16.0"
