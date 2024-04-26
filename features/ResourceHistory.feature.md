@@ -3,7 +3,6 @@ exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
   ts: 1694503339523
-  tsISO: 2023-09-12T00:00:00.000Z
   APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
 ---
 
@@ -14,8 +13,6 @@ exampleContext:
 Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 Given I store `$millis()` into `ts`
-
-And I store `$fromMillis(${ts})` into `tsISO`
 
 ## Scenario Outline: Device publishes data
 
