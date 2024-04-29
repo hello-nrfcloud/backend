@@ -64,9 +64,12 @@ export class CoAPSenMLtoLwM2M extends Construct {
 		websocketEventBus.eventBus.grantPutEventsTo(fn)
 		this.importLogs.grantReadWriteData(fn)
 
-		const rule = new IoT.CfnTopicRule(this, 'topicRule', {
+		const role = new IoTActionRole(this)
+
+		// SenML encoded in CBOR via CoAP
+		const coapRule = new IoT.CfnTopicRule(this, 'coapTopicRule', {
 			topicRulePayload: {
-				description: `Convert received message and publish to the EventBus`,
+				description: `Convert SenML encoded in CBOR via CoAP and publish to the EventBus`,
 				ruleDisabled: false,
 				awsIotSqlVersion: '2016-03-23',
 				sql: `
@@ -85,16 +88,50 @@ export class CoAPSenMLtoLwM2M extends Construct {
 				],
 				errorAction: {
 					republish: {
-						roleArn: new IoTActionRole(this).roleArn,
+						roleArn: role.roleArn,
 						topic: 'errors',
 					},
 				},
 			},
 		})
 
-		fn.addPermission('topicRule', {
+		fn.addPermission('coapTopicRule', {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
-			sourceArn: rule.attrArn,
+			sourceArn: coapRule.attrArn,
+		})
+
+		// SenML encoded in JSON via MQTT
+		const mqttRule = new IoT.CfnTopicRule(this, 'mqttTopicRule', {
+			topicRulePayload: {
+				description: `Convert SenML encoded in JSON via MQTT and publish to the EventBus`,
+				ruleDisabled: false,
+				awsIotSqlVersion: '2016-03-23',
+				sql: `
+					select
+						* as senML,
+						topic(4) as deviceId,
+						timestamp() as timestamp
+                    from 'data/m/d/+/d2c/senml'
+				`,
+				actions: [
+					{
+						lambda: {
+							functionArn: fn.functionArn,
+						},
+					},
+				],
+				errorAction: {
+					republish: {
+						roleArn: role.roleArn,
+						topic: 'errors',
+					},
+				},
+			},
+		})
+
+		fn.addPermission('mqttTopicRule', {
+			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
+			sourceArn: mqttRule.attrArn,
 		})
 	}
 }

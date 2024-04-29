@@ -5,11 +5,12 @@ exampleContext:
   ts: 1694503339523
   tsISO: 2023-09-12T00:00:00.000Z
   APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
+run: only
 ---
 
-# Device to websocket
+# Device to websocket (MQTT)
 
-> LwM2M objects published via CoAP on nRF Cloud should be delivered to the
+> LwM2M objects published via MQTT on nRF Cloud should be delivered to the
 > websocket API
 
 ## Background
@@ -24,8 +25,8 @@ Given I store `$millis()` into `ts`
 
 And I store `$fromMillis(${ts})` into `tsISO`
 
-When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
-`/msg/d2c/raw` with this SenML payload
+When the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c/senml`
 
 ```json
 [

@@ -8,6 +8,7 @@ import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/BackendStack.js'
 import { STACK_NAME } from '../cdk/stackConfig.js'
 import { steps as CoAPDeviceSteps } from './steps/device/CoAP.js'
+import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
 import { steps as deviceRegistrySteps } from './steps/device/registry.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
@@ -23,6 +24,7 @@ import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',
@@ -32,6 +34,7 @@ const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 
 const ssm = new SSMClient({})
 const iotData = new IoTDataPlaneClient({})
+const db = new DynamoDBClient({})
 
 /**
  * This file configures the BDD Feature runner
@@ -44,7 +47,10 @@ const backendConfig = await stackOutput(
 	new CloudFormationClient({}),
 )<BackendStackOutputs>(STACK_NAME)
 
-const db = new DynamoDBClient({})
+const allAccountSettings = await getAllAccountsSettings({
+	ssm,
+	stackName: STACK_NAME,
+})
 
 const print = (arg: unknown) =>
 	typeof arg === 'object' ? JSON.stringify(arg) : arg
@@ -107,6 +113,7 @@ runner
 		}),
 	)
 	.addStepRunners(...CoAPDeviceSteps({ iotData }))
+	.addStepRunners(...MQTTDeviceSteps({ allAccountSettings }))
 	.addStepRunners(
 		...mocknRFCloudSteps({
 			db,

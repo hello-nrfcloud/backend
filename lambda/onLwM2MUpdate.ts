@@ -30,25 +30,36 @@ const updateShadow = updateLwM2MShadow(iotData)
 const db = new DynamoDBClient({})
 const logDb = importLogs(db, importLogsTableName)
 
-const h = async (event: {
-	senMLCBOR: string
-	deviceId: string
-	timestamp: number
-}): Promise<void> => {
+const h = async (
+	event: {
+		deviceId: string
+		timestamp: number
+	} & (
+		| {
+				senMLCBOR: string
+		  }
+		| { senML: SenMLType }
+	),
+): Promise<void> => {
 	console.debug({
 		event,
 	})
-	const { deviceId, senMLCBOR, timestamp } = event
+	const { deviceId, timestamp } = event
 	track('deviceMessageLwM2M', MetricUnit.Count, 1)
 
 	let senML: SenMLType | undefined = undefined
-	try {
-		senML = decode(Buffer.from(senMLCBOR, 'base64'))
-	} catch (err) {
-		console.error(`Failed to decode SenML from ${senMLCBOR}!`)
-		await logDb.recordError(deviceId, senMLCBOR, [
-			`Failed to decode payload as SenML!`,
-		])
+	if ('senMLCBOR' in event) {
+		const senMLCBOR = event.senMLCBOR
+		try {
+			senML = decode(Buffer.from(senMLCBOR, 'base64'))
+		} catch (err) {
+			console.error(`Failed to decode SenML from ${senMLCBOR}!`)
+			await logDb.recordError(deviceId, senMLCBOR, [
+				`Failed to decode payload as SenML!`,
+			])
+		}
+	} else {
+		senML = event.senML
 	}
 	if (senML === undefined) {
 		track('invalidPayload', MetricUnit.Count, 1)
