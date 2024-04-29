@@ -25,12 +25,4 @@ export const pack = async (): Promise<PackedLayer> =>
 	packLayer({
 		id: 'baseLayer',
 		dependencies,
-		installCommand: () => [
-			'npm',
-			'i',
-			'--force',
-			'--ignore-scripts',
-			'--only=prod',
-			'--no-audit',
-		],
 	})

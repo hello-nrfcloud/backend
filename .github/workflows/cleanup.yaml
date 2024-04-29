@@ -41,7 +41,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm i --force --no-audit
+        run: npm ci --no-audit
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
