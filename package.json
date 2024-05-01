@@ -51,7 +51,7 @@
     "@bifravst/http-api-mock": "1.4.17",
     "@bifravst/prettier-config": "1.0.0",
     "@commitlint/config-conventional": "19.2.2",
-    "@hello.nrfcloud.com/bdd-markdown-steps": "2.4.11",
+    "@hello.nrfcloud.com/bdd-markdown-steps": "2.4.16",
     "@nordicsemiconductor/bdd-markdown": "8.1.9",
     "@nordicsemiconductor/cloudformation-helpers": "9.0.3",
     "@nordicsemiconductor/firmware-ci-device-helpers": "14.0.201",
