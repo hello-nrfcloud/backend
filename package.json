@@ -79,7 +79,7 @@
     "p-retry": "6.2.0",
     "semver": "7.6.0",
     "tsmatchers": "5.0.2",
-    "tsx": "4.8.2",
+    "tsx": "4.9.3",
     "yazl": "2.5.1"
   },
   "lint-staged": {
