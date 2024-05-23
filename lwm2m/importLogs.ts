@@ -49,7 +49,7 @@ export const importLogs = (
 					...sharedProps(deviceId),
 					success: false,
 					errors: JSON.stringify(errors),
-					senML: JSON.stringify(senML),
+					senML: JSON.stringify(senML, marshallBigInt),
 				}),
 			}),
 		)
@@ -61,7 +61,7 @@ export const importLogs = (
 				Item: marshall({
 					...sharedProps(deviceId),
 					success: true,
-					senML: JSON.stringify(senML),
+					senML: JSON.stringify(senML, marshallBigInt),
 					lwm2m: JSON.stringify(lwm2m),
 				}),
 			}),
@@ -108,3 +108,6 @@ export const importLogs = (
 		})
 	},
 })
+
+const marshallBigInt = (key: string, value: unknown) =>
+	typeof value === 'bigint' ? value.toString() : value
