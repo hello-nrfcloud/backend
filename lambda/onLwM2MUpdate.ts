@@ -6,7 +6,11 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { decode } from 'cbor-x'
-import { senMLtoLwM2M, type SenMLType } from '@hello.nrfcloud.com/proto-map'
+import {
+	fromCBOR,
+	senMLtoLwM2M,
+	type SenMLType,
+} from '@hello.nrfcloud.com/proto-map'
 import { Context, LwM2MObjectUpdate } from '@hello.nrfcloud.com/proto/hello'
 import type { Static } from '@sinclair/typebox'
 import type { Resources as LwM2MResources } from '@hello.nrfcloud.com/proto-map/api'
@@ -47,11 +51,11 @@ const h = async (
 	const { deviceId, timestamp } = event
 	track('deviceMessageLwM2M', MetricUnit.Count, 1)
 
-	let senML: SenMLType | undefined = undefined
+	let senML: Array<Record<string, unknown>> | undefined = undefined
 	if ('senMLCBOR' in event) {
 		const senMLCBOR = event.senMLCBOR
 		try {
-			senML = decode(Buffer.from(senMLCBOR, 'base64'))
+			senML = fromCBOR(decode(Buffer.from(senMLCBOR, 'base64')))
 		} catch (err) {
 			console.error(`Failed to decode SenML from ${senMLCBOR}!`)
 			await logDb.recordError(deviceId, senMLCBOR, [
@@ -66,7 +70,7 @@ const h = async (
 		return
 	}
 
-	const maybeObjects = senMLtoLwM2M(senML)
+	const maybeObjects = senMLtoLwM2M(senML as any)
 
 	if ('error' in maybeObjects) {
 		console.error(`[${deviceId}]`, JSON.stringify(maybeObjects.error.message))
