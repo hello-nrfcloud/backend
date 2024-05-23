@@ -2,23 +2,28 @@ import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import middy from '@middy/core'
-import { fromEnv } from '@nordicsemiconductor/from-env'
-import mqtt from 'mqtt'
-import assert from 'node:assert/strict'
-import { registerDevice } from '../devices/registerDevice.js'
-import { defer } from './health-check/defer.js'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import {
-	ValidateResponse,
-	checkMessageFromWebsocket,
-} from './health-check/checkMessageFromWebsocket.js'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import {
 	getAllAccountsSettings,
 	type Settings as NrfCloudSettings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import {
+	LwM2MObjectID,
+	lwm2mToSenML,
+	type BatteryAndPower_14202,
+} from '@hello.nrfcloud.com/proto-map'
+import middy from '@middy/core'
+import { fromEnv } from '@nordicsemiconductor/from-env'
+import mqtt from 'mqtt'
+import assert from 'node:assert'
+import { registerDevice } from '../devices/registerDevice.js'
 import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.js'
+import {
+	ValidateResponse,
+	checkMessageFromWebsocket,
+} from './health-check/checkMessageFromWebsocket.js'
+import { defer } from './health-check/defer.js'
 
 const { DevicesTableName, stackName, websocketUrl } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -96,7 +101,7 @@ const publishDeviceMessage =
 		deviceCert: string
 		devicePrivateKey: string
 	}) =>
-	async (message: Record<string, unknown>): Promise<void> => {
+	async (message: unknown): Promise<void> => {
 		const { promise, resolve, reject } = defer<void>(10000)
 
 		const mqttClient = mqtt.connect({
@@ -114,7 +119,7 @@ const publishDeviceMessage =
 
 		mqttClient
 			.on('connect', () => {
-				const topic = `${nrfCloudSettings.mqttTopicPrefix}m/d/${deviceId}/d2c`
+				const topic = `${nrfCloudSettings.mqttTopicPrefix}m/d/${deviceId}/d2c/senml`
 				log.debug('mqtt publish', { mqttMessage: message, topic })
 				mqttClient.publish(topic, JSON.stringify(message), (error) => {
 					if (error !== undefined) return reject(error)
@@ -160,6 +165,16 @@ const h = async (): Promise<void> => {
 								gain: 3 + Number(Math.random().toFixed(5)),
 							}
 							store.set(account, data)
+							const maybeSenML = lwm2mToSenML(<BatteryAndPower_14202>{
+								ObjectID: LwM2MObjectID.BatteryAndPower_14202,
+								ObjectVersion: '1.0',
+								Resources: {
+									1: data.gain,
+									99: new Date(data.ts),
+								},
+							})
+							if ('errors' in maybeSenML)
+								throw new Error(`Failed to create SenML!`)
 							await publishDeviceMessage({
 								nrfCloudSettings: allAccountsSettings[
 									account
@@ -167,34 +182,47 @@ const h = async (): Promise<void> => {
 								deviceId,
 								deviceCert,
 								devicePrivateKey,
-							})({
-								appId: 'SOLAR',
-								messageType: 'DATA',
-								ts: data.ts,
-								data: `${data.gain}`,
-							})
+							})(maybeSenML.senML)
 						},
 						validate: async (message) => {
 							try {
 								const data = store.get(account)
 								const messageObj = JSON.parse(message)
 								log.debug(`ws incoming message`, { messageObj })
-								const expectedMessage = {
-									'@context':
-										'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/gain',
-									ts: data?.ts,
-									mA: data?.gain,
-								}
 
-								if (messageObj['@context'] !== expectedMessage['@context'])
+								try {
+									const {
+										ObjectID,
+										Resources,
+										'@context': context,
+									} = messageObj
+									assert.deepEqual(
+										{
+											'@context': context,
+											ObjectID,
+											Resources,
+										},
+										{
+											'@context':
+												'https://github.com/hello-nrfcloud/proto/lwm2m/object/update',
+											ObjectID: LwM2MObjectID.BatteryAndPower_14202,
+											Resources: {
+												1: data?.gain,
+												99: new Date(data?.ts ?? Date.now()).toISOString(),
+											},
+										},
+									)
+								} catch (err) {
+									console.error(JSON.stringify(err))
 									return ValidateResponse.skip
+								}
 
 								track(
 									`receivingMessageDuration`,
 									MetricUnit.Seconds,
 									(Date.now() - (data?.ts ?? 0)) / 1000,
 								)
-								assert.deepEqual(messageObj, expectedMessage)
+
 								return ValidateResponse.valid
 							} catch (error) {
 								log.error(`validate error`, { error, account })
