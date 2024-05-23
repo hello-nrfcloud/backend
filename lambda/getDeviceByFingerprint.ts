@@ -4,7 +4,7 @@ import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
-import { Context } from '@hello.nrfcloud.com/proto/hello'
+import { Context, HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
@@ -44,18 +44,19 @@ const h = async (
 		return aProblem({
 			title: 'Invalid fingerprint provided!',
 			detail: event.queryStringParameters?.fingerprint,
-			status: 400,
+			status: HttpStatusCode.BAD_REQUEST,
 		})
 	}
 
-	const device = await getDevice(maybeValidInput.value.fingerprint)
-	if (device === null) {
+	const maybeDevice = await getDevice(maybeValidInput.value.fingerprint)
+	if ('error' in maybeDevice) {
 		return aProblem({
 			title: `No device found for fingerprint!`,
 			detail: maybeValidInput.value.fingerprint,
-			status: 404,
+			status: HttpStatusCode.NOT_FOUND,
 		})
 	}
+	const device = maybeDevice.device
 
 	return aResponse(
 		200,

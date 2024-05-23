@@ -11,16 +11,18 @@ export type BackendLambdas = {
 	publishToWebsocketClients: PackedLambda
 	prepareDeviceShadow: PackedLambda
 	fetchDeviceShadow: PackedLambda
-	onDeviceMessage: PackedLambda
-	storeMessagesInTimestream: PackedLambda
+	onLwM2MUpdate: PackedLambda
+	senMLImportLogs: PackedLambda
 	healthCheck: PackedLambda
 	healthCheckForCoAP: PackedLambda
-	historicalDataRequest: PackedLambda
 	kpis: PackedLambda
 	configureDevice: PackedLambda
-	resolveSingleCellGeoLocation: PackedLambda
 	getDeviceByFingerprint: PackedLambda
 	feedback: PackedLambda
+	connectionInformationGeoLocation: PackedLambda
+	storeObjectsInTimestream: PackedLambda
+	queryLwM2MHistory: PackedLambda
+	apiHealthCheck: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -33,14 +35,18 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	publishToWebsocketClients: await pack('publishToWebsocketClients'),
 	prepareDeviceShadow: await pack('prepareDeviceShadow'),
 	fetchDeviceShadow: await pack('fetchDeviceShadow'),
-	onDeviceMessage: await pack('onDeviceMessage'),
-	storeMessagesInTimestream: await pack('storeMessagesInTimestream'),
+	onLwM2MUpdate: await pack('onLwM2MUpdate'),
+	senMLImportLogs: await pack('senMLImportLogs'),
 	healthCheck: await pack('healthCheck'),
 	healthCheckForCoAP: await pack('healthCheckForCoAP'),
-	historicalDataRequest: await pack('historicalDataRequest'),
 	kpis: await pack('kpis'),
 	configureDevice: await pack('configureDevice'),
-	resolveSingleCellGeoLocation: await pack('resolveSingleCellGeoLocation'),
 	getDeviceByFingerprint: await pack('getDeviceByFingerprint'),
 	feedback: await pack('feedback'),
+	connectionInformationGeoLocation: await pack(
+		'connectionInformationGeoLocation',
+	),
+	storeObjectsInTimestream: await pack('storeObjectsInTimestream'),
+	queryLwM2MHistory: await pack('queryLwM2MHistory'),
+	apiHealthCheck: await pack('apiHealthCheck'),
 })

@@ -7,6 +7,7 @@ export type WebSocketClient = {
 	close: () => void
 	send: (message: Record<string, unknown>) => Promise<void>
 	messages: Record<string, unknown>
+	lastMessage: () => unknown
 }
 
 export const createWebsocketClient = ({
@@ -20,6 +21,7 @@ export const createWebsocketClient = ({
 }): WebSocketClient => {
 	const client = new WebSocket(url)
 	const messages: Record<string, unknown> = {} as const
+	let lastMessage: undefined = undefined
 
 	const wsClient: WebSocketClient = {
 		id,
@@ -38,6 +40,7 @@ export const createWebsocketClient = ({
 						const message = JSON.parse(msg.toString())
 						debug?.(`<< ` + msg.toString())
 						messages[ulid()] = message
+						lastMessage = message
 					}),
 			),
 		close: () => {
@@ -45,6 +48,7 @@ export const createWebsocketClient = ({
 			client.terminate()
 		},
 		messages,
+		lastMessage: () => lastMessage,
 		send: async (message) =>
 			new Promise<void>((resolve, reject) => {
 				const strMessage = JSON.stringify(message)

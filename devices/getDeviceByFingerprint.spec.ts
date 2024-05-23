@@ -15,7 +15,7 @@ void describe('getDeviceByFingerprint()', () => {
 				marshall({
 					deviceId,
 					fingerprint,
-					model: 'PCA20035+solar',
+					model: 'PCA20065',
 					account: 'nordic',
 				}),
 			],
@@ -28,10 +28,10 @@ void describe('getDeviceByFingerprint()', () => {
 			DevicesIndexName: 'fingerprintIndex',
 		})(fingerprint)
 
-		assert.deepEqual(res, {
+		assert.deepEqual('device' in res && res.device, {
 			id: deviceId,
 			fingerprint,
-			model: 'PCA20035+solar',
+			model: 'PCA20065',
 			account: 'nordic',
 		})
 
@@ -52,7 +52,7 @@ void describe('getDeviceByFingerprint()', () => {
 		})
 	})
 
-	void it('should return null if the device is not found', async () => {
+	void it('should return error if the device is not found', async () => {
 		const send = mock.fn(() => ({}))
 		const fingerprint = `29a.${generateCode()}`
 		const res = await getDeviceByFingerprint({
@@ -63,7 +63,7 @@ void describe('getDeviceByFingerprint()', () => {
 			DevicesIndexName: 'fingerprintIndex',
 		})(fingerprint)
 
-		assert.equal(res, null)
+		assert.equal('error' in res, true)
 
 		assertCall(send, {
 			input: {

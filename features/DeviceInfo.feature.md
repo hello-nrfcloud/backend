@@ -11,7 +11,7 @@ exampleContext:
 
 ## Background
 
-Given I have the fingerprint for a `PCA20035+solar` device in `fingerprint`
+Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 ## Connect with a valid fingerprint
 
@@ -23,6 +23,6 @@ Soon I should receive a message on the websocket that matches
 {
   "@context": "https://github.com/hello-nrfcloud/proto/deviceIdentity",
   "id": "${fingerprint_deviceId}",
-  "model": "PCA20035+solar"
+  "model": "PCA20065"
 }
 ```

@@ -1,43 +1,52 @@
-import { MetricUnit } from '@aws-lambda-powertools/metrics'
-import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
-import { EventBridge } from '@aws-sdk/client-eventbridge'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
+import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
+import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
+import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { devices } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import {
+	formatTypeBoxErrors,
+	validateWithTypeBox,
+} from '@hello.nrfcloud.com/proto'
+import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	BadRequestError,
-	ConfigureDevice,
-	Context,
-	DeviceConfigured,
+	HttpStatusCode,
+	LwM2MObjectUpdate,
+	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import type { EventBridgeEvent } from 'aws-lambda'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import type { Static } from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox/type'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+} from 'aws-lambda'
 import { once } from 'lodash-es'
-import { SSMClient } from '@aws-sdk/client-ssm'
+import { getDeviceById } from '../devices/getDeviceById.js'
+import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 import { loggingFetch } from './loggingFetch.js'
-import type { Configuration } from '@hello.nrfcloud.com/proto/hello/model/PCA20035+solar'
-import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import { updateDeviceShadow } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 
-type Request = Omit<WebsocketPayload, 'message'> & {
-	message: {
-		model: string
-		request: Static<typeof ConfigureDevice>
-	}
-}
-
-const { EventBusName, stackName } = fromEnv({
-	EventBusName: 'EVENTBUS_NAME',
+const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',
+	version: 'VERSION',
+	DevicesTableName: 'DEVICES_TABLE_NAME',
+	DevicesIndexName: 'DEVICES_INDEX_NAME',
 })(process.env)
 
-const log = logger('configureDevice')
-const ssm = new SSMClient({})
-const eventBus = new EventBridge({})
+const db = new DynamoDBClient({})
+const getDevice = getDeviceById({
+	db,
+	DevicesTableName,
+})
 
-const { track, metrics } = metricsForComponent('configureDevice')
+const ssm = new SSMClient({})
+
+const { track } = metricsForComponent('configureDevice')
 
 const getAllNRFCloudAPIConfigs: () => Promise<
 	Record<
@@ -66,107 +75,102 @@ const getAllNRFCloudAPIConfigs: () => Promise<
 	)
 })
 
-const trackFetch = loggingFetch({ track, log })
+const trackFetch = loggingFetch({ track, log: logger('configureDevice') })
+
+const validateInput = validateWithTypeBox(
+	Type.Object({
+		id: deviceId,
+		fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
+		update: LwM2MObjectUpdate,
+	}),
+)
 
 /**
  * Handle configure device request
  */
 const h = async (
-	event: EventBridgeEvent<
-		'https://github.com/hello-nrfcloud/proto/configure-device', // Context.configureDevice.toString()
-		Request
-	>,
-): Promise<void> => {
-	log.info('event', { event })
-	const account = event.detail.nRFCloudAccount
-	if (account === undefined)
-		throw new Error(`The device does not belong to any nRF Cloud account`)
+	event: APIGatewayProxyEventV2,
+): Promise<APIGatewayProxyResultV2> => {
+	console.info('event', { event })
 
+	const maybeValidInput = validateInput({
+		...(event.queryStringParameters ?? {}),
+		...(event.pathParameters ?? {}),
+		update: {
+			...tryAsJSON(event.body),
+			ts: new Date().toISOString(),
+		},
+	})
+	if ('errors' in maybeValidInput) {
+		return aProblem({
+			title: 'Validation failed',
+			status: HttpStatusCode.BAD_REQUEST,
+			detail: formatTypeBoxErrors(maybeValidInput.errors),
+		})
+	}
+
+	const deviceId = maybeValidInput.value.id
+
+	const maybeDevice = await getDevice(deviceId)
+	if ('error' in maybeDevice) {
+		return aProblem({
+			title: `No device found with ID!`,
+			detail: deviceId,
+			status: HttpStatusCode.NOT_FOUND,
+		})
+	}
+	const device = maybeDevice.device
+	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
+		return aProblem({
+			title: `Fingerprint does not match!`,
+			detail: maybeValidInput.value.fingerprint,
+			status: HttpStatusCode.FORBIDDEN,
+		})
+	}
+
+	const account = device.account
 	const apiConfigs = await getAllNRFCloudAPIConfigs()
 	const { apiKey, apiEndpoint } = apiConfigs[account] ?? {}
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
 
-	const {
-		deviceId,
-		message: {
-			request: {
-				configuration: { gnss, updateIntervalSeconds },
-			},
-		},
-	} = event.detail
-
-	const config: Static<typeof Configuration> = {}
-
-	if (gnss !== undefined) {
-		config.nod = gnss === false ? ['gnss'] : []
-		if (gnss === true) {
-			track('gnss:on', MetricUnit.Count, 1)
-		} else {
-			track('gnss:off', MetricUnit.Count, 1)
-		}
-	}
-
-	if (updateIntervalSeconds !== undefined) {
-		track('updateInterval', MetricUnit.Seconds, updateIntervalSeconds)
-		config.activeWaitTime = updateIntervalSeconds
-	}
-
-	const update = updateDeviceShadow(
+	const update = devices(
 		{
 			endpoint: apiEndpoint,
 			apiKey,
 		},
 		trackFetch,
 	)
-	const res = await update(deviceId, {
+	const res = await update.updateState(deviceId, {
 		desired: {
-			config,
+			lwm2m: objectsToShadow([maybeValidInput.value.update]),
 		},
 	})
 
-	if ('ok' in res) {
-		log.debug(`Accepted`)
-		const message: Static<typeof DeviceConfigured> = {
-			...event.detail.message.request,
-			'@context': Context.deviceConfigured.toString(),
-		}
-		await eventBus.putEvents({
-			Entries: [
-				{
-					EventBusName,
-					Source: 'hello.ws',
-					DetailType: 'message',
-					Detail: JSON.stringify(<WebsocketPayload>{
-						deviceId,
-						connectionId: event.detail.connectionId,
-						message,
-					}),
-				},
-			],
-		})
+	if ('success' in res) {
+		console.debug(`Accepted`)
+		return aResponse(HttpStatusCode.ACCEPTED)
 	} else {
-		const error = BadRequestError({
-			id: event.detail.message.request['@id'],
-			title: `Configuration update failed`,
-			detail: res.error.message,
-		})
-		log.error(`Update failed`, error)
-		await eventBus.putEvents({
-			Entries: [
-				{
-					EventBusName,
-					Source: 'hello.ws',
-					DetailType: 'error',
-					Detail: JSON.stringify(<WebsocketPayload>{
-						deviceId: event.detail.deviceId,
-						connectionId: event.detail.connectionId,
-						message: error,
-					}),
-				},
-			],
-		})
+		console.error(`Update failed`, JSON.stringify(res))
+		return aProblem(
+			BadRequestError({
+				title: `Configuration update failed`,
+				detail: res.error.message,
+			}),
+		)
 	}
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy()
+	.use(addVersionHeader(version))
+	.use(corsOPTIONS('PATCH'))
+	.handler(h)
+
+const tryAsJSON = (body: any): Record<string, any> | undefined => {
+	if (typeof body !== 'string') return undefined
+	try {
+		return JSON.parse(body)
+	} catch {
+		return undefined
+	}
+}

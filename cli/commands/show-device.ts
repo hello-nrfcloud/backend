@@ -2,7 +2,6 @@ import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { table } from 'table'
-import { getDevice } from '../../devices/getDevice.js'
 import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
@@ -10,6 +9,7 @@ import {
 	getAccountInfo,
 	devices,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.js'
 
 export const showDeviceCommand = ({
 	ssm,
@@ -26,13 +26,11 @@ export const showDeviceCommand = ({
 }): CommandDefinition => ({
 	command: 'show-device <fingerprint>',
 	action: async (fingerprint) => {
-		const maybeDevice = await getDevice({
+		const maybeDevice = await getDeviceByFingerprint({
 			db,
-			devicesTableName,
-			devicesIndexName,
-		})({
-			fingerprint,
-		})
+			DevicesTableName: devicesTableName,
+			DevicesIndexName: devicesIndexName,
+		})(fingerprint)
 
 		if ('error' in maybeDevice) {
 			console.error(chalk.red('⚠️'), '', chalk.red(maybeDevice.error.message))

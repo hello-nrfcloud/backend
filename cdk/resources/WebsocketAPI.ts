@@ -1,7 +1,4 @@
-import {
-	LambdaLogGroup,
-	LambdaSource,
-} from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import {
 	aws_apigatewayv2 as ApiGatewayV2,
 	Duration,
@@ -13,12 +10,12 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
-import { ApiLogging } from './ApiLogging.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
 import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import { ApiLogging } from './APILogging.js'
 
 export const integrationUri = (
 	parent: Construct,
@@ -64,110 +61,99 @@ export class WebsocketAPI extends Construct {
 		super(parent, 'WebsocketAPI')
 
 		// OnConnect
-		const onConnect = new Lambda.Function(this, 'onConnect', {
-			handler: lambdaSources.onConnect.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(5),
-			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.onConnect).code,
-			description: 'Registers new clients',
-			environment: {
-				VERSION: this.node.getContext('version'),
-				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
-				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
-				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
-				LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
-				DEVICE_SHADOW_TABLE_NAME: deviceShadow.deviceShadowTable.tableName,
+		const onConnect = new PackedLambdaFn(
+			this,
+			'onConnect',
+			lambdaSources.onConnect,
+			{
+				description: 'Registers new clients',
+				environment: {
+					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
+					EVENTBUS_NAME: eventBus.eventBus.eventBusName,
+					LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
+					DEVICE_SHADOW_TABLE_NAME: deviceShadow.deviceShadowTable.tableName,
+				},
+				layers,
 			},
-			layers,
-			...new LambdaLogGroup(this, 'onConnectLogs'),
-		})
+		).fn
 		eventBus.eventBus.grantPutEventsTo(onConnect)
 		connectionsTable.table.grantWriteData(onConnect)
 		lastSeen.table.grantReadData(onConnect)
 		deviceShadow.deviceShadowTable.grantReadData(onConnect)
 
 		// onMessage
-		const onMessage = new Lambda.Function(this, 'onMessage', {
-			handler: lambdaSources.onMessage.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(5),
-			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.onMessage).code,
-			description: 'Handles messages sent by clients',
-			environment: {
-				VERSION: this.node.getContext('version'),
-				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
-				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
-				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
+		const onMessage = new PackedLambdaFn(
+			this,
+			'onMessage',
+			lambdaSources.onMessage,
+			{
+				description: 'Handles messages sent by clients',
+				environment: {
+					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
+				},
+				layers,
 			},
-			layers,
-			...new LambdaLogGroup(this, 'onMessageLogs'),
-		})
-		eventBus.eventBus.grantPutEventsTo(onMessage)
+		).fn
 		connectionsTable.table.grantWriteData(onMessage)
 
 		// OnDisconnect
-		const onDisconnect = new Lambda.Function(this, 'onDisconnect', {
-			handler: lambdaSources.onDisconnect.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(5),
-			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.onDisconnect).code,
-			description: 'De-registers clients',
-			environment: {
-				VERSION: this.node.getContext('version'),
-				WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
-				EVENTBUS_NAME: eventBus.eventBus.eventBusName,
-				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
+		const onDisconnect = new PackedLambdaFn(
+			this,
+			'onDisconnect',
+			lambdaSources.onDisconnect,
+			{
+				description: 'De-registers clients',
+				environment: {
+					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
+					EVENTBUS_NAME: eventBus.eventBus.eventBusName,
+				},
+				layers,
 			},
-			layers,
-			...new LambdaLogGroup(this, 'onDisconnectLogs'),
-		})
+		).fn
 		connectionsTable.table.grantWriteData(onDisconnect)
 		eventBus.eventBus.grantPutEventsTo(onDisconnect)
 
 		// Request authorizer
-		const authorizerLambda = new Lambda.Function(this, 'authorizerLambda', {
-			description: 'Authorize WS connection request using device fingerprints ',
-			handler: lambdaSources.authorizer.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(1),
-			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.authorizer).code,
-			layers,
-			...new LambdaLogGroup(this, 'authorizerLambdaLogs'),
-			environment: {
-				VERSION: this.node.getContext('version'),
-				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
-				NODE_NO_WARNINGS: '1',
-				DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
+		const authorizerLambda = new PackedLambdaFn(
+			this,
+			'authorizerLambda',
+			lambdaSources.authorizer,
+			{
+				description:
+					'Authorize WS connection request using device fingerprints ',
+				layers,
+				environment: {
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+					DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
+				},
 			},
-		})
+		).fn
 		deviceStorage.devicesTable.grantReadWriteData(authorizerLambda)
 
 		// API
 		const api = new ApiGatewayV2.CfnApi(this, 'api', {
-			name: 'websocketGateway',
+			name: 'hello.nrfcloud.com websocket API',
 			protocolType: 'WEBSOCKET',
 			routeSelectionExpression: '$request.body.message',
 		})
-		const authorizer = new ApiGatewayV2.CfnAuthorizer(this, 'authorizer', {
-			apiId: api.ref,
-			authorizerType: 'REQUEST',
-			name: `authorizer`,
-			authorizerUri: integrationUri(this, authorizerLambda),
-		})
+		// Authorization
+		const authorizer = new ApiGatewayV2.CfnAuthorizer(
+			this,
+			'fingerprintAuthorizer',
+			{
+				apiId: api.ref,
+				authorizerType: 'REQUEST',
+				name: `authorizer`,
+				authorizerUri: integrationUri(this, authorizerLambda),
+			},
+		)
 		authorizerLambda.addPermission('invokeByHttpApi', {
-			principal: new IAM.ServicePrincipal('apigateway.amazonaws.com'),
+			principal: new IAM.ServicePrincipal(
+				'apigateway.amazonaws.com',
+			) as IAM.IPrincipal,
+			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
+				Stack.of(this).account
+			}:${api.ref}/authorizers/${authorizer.attrAuthorizerId}`,
 		})
 		// API on connect
 		const connectIntegration = new ApiGatewayV2.CfnIntegration(
@@ -237,7 +223,7 @@ export class WebsocketAPI extends Construct {
 			apiId: api.ref,
 		})
 		this.websocketURI = `${api.attrApiEndpoint}/${prodStage.ref}`
-		// API invoke lambda
+		// API invoke lambda permissions
 		onConnect.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
@@ -274,31 +260,18 @@ export class WebsocketAPI extends Construct {
 			Stack.of(this).region
 		}.amazonaws.com/${prodStage.stageName}`
 
-		// Logging
-		if (this.node.getContext('isTest') === true) {
-			new ApiLogging(this, api, prodStage)
-		}
-
 		// Publish event to sockets
-		const publishToWebsocketClients = new Lambda.Function(
+		const publishToWebsocketClients = new PackedLambdaFn(
 			this,
 			'publishToWebsocketClients',
+			lambdaSources.publishToWebsocketClients,
 			{
-				handler: lambdaSources.publishToWebsocketClients.handler,
-				architecture: Lambda.Architecture.ARM_64,
-				runtime: Lambda.Runtime.NODEJS_20_X,
 				timeout: Duration.minutes(1),
-				memorySize: 1792,
-				code: new LambdaSource(this, lambdaSources.publishToWebsocketClients)
-					.code,
-				description: 'Publish event to web socket clients',
+				description: 'Publish events to web socket clients',
 				environment: {
-					VERSION: this.node.getContext('version'),
 					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 					WEBSOCKET_MANAGEMENT_API_URL: this.websocketManagementAPIURL,
 					EVENTBUS_NAME: eventBus.eventBus.eventBusName,
-					NODE_NO_WARNINGS: '1',
-					DISABLE_METRICS: this.node.getContext('isTest') === true ? '1' : '0',
 				},
 				initialPolicy: [
 					new IAM.PolicyStatement({
@@ -312,17 +285,19 @@ export class WebsocketAPI extends Construct {
 					}),
 				],
 				layers,
-				...new LambdaLogGroup(this, 'publishToWebsocketClientsLogs'),
 			},
-		)
+		).fn
 		connectionsTable.table.grantReadWriteData(publishToWebsocketClients)
 		new Events.Rule(this, 'publishToWebsocketClientsRule', {
 			eventPattern: {
 				source: ['hello.ws'],
-				detailType: ['message', 'connect', 'error'],
 			},
 			targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
 			eventBus: eventBus.eventBus,
 		})
+
+		// Logging
+		if (this.node.tryGetContext('wsAPILogging') !== undefined)
+			new ApiLogging(this, api, prodStage)
 	}
 }

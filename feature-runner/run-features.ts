@@ -1,25 +1,29 @@
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { TimestreamQueryClient } from '@aws-sdk/client-timestream-query'
-import { TimestreamWriteClient } from '@aws-sdk/client-timestream-write'
 import { runFolder } from '@nordicsemiconductor/bdd-markdown'
 import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/BackendStack.js'
 import { STACK_NAME } from '../cdk/stackConfig.js'
-import { storeRecordsInTimestream } from '../historicalData/storeRecordsInTimestream.js'
-import { steps as deviceSteps } from './steps/device.js'
-import { steps as historicalDataSteps } from './steps/historicalData.js'
+import { steps as CoAPDeviceSteps } from './steps/device/CoAP.js'
+import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
+import { steps as deviceRegistrySteps } from './steps/device/registry.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
 import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
 import { steps as httpApiMockSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/httpApiMock'
-import { steps as randomSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
+import {
+	steps as randomSteps,
+	UUIDv4,
+	email,
+	IMEI,
+} from '@hello.nrfcloud.com/bdd-markdown-steps/random'
 import { websocketStepRunners } from './steps/websocket.js'
 import { steps as userSteps } from './steps/user.js'
 import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
 import { fromEnv } from '@nordicsemiconductor/from-env'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
@@ -29,6 +33,8 @@ const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 })(process.env)
 
 const ssm = new SSMClient({})
+const iotData = new IoTDataPlaneClient({})
+const db = new DynamoDBClient({})
 
 /**
  * This file configures the BDD Feature runner
@@ -44,19 +50,6 @@ const backendConfig = await stackOutput(
 const allAccountSettings = await getAllAccountsSettings({
 	ssm,
 	stackName: STACK_NAME,
-})
-
-const db = new DynamoDBClient({})
-const timestream = new TimestreamQueryClient({})
-const writeTimestream = new TimestreamWriteClient({})
-const [DatabaseName, TableName] =
-	backendConfig.historicalDataTableInfo.split('|')
-if (DatabaseName === undefined || TableName === undefined)
-	throw Error('historicalDataTableInfo is not configured')
-const storeTimestream = storeRecordsInTimestream({
-	timestream: writeTimestream,
-	DatabaseName,
-	TableName,
 })
 
 const print = (arg: unknown) =>
@@ -113,12 +106,14 @@ cleaners.push(websocketCleanup)
 runner
 	.addStepRunners(...webSocketSteps)
 	.addStepRunners(
-		...deviceSteps(allAccountSettings, db, {
+		...deviceRegistrySteps(db, {
 			devicesTableFingerprintIndexName:
 				backendConfig.devicesTableFingerprintIndexName,
 			devicesTable: backendConfig.devicesTableName,
 		}),
 	)
+	.addStepRunners(...CoAPDeviceSteps({ iotData }))
+	.addStepRunners(...MQTTDeviceSteps({ allAccountSettings }))
 	.addStepRunners(
 		...mocknRFCloudSteps({
 			db,
@@ -126,13 +121,6 @@ runner
 			stackName: STACK_NAME,
 			responsesTableName,
 			requestsTableName,
-		}),
-	)
-	.addStepRunners(
-		...historicalDataSteps({
-			timestream,
-			storeTimestream,
-			historicalDataTableInfo: backendConfig.historicalDataTableInfo,
 		}),
 	)
 	.addStepRunners(...storageSteps)
@@ -146,7 +134,15 @@ runner
 			httpMockApiURL: new URL(httpApiMockURL),
 		}),
 	)
-	.addStepRunners(...randomSteps())
+	.addStepRunners(
+		...randomSteps({
+			UUIDv4,
+			email,
+			IMEI,
+			cellId: () =>
+				(10000000 + Math.floor(Math.random() * 100000000)).toString(),
+		}),
+	)
 
 const res = await runner.run({
 	APIURL: backendConfig.APIURL.toString().replace(/\/+$/, ''),

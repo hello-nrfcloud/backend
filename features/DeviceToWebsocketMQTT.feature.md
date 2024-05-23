@@ -1,0 +1,107 @@
+---
+exampleContext:
+  fingerprint: 92b.y7i24q
+  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+  ts: 1694503339523
+  tsISO: 2023-09-12T00:00:00.000Z
+  APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
+run: only
+---
+
+# Device to websocket (MQTT)
+
+> LwM2M objects published via MQTT on nRF Cloud should be delivered to the
+> websocket API
+
+## Background
+
+Given I have the fingerprint for a `PCA20065` device in `fingerprint`
+
+And I connect to the websocket using fingerprint `${fingerprint}`
+
+## Receive LwM2M updates published via CoAP on the Websocket connection
+
+Given I store `$millis()` into `ts`
+
+And I store `$fromMillis(${ts})` into `tsISO`
+
+When the device `${fingerprint_deviceId}` publishes this message to the topic
+`m/d/${fingerprint_deviceId}/d2c/senml`
+
+```json
+[
+  {
+    "bn": "14201/0/",
+    "bt": "$number{ts}",
+    "n": "0",
+    "v": 62.469414
+  },
+  { "n": "1", "v": 6.151946 },
+  { "n": "3", "v": 1 },
+  { "n": "6", "vs": "Fixed" }
+]
+```
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/lwm2m/object/update",
+  "ObjectID": 14201,
+  "Resources": {
+    "0": 62.469414,
+    "1": 6.151946,
+    "3": 1,
+    "6": "Fixed"
+  }
+}
+```
+
+## Fetch the import logs
+
+> The import logs can be used to debug issues with the sent data
+
+When I `GET`
+`${APIURL}/device/${fingerprint_deviceId}/senml-imports?fingerprint=${fingerprint}`
+
+Then I should receive a `https://github.com/hello-nrfcloud/proto/senml/imports`
+response
+
+And `$` of the last response should match
+
+```json
+{
+  "id": "${fingerprint_deviceId}"
+}
+```
+
+And `$.imports[0]` of the last response should match
+
+```json
+{
+  "success": true,
+  "senML": [
+    {
+      "bn": "14201/0/",
+      "bt": "$number{ts}",
+      "n": "0",
+      "v": 62.469414
+    },
+    { "n": "1", "v": 6.151946 },
+    { "n": "3", "v": 1 },
+    { "n": "6", "vs": "Fixed" }
+  ],
+  "lwm2m": [
+    {
+      "ObjectID": 14201,
+      "Resources": {
+        "0": 62.469414,
+        "1": 6.151946,
+        "3": 1,
+        "6": "Fixed",
+        "99": "${tsISO}"
+      }
+    }
+  ]
+}
+```

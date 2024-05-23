@@ -10,3 +10,4 @@ dist/
 /certificates/
 cdk.context.json
 e2e-test-result.json
+http-api-mock.json

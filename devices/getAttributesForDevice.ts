@@ -1,38 +1,20 @@
-import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { getDeviceById } from './getDeviceById.js'
 
-export const getAttributesForDevice =
-	({
-		db,
-		DevicesTableName,
-	}: {
-		db: DynamoDBClient
-		DevicesTableName: string
-	}) =>
-	async (
+export const getAttributesForDevice = ({
+	db,
+	DevicesTableName,
+}: {
+	db: DynamoDBClient
+	DevicesTableName: string
+}) => {
+	const getDevice = getDeviceById({ db, DevicesTableName })
+	return async (
 		deviceId: string,
 	): Promise<{ model: string; account: string } | { error: Error }> => {
-		const { Items } = await db.send(
-			new QueryCommand({
-				TableName: DevicesTableName,
-				KeyConditionExpression: '#deviceId = :deviceId',
-				ExpressionAttributeNames: {
-					'#deviceId': 'deviceId',
-					'#model': 'model',
-					'#account': 'account',
-				},
-				ExpressionAttributeValues: {
-					':deviceId': {
-						S: deviceId,
-					},
-				},
-				ProjectionExpression: '#model, #account',
-			}),
-		)
-
-		const attributes = unmarshall(Items?.[0] ?? {})
-		const { model, account } = attributes
-
+		const maybeDevice = await getDevice(deviceId)
+		if ('error' in maybeDevice) return maybeDevice
+		const { model, account } = maybeDevice.device
 		if (model === undefined)
 			return {
 				error: new Error(`No model defined for device ${deviceId}!`),
@@ -41,6 +23,6 @@ export const getAttributesForDevice =
 			return {
 				error: new Error(`No account defined for device ${deviceId}!`),
 			}
-
 		return { model, account }
 	}
+}

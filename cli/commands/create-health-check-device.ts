@@ -114,7 +114,7 @@ export const createHealthCheckDevice = ({
 				'utf-8',
 			),
 			healthCheckClientId: deviceId,
-			healthCheckModel: 'PCA20035+solar',
+			healthCheckModel: 'PCA20065',
 			healthCheckFingerPrint: `29a.${generateCode()}`,
 		}
 		await updateSettings({ ssm, stackName, account })(settings)

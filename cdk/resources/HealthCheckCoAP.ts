@@ -1,14 +1,9 @@
-import {
-	LambdaLogGroup,
-	LambdaSource,
-} from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Permissions as SettingsPermissions } from '@bifravst/aws-ssm-settings-helpers/cdk'
+import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import {
 	Duration,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
 	aws_lambda as Lambda,
-	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
@@ -41,32 +36,26 @@ export class HealthCheckCoAP extends Construct {
 
 		// Lambda functions
 		const coapLambda = new Lambda.DockerImageFunction(this, 'coapSimulator', {
-			memorySize: 1792,
 			timeout: Duration.seconds(30),
 			description: 'CoAP simulator (JAVA) - lambda container image',
 			code,
 		})
 
-		const healthCheckCoAP = new Lambda.Function(this, 'healthCheckCoAP', {
-			handler: lambdaSources.healthCheckForCoAP.handler,
-			architecture: Lambda.Architecture.ARM_64,
-			runtime: Lambda.Runtime.NODEJS_20_X,
-			timeout: Duration.seconds(30),
-			memorySize: 1792,
-			code: new LambdaSource(this, lambdaSources.healthCheckForCoAP).code,
-			description: 'End to end test for CoAP to mqtt bridge',
-			environment: {
-				VERSION: this.node.getContext('version'),
-				NODE_NO_WARNINGS: '1',
-				STACK_NAME: Stack.of(this).stackName,
-				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-				WEBSOCKET_URL: websocketAPI.websocketURI,
-				COAP_LAMBDA: coapLambda.functionName,
+		const healthCheckCoAP = new PackedLambdaFn(
+			this,
+			'healthCheckCoAP',
+			lambdaSources.healthCheckForCoAP,
+			{
+				timeout: Duration.seconds(30),
+				description: 'End to end test for CoAP to mqtt bridge',
+				environment: {
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+					WEBSOCKET_URL: websocketAPI.websocketURI,
+					COAP_LAMBDA: coapLambda.functionName,
+				},
+				layers,
 			},
-			initialPolicy: [SettingsPermissions(Stack.of(this))],
-			layers,
-			...new LambdaLogGroup(this, 'healthCheckCoAPLogs'),
-		})
+		).fn
 		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheckCoAP))
 		deviceStorage.devicesTable.grantWriteData(healthCheckCoAP)
 		coapLambda.grantInvoke(healthCheckCoAP)

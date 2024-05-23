@@ -12,6 +12,7 @@ import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import middy from '@middy/core'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
+import { HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 
 const { stackName, version } = fromEnv({
 	version: 'VERSION',
@@ -40,7 +41,7 @@ const h = async (
 		return aProblem({
 			title: 'Input validation failed!',
 			detail: JSON.stringify(maybeValidInput.errors),
-			status: 400,
+			status: HttpStatusCode.BAD_REQUEST,
 		})
 	}
 
@@ -79,7 +80,7 @@ const h = async (
 		console.error(await res.text())
 		return aProblem({
 			title: 'Failed to submit feedback',
-			status: 500,
+			status: HttpStatusCode.INTERNAL_SERVER_ERROR,
 		})
 	}
 

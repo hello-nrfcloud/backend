@@ -1,23 +1,30 @@
-export const HistoricalDataTimeSpans = {
-	lastHour: {
-		bin: '1minute',
-		duration: '1hour',
-		expires: '1minute',
-	},
+export type HistoricalDataTimeSpan = {
+	binIntervalMinutes: number // e.g. 1,
+	durationHours: number // e.g. 1,
+	expiresMinutes: number // e.g. 1,
+}
+
+export const LastHour: HistoricalDataTimeSpan = {
+	binIntervalMinutes: 1,
+	durationHours: 1,
+	expiresMinutes: 1,
+}
+
+export const HistoricalDataTimeSpans: Record<string, HistoricalDataTimeSpan> = {
+	lastHour: LastHour,
 	lastDay: {
-		bin: '5minutes',
-		duration: '24hours',
-		expires: '5minutes',
+		binIntervalMinutes: 15,
+		durationHours: 24,
+		expiresMinutes: 5,
 	},
 	lastWeek: {
-		bin: '1hour',
-		duration: '7day',
-		expires: '5minutes',
+		binIntervalMinutes: 60,
+		durationHours: 24 * 7,
+		expiresMinutes: 5,
 	},
 	lastMonth: {
-		bin: '1hour',
-		duration: '30days',
-		expires: '15minutes',
-		aggregateRequired: true,
+		binIntervalMinutes: 60,
+		durationHours: 24 * 30,
+		expiresMinutes: 15,
 	},
 }

@@ -66,8 +66,8 @@ export const listDevicesCommand = ({
 			const data = [
 				header,
 				...(await Promise.all(
-					devices.items.map(async ({ id, firmware }) => {
-						const data = [++i, id, firmware?.app?.version ?? '-']
+					devices.items.map(async ({ id }) => {
+						const data = [++i, id]
 						if (lastSeen === true) {
 							const lastSeen = deviceLastSeen[id]
 							if (isNullOrUndefined(lastSeen)) {

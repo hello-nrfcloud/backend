@@ -12,7 +12,6 @@ import type { StackOutputs } from '../cdk/BackendStack.js'
 import { STACK_NAME } from '../cdk/stackConfig.js'
 import psjon from '../package.json'
 import type { CommandDefinition } from './commands/CommandDefinition.js'
-import { configureDeviceCommand } from './commands/configure-device.js'
 import { createFakeNrfCloudAccountDeviceCredentials } from './commands/create-fake-nrfcloud-account-device-credentials.js'
 import { createFakeNrfCloudHealthCheckDevice } from './commands/create-fake-nrfcloud-health-check-device.js'
 import { createHealthCheckDevice } from './commands/create-health-check-device.js'
@@ -21,11 +20,9 @@ import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud
 import { logsCommand } from './commands/logs.js'
 import { provisionDkCommand } from './commands/provision-dk.js'
 import { registerDeviceCommand } from './commands/register-device.js'
-import { registerSimulatorDeviceCommand } from './commands/register-simulator-device.js'
 import { showDeviceCommand } from './commands/show-device.js'
 import { showFingerprintCommand } from './commands/show-fingerprint.js'
 import { showNRFCloudAccount } from './commands/show-nrfcloud-account.js'
-import { simulateDeviceCommand } from './commands/simulate-device.js'
 import { cleanBackupCertificates } from './commands/clean-backup-certificates.js'
 import { listnRFCloudAccountsCommand } from './commands/list-nrfcloud-accounts.js'
 import { configureRFCloudAccountCommand } from './commands/configure-nrfcloud-account.js'
@@ -37,11 +34,14 @@ import { ECRClient } from '@aws-sdk/client-ecr'
 import { buildContainersCommand } from './commands/build-container.js'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { configureFeedbackCommand } from './commands/configure-feedback.js'
+import { updateLambda } from './commands/updateLambda.js'
+import { LambdaClient } from '@aws-sdk/client-lambda'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
 const db = new DynamoDBClient({})
 const cf = new CloudFormationClient({})
+const lambda = new LambdaClient({})
 const logs = new CloudWatchLogsClient({})
 const sts = new STSClient({})
 const ecr = new ECRClient({})
@@ -80,6 +80,11 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		buildContainersCommand({
 			ecr,
 			ssm,
+		}),
+		updateLambda({
+			stackName: STACK_NAME,
+			cf,
+			lambda,
 		}),
 	]
 
@@ -122,30 +127,9 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					devicesTableName: outputs.devicesTableName,
 					devicesIndexName: outputs.devicesTableFingerprintIndexName,
 				}),
-				configureDeviceCommand({
-					ssm,
-					stackName: STACK_NAME,
-					db,
-					devicesTableName: outputs.devicesTableName,
-					devicesIndexName: outputs.devicesTableFingerprintIndexName,
-				}),
 				registerDeviceCommand({
 					db,
 					devicesTableName: outputs.devicesTableName,
-				}),
-				registerSimulatorDeviceCommand({
-					db,
-					devicesTableName: outputs.devicesTableName,
-					ssm,
-					stackName: STACK_NAME,
-					env: accountEnv,
-				}),
-				simulateDeviceCommand({
-					ssm,
-					stackName: STACK_NAME,
-					db,
-					devicesTableName: outputs.devicesTableName,
-					env: accountEnv,
 				}),
 				importDevicesCommand({
 					db,

@@ -3,7 +3,6 @@ import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridgeClient } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { getShadowUpdateTime } from '@hello.nrfcloud.com/proto/nrfCloud'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, groupBy, once, uniqBy } from 'lodash-es'
@@ -75,7 +74,6 @@ const allHealthCheckClientIds = once(async () => {
 const send = sendShadowToConnection({
 	eventBus,
 	eventBusName,
-	track,
 	log,
 })
 
@@ -225,7 +223,7 @@ const h = async (): Promise<void> => {
 					'shadowAge',
 					MetricUnit.Seconds,
 					Math.round(Date.now() / 1000) -
-						getShadowUpdateTime(deviceShadow.state.metadata),
+						new Date((deviceShadow as any).$meta.updatedAt).getTime() / 1000,
 				)
 
 				log.info(

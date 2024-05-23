@@ -132,23 +132,3 @@ associates with the same device id.
 
 Messages will be converted using
 [`@hello.nrfcloud.com/proto`](https://github.com/hello-nrfcloud/proto).
-
-## Device Simulator
-
-You can create a simulated device for a particular nRF Cloud account using the
-CLI:
-
-```bash
-./cli.sh register-simulator-device <account>
-```
-
-This will create a new device, register its public key with nRF Cloud and its
-fingerprint in the device database.
-
-Afterwards you can run the simulator using
-
-```bash
-./cli.sh simulate-device <deviceId>
-```
-
-which will send simulated data to nRF Cloud.

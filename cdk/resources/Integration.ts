@@ -281,7 +281,6 @@ export class Integration extends Construct {
 				interval: Duration.minutes(1),
 				retries: 3,
 				startPeriod: Duration.minutes(3),
-				timeout: Duration.seconds(5),
 			},
 		})
 
