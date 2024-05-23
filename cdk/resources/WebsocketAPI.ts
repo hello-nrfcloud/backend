@@ -143,7 +143,7 @@ export class WebsocketAPI extends Construct {
 			{
 				apiId: api.ref,
 				authorizerType: 'REQUEST',
-				name: `authorizer`,
+				name: `fingerprintAuthorizer`,
 				authorizerUri: integrationUri(this, authorizerLambda),
 			},
 		)
