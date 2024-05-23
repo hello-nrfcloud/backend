@@ -9,27 +9,7 @@ import {
 	type StepRunner,
 } from '@nordicsemiconductor/bdd-markdown'
 import { Type } from '@sinclair/typebox'
-import { Encoder } from 'cbor-x'
-
-// @see https://www.rfc-editor.org/rfc/rfc8428.html#section-6
-const senmlKeys = {
-	bs: -6,
-	bv: -5,
-	bu: -4,
-	bt: -3,
-	bn: -2,
-	bver: -1,
-	n: 0,
-	u: 1,
-	v: 2,
-	vs: 3,
-	vb: 4,
-	s: 5,
-	t: 6,
-	ut: 7,
-	vd: 8,
-}
-const senmlCbor = new Encoder({ keyMap: senmlKeys })
+import { encode } from './senmlCbor.js'
 
 export const steps = ({
 	iotData,
@@ -55,7 +35,7 @@ export const steps = ({
 			// The message bridge receives messages from nRF Cloud and publishes them under the data/ topic
 			const mqttTopic = `data/m/d/${id}${resource.replace(/^\/msg/, '')}`
 			const payload = JSON.stringify({
-				data: senmlCbor.encode(message).toString('base64'),
+				data: encode(message).toString('base64'),
 			})
 			progress('publishing', message, mqttTopic, payload)
 			await iotData.send(

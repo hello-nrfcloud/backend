@@ -1,25 +1,32 @@
-import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { SSMClient } from '@aws-sdk/client-ssm'
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda'
-import middy from '@middy/core'
-import { fromEnv } from '@nordicsemiconductor/from-env'
-import assert from 'node:assert/strict'
-import { registerDevice } from '../devices/registerDevice.js'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { SSMClient } from '@aws-sdk/client-ssm'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import {
 	getAllAccountsSettings,
 	type Settings as NrfCloudSettings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
+	LwM2MObjectID,
+	lwm2mToSenML,
+	type Environment_14205,
+	type SenMLType,
+} from '@hello.nrfcloud.com/proto-map'
+import middy from '@middy/core'
+import { fromEnv } from '@nordicsemiconductor/from-env'
+import assert from 'node:assert/strict'
+import { createPrivateKey, createPublicKey } from 'node:crypto'
+import { registerDevice } from '../devices/registerDevice.js'
+import { encode } from '../feature-runner/steps/device/senmlCbor.js'
+import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.js'
+import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
 } from './health-check/checkMessageFromWebsocket.js'
-import { createPublicKey, createPrivateKey } from 'node:crypto'
 import { parseDateTimeFromLog } from './health-check/parseDateTimeFromLog.js'
-import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.js'
 
 const { DevicesTableName, stackName, websocketUrl, coapLambda } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -73,10 +80,12 @@ const publishDeviceMessageOnCoAP =
 			privateKey: string
 		}
 	}) =>
-	async (message: Record<string, unknown>): Promise<Date | null> => {
+	async (message: SenMLType): Promise<Date | null> => {
 		const timeout = setTimeout(() => {
 			throw new Error('CoAP simulator timeout')
 		}, 25000)
+
+		const cbor = encode(message)
 
 		const { Payload } = await lambda.send(
 			new InvokeCommand({
@@ -88,7 +97,16 @@ const publishDeviceMessageOnCoAP =
 							host: nrfCloudSettings.coapEndpoint.host,
 							port: nrfCloudSettings.coapPort,
 						},
-						args: ['send', 'POST', '/msg/d2c', '-p', JSON.stringify(message)],
+						args: [
+							'send',
+							'POST',
+							'/msg/d2c/raw',
+							'-p',
+							cbor.toString('hex'),
+							'-x',
+							'-C',
+							'cbor',
+						],
 					}),
 				),
 				LogType: 'Tail',
@@ -161,6 +179,17 @@ const h = async (): Promise<void> => {
 								ts: Date.now(),
 								temperature: Number((Math.random() * 20).toFixed(1)),
 							}
+							const maybeSenML = lwm2mToSenML(<Environment_14205>{
+								ObjectID: LwM2MObjectID.Environment_14205,
+								ObjectVersion: '1.0',
+								Resources: {
+									0: data.temperature,
+									99: new Date(data.ts),
+								},
+							})
+							if ('errors' in maybeSenML)
+								throw new Error(`Failed to create SenML!`)
+
 							const coapTs = await publishDeviceMessageOnCoAP({
 								nrfCloudSettings: allAccountsSettings[
 									account
@@ -169,12 +198,7 @@ const h = async (): Promise<void> => {
 									deviceId,
 									...certificates,
 								},
-							})({
-								appId: 'TEMP',
-								messageType: 'DATA',
-								ts: data.ts,
-								data: `${data.temperature}`,
-							})
+							})(maybeSenML.senML)
 							store.set(account, { ...data, coapTs: coapTs?.getTime() ?? null })
 						},
 						validate: async (message) => {
@@ -184,22 +208,38 @@ const h = async (): Promise<void> => {
 
 								const messageObj = JSON.parse(message)
 								log.debug(`ws incoming message`, { messageObj })
-								const expectedMessage = {
-									'@context':
-										'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/airTemperature',
-									ts: data.ts,
-									c: data.temperature,
-								}
-
-								if (messageObj['@context'] !== expectedMessage['@context'])
+								try {
+									const {
+										ObjectID,
+										Resources,
+										'@context': context,
+									} = messageObj
+									assert.deepEqual(
+										{
+											'@context': context,
+											ObjectID,
+											Resources,
+										},
+										{
+											'@context':
+												'https://github.com/hello-nrfcloud/proto/lwm2m/object/update',
+											ObjectID: LwM2MObjectID.Environment_14205,
+											Resources: {
+												0: data.temperature,
+												99: new Date(data.ts),
+											},
+										},
+									)
+								} catch (err) {
+									console.error(JSON.stringify(err))
 									return ValidateResponse.skip
+								}
 
 								track(
 									`receivingMessageDuration`,
 									MetricUnit.Seconds,
 									(Date.now() - (data.coapTs ?? data.ts)) / 1000,
 								)
-								assert.deepEqual(messageObj, expectedMessage)
 								return ValidateResponse.valid
 							} catch (error) {
 								log.error(`validate error`, { error, account })

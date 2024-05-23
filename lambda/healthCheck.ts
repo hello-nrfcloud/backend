@@ -187,6 +187,8 @@ const h = async (): Promise<void> => {
 						validate: async (message) => {
 							try {
 								const data = store.get(account)
+								if (data === undefined) return ValidateResponse.skip
+
 								const messageObj = JSON.parse(message)
 								log.debug(`ws incoming message`, { messageObj })
 
@@ -207,8 +209,8 @@ const h = async (): Promise<void> => {
 												'https://github.com/hello-nrfcloud/proto/lwm2m/object/update',
 											ObjectID: LwM2MObjectID.BatteryAndPower_14202,
 											Resources: {
-												1: data?.gain,
-												99: new Date(data?.ts ?? Date.now()).toISOString(),
+												1: data.gain,
+												99: new Date(data.ts).toISOString(),
 											},
 										},
 									)

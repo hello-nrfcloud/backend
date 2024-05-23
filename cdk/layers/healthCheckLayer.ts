@@ -8,6 +8,7 @@ const dependencies: Array<keyof (typeof pJson)['dependencies']> = [
 	'mqtt',
 	'ws',
 	'@hello.nrfcloud.com/lambda-helpers',
+	'cbor-x',
 ]
 
 export const pack = async (): Promise<PackedLayer> =>
