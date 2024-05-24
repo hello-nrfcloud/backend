@@ -5,7 +5,8 @@ import {
 	aws_iot as IoT,
 	Stack,
 } from 'aws-cdk-lib'
-import { LogDriver, type ICluster, ContainerImage } from 'aws-cdk-lib/aws-ecs'
+import type { ContainerImage } from 'aws-cdk-lib/aws-ecs'
+import { LogDriver, type ICluster } from 'aws-cdk-lib/aws-ecs'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 import { Construct } from 'constructs'

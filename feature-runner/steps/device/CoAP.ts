@@ -1,5 +1,5 @@
+import type { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import {
-	IoTDataPlaneClient,
 	PayloadFormatIndicator,
 	PublishCommand,
 } from '@aws-sdk/client-iot-data-plane'

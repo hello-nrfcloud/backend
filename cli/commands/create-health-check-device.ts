@@ -1,4 +1,4 @@
-import { SSMClient } from '@aws-sdk/client-ssm'
+import type { SSMClient } from '@aws-sdk/client-ssm'
 import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'

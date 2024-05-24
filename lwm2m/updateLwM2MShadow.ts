@@ -1,8 +1,8 @@
 import {
-	IoTDataPlaneClient,
+	type IoTDataPlaneClient,
 	UpdateThingShadowCommand,
 } from '@aws-sdk/client-iot-data-plane'
-import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map'
+import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { objectsToShadow } from './objectsToShadow.js'
 
 export const updateLwM2MShadow =

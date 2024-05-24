@@ -1,4 +1,5 @@
-import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts'
+import type { STSClient } from '@aws-sdk/client-sts'
+import { GetCallerIdentityCommand } from '@aws-sdk/client-sts'
 import type { Environment } from 'aws-cdk-lib'
 
 export const env = async ({

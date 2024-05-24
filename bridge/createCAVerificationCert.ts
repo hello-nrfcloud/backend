@@ -1,4 +1,5 @@
-import { GetRegistrationCodeCommand, IoTClient } from '@aws-sdk/client-iot'
+import type { IoTClient } from '@aws-sdk/client-iot'
+import { GetRegistrationCodeCommand } from '@aws-sdk/client-iot'
 import { randomUUID } from 'crypto'
 import { unlink } from 'fs/promises'
 import path from 'path'

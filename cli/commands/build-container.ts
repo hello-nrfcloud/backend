@@ -1,4 +1,4 @@
-import { ECRClient } from '@aws-sdk/client-ecr'
+import type { ECRClient } from '@aws-sdk/client-ecr'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { getOrCreateRepository } from '@bifravst/aws-cdk-ecr-helpers/repository'
 import type { CommandDefinition } from './CommandDefinition.js'

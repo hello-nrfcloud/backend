@@ -1,9 +1,10 @@
+import type { IoTClient } from '@aws-sdk/client-iot'
 import {
 	AttachPolicyCommand,
 	CreateKeysAndCertificateCommand,
-	IoTClient,
 } from '@aws-sdk/client-iot'
-import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm'
+import type { SSMClient } from '@aws-sdk/client-ssm'
+import { GetParameterCommand } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
 import { STACK_NAME } from '../../cdk/stackConfig.js'

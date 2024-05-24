@@ -36,10 +36,6 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
           }
         },
         "reported": {
-          "connection": {
-            "status": "connected",
-            "keepalive": 1200
-          },
           "14240:1.0": {
             "0": {
               "0": 0,

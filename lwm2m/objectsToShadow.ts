@@ -1,4 +1,4 @@
-import type { LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map'
+import type { LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
 
 export type LwM2MShadow = Record<
 	string,

@@ -10,11 +10,13 @@ import {
 	type Settings as NrfCloudSettings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
-	LwM2MObjectID,
 	lwm2mToSenML,
-	type Environment_14205,
 	type SenMLType,
-} from '@hello.nrfcloud.com/proto-map'
+} from '@hello.nrfcloud.com/proto-map/senml'
+import {
+	LwM2MObjectID,
+	type Environment_14205,
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import assert from 'node:assert/strict'

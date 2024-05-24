@@ -10,8 +10,11 @@ import {
 	fromCBOR,
 	senMLtoLwM2M,
 	type SenMLType,
-} from '@hello.nrfcloud.com/proto-map'
-import { Context, LwM2MObjectUpdate } from '@hello.nrfcloud.com/proto/hello'
+} from '@hello.nrfcloud.com/proto-map/senml'
+import {
+	Context,
+	type LwM2MObjectUpdate,
+} from '@hello.nrfcloud.com/proto/hello'
 import type { Static } from '@sinclair/typebox'
 import type { Resources as LwM2MResources } from '@hello.nrfcloud.com/proto-map/api'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'

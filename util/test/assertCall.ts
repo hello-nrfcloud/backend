@@ -1,4 +1,4 @@
-import { mock } from 'node:test'
+import type { mock } from 'node:test'
 import { arrayContaining, check, objectMatching } from 'tsmatchers'
 
 export const assertCall = (

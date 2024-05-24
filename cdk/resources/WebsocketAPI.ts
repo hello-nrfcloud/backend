@@ -5,7 +5,7 @@ import {
 	aws_events as Events,
 	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
-	aws_lambda as Lambda,
+	type aws_lambda as Lambda,
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -74,6 +74,12 @@ export class WebsocketAPI extends Construct {
 					DEVICE_SHADOW_TABLE_NAME: deviceShadow.deviceShadowTable.tableName,
 				},
 				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['iot:GetThingShadow'],
+						resources: ['*'],
+					}),
+				],
 			},
 		).fn
 		eventBus.eventBus.grantPutEventsTo(onConnect)

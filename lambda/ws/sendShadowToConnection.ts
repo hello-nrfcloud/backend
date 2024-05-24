@@ -1,11 +1,11 @@
 import {
-	EventBridgeClient,
+	type EventBridgeClient,
 	PutEventsCommand,
 } from '@aws-sdk/client-eventbridge'
-import type { DeviceShadowType } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
-import type { WebsocketPayload } from '../publishToWebsocketClients.js'
 import type { Logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import { Context, type ShadowType } from '@hello.nrfcloud.com/proto/hello'
+import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
+import type { WebsocketPayload } from '../publishToWebsocketClients.js'
 
 export const sendShadowToConnection =
 	({
@@ -19,28 +19,25 @@ export const sendShadowToConnection =
 	}) =>
 	async ({
 		connectionId,
-		shadow,
+		deviceId,
+		shadow: { desired, reported },
 	}: {
-		shadow: DeviceShadowType
+		deviceId: string
+		shadow: {
+			desired: Array<LwM2MObjectInstance>
+			reported: Array<LwM2MObjectInstance>
+		}
 		model: string
 		connectionId: string
 	}): Promise<void> => {
-		const { reported, desired, version } = shadow.state
-		const connected = (reported?.connection?.status ?? '') === 'connected'
-
-		const message: ShadowType = {
-			'@context': Context.shadow.toString(),
-			connected,
-			version,
-			desired: desired?.lwm2m ?? {},
-			reported: reported?.lwm2m ?? {},
-			updatedAt: shadow.$meta.updatedAt,
-		}
-
 		const payload: WebsocketPayload = {
-			deviceId: shadow.id,
+			deviceId,
 			connectionId,
-			message,
+			message: {
+				'@context': Context.shadow.toString(),
+				desired,
+				reported,
+			},
 		}
 		log.debug('Publish websocket message', payload)
 		await eventBus.send(

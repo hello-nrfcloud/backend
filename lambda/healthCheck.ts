@@ -10,9 +10,9 @@ import {
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
 	LwM2MObjectID,
-	lwm2mToSenML,
 	type BatteryAndPower_14202,
-} from '@hello.nrfcloud.com/proto-map'
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { lwm2mToSenML } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import mqtt from 'mqtt'

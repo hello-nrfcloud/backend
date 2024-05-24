@@ -1,4 +1,4 @@
-import { SSMClient } from '@aws-sdk/client-ssm'
+import type { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { table } from 'table'
 import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'

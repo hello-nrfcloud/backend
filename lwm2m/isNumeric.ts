@@ -1,4 +1,4 @@
-import { ResourceType } from '@hello.nrfcloud.com/proto-map'
+import { ResourceType } from '@hello.nrfcloud.com/proto-map/lwm2m'
 
 /**
  * Only store numeric values, because you cannot create statistics about strings, or boolean

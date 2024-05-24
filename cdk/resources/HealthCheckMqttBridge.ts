@@ -1,10 +1,10 @@
 import { type ECRImage as BridgeSettings } from '@bifravst/aws-cdk-ecr-helpers/image'
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
 	Duration,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
-	aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'

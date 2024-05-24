@@ -17,12 +17,12 @@ import {
 	LwM2MObjectIDs,
 	definitions,
 	type LWM2MObjectInfo,
-} from '@hello.nrfcloud.com/proto-map'
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
 	HttpStatusCode,
-	LwM2MObjectHistory,
+	type LwM2MObjectHistory,
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'

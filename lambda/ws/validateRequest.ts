@@ -1,4 +1,4 @@
-import { ProblemDetail } from '@hello.nrfcloud.com/proto/hello'
+import type { ProblemDetail } from '@hello.nrfcloud.com/proto/hello'
 import { type Static, type TSchema } from '@sinclair/typebox'
 import type { ValueError } from '@sinclair/typebox/compiler'
 import { toBadRequest } from './toBadRequest.js'

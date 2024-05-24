@@ -1,4 +1,4 @@
-import { IoTClient } from '@aws-sdk/client-iot'
+import type { IoTClient } from '@aws-sdk/client-iot'
 import { mkdir, stat } from 'node:fs/promises'
 import type { logFn } from '../cli/log.js'
 import run from '@bifravst/run'

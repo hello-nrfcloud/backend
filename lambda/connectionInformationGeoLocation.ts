@@ -6,7 +6,7 @@ import {
 	serviceToken,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
-	cellId,
+	type cellId,
 	get,
 	store,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cellGeoLocation'
@@ -16,7 +16,7 @@ import {
 	type ConnectionInformation_14203,
 	type Geolocation_14201,
 	type LwM2MObjectInstance,
-} from '@hello.nrfcloud.com/proto-map'
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { once } from 'lodash-es'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'

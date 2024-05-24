@@ -1,9 +1,5 @@
-import {
-	aws_apigatewayv2 as HttpApi,
-	aws_iam as IAM,
-	aws_lambda as Lambda,
-	Stack,
-} from 'aws-cdk-lib'
+import type { aws_lambda as Lambda } from 'aws-cdk-lib'
+import { aws_apigatewayv2 as HttpApi, aws_iam as IAM, Stack } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 
 export const integrationUri = (parent: Stack, f: Lambda.IFunction): string =>

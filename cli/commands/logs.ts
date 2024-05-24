@@ -1,9 +1,7 @@
+import type { CloudFormationClient } from '@aws-sdk/client-cloudformation'
+import { DescribeStackResourcesCommand } from '@aws-sdk/client-cloudformation'
+import type { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs'
 import {
-	CloudFormationClient,
-	DescribeStackResourcesCommand,
-} from '@aws-sdk/client-cloudformation'
-import {
-	CloudWatchLogsClient,
 	DeleteLogGroupCommand,
 	DescribeLogStreamsCommand,
 	GetLogEventsCommand,

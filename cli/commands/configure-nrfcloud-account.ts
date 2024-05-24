@@ -1,4 +1,4 @@
-import { SSMClient } from '@aws-sdk/client-ssm'
+import type { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import fs from 'fs'
 import { STACK_NAME } from '../../cdk/stackConfig.js'

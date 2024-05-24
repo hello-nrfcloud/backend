@@ -1,4 +1,4 @@
-import { SSMClient } from '@aws-sdk/client-ssm'
+import type { SSMClient } from '@aws-sdk/client-ssm'
 import { type logFn } from '../../../cli/log.js'
 import { readFilesFromMap } from './readFilesFromMap.js'
 import { put } from '@bifravst/aws-ssm-settings-helpers'

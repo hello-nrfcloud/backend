@@ -1,7 +1,7 @@
+import type { SSMClient } from '@aws-sdk/client-ssm'
 import {
 	DeleteParametersCommand,
 	GetParametersByPathCommand,
-	SSMClient,
 } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'

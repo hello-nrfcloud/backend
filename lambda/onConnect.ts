@@ -1,6 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { Context, DeviceIdentity } from '@hello.nrfcloud.com/proto/hello'
+import { Context, type DeviceIdentity } from '@hello.nrfcloud.com/proto/hello'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
@@ -11,6 +11,11 @@ import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 import { get } from '../devices/deviceShadowRepo.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
+import {
+	GetThingShadowCommand,
+	IoTDataPlaneClient,
+} from '@aws-sdk/client-iot-data-plane'
+import { shadowToObjects } from '../lwm2m/shadowToObjects.js'
 
 const { EventBusName, TableName, LastSeenTableName, deviceShadowTableName } =
 	fromEnv({
@@ -23,6 +28,7 @@ const { EventBusName, TableName, LastSeenTableName, deviceShadowTableName } =
 const log = logger('connect')
 const eventBus = new EventBridge({})
 const db = new DynamoDBClient({})
+const iotData = new IoTDataPlaneClient({})
 
 const repo = connectionsRepository(db, TableName)
 const { getLastSeenOrNull } = lastSeenRepo(db, LastSeenTableName)
@@ -76,6 +82,32 @@ export const handler = async (
 		],
 	})
 
+	// Send the LwM2M shadow
+	const { payload } = await iotData.send(
+		new GetThingShadowCommand({
+			shadowName: 'lwm2m',
+			thingName: deviceId,
+		}),
+	)
+	if (payload !== undefined) {
+		const shadow = JSON.parse(new TextDecoder('utf-8').decode(payload))
+		log.debug('sending shadow', {
+			deviceId,
+			connectionId,
+		})
+		await sendShadow({
+			deviceId,
+			model,
+			shadow: {
+				desired: shadowToObjects(shadow.state.desired ?? {}),
+				reported: shadowToObjects(shadow.state.reported ?? {}),
+			},
+			connectionId,
+		})
+	}
+
+	// Send the shadow that is stored on nRF Cloud, which is the one that the device writes
+	// This is used for device configuration.
 	if (context.model === 'unsupported') {
 		log.debug(`Unsupported device, not fetching shadow.`, {
 			deviceId,
@@ -84,13 +116,17 @@ export const handler = async (
 	} else {
 		const { shadow } = await getShadow(deviceId)
 		if (shadow !== null) {
-			log.debug(`sending shadow`, {
+			log.debug(`sending shadow from nRF Cloud`, {
 				deviceId,
 				connectionId,
 			})
 			await sendShadow({
+				deviceId,
 				model,
-				shadow,
+				shadow: {
+					desired: shadowToObjects(shadow.state.desired?.lwm2m ?? {}),
+					reported: shadowToObjects(shadow.state.reported?.lwm2m ?? {}),
+				},
 				connectionId,
 			})
 		} else {

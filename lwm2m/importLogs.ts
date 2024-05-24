@@ -4,7 +4,7 @@ import {
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
-import type { LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map'
+import type { LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { ValueError } from '@sinclair/typebox/errors'
 import id128 from 'id128'
 
