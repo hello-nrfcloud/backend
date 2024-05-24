@@ -1,4 +1,5 @@
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
 	Duration,
 	aws_dynamodb as DynamoDB,
@@ -6,7 +7,6 @@ import {
 	aws_events_targets as EventTargets,
 	aws_events as Events,
 	aws_iam as IAM,
-	aws_lambda as Lambda,
 	RemovalPolicy,
 	aws_sqs as SQS,
 	Stack,

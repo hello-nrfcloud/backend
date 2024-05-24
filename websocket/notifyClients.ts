@@ -1,10 +1,8 @@
-import {
-	ApiGatewayManagementApiClient,
-	PostToConnectionCommand,
-} from '@aws-sdk/client-apigatewaymanagementapi'
+import type { ApiGatewayManagementApiClient } from '@aws-sdk/client-apigatewaymanagementapi'
+import { PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi'
+import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	DeleteItemCommand,
-	DynamoDBClient,
 	ExecuteStatementCommand,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'

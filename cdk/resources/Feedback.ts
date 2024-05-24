@@ -1,5 +1,6 @@
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { Duration, aws_lambda as Lambda } from 'aws-cdk-lib'
+import type { aws_lambda as Lambda } from 'aws-cdk-lib'
+import { Duration } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 

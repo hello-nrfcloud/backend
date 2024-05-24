@@ -1,9 +1,9 @@
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
 	Duration,
 	aws_iam as IAM,
 	aws_iot as IoT,
-	aws_lambda as Lambda,
 	RemovalPolicy,
 	Stack,
 	aws_timestream as Timestream,

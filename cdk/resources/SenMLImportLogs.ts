@@ -1,9 +1,9 @@
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import {
-	Duration,
+import type {
 	aws_dynamodb as DynamoDB,
 	aws_lambda as Lambda,
 } from 'aws-cdk-lib'
+import { Duration } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'

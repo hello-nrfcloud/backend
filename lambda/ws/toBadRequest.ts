@@ -1,4 +1,5 @@
-import { BadRequestError, ProblemDetail } from '@hello.nrfcloud.com/proto/hello'
+import type { ProblemDetail } from '@hello.nrfcloud.com/proto/hello'
+import { BadRequestError } from '@hello.nrfcloud.com/proto/hello'
 import { type Static } from '@sinclair/typebox'
 import type { ValueError } from '@sinclair/typebox/compiler'
 

@@ -2,12 +2,12 @@ import {
 	IoTActionRole,
 	PackedLambdaFn,
 } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
 	Duration,
 	aws_dynamodb as DynamoDB,
 	aws_iam as IAM,
 	aws_iot as IoT,
-	aws_lambda as Lambda,
 	RemovalPolicy,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'

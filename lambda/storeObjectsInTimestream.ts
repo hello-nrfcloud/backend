@@ -1,4 +1,5 @@
-import { definitions, isLwM2MObjectID } from '@hello.nrfcloud.com/proto-map'
+import { definitions } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { isLwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import {
 	TimeUnit,
 	TimestreamWriteClient,

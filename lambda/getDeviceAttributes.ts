@@ -1,4 +1,4 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { getAttributesForDevice } from '../devices/getAttributesForDevice.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 

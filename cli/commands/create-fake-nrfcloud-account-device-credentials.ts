@@ -1,3 +1,4 @@
+import type { IoTClient } from '@aws-sdk/client-iot'
 import {
 	AttachPolicyCommand,
 	CertificateStatus,
@@ -6,16 +7,15 @@ import {
 	DeleteCertificateCommand,
 	DeletePolicyCommand,
 	DetachPolicyCommand,
-	IoTClient,
 	ListTargetsForPolicyCommand,
 	UpdateCertificateCommand,
 } from '@aws-sdk/client-iot'
+import type { SSMClient } from '@aws-sdk/client-ssm'
 import {
 	DeleteParametersCommand,
 	GetParameterCommand,
 	GetParametersByPathCommand,
 	PutParameterCommand,
-	SSMClient,
 } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'

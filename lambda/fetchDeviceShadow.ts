@@ -25,6 +25,7 @@ import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import { loggingFetch } from './loggingFetch.js'
 import { getAllAccountsSettings } from '../settings/health-check/device.js'
+import { shadowToObjects } from '../lwm2m/shadowToObjects.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
@@ -232,7 +233,13 @@ const h = async (): Promise<void> => {
 					}) with shadow data version ${deviceShadow.state.version}`,
 				)
 
-				await send({ ...d, shadow: deviceShadow })
+				await send({
+					...d,
+					shadow: {
+						desired: shadowToObjects(deviceShadow.state.desired?.lwm2m ?? {}),
+						reported: shadowToObjects(deviceShadow.state.reported?.lwm2m ?? {}),
+					},
+				})
 			}
 		}
 

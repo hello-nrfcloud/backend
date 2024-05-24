@@ -1,6 +1,6 @@
+import type { aws_apigatewayv2 as ApiGatewayV2 } from 'aws-cdk-lib'
 import {
 	aws_apigateway as ApiGateway,
-	aws_apigatewayv2 as ApiGatewayV2,
 	aws_iam as IAM,
 	aws_logs as Logs,
 	RemovalPolicy,

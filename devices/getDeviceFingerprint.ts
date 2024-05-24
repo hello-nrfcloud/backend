@@ -1,4 +1,5 @@
-import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb'
+import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { QueryCommand } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 
 export const getDeviceFingerprint =

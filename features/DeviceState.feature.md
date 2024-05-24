@@ -38,10 +38,6 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
           }
         },
         "reported": {
-          "connection": {
-            "status": "connected",
-            "keepalive": 1200
-          },
           "lwm2m": {
             "14240:1.0": {
               "0": {
@@ -71,28 +67,28 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/shadow",
-  "connected": true,
-  "version": 8835,
-  "desired": {
-    "14240:1.0": {
-      "0": {
+  "desired": [
+    {
+      "ObjectID": 14240,
+      "Resources": {
         "0": 0,
         "1": 162,
         "2": 198,
         "99": 1699197208705
       }
     }
-  },
-  "reported": {
-    "14240:1.0": {
-      "0": {
+  ],
+  "reported": [
+    {
+      "ObjectID": 14240,
+      "Resources": {
         "0": 0,
         "1": 162,
         "2": 198,
         "99": 1699197208705
       }
     }
-  }
+  ]
 }
 ```
 
@@ -110,27 +106,27 @@ Soon I should receive a message on the websocket that matches
 ```json
 {
   "@context": "https://github.com/hello-nrfcloud/proto/shadow",
-  "connected": true,
-  "version": 8835,
-  "desired": {
-    "14240:1.0": {
-      "0": {
+  "desired": [
+    {
+      "ObjectID": 14240,
+      "Resources": {
         "0": 0,
         "1": 162,
         "2": 198,
         "99": 1699197208705
       }
     }
-  },
-  "reported": {
-    "14240:1.0": {
-      "0": {
+  ],
+  "reported": [
+    {
+      "ObjectID": 14240,
+      "Resources": {
         "0": 0,
         "1": 162,
         "2": 198,
         "99": 1699197208705
       }
     }
-  }
+  ]
 }
 ```
