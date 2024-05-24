@@ -83,14 +83,24 @@ export const handler = async (
 	})
 
 	// Send the LwM2M shadow
-	const { payload } = await iotData.send(
-		new GetThingShadowCommand({
-			shadowName: 'lwm2m',
-			thingName: deviceId,
-		}),
-	)
-	if (payload !== undefined) {
-		const shadow = JSON.parse(new TextDecoder('utf-8').decode(payload))
+	let lwm2mShadow: Record<string, any> | undefined = undefined
+	try {
+		const { payload } = await iotData.send(
+			new GetThingShadowCommand({
+				shadowName: 'lwm2m',
+				thingName: deviceId,
+			}),
+		)
+		if (payload !== undefined) {
+			lwm2mShadow = JSON.parse(new TextDecoder('utf-8').decode(payload))
+		}
+	} catch (error) {
+		log.debug('failed to fetch shadow', {
+			deviceId,
+			error: (error as Error).message,
+		})
+	}
+	if (lwm2mShadow !== undefined) {
 		log.debug('sending shadow', {
 			deviceId,
 			connectionId,
@@ -99,8 +109,8 @@ export const handler = async (
 			deviceId,
 			model,
 			shadow: {
-				desired: shadowToObjects(shadow.state.desired ?? {}),
-				reported: shadowToObjects(shadow.state.reported ?? {}),
+				desired: shadowToObjects(lwm2mShadow.state.desired ?? {}),
+				reported: shadowToObjects(lwm2mShadow.state.reported ?? {}),
 			},
 			connectionId,
 		})
