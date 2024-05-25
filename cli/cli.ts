@@ -36,6 +36,7 @@ import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { configureFeedbackCommand } from './commands/configure-feedback.js'
 import { updateLambda } from './commands/updateLambda.js'
 import { LambdaClient } from '@aws-sdk/client-lambda'
+import { importDeviceCommand } from './commands/import-device.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -132,6 +133,12 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 					devicesTableName: outputs.devicesTableName,
 				}),
 				importDevicesCommand({
+					db,
+					devicesTableName: outputs.devicesTableName,
+					ssm,
+					stackName: STACK_NAME,
+				}),
+				importDeviceCommand({
 					db,
 					devicesTableName: outputs.devicesTableName,
 					ssm,
