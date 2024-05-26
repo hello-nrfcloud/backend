@@ -9,6 +9,13 @@
         "@sinclair/typebox"
       ],
       "groupName": "proto"
+    },
+    {
+      "matchPackagePatterns": [
+        "@bifravst/aws-cdk-lambda-helpers",
+        "@bifravst/aws-ssm-settings-helpers"
+      ],
+      "groupName": "bifravst"
     }
   ]
 }
