@@ -139,11 +139,15 @@ Soon I should receive a message on the websocket that matches
 
 ```json
 {
-  "@context": "https://github.com/hello-nrfcloud/proto/single-cell-geo-location",
-  "lat": 63.41999531,
-  "lng": 10.42999506,
-  "accuracy": 2420,
-  "ts": "$number{ts}"
+  "@context": "https://github.com/hello-nrfcloud/proto/lwm2m/object/update",
+  "ObjectID": 14201,
+  "Resources": {
+    "0": 63.41999531,
+    "1": 10.42999506,
+    "3": 2420,
+    "6": "SCELL",
+    "99": "${tsISO}"
+  }
 }
 ```
 
@@ -222,10 +226,39 @@ Soon I should receive a message on the websocket that matches
 
 ```json
 {
-  "@context": "https://github.com/hello-nrfcloud/proto/single-cell-geo-location",
-  "lat": 63.41999531,
-  "lng": 10.42999506,
-  "accuracy": 2420,
-  "ts": "$number{ts2}"
+  "@context": "https://github.com/hello-nrfcloud/proto/lwm2m/object/update",
+  "ObjectID": 14201,
+  "Resources": {
+    "0": 63.41999531,
+    "1": 10.42999506,
+    "3": 2420,
+    "6": "SCELL",
+    "99": "${tsISO2}"
+  }
+}
+```
+
+## The single cell geo location should be persisted in the device shadow
+
+Given I reconnect to the websocket using fingerprint `${fingerprint}`
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/shadow",
+  "reported": [
+    {
+      "ObjectID": 14201,
+      "ObjectInstanceID": 2,
+      "Resources": {
+        "0": 63.41999531,
+        "1": 10.42999506,
+        "3": 2420,
+        "6": "SCELL",
+        "99": "${tsISO}"
+      }
+    }
+  ]
 }
 ```
