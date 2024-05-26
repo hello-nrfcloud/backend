@@ -1,4 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import {
@@ -6,9 +7,9 @@ import {
 	serviceToken,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
-	type cellId,
 	get,
 	store,
+	type cellId,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/cellGeoLocation'
 import { getSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
@@ -17,16 +18,11 @@ import {
 	type Geolocation_14201,
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { once } from 'lodash-es'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { NRF_CLOUD_ACCOUNT } from '../settings/account.js'
-import type { Static } from '@sinclair/typebox'
-import {
-	Context,
-	type SingleCellGeoLocation,
-} from '@hello.nrfcloud.com/proto/hello'
-import { EventBridge } from '@aws-sdk/client-eventbridge'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 
 const { TableName, stackName, EventBusName } = fromEnv({
@@ -136,21 +132,19 @@ export const handler = async (event: {
 		}
 		await updateShadow(event.id, [singleCellGeoLocation])
 
-		const message: Static<typeof SingleCellGeoLocation> = {
-			'@context': Context.singleCellGeoLocation.toString(),
-			...geoLocation,
-			ts: new Date(event.connectionInformation[99]).getTime(),
-		}
-
 		await eventBus.putEvents({
 			Entries: [
 				{
 					EventBusName,
 					Source: 'hello.ws',
-					DetailType: Context.singleCellGeoLocation.toString(),
+					DetailType: Context.lwm2mObjectUpdate.toString(),
 					Detail: JSON.stringify(<WebsocketPayload>{
 						deviceId: event.id,
-						message,
+						message: {
+							'@context': Context.lwm2mObjectUpdate.toString(),
+							...singleCellGeoLocation,
+							ts: new Date(event.connectionInformation[99]).getTime(),
+						},
 					}),
 				},
 			],
