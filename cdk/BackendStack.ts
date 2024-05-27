@@ -106,11 +106,12 @@ export class BackendStack extends Stack {
 		const websocketConnectionsTable = new WebsocketConnectionsTable(this)
 		const websocketEventBus = new WebsocketEventBus(this)
 
-		const deviceShadow = new DeviceShadow(this, {
-			websocketEventBus,
-			websocketConnectionsTable,
+		new DeviceShadow(this, {
 			layers: [baseLayerVersion],
 			lambdaSources,
+			connectionsTable: websocketConnectionsTable,
+			eventBus: websocketEventBus,
+			deviceStorage,
 		})
 
 		const websocketAPI = new WebsocketAPI(this, {
@@ -118,7 +119,6 @@ export class BackendStack extends Stack {
 			deviceStorage,
 			layers: [baseLayerVersion],
 			lastSeen,
-			deviceShadow,
 			connectionsTable: websocketConnectionsTable,
 			eventBus: websocketEventBus,
 		})

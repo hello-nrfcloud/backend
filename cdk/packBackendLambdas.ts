@@ -11,6 +11,7 @@ export type BackendLambdas = {
 	publishToWebsocketClients: PackedLambda
 	prepareDeviceShadow: PackedLambda
 	fetchDeviceShadow: PackedLambda
+	publishShadowUpdatesToWebsocket: PackedLambda
 	onLwM2MUpdate: PackedLambda
 	senMLImportLogs: PackedLambda
 	healthCheck: PackedLambda
@@ -35,6 +36,9 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	publishToWebsocketClients: await pack('publishToWebsocketClients'),
 	prepareDeviceShadow: await pack('prepareDeviceShadow'),
 	fetchDeviceShadow: await pack('fetchDeviceShadow'),
+	publishShadowUpdatesToWebsocket: await pack(
+		'publishShadowUpdatesToWebsocket',
+	),
 	onLwM2MUpdate: await pack('onLwM2MUpdate'),
 	senMLImportLogs: await pack('senMLImportLogs'),
 	healthCheck: await pack('healthCheck'),

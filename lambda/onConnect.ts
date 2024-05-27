@@ -9,7 +9,6 @@ import { connectionsRepository } from '../websocket/connectionsRepository.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
-import { get } from '../devices/deviceShadowRepo.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import {
 	GetThingShadowCommand,
@@ -17,13 +16,11 @@ import {
 } from '@aws-sdk/client-iot-data-plane'
 import { shadowToObjects } from '../lwm2m/shadowToObjects.js'
 
-const { EventBusName, TableName, LastSeenTableName, deviceShadowTableName } =
-	fromEnv({
-		EventBusName: 'EVENTBUS_NAME',
-		TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
-		LastSeenTableName: 'LAST_SEEN_TABLE_NAME',
-		deviceShadowTableName: 'DEVICE_SHADOW_TABLE_NAME',
-	})(process.env)
+const { EventBusName, TableName, LastSeenTableName } = fromEnv({
+	EventBusName: 'EVENTBUS_NAME',
+	TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
+	LastSeenTableName: 'LAST_SEEN_TABLE_NAME',
+})(process.env)
 
 const log = logger('connect')
 const eventBus = new EventBridge({})
@@ -33,7 +30,6 @@ const iotData = new IoTDataPlaneClient({})
 const repo = connectionsRepository(db, TableName)
 const { getLastSeenOrNull } = lastSeenRepo(db, LastSeenTableName)
 
-const getShadow = get({ db, TableName: deviceShadowTableName })
 const sendShadow = sendShadowToConnection({
 	eventBus,
 	eventBusName: EventBusName,
@@ -114,38 +110,6 @@ export const handler = async (
 			},
 			connectionId,
 		})
-	}
-
-	// Send the shadow that is stored on nRF Cloud, which is the one that the device writes
-	// This is used for device configuration,
-	// ...some objects that are published via the nRF Cloud library.
-	if (context.model === 'unsupported') {
-		log.debug(`Unsupported device, not fetching shadow.`, {
-			deviceId,
-			connectionId,
-		})
-	} else {
-		const { shadow } = await getShadow(deviceId)
-		if (shadow !== null) {
-			log.debug(`sending shadow from nRF Cloud`, {
-				deviceId,
-				connectionId,
-			})
-			await sendShadow({
-				deviceId,
-				model,
-				shadow: {
-					desired: shadowToObjects(shadow.state.desired?.lwm2m ?? {}),
-					reported: shadowToObjects(shadow.state.reported?.lwm2m ?? {}),
-				},
-				connectionId,
-			})
-		} else {
-			log.debug('no shadow found', {
-				deviceId,
-				connectionId,
-			})
-		}
 	}
 
 	return {
