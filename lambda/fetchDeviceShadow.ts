@@ -1,48 +1,42 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { EventBridgeClient } from '@aws-sdk/client-eventbridge'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import middy from '@middy/core'
-import { fromEnv } from '@nordicsemiconductor/from-env'
-import { chunk, groupBy, once, uniqBy } from 'lodash-es'
-import pLimit from 'p-limit'
-import { store } from '../devices/deviceShadowRepo.js'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { getDeviceShadow } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	defaultApiEndpoint,
 	getAllAccountsSettings as getAllNRFCloudAccountSettings,
 	type Settings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import middy from '@middy/core'
+import { fromEnv } from '@nordicsemiconductor/from-env'
+import { chunk, groupBy, once, uniqBy } from 'lodash-es'
+import pLimit from 'p-limit'
+import { nrfCloudShadowToObjects } from '../devices/nrfCloudShadowToObjects.js'
+import { getAllAccountsSettings } from '../settings/health-check/device.js'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
 } from '../websocket/connectionsRepository.js'
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import { loggingFetch } from './loggingFetch.js'
-import { getAllAccountsSettings } from '../settings/health-check/device.js'
-import { shadowToObjects } from '../lwm2m/shadowToObjects.js'
-import { nrfCloudShadowToObjects } from '../devices/nrfCloudShadowToObjects.js'
+import {
+	IoTDataPlaneClient,
+	UpdateThingShadowCommand,
+} from '@aws-sdk/client-iot-data-plane'
+import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
-const {
-	websocketDeviceConnectionsTableName,
-	lockTableName,
-	eventBusName,
-	stackName,
-	deviceShadowTableName,
-} = fromEnv({
-	stackName: 'STACK_NAME',
-	websocketDeviceConnectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
-	lockTableName: 'LOCK_TABLE_NAME',
-	eventBusName: 'EVENTBUS_NAME',
-	deviceShadowTableName: 'DEVICE_SHADOW_TABLE_NAME',
-})(process.env)
+const { websocketDeviceConnectionsTableName, lockTableName, stackName } =
+	fromEnv({
+		stackName: 'STACK_NAME',
+		websocketDeviceConnectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',
+		lockTableName: 'LOCK_TABLE_NAME',
+	})(process.env)
 
 const limit = pLimit(3)
 const db = new DynamoDBClient({})
@@ -52,14 +46,13 @@ const lockName = 'fetch-shadow'
 const lockTTLSeconds = 5
 const lock = createLock(db, lockTableName)
 
-const eventBus = new EventBridgeClient({})
-
 const connectionsRepo = connectionsRepository(
 	db,
 	websocketDeviceConnectionsTableName,
 )
 
 const ssm = new SSMClient({})
+const iot = new IoTDataPlaneClient({})
 
 // Make sure to call it in the handler, so the AWS Parameters and Secrets Lambda Extension is ready.
 const allNRFCloudAccountSettings = once(async () =>
@@ -72,14 +65,6 @@ const allHealthCheckClientIds = once(async () => {
 	const settings = await getAllAccountsSettings({ ssm, stackName })
 	return Object.values(settings).map((settings) => settings.healthCheckClientId)
 })
-
-const send = sendShadowToConnection({
-	eventBus,
-	eventBusName,
-	log,
-})
-
-const cacheShadow = store({ db, TableName: deviceShadowTableName })
 
 const h = async (): Promise<void> => {
 	try {
@@ -234,30 +219,34 @@ const h = async (): Promise<void> => {
 					}) with shadow data version ${deviceShadow.state.version}`,
 				)
 
-				// FIXME: update the lwm2m shadow
+				// Convert parts written by the nRF Cloud library in the firmware to LwM2M objects
 				const nrfCloudShadow = nrfCloudShadowToObjects(deviceShadow)
 				log.debug('nrfCloudShadow', nrfCloudShadow)
 
-				await send({
-					...d,
-					shadow: {
-						desired: shadowToObjects(deviceShadow.state.desired?.lwm2m ?? {}),
-						reported: shadowToObjects(deviceShadow.state.reported?.lwm2m ?? {}),
-					},
-				})
+				// The device configuration is written directly as LwM2M objects to the `lwm2m` subsection of the nRF Cloud device shadow document
+				const desiredConfig = deviceShadow.state.desired?.lwm2m ?? {}
+				const reportedConfig = deviceShadow.state.reported?.lwm2m ?? {}
+
+				const state = {
+					desired: desiredConfig,
+					reported: { ...reportedConfig, ...objectsToShadow(nrfCloudShadow) },
+				}
+
+				log.debug('state', state)
+
+				await iot.send(
+					new UpdateThingShadowCommand({
+						thingName: d.deviceId,
+						shadowName: 'lwm2m',
+						payload: JSON.stringify({
+							state,
+						}),
+					}),
+				)
 			}
 		}
-
-		await Promise.all(
-			deviceShadows.map(async (deviceShadow) => {
-				log.debug(`Caching shadow`, {
-					deviceId: deviceShadow.id,
-				})
-				return cacheShadow(deviceShadow)
-			}),
-		)
 	} catch (error) {
-		log.error(`fetch device shadow error`, { error })
+		log.error(`fetch device shadow error`, { error: (error as Error).message })
 		track('error', MetricUnit.Count, 1)
 	} finally {
 		await lock.releaseLock(lockName)

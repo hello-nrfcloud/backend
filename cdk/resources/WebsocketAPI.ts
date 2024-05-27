@@ -11,7 +11,6 @@ import {
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
-import type { DeviceShadow } from './DeviceShadow.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
@@ -38,12 +37,10 @@ export class WebsocketAPI extends Construct {
 			lambdaSources,
 			layers,
 			lastSeen,
-			deviceShadow,
 			eventBus,
 			connectionsTable,
 		}: {
 			deviceStorage: DeviceStorage
-			deviceShadow: DeviceShadow
 			lambdaSources: Pick<
 				BackendLambdas,
 				| 'authorizer'
@@ -71,7 +68,6 @@ export class WebsocketAPI extends Construct {
 					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 					EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 					LAST_SEEN_TABLE_NAME: lastSeen.table.tableName,
-					DEVICE_SHADOW_TABLE_NAME: deviceShadow.deviceShadowTable.tableName,
 				},
 				layers,
 				initialPolicy: [
@@ -85,7 +81,6 @@ export class WebsocketAPI extends Construct {
 		eventBus.eventBus.grantPutEventsTo(onConnect)
 		connectionsTable.table.grantWriteData(onConnect)
 		lastSeen.table.grantReadData(onConnect)
-		deviceShadow.deviceShadowTable.grantReadData(onConnect)
 
 		// onMessage
 		const onMessage = new PackedLambdaFn(

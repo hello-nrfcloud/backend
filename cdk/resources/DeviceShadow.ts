@@ -1,4 +1,7 @@
-import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import {
+	IoTActionRole,
+	PackedLambdaFn,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
 	Duration,
@@ -7,6 +10,7 @@ import {
 	aws_events_targets as EventTargets,
 	aws_events as Events,
 	aws_iam as IAM,
+	aws_iot as IoT,
 	RemovalPolicy,
 	aws_sqs as SQS,
 	Stack,
@@ -15,24 +19,31 @@ import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import type { DeviceStorage } from './DeviceStorage.js'
 
+/**
+ * Updates the LwM2M shadow for each device from nRF Cloud
+ */
 export class DeviceShadow extends Construct {
-	public readonly deviceShadowTable: DynamoDB.ITable
 	public constructor(
 		parent: Construct,
 		{
-			websocketEventBus,
-			websocketConnectionsTable,
 			lambdaSources,
 			layers,
+			eventBus,
+			connectionsTable,
+			deviceStorage,
 		}: {
-			websocketEventBus: WebsocketEventBus
-			websocketConnectionsTable: WebsocketConnectionsTable
 			lambdaSources: Pick<
 				BackendLambdas,
-				'prepareDeviceShadow' | 'fetchDeviceShadow'
+				| 'prepareDeviceShadow'
+				| 'fetchDeviceShadow'
+				| 'publishShadowUpdatesToWebsocket'
 			>
 			layers: Lambda.ILayerVersion[]
+			eventBus: WebsocketEventBus
+			connectionsTable: WebsocketConnectionsTable
+			deviceStorage: DeviceStorage
 		},
 	) {
 		super(parent, 'DeviceShadow')
@@ -68,18 +79,6 @@ export class DeviceShadow extends Construct {
 			timeToLiveAttribute: 'ttl',
 		})
 
-		// Table to store the last known shadow of a device
-		this.deviceShadowTable = new DynamoDB.Table(this, 'deviceShadow', {
-			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
-			partitionKey: {
-				name: 'deviceId',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			pointInTimeRecovery: false,
-			removalPolicy: RemovalPolicy.DESTROY,
-			timeToLiveAttribute: 'ttl',
-		})
-
 		// Lambda functions
 		const prepareDeviceShadow = new PackedLambdaFn(
 			this,
@@ -104,17 +103,19 @@ export class DeviceShadow extends Construct {
 				timeout: processDeviceShadowTimeout,
 				description: `Fetch devices' shadow from nRF Cloud`,
 				environment: {
-					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
-					WEBSOCKET_CONNECTIONS_TABLE_NAME:
-						websocketConnectionsTable.table.tableName,
 					LOCK_TABLE_NAME: lockTable.tableName,
-					PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED: 'FALSE',
-					PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS: '100',
-					DEVICE_SHADOW_TABLE_NAME: this.deviceShadowTable.tableName,
+					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 				},
 				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['iot:UpdateThingShadow'],
+						resources: ['*'],
+					}),
+				],
 			},
 		).fn
+		connectionsTable.table.grantReadWriteData(fetchDeviceShadow)
 		const ssmReadPolicy = new IAM.PolicyStatement({
 			effect: IAM.Effect.ALLOW,
 			actions: ['ssm:GetParametersByPath'],
@@ -125,8 +126,6 @@ export class DeviceShadow extends Construct {
 			],
 		})
 		fetchDeviceShadow.addToRolePolicy(ssmReadPolicy)
-		websocketEventBus.eventBus.grantPutEventsTo(fetchDeviceShadow)
-		websocketConnectionsTable.table.grantReadWriteData(fetchDeviceShadow)
 		lockTable.grantReadWriteData(fetchDeviceShadow)
 		fetchDeviceShadow.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {
@@ -134,6 +133,64 @@ export class DeviceShadow extends Construct {
 				maxConcurrency: 15,
 			}),
 		)
-		this.deviceShadowTable.grantWriteData(fetchDeviceShadow)
+
+		// Publish shadow updates to the websocket clients
+		const publishShadowUpdatesToWebsocket = new PackedLambdaFn(
+			this,
+			'publishShadowUpdatesToWebsocket',
+			lambdaSources.publishShadowUpdatesToWebsocket,
+			{
+				timeout: Duration.minutes(1),
+				description: 'Publish shadow updates to the websocket clients',
+				environment: {
+					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
+					EVENTBUS_NAME: eventBus.eventBus.eventBusName,
+				},
+				layers,
+			},
+		).fn
+		connectionsTable.table.grantReadWriteData(publishShadowUpdatesToWebsocket)
+
+		// AWS IoT Rule
+		const updateShadowRuleRole = new IoTActionRole(this).role
+		updateShadowRuleRole.addToPrincipalPolicy(
+			new IAM.PolicyStatement({
+				actions: ['dynamodb:PartiQLSelect'],
+				resources: [deviceStorage.devicesTable.tableArn],
+			}),
+		)
+		const updateShadowRule = new IoT.CfnTopicRule(this, 'updateShadowRule', {
+			topicRulePayload: {
+				description:
+					'Publish shadow updates to the LwM2M shadow to the websocket clients',
+				ruleDisabled: false,
+				awsIotSqlVersion: '2016-03-23',
+				sql: [
+					`SELECT`,
+					`state,`,
+					`get_dynamodb("${deviceStorage.devicesTable.tableName}", "deviceId", topic(3), "${updateShadowRuleRole.roleArn}").model AS model,`,
+					`topic(3) as deviceId`,
+					`FROM '$aws/things/+/shadow/name/lwm2m/update/accepted'`,
+				].join(' '),
+				actions: [
+					{
+						lambda: {
+							functionArn: publishShadowUpdatesToWebsocket.functionArn,
+						},
+					},
+				],
+				errorAction: {
+					republish: {
+						roleArn: updateShadowRuleRole.roleArn,
+						topic: 'errors',
+					},
+				},
+			},
+		})
+
+		publishShadowUpdatesToWebsocket.addPermission('updateShadowRule', {
+			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
+			sourceArn: updateShadowRule.attrArn,
+		})
 	}
 }
