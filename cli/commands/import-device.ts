@@ -3,7 +3,10 @@ import type { SSMClient } from '@aws-sdk/client-ssm'
 import { inspectString } from '@hello.nrfcloud.com/certificate-helpers/inspect'
 import { devices as devicesApi } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
+import {
+	generateCode,
+	isFingerprint,
+} from '@hello.nrfcloud.com/proto/fingerprint'
 import chalk from 'chalk'
 import { readFile } from 'node:fs/promises'
 import { registerDevice } from '../../devices/registerDevice.js'
@@ -22,7 +25,13 @@ export const importDeviceCommand = ({
 	stackName: string
 }): CommandDefinition => ({
 	command: 'import-device <account> <model> <imei> <publicKeyFile>',
-	action: async (account, model, imei, publicKeyFile) => {
+	options: [
+		{
+			flags: '-f, --fingerprint <fingerprint>',
+			description: 'Use fingerprint provided instead of generating one.',
+		},
+	],
+	action: async (account, model, imei, publicKeyFile, { fingerprint }) => {
 		if (!isIMEI(imei)) {
 			console.error(
 				chalk.yellow('⚠️'),
@@ -44,7 +53,16 @@ export const importDeviceCommand = ({
 			)
 			process.exit(1)
 		}
-		const fingerprint = `29a.${generateCode()}`
+
+		fingerprint = fingerprint ?? `29a.${generateCode()}`
+		if (!isFingerprint(fingerprint)) {
+			console.error(
+				chalk.yellow('⚠️'),
+				chalk.yellow(`Not a fingerprint:`),
+				chalk.red(fingerprint),
+			)
+			process.exit(1)
+		}
 
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,
