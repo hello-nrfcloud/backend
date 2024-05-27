@@ -26,6 +26,7 @@ import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import { loggingFetch } from './loggingFetch.js'
 import { getAllAccountsSettings } from '../settings/health-check/device.js'
 import { shadowToObjects } from '../lwm2m/shadowToObjects.js'
+import { nrfCloudShadowToObjects } from '../devices/nrfCloudShadowToObjects.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
@@ -232,6 +233,10 @@ const h = async (): Promise<void> => {
 						d?.version ?? 0
 					}) with shadow data version ${deviceShadow.state.version}`,
 				)
+
+				// FIXME: update the lwm2m shadow
+				const nrfCloudShadow = nrfCloudShadowToObjects(deviceShadow)
+				log.debug('nrfCloudShadow', nrfCloudShadow)
 
 				await send({
 					...d,

@@ -117,7 +117,8 @@ export const handler = async (
 	}
 
 	// Send the shadow that is stored on nRF Cloud, which is the one that the device writes
-	// This is used for device configuration.
+	// This is used for device configuration,
+	// ...some objects that are published via the nRF Cloud library.
 	if (context.model === 'unsupported') {
 		log.debug(`Unsupported device, not fetching shadow.`, {
 			deviceId,
