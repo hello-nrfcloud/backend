@@ -51,7 +51,7 @@ const h = async (
 	console.debug({
 		event,
 	})
-	const { deviceId, timestamp } = event
+	const { deviceId } = event
 	track('deviceMessageLwM2M', MetricUnit.Count, 1)
 
 	let senML: Array<Record<string, unknown>> | undefined = undefined
@@ -97,7 +97,6 @@ const h = async (
 
 	await updateShadow(deviceId, objects)
 
-	const ts = new Date(timestamp).toISOString()
 	await Promise.all(
 		objects.map(
 			async ({ ObjectID, ObjectInstanceID, ObjectVersion, Resources }) => {
@@ -106,7 +105,6 @@ const h = async (
 					ObjectID,
 					ObjectInstanceID,
 					ObjectVersion,
-					ts,
 					Resources: Resources as Static<typeof LwM2MResources>,
 				}
 				console.debug('websocket message', JSON.stringify({ payload: message }))
