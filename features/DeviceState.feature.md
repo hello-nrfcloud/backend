@@ -50,6 +50,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
           },
           "device": {
             "deviceInfo": {
+              "appVersion": "2.0.0-development",
               "modemFirmware": "mfw_nrf91x1_2.0.1",
               "batteryVoltage": 5101,
               "imei": "355025930003908",
@@ -84,6 +85,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
             "device": {
               "deviceInfo": {
                 "modemFirmware": { "timestamp": 1716801888 },
+                "appVersion": { "timestamp": 1716801888 },
                 "batteryVoltage": { "timestamp": 1716801888 },
                 "imei": { "timestamp": 1716801888 },
                 "board": { "timestamp": 1716801888 },
@@ -158,6 +160,7 @@ Soon I should receive a message on the websocket that matches
       "ObjectID": 14204,
       "Resources": {
         "0": "355025930003908",
+        "1": "2.0.0-development",
         "2": "mfw_nrf91x1_2.0.1",
         "3": "N/A",
         "4": "thingy91x",

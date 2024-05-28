@@ -39,6 +39,8 @@ export const nrfCloudShadowToObjects = ({
 			Resources: {
 				// IMEI
 				0: reported.device.deviceInfo.imei,
+				// Application firmware version
+				1: reported.device.deviceInfo.appVersion,
 				// Modem firmware version
 				2: reported.device.deviceInfo.modemFirmware,
 				// Application firmware version
