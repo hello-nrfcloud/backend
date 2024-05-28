@@ -16,7 +16,7 @@ const deviceInfo: DeviceInformation_14204 = {
 		// Modem firmware version
 		2: 'mfw_nrf91x1_2.0.1',
 		// Application firmware version
-		3: 'N/A',
+		3: '0.0.0-development',
 		// Board version
 		4: 'thingy91x',
 		// Timestamp
@@ -65,6 +65,7 @@ void describe('nrfCloudShadowToObjects()', () => {
 						device: {
 							deviceInfo: {
 								modemFirmware: 'mfw_nrf91x1_2.0.1',
+								appVersion: '0.0.0-development',
 								batteryVoltage: 5101,
 								imei: '355025930003908',
 								board: 'thingy91x',
@@ -97,6 +98,7 @@ void describe('nrfCloudShadowToObjects()', () => {
 						reported: {
 							device: {
 								deviceInfo: {
+									appVersion: { timestamp: 1716560679 },
 									modemFirmware: { timestamp: 1716560679 },
 									batteryVoltage: { timestamp: 1716560679 },
 									imei: { timestamp: 1716560679 },

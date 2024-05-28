@@ -160,12 +160,11 @@ Soon I should receive a message on the websocket that matches
       "ObjectID": 14204,
       "Resources": {
         "0": "355025930003908",
-        "1": "2.0.0-development",
+        "1": "89470060200703359994",
         "2": "mfw_nrf91x1_2.0.1",
-        "3": "N/A",
+        "3": "2.0.0-development",
         "4": "thingy91x",
-        "99": "1716801888000",
-        "1": "89470060200703359994"
+        "99": "1716801888000"
       }
     },
     {

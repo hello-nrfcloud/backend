@@ -30,7 +30,7 @@ export const nrfCloudShadowToObjects = ({
 		const timestamps = [
 			metadata.reported.device.deviceInfo.imei?.timestamp,
 			metadata.reported.device.deviceInfo.modemFirmware?.timestamp,
-			metadata.reported.device.deviceInfo.appName?.timestamp,
+			metadata.reported.device.deviceInfo.appVersion?.timestamp,
 			metadata.reported.device.deviceInfo.board?.timestamp,
 		]
 		const d = <DeviceInformation_14204>{
@@ -39,12 +39,10 @@ export const nrfCloudShadowToObjects = ({
 			Resources: {
 				// IMEI
 				0: reported.device.deviceInfo.imei,
-				// Application firmware version
-				1: reported.device.deviceInfo.appVersion,
 				// Modem firmware version
 				2: reported.device.deviceInfo.modemFirmware,
 				// Application firmware version
-				3: reported.device.deviceInfo.appName,
+				3: reported.device.deviceInfo.appVersion,
 				// Board version
 				4: reported.device.deviceInfo.board,
 			},
