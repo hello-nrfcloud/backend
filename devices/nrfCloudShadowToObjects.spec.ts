@@ -37,7 +37,7 @@ const connectionInfo: ConnectionInformation_14203 = {
 		// Band
 		1: 20,
 		// RSRP (dBm), FIXME: not supported yet: https://github.com/hello-nrfcloud/firmware/issues/105
-		// 2: number;
+		2: -107,
 		// Area
 		3: 33131,
 		// Cell
@@ -47,7 +47,7 @@ const connectionInfo: ConnectionInformation_14203 = {
 		// IP address
 		6: '10.108.72.99',
 		// Energy Estimate, FIXME: not supported yet: https://github.com/hello-nrfcloud/firmware/issues/105
-		// 11: number;
+		11: 7,
 	},
 }
 
@@ -82,6 +82,8 @@ void describe('nrfCloudShadowToObjects()', () => {
 								ueMode: 2,
 								cellID: 51297540,
 								networkMode: 'LTE-M GPS',
+								rsrp: -107,
+								eest: 7,
 							},
 							simInfo: {
 								uiccMode: 0,

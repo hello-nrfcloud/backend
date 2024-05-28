@@ -66,7 +66,7 @@ export const nrfCloudShadowToObjects = ({
 				// Band
 				1: reported.device.networkInfo.currentBand,
 				// RSRP (dBm), FIXME: not supported yet: https://github.com/hello-nrfcloud/firmware/issues/105
-				// 2: number;
+				2: reported.device.networkInfo.rsrp,
 				// Area
 				3: reported.device.networkInfo.areaCode,
 				// Cell
@@ -75,6 +75,8 @@ export const nrfCloudShadowToObjects = ({
 				5: parseInt(reported.device.networkInfo.mccmnc, 10),
 				// IP address
 				6: reported.device.networkInfo.ipAddress,
+				// Energy Estimate
+				11: reported.device.networkInfo.eest,
 				// Timestamp
 				99:
 					max([

@@ -67,7 +67,9 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
               "ipAddress": "10.108.72.99",
               "ueMode": 2,
               "cellID": 51297540,
-              "networkMode": "LTE-M GPS"
+              "networkMode": "LTE-M GPS",
+              "rsrp": -107,
+              "eest": 7
             },
             "simInfo": {
               "uiccMode": 0,
@@ -98,7 +100,9 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
                 "ipAddress": { "timestamp": 1716801888 },
                 "ueMode": { "timestamp": 1716801888 },
                 "cellID": { "timestamp": 1716801888 },
-                "networkMode": { "timestamp": 1716801888 }
+                "networkMode": { "timestamp": 1716801888 },
+                "rsrp": { "timestamp": 1716801888 },
+                "eest": { "timestamp": 1716801888 }
               },
               "simInfo": {
                 "uiccMode": { "timestamp": 1716801888 },
@@ -167,10 +171,12 @@ Soon I should receive a message on the websocket that matches
         "99": 1716801888000,
         "0": "LTE-M GPS",
         "1": 20,
+        "2": -107,
         "3": 33131,
         "4": 51297540,
         "5": 24201,
-        "6": "10.108.72.99"
+        "6": "10.108.72.99",
+        "11": 7
       }
     }
   ]
