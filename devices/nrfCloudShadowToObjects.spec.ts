@@ -20,7 +20,7 @@ const deviceInfo: DeviceInformation_14204 = {
 		// Board version
 		4: 'thingy91x',
 		// Timestamp
-		99: new Date(1716560679 * 1000),
+		99: 1716560679 * 1000,
 		// SIM ICCID
 		1: '89470060200703359994',
 	},
@@ -31,7 +31,7 @@ const connectionInfo: ConnectionInformation_14203 = {
 	ObjectVersion: '1.0',
 	Resources: {
 		// Timestamp
-		99: new Date(1716560679 * 1000),
+		99: 1716560679 * 1000,
 		// Network mode
 		0: 'LTE-M GPS',
 		// Band

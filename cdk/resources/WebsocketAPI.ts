@@ -280,7 +280,6 @@ export class WebsocketAPI extends Construct {
 						resources: [this.websocketAPIArn],
 					}),
 					new IAM.PolicyStatement({
-						effect: IAM.Effect.ALLOW,
 						resources: [connectionsTable.table.tableArn],
 						actions: ['dynamodb:PartiQLSelect'],
 					}),

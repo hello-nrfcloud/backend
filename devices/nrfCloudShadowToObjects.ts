@@ -52,7 +52,7 @@ export const nrfCloudShadowToObjects = ({
 			d.Resources[1] = reported.device.simInfo.iccid
 			timestamps.push(metadata.reported.device.simInfo.iccid?.timestamp)
 		}
-		d.Resources[99] = new Date(max(timestamps) * 1000)
+		d.Resources[99] = max(timestamps) * 1000
 		objects.push(d)
 	}
 
@@ -76,7 +76,7 @@ export const nrfCloudShadowToObjects = ({
 				// IP address
 				6: reported.device.networkInfo.ipAddress,
 				// Timestamp
-				99: new Date(
+				99:
 					max([
 						metadata.reported.device.networkInfo.ipAddress?.timestamp,
 						metadata.reported.device.networkInfo.band?.timestamp,
@@ -85,7 +85,6 @@ export const nrfCloudShadowToObjects = ({
 						metadata.reported.device.networkInfo.mccmnc?.timestamp,
 						metadata.reported.device.networkInfo.ipAddress?.timestamp,
 					]) * 1000,
-				),
 			},
 		}
 		objects.push(n)

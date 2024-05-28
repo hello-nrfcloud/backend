@@ -91,8 +91,7 @@ And `$.partialInstances[0]` of the last response should match
   "1": 10.437808861037931,
   "3": 293.7028058347316,
   "6": "GNSS",
-  "99": "$number{ts - 7000}",
-  "ts": "${$fromMillis(ts - 7000)}"
+  "99": "$number{ts - 7000}"
 }
 ```
 
@@ -104,8 +103,7 @@ And `$.partialInstances[1]` of the last response should match
   "1": 10.487144544169565,
   "3": 0,
   "6": "GNSS",
-  "99": "$number{ts - 3000}",
-  "ts": "${$fromMillis(ts - 3000)}"
+  "99": "$number{ts - 3000}"
 }
 ```
 
@@ -117,8 +115,7 @@ And `$.partialInstances[2]` of the last response should match
   "1": 10.535387671151794,
   "3": 0,
   "6": "GNSS",
-  "99": "$number{ts - 2000}",
-  "ts": "${$fromMillis(ts - 2000)}"
+  "99": "$number{ts - 2000}"
 }
 ```
 
@@ -130,7 +127,6 @@ And `$.partialInstances[3]` of the last response should match
   "1": 10.630926224360818,
   "3": 0,
   "6": "GNSS",
-  "99": "$number{ts - 1000}",
-  "ts": "${$fromMillis(ts - 1000)}"
+  "99": "$number{ts - 1000}"
 }
 ```

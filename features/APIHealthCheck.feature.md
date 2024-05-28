@@ -1,6 +1,7 @@
 ---
 exampleContext:
   APIURL: "https://api.nordicsemi.world/2024-04-15"
+  VERSION: "0.0.0-development"
 ---
 
 # API health check
@@ -18,6 +19,6 @@ And the last response should match
 
 ```json
 {
-  "version": "0.0.0-development"
+  "version": "${VERSION}"
 }
 ```

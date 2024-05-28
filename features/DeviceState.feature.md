@@ -74,7 +74,8 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
               "iccid": "89470060200703359994",
               "imsi": "242016000941158"
             },
-            "connectionInfo": { "protocol": "CoAP", "method": "LTE" },
+            "connectionInfo": { "protocol": "CoAP", "method": "LTE" }
+          }
         },
         "metadata": {
           "reported": {
@@ -107,7 +108,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
               "connectionInfo": {
                 "protocol": { "timestamp": 1716801888 },
                 "method": { "timestamp": 1716801888 }
-              },
+              }
             }
           }
         },
@@ -115,8 +116,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
       }
     }
   ],
-  "total": 1,
-  "pageNextToken": "4bb1f9ab35bd"
+  "total": 1
 }
 ```
 

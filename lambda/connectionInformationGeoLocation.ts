@@ -3,6 +3,7 @@ import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import {
+	ValidationError,
 	groundFix,
 	serviceToken,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
@@ -84,6 +85,11 @@ export const handler = async (event: {
 		})
 
 		if ('error' in locationServiceToken) {
+			if (locationServiceToken.error instanceof ValidationError) {
+				console.error(JSON.stringify(locationServiceToken.error.errors))
+			} else {
+				console.error(locationServiceToken.error.message)
+			}
 			throw new Error(`Acquiring service token failed.`)
 		}
 
@@ -143,7 +149,6 @@ export const handler = async (event: {
 						message: {
 							'@context': Context.lwm2mObjectUpdate.toString(),
 							...singleCellGeoLocation,
-							ts: new Date(event.connectionInformation[99]).getTime(),
 						},
 					}),
 				},

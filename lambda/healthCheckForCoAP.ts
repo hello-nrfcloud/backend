@@ -186,7 +186,7 @@ const h = async (): Promise<void> => {
 								ObjectVersion: '1.0',
 								Resources: {
 									0: data.temperature,
-									99: new Date(data.ts),
+									99: data.ts,
 								},
 							})
 							if ('errors' in maybeSenML)
@@ -228,7 +228,7 @@ const h = async (): Promise<void> => {
 											ObjectID: LwM2MObjectID.Environment_14205,
 											Resources: {
 												0: data.temperature,
-												99: new Date(data.ts),
+												99: data.ts,
 											},
 										},
 									)

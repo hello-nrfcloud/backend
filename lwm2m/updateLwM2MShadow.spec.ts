@@ -18,7 +18,7 @@ void describe('updateLwM2MShadow()', () => {
 				ObjectVersion: '1.0',
 				Resources: {
 					1: 2.754,
-					99: new Date(1688104200000),
+					99: 1688104200000,
 				},
 			},
 		]

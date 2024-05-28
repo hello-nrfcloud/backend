@@ -4,7 +4,6 @@ exampleContext:
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
   tsISO: 2023-09-12T00:00:00.000Z
   ts: 1694503339523
-  tsISO2: 2023-09-12T00:00:00.000Z
   ts2: 1694503339523
 ---
 
@@ -110,7 +109,7 @@ Soon I should receive a message on the websocket that matches
     "5": 24202,
     "6": "100.74.127.55",
     "11": 7,
-    "99": "${tsISO}"
+    "99": "$number{ts}"
   }
 }
 ```
@@ -146,7 +145,7 @@ Soon I should receive a message on the websocket that matches
     "1": 10.42999506,
     "3": 2420,
     "6": "SCELL",
-    "99": "${tsISO}"
+    "99": "$number{ts}"
   }
 }
 ```
@@ -157,8 +156,6 @@ Soon I should receive a message on the websocket that matches
 > API.
 
 Given I store `$millis()` into `ts2`
-
-And I store `$fromMillis(${ts2})` into `tsISO2`
 
 When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 `/msg/d2c/raw` with this SenML payload
@@ -217,7 +214,7 @@ Soon I should receive a message on the websocket that matches
     "5": 24202,
     "6": "100.74.127.45",
     "11": 6,
-    "99": "${tsISO2}"
+    "99": "$number{ts2}"
   }
 }
 ```
@@ -233,7 +230,7 @@ Soon I should receive a message on the websocket that matches
     "1": 10.42999506,
     "3": 2420,
     "6": "SCELL",
-    "99": "${tsISO2}"
+    "99": "$number{ts2}"
   }
 }
 ```
@@ -256,7 +253,7 @@ Soon I should receive a message on the websocket that matches
         "1": 10.42999506,
         "3": 2420,
         "6": "SCELL",
-        "99": "${tsISO}"
+        "99": "$number{ts2}"
       }
     }
   ]

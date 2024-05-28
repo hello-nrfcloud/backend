@@ -147,18 +147,21 @@ export class DeviceShadow extends Construct {
 					EVENTBUS_NAME: eventBus.eventBus.eventBusName,
 				},
 				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						resources: [connectionsTable.table.tableArn],
+						actions: ['dynamodb:PartiQLSelect'],
+					}),
+				],
 			},
 		).fn
 		connectionsTable.table.grantReadWriteData(publishShadowUpdatesToWebsocket)
+		eventBus.eventBus.grantPutEventsTo(publishShadowUpdatesToWebsocket)
 
 		// AWS IoT Rule
 		const updateShadowRuleRole = new IoTActionRole(this).role
-		updateShadowRuleRole.addToPrincipalPolicy(
-			new IAM.PolicyStatement({
-				actions: ['dynamodb:PartiQLSelect'],
-				resources: [deviceStorage.devicesTable.tableArn],
-			}),
-		)
+		deviceStorage.devicesTable.grantReadData(updateShadowRuleRole)
+
 		const updateShadowRule = new IoT.CfnTopicRule(this, 'updateShadowRule', {
 			topicRulePayload: {
 				description:

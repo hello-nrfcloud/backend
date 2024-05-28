@@ -3,9 +3,7 @@ exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
   ts: 1694503339523
-  tsISO: 2023-09-12T00:00:00.000Z
   APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
-run: only
 ---
 
 # Device to websocket (MQTT)
@@ -22,8 +20,6 @@ And I connect to the websocket using fingerprint `${fingerprint}`
 ## Receive LwM2M updates published via CoAP on the Websocket connection
 
 Given I store `$millis()` into `ts`
-
-And I store `$fromMillis(${ts})` into `tsISO`
 
 When the device `${fingerprint_deviceId}` publishes this message to the topic
 `m/d/${fingerprint_deviceId}/d2c/senml`
@@ -99,7 +95,7 @@ And `$.imports[0]` of the last response should match
         "1": 6.151946,
         "3": 1,
         "6": "Fixed",
-        "99": "${tsISO}"
+        "99": "$number{ts}"
       }
     }
   ]

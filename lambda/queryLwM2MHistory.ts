@@ -195,7 +195,7 @@ const h = async (
 				history.map(({ '0': lat, '1': lng, '99': ts }) => ({
 					lat,
 					lng,
-					ts: new Date(ts).getTime(),
+					ts,
 				})),
 			).map(({ lat, lng, ts, radiusKm }) => ({
 				'0': lat,
@@ -203,7 +203,6 @@ const h = async (
 				'3': radiusKm * 1000,
 				'6': source,
 				'99': ts,
-				ts: new Date(ts).toISOString(),
 			}))
 		} else {
 			result.partialInstances = await binResourceHistory({

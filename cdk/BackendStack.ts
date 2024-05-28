@@ -35,6 +35,7 @@ import { DeviceInfo } from './resources/DeviceInfo.js'
 import { ConnectionInformationGeoLocation } from './resources/ConnectionInformationGeoLocation.js'
 import { APIHealthCheck } from './resources/APIHealthCheck.js'
 import { LwM2MObjectsHistory } from './resources/LwM2MObjectsHistory.js'
+import { ConvertNrfCloudDeviceMessages } from './resources/ConvertDeviceMessages.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -112,6 +113,11 @@ export class BackendStack extends Stack {
 			connectionsTable: websocketConnectionsTable,
 			eventBus: websocketEventBus,
 			deviceStorage,
+		})
+
+		new ConvertNrfCloudDeviceMessages(this, {
+			layers: [baseLayerVersion],
+			lambdaSources,
 		})
 
 		const websocketAPI = new WebsocketAPI(this, {

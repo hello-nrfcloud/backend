@@ -164,7 +164,14 @@ const h = async (): Promise<void> => {
 									)
 									if ('error' in res) {
 										track('error', MetricUnit.Count, 1)
-										log.error(`Fetching shadow error`, { error: res.error })
+										if (res.error instanceof Error) {
+											log.error(`Fetching shadow error`, {
+												error: res.error.message,
+											})
+										} else {
+											log.error(`Fetching shadow error`, { error: res.error })
+										}
+
 										return []
 									}
 									return res.shadows
@@ -214,7 +221,7 @@ const h = async (): Promise<void> => {
 				)
 
 				log.info(
-					`Sending device shadow of ${d.deviceId}(v.${
+					`Storing device shadow of ${d.deviceId} (v.${
 						d?.version ?? 0
 					}) with shadow data version ${deviceShadow.state.version}`,
 				)

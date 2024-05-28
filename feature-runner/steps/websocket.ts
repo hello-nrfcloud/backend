@@ -64,6 +64,8 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 		},
 	)
 
+const matchedMessages: Array<unknown> = []
+
 const receive = regExpMatchedStep(
 	{
 		regExp:
@@ -96,6 +98,7 @@ const receive = regExpMatchedStep(
 						}
 						debug(`match (${equalOrMatch}) ${msgString}`)
 						delete wsClient?.messages[id]
+						matchedMessages.push(message)
 						return true
 					} catch {
 						debug(`no match (${equalOrMatch}) ${msgString}`)
@@ -129,17 +132,23 @@ const wsSend = <StepRunner>{
 
 const assertOnLastMessage = regExpMatchedStep(
 	{
-		regExp: /^`(?<exp>[^`]+)` of the last websocket message equals$/,
+		regExp:
+			/^`(?<exp>[^`]+)` of the last (?<matched>matched )?websocket message equals$/,
 		schema: Type.Object({
 			exp: Type.String({ minLength: 1 }),
+			matched: Type.Optional(Type.Any()),
 		}),
 	},
-	async ({ match: { exp }, log: { debug }, step, context }) => {
+	async ({ match: { exp, matched }, log: { debug }, step, context }) => {
 		const { wsClient } = context as { wsClient: WebSocketClient }
 		const expected = JSON.parse(codeBlockOrThrow(step).code)
 		const e = jsonata(exp)
-		const result = await e.evaluate(wsClient.lastMessage())
-		debug(JSON.stringify(wsClient.lastMessage()), result)
+		const message =
+			matched !== undefined
+				? matchedMessages[matchedMessages.length - 1]
+				: wsClient?.lastMessage()
+		const result = await e.evaluate(message)
+		debug(JSON.stringify(message), result)
 		assert.equal(result, expected)
 	},
 )

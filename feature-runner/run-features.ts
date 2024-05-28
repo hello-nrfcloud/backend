@@ -150,6 +150,7 @@ const res = await runner.run({
 		'./webhook.office.com/',
 		httpApiMockURL,
 	).toString(),
+	VERSION: process.env.VERSION ?? '0.0.0-development',
 })
 
 await Promise.all(cleaners.map(async (fn) => fn()))

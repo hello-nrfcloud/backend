@@ -11,10 +11,7 @@ import {
 	senMLtoLwM2M,
 	type SenMLType,
 } from '@hello.nrfcloud.com/proto-map/senml'
-import {
-	Context,
-	type LwM2MObjectUpdate,
-} from '@hello.nrfcloud.com/proto/hello'
+import { Context } from '@hello.nrfcloud.com/proto/hello'
 import type { Static } from '@sinclair/typebox'
 import type { Resources as LwM2MResources } from '@hello.nrfcloud.com/proto-map/api'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
@@ -100,12 +97,15 @@ const h = async (
 	await Promise.all(
 		objects.map(
 			async ({ ObjectID, ObjectInstanceID, ObjectVersion, Resources }) => {
-				const message: Static<typeof LwM2MObjectUpdate> = {
+				const message = {
 					'@context': Context.lwm2mObjectUpdate.toString(),
 					ObjectID,
 					ObjectInstanceID,
 					ObjectVersion,
-					Resources: Resources as Static<typeof LwM2MResources>,
+					Resources: {
+						...(Resources as Static<typeof LwM2MResources>),
+						[99]: Resources['99'],
+					},
 				}
 				console.debug('websocket message', JSON.stringify({ payload: message }))
 				return eventBus.putEvents({

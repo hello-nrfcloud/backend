@@ -170,7 +170,7 @@ const h = async (): Promise<void> => {
 								ObjectVersion: '1.0',
 								Resources: {
 									1: data.gain,
-									99: new Date(data.ts),
+									99: data.ts,
 								},
 							})
 							if ('errors' in maybeSenML)
@@ -210,7 +210,7 @@ const h = async (): Promise<void> => {
 											ObjectID: LwM2MObjectID.BatteryAndPower_14202,
 											Resources: {
 												1: data.gain,
-												99: new Date(data.ts).toISOString(),
+												99: data.ts,
 											},
 										},
 									)

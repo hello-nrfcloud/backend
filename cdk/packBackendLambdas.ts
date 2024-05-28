@@ -24,6 +24,7 @@ export type BackendLambdas = {
 	storeObjectsInTimestream: PackedLambda
 	queryLwM2MHistory: PackedLambda
 	apiHealthCheck: PackedLambda
+	onNrfCloudDeviceMessage: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -53,4 +54,5 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	storeObjectsInTimestream: await pack('storeObjectsInTimestream'),
 	queryLwM2MHistory: await pack('queryLwM2MHistory'),
 	apiHealthCheck: await pack('apiHealthCheck'),
+	onNrfCloudDeviceMessage: await pack('onNrfCloudDeviceMessage'),
 })

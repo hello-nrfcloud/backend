@@ -19,16 +19,7 @@ export const shadowToObjects = (shadow: LwM2MShadow): LwM2MObjectInstance[] =>
 				const objectInstance: LwM2MObjectInstance = {
 					ObjectID,
 					ObjectVersion,
-					Resources: Object.entries(Resources).reduce(
-						(Resources, [k, v]) => ({
-							...Resources,
-							[k]:
-								typeof v === 'number' && parseInt(k, 10) === tsResource
-									? new Date(v)
-									: v,
-						}),
-						{},
-					),
+					Resources,
 				}
 				if (ObjectInstanceID > 0)
 					objectInstance.ObjectInstanceID = ObjectInstanceID
