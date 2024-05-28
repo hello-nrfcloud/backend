@@ -31,11 +31,12 @@ WORKDIR ${FUNCTION_DIR}
 RUN echo '{"type": "module"}' > ${FUNCTION_DIR}/package.json
 
 # Install the runtime interface client
-RUN npm install aws-lambda-ric @swc/core @swc/cli
+RUN npm install aws-lambda-ric 
 
 COPY src /tmp/src/
 
-RUN npx swcx compile --config-json '{"jsc":{"target":"es2022"}}' --out-file ${FUNCTION_DIR}/handler.js /tmp/src/handler.ts
+# FIXME: Remove pin once issue is resolved: https://github.com/swc-project/swc/issues/8988
+RUN npm i @swc/core@1.5.7 @swc/cli@0.3.12 && npx swcx compile --config-json '{"jsc":{"target":"es2022"}}' --out-file ${FUNCTION_DIR}/handler.js /tmp/src/handler.ts
 
 # Grab a fresh slim copy of the image to reduce the final size
 FROM node:21-slim
