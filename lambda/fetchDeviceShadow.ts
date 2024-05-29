@@ -1,6 +1,10 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import {
+	IoTDataPlaneClient,
+	UpdateThingShadowCommand,
+} from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
@@ -10,11 +14,13 @@ import {
 	getAllAccountsSettings as getAllNRFCloudAccountSettings,
 	type Settings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { validate, validators } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, groupBy, once, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
 import { nrfCloudShadowToObjects } from '../devices/nrfCloudShadowToObjects.js'
+import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 import { getAllAccountsSettings } from '../settings/health-check/device.js'
 import {
 	connectionsRepository,
@@ -23,11 +29,6 @@ import {
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
 import { loggingFetch } from './loggingFetch.js'
-import {
-	IoTDataPlaneClient,
-	UpdateThingShadowCommand,
-} from '@aws-sdk/client-iot-data-plane'
-import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
@@ -65,6 +66,8 @@ const allHealthCheckClientIds = once(async () => {
 	const settings = await getAllAccountsSettings({ ssm, stackName })
 	return Object.values(settings).map((settings) => settings.healthCheckClientId)
 })
+
+const validateLwM2MObjectInstance = validate(validators)
 
 const h = async (): Promise<void> => {
 	try {
@@ -227,8 +230,27 @@ const h = async (): Promise<void> => {
 				)
 
 				// Convert parts written by the nRF Cloud library in the firmware to LwM2M objects
-				const nrfCloudShadow = nrfCloudShadowToObjects(deviceShadow)
-				log.debug('nrfCloudShadow', nrfCloudShadow)
+				const lwm2mObjects = nrfCloudShadowToObjects(deviceShadow)
+				log.debug('deviceShadow', deviceShadow)
+				log.debug('nrfCloudShadow', lwm2mObjects)
+				const nrfCloudShadow = lwm2mObjects.filter((o) => {
+					const maybeValid = validateLwM2MObjectInstance(o)
+					if ('error' in maybeValid) {
+						log.error('Invalid LwM2M object', o)
+						log.error('shadow2lwm2m:error', maybeValid.error.message)
+						track('shadow2lwm2m:error', MetricUnit.Count, 1)
+						return false
+					}
+
+					return true
+				})
+
+				track('shadow2lwm2m:success', MetricUnit.Count, nrfCloudShadow.length)
+				track(
+					'shadow2lwm2m:error',
+					MetricUnit.Count,
+					lwm2mObjects.length - nrfCloudShadow.length,
+				)
 
 				// The device configuration is written directly as LwM2M objects to the `lwm2m` subsection of the nRF Cloud device shadow document
 				const desiredConfig = deviceShadow.state.desired?.lwm2m ?? {}

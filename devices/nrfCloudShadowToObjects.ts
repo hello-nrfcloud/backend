@@ -1,8 +1,6 @@
 import type { DeviceShadow } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	LwM2MObjectID,
-	validate,
-	validators,
 	type ConnectionInformation_14203,
 	type DeviceInformation_14204,
 	type LwM2MObjectInstance,
@@ -13,8 +11,6 @@ const max = (timestamps: Array<number>) =>
 	timestamps
 		.filter(Number.isInteger)
 		.reduce((acc, timestamp) => Math.max(acc, timestamp), 0)
-
-const v = validate(validators)
 
 export const nrfCloudShadowToObjects = ({
 	state: { reported, metadata },
@@ -42,7 +38,7 @@ export const nrfCloudShadowToObjects = ({
 				// Modem firmware version
 				2: reported.device.deviceInfo.modemFirmware,
 				// Application firmware version
-				3: reported.device.deviceInfo.appVersion,
+				3: reported.device.deviceInfo.appVersion ?? '0.0.0-unknown',
 				// Board version
 				4: reported.device.deviceInfo.board,
 			},
@@ -92,10 +88,5 @@ export const nrfCloudShadowToObjects = ({
 		objects.push(n)
 	}
 
-	return objects.filter(isValid)
-}
-
-const isValid = (o: unknown): o is { object: LwM2MObjectInstance } => {
-	const maybeValid = v(o)
-	return 'object' in maybeValid
+	return objects
 }
