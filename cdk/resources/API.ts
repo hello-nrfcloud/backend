@@ -48,6 +48,15 @@ export class API extends Construct {
 			resource,
 		})
 		this.deployment.node.addDependency(route)
+		// Add OPTIONS route for CORS
+		const { route: CORS } = new ApiRoute(this, `OPTIONS-${id}-Route`, {
+			api: this.api,
+			stage: this.stage,
+			function: fn,
+			method: 'OPTIONS' as Lambda.HttpMethod,
+			resource,
+		})
+		this.deployment.node.addDependency(CORS)
 	}
 }
 
