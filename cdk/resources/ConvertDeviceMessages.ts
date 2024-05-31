@@ -44,7 +44,7 @@ export class ConvertNrfCloudDeviceMessages extends Construct {
 
 		const rule = new IoT.CfnTopicRule(this, 'topicRule', {
 			topicRulePayload: {
-				description: `Convert device messages and store in the device shadow as SenML`,
+				description: `Convert device messages published using the nRF Cloud Library to LwM2M and store in the shadow`,
 				ruleDisabled: false,
 				awsIotSqlVersion: '2016-03-23',
 				sql: `
