@@ -229,6 +229,8 @@ const h = async (): Promise<void> => {
 					}) with shadow data version ${deviceShadow.state.version}`,
 				)
 
+				log.debug('deviceShadow', deviceShadow)
+
 				// Convert parts written by the nRF Cloud library in the firmware to LwM2M objects
 				const lwm2mObjects = nrfCloudShadowToObjects(deviceShadow)
 				log.debug('deviceShadow', deviceShadow)

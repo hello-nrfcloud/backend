@@ -22,7 +22,7 @@ export const nrfCloudShadowToObjects = ({
 	const objects: Array<LwM2MObjectInstance> = []
 	if (reported === undefined) return []
 
-	if ('deviceInfo' in reported.device ?? {}) {
+	if ('deviceInfo' in (reported.device ?? {})) {
 		const timestamps = [
 			metadata.reported.device.deviceInfo.imei?.timestamp,
 			metadata.reported.device.deviceInfo.modemFirmware?.timestamp,
@@ -52,7 +52,7 @@ export const nrfCloudShadowToObjects = ({
 		objects.push(d)
 	}
 
-	if ('networkInfo' in reported.device ?? {}) {
+	if ('networkInfo' in (reported.device ?? {})) {
 		const n: ConnectionInformation_14203 = {
 			ObjectID: LwM2MObjectID.ConnectionInformation_14203,
 			ObjectVersion: '1.0',
