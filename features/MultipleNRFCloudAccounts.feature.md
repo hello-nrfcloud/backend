@@ -24,6 +24,10 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
   "items": [
     {
       "id": "${fingerprint_deviceId}",
+      "$meta": {
+        "createdAt": "${$fromMillis($millis())}",
+        "updatedAt": "${$fromMillis($millis())}"
+      },
       "state": {
         "desired": {
           "14240:1.0": {
@@ -42,6 +46,28 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
               "1": 162,
               "2": 198,
               "99": 1699197208705
+            }
+          }
+        },
+        "metadata": {
+          "desired": {
+            "14240:1.0": {
+              "0": {
+                "0": { "timestamp": 1699197208705 },
+                "1": { "timestamp": 1699197208705 },
+                "2": { "timestamp": 1699197208705 },
+                "99": { "timestamp": 1699197208705 }
+              }
+            }
+          },
+          "reported": {
+            "14240:1.0": {
+              "0": {
+                "0": { "timestamp": 1699197208705 },
+                "1": { "timestamp": 1699197208705 },
+                "2": { "timestamp": 1699197208705 },
+                "99": { "timestamp": 1699197208705 }
+              }
             }
           }
         },
