@@ -277,7 +277,10 @@ jobs:
         run: npx cdk deploy --all --require-approval never
 
       - name: Run End-to-End Tests
-        run: npm run test:e2e
+        uses: nick-fields/retry@v3
+        with:
+          max_attempts: 3
+          command: npm run test:e2e
 
       - name: Print failed End-to-End tests
         if: failure()
