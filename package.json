@@ -45,7 +45,7 @@
     "@aws-sdk/client-timestream-write": "3.588.0",
     "@aws-sdk/util-dynamodb": "3.588.0",
     "@bifravst/aws-cdk-ecr-helpers": "1.2.16",
-    "@bifravst/aws-cdk-lambda-helpers": "1.7.39",
+    "@bifravst/aws-cdk-lambda-helpers": "1.7.41",
     "@bifravst/ci": "2.0.1",
     "@bifravst/eslint-config-typescript": "6.1.1",
     "@bifravst/http-api-mock": "1.4.71",
@@ -115,7 +115,7 @@
   "prettier": "@bifravst/prettier-config",
   "dependencies": {
     "@aws-lambda-powertools/metrics": "2.1.1",
-    "@bifravst/aws-ssm-settings-helpers": "1.1.24",
+    "@bifravst/aws-ssm-settings-helpers": "1.1.26",
     "@bifravst/run": "1.2.0",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
     "@hello.nrfcloud.com/lambda-helpers": "1.1.33",
