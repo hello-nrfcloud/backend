@@ -2,6 +2,7 @@ import {
 	packLambdaFromPath,
 	type PackedLambda,
 } from '@bifravst/aws-cdk-lambda-helpers'
+import { packGo } from './helpers/certificates/lambda/packGo.js'
 
 export type BackendLambdas = {
 	authorizer: PackedLambda
@@ -16,6 +17,7 @@ export type BackendLambdas = {
 	senMLImportLogs: PackedLambda
 	healthCheck: PackedLambda
 	healthCheckForCoAP: PackedLambda
+	healthCheckForCoAPClient: PackedLambda
 	kpis: PackedLambda
 	configureDevice: PackedLambda
 	getDeviceByFingerprint: PackedLambda
@@ -44,6 +46,10 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	senMLImportLogs: await pack('senMLImportLogs'),
 	healthCheck: await pack('healthCheck'),
 	healthCheckForCoAP: await pack('healthCheckForCoAP'),
+	healthCheckForCoAPClient: await packGo(
+		'healthCheckForCoAPClient',
+		'lambda/health-check/coap/client',
+	),
 	kpis: await pack('kpis'),
 	configureDevice: await pack('configureDevice'),
 	getDeviceByFingerprint: await pack('getDeviceByFingerprint'),

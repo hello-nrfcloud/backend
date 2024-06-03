@@ -10,17 +10,16 @@ import {
 	type Settings as NrfCloudSettings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
-	lwm2mToSenML,
-	type SenMLType,
-} from '@hello.nrfcloud.com/proto-map/senml'
-import {
 	LwM2MObjectID,
 	type Environment_14205,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import {
+	lwm2mToSenML,
+	type SenMLType,
+} from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import assert from 'node:assert/strict'
-import { createPrivateKey, createPublicKey } from 'node:crypto'
 import { registerDevice } from '../devices/registerDevice.js'
 import { encode } from '../feature-runner/steps/device/senmlCbor.js'
 import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.js'
@@ -78,7 +77,6 @@ const publishDeviceMessageOnCoAP =
 		nrfCloudSettings: NrfCloudSettings
 		deviceProperties: {
 			deviceId: string
-			publicKey: string
 			privateKey: string
 		}
 	}) =>
@@ -89,28 +87,19 @@ const publishDeviceMessageOnCoAP =
 
 		const cbor = encode(message)
 
+		const InvokePayload = {
+			...deviceProperties,
+			host: nrfCloudSettings.coapEndpoint.host,
+			port: nrfCloudSettings.coapPort,
+			payload: cbor.toString('hex'),
+		}
+
+		log.debug(`InvokePayload`, { InvokePayload })
+
 		const { Payload } = await lambda.send(
 			new InvokeCommand({
 				FunctionName: coapLambda,
-				Payload: Buffer.from(
-					JSON.stringify({
-						deviceProperties: {
-							...deviceProperties,
-							host: nrfCloudSettings.coapEndpoint.host,
-							port: nrfCloudSettings.coapPort,
-						},
-						args: [
-							'send',
-							'POST',
-							'/msg/d2c/raw',
-							'-p',
-							cbor.toString('hex'),
-							'-x',
-							'-C',
-							'cbor',
-						],
-					}),
-				),
+				Payload: Buffer.from(JSON.stringify(InvokePayload)),
 				LogType: 'Tail',
 			}),
 		)
@@ -130,11 +119,7 @@ const publishDeviceMessageOnCoAP =
 		}
 	}
 
-type KeyPair = {
-	publicKey: string
-	privateKey: string
-}
-const cacheAccountCertificates = new Map<string, KeyPair>()
+const cacheAccountCertificates = new Map<string, string>()
 
 const h = async (): Promise<void> => {
 	const store = new Map<
@@ -149,28 +134,15 @@ const h = async (): Promise<void> => {
 					const {
 						healthCheckFingerPrint: fingerprint,
 						healthCheckClientId: deviceId,
-						healthCheckClientCert,
 						healthCheckPrivateKey,
 					} = healthCheckSettings
 
-					let certificates: KeyPair
+					let privateKey: string
 					if (cacheAccountCertificates.has(account) === false) {
-						const publicKey = createPublicKey(healthCheckClientCert)
-							.export({
-								format: 'pem',
-								type: 'spki',
-							})
-							.toString()
-						const privateKey = createPrivateKey(healthCheckPrivateKey)
-							.export({
-								format: 'pem',
-								type: 'pkcs8',
-							})
-							.toString()
-						certificates = { publicKey, privateKey }
-						cacheAccountCertificates.set(account, certificates)
+						privateKey = healthCheckPrivateKey
+						cacheAccountCertificates.set(account, privateKey)
 					} else {
-						certificates = cacheAccountCertificates.get(account) as KeyPair
+						privateKey = cacheAccountCertificates.get(account) as string
 					}
 
 					await checkMessageFromWebsocket({
@@ -198,7 +170,7 @@ const h = async (): Promise<void> => {
 								] as NrfCloudSettings,
 								deviceProperties: {
 									deviceId,
-									...certificates,
+									privateKey,
 								},
 							})(maybeSenML.senML)
 							store.set(account, { ...data, coapTs: coapTs?.getTime() ?? null })

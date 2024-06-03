@@ -16,15 +16,16 @@ export class HealthCheckCoAP extends Construct {
 		{
 			websocketAPI,
 			deviceStorage,
-			code,
 			layers,
 			lambdaSources,
 		}: {
 			websocketAPI: WebsocketAPI
 			deviceStorage: DeviceStorage
-			code: Lambda.DockerImageCode
 			layers: Lambda.ILayerVersion[]
-			lambdaSources: Pick<BackendLambdas, 'healthCheckForCoAP'>
+			lambdaSources: Pick<
+				BackendLambdas,
+				'healthCheckForCoAP' | 'healthCheckForCoAPClient'
+			>
 		},
 	) {
 		super(parent, 'HealthCheckCoAP')
@@ -35,11 +36,17 @@ export class HealthCheckCoAP extends Construct {
 		})
 
 		// Lambda functions
-		const coapLambda = new Lambda.DockerImageFunction(this, 'coapSimulator', {
-			timeout: Duration.seconds(30),
-			description: 'CoAP simulator (JAVA) - lambda container image',
-			code,
-		})
+		const coapLambda = new PackedLambdaFn(
+			this,
+			'client',
+			lambdaSources.healthCheckForCoAPClient,
+			{
+				runtime: Lambda.Runtime.PROVIDED_AL2023,
+				timeout: Duration.seconds(30),
+				description: 'Sends binary payload to the nRF Cloud CoAP server',
+				environment: {},
+			},
+		).fn
 
 		const healthCheckCoAP = new PackedLambdaFn(
 			this,

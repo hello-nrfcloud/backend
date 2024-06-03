@@ -17,30 +17,14 @@ developed using [AWS CDK](https://aws.amazon.com/cdk) in
 
 [Provide your AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html).
 
-### CoAP Simulator
-
-Recently, nRF Cloud has added support for CoAP. Therefore, it is essential to
-ensure that the messages sent via CoAP will be successfully delivered to
-`hello.nrfcloud` through the MQTT bridge. The nRF Cloud team offers a
-[CoAP simulator](https://github.com/nRFCloud/coap-simulator), which we will
-employ in conjunction with Lambda to execute the CoAP simulator and transmit a
-message to nRF Cloud.
-
-To accomplish this, you need to supply the URL to the CoAP simulator binary in
-zip format via an SSM parameter for the stack. Please note that the server
-_MUST_ serve a `HEAD` request with and `ETag` header containing the hash of the
-file in order to detect binary changes and rebuild the Docker image if
-necessary.
-
-```bash
-./cli.sh configure-coap-health-check simulatorDownloadURL <URL to the ZIP file>
-```
-
 ### Install the dependencies
 
 ```bash
 npm ci
 ```
+
+The CoAP simulator is written in Golang, which needs to be
+[present on the local system](https://go.dev/dl/).
 
 ### Run once
 
@@ -68,11 +52,9 @@ and published before deploying the solutions.
 
 ```bash
 export MQTT_BRIDGE_CONTAINER_TAG=$(./cli.sh build-container mqtt-bridge)
-export COAP_SIMULATOR_CONTAINER_TAG=$(./cli.sh build-container coap-simulator)
 
 # You can add these outputs to your .env file
 echo MQTT_BRIDGE_CONTAINER_TAG=$MQTT_BRIDGE_CONTAINER_TAG
-echo COAP_SIMULATOR_CONTAINER_TAG=$COAP_SIMULATOR_CONTAINER_TAG
 ```
 
 ### Deploy

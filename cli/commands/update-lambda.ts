@@ -11,10 +11,14 @@ import {
 	LastUpdateStatus,
 } from '@aws-sdk/client-lambda'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { packLambdaFromPath } from '@bifravst/aws-cdk-lambda-helpers'
+import {
+	packLambdaFromPath,
+	type PackedLambda,
+} from '@bifravst/aws-cdk-lambda-helpers'
 import { readFile } from 'node:fs/promises'
 import pRetry from 'p-retry'
 import assert from 'node:assert/strict'
+import { packGo } from '../../cdk/helpers/certificates/lambda/packGo.js'
 
 const listStackLambdas = async (
 	cf: CloudFormationClient,
@@ -107,9 +111,28 @@ export const updateLambda = ({
 			throw new Error(`No function found for ${id}!`)
 		}
 
+		const fnInfo = await lambda.send(
+			new GetFunctionCommand({
+				FunctionName: functionToUpdate.PhysicalResourceId,
+			}),
+		)
+
 		console.log(`[${id}] Updating (${functionToUpdate.PhysicalResourceId}) ...`)
 
-		const res = await packLambdaFromPath(id, `lambda/${id}.ts`)
+		let res: PackedLambda | undefined = undefined
+
+		switch (fnInfo.Configuration?.Runtime) {
+			case 'nodejs20.x':
+				res = await packLambdaFromPath(id, `lambda/${id}.ts`)
+				break
+			case 'provided.al2023':
+				if (id !== 'healthCheckForCoAPClient')
+					throw new Error(`Unsupported Go lambda ${id}!`)
+				res = await packGo(id, 'lambda/health-check/coap/client')
+				break
+			default:
+				throw new Error(`Unsupported runtime ${fnInfo.Configuration?.Runtime}`)
+		}
 
 		const updateResult = await lambda.send(
 			new UpdateFunctionCodeCommand({

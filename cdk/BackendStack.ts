@@ -49,7 +49,6 @@ export class BackendStack extends Stack {
 			caCertificate,
 			nRFCloudAccounts,
 			mqttBridgeContainerTag,
-			coapSimulatorContainerTag,
 			repository,
 			gitHubOICDProviderArn,
 			env,
@@ -62,7 +61,6 @@ export class BackendStack extends Stack {
 			caCertificate: CAFiles
 			nRFCloudAccounts: Array<string>
 			mqttBridgeContainerTag: string
-			coapSimulatorContainerTag: string
 			gitHubOICDProviderArn: string
 			repository: {
 				owner: string
@@ -161,27 +159,12 @@ export class BackendStack extends Stack {
 			lambdaSources,
 		})
 
-		if (this.node.getContext('isTest') !== true) {
-			new HealthCheckCoAP(this, {
-				websocketAPI,
-				deviceStorage,
-				code: Lambda.DockerImageCode.fromEcr(
-					ECR.Repository.fromRepositoryName(
-						this,
-						'coap-simulator-ecr',
-						repositoryName({
-							stackName: Stack.of(this).stackName,
-							id: ContainerRepositoryId.CoAPSimulator,
-						}),
-					),
-					{
-						tagOrDigest: coapSimulatorContainerTag,
-					},
-				),
-				layers: [baseLayerVersion, healthCheckLayerVersion],
-				lambdaSources,
-			})
-		}
+		new HealthCheckCoAP(this, {
+			websocketAPI,
+			deviceStorage,
+			layers: [baseLayerVersion, healthCheckLayerVersion],
+			lambdaSources,
+		})
 
 		const convertLwM2M = new CoAPSenMLtoLwM2M(this, {
 			lambdaSources,

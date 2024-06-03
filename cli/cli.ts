@@ -29,12 +29,11 @@ import { configureRFCloudAccountCommand } from './commands/configure-nrfcloud-ac
 import { getNRFCloudBulkOpsStatus } from './commands/get-nrfcloud-bulkops-status.js'
 import { importUnsupportedDevice } from './commands/import-unsupported-device.js'
 import { listDevicesCommand } from './commands/list-devices.js'
-import { configureCoAPHealthCheckCommand } from './commands/configure-coap-health-check.js'
 import { ECRClient } from '@aws-sdk/client-ecr'
 import { buildContainersCommand } from './commands/build-container.js'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.js'
 import { configureFeedbackCommand } from './commands/configure-feedback.js'
-import { updateLambda } from './commands/updateLambda.js'
+import { updateLambda } from './commands/update-lambda.js'
 import { LambdaClient } from '@aws-sdk/client-lambda'
 import { importDeviceCommand } from './commands/import-device.js'
 
@@ -73,14 +72,9 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		logsCommand({ stackName: STACK_NAME, cf, logs }),
 		cleanBackupCertificates({ ssm }),
 		listnRFCloudAccountsCommand({ ssm, stackName: STACK_NAME }),
-		configureCoAPHealthCheckCommand({
-			ssm,
-			stackName: STACK_NAME,
-		}),
 		configureFeedbackCommand({ ssm, stackName: STACK_NAME }),
 		buildContainersCommand({
 			ecr,
-			ssm,
 		}),
 		updateLambda({
 			stackName: STACK_NAME,

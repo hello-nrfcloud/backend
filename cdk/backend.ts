@@ -104,9 +104,8 @@ await Promise.all(
 )
 
 // Ensure needed container images exist
-const { mqttBridgeContainerTag, coapSimulatorContainerTag } = fromEnv({
+const { mqttBridgeContainerTag } = fromEnv({
 	mqttBridgeContainerTag: 'MQTT_BRIDGE_CONTAINER_TAG',
-	coapSimulatorContainerTag: 'COAP_SIMULATOR_CONTAINER_TAG',
 })(process.env)
 
 // Fetch all the configured nRF Cloud Accounts
@@ -124,7 +123,6 @@ new BackendApp({
 	caCertificate,
 	nRFCloudAccounts,
 	mqttBridgeContainerTag,
-	coapSimulatorContainerTag,
 	repository,
 	gitHubOICDProviderArn: await ensureGitHubOIDCProvider({
 		iam,

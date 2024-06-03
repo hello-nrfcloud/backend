@@ -153,64 +153,12 @@ jobs:
           docker tag mqtt-bridge:${{ steps.build.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.build.outputs.tag }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.build.outputs.tag }}
 
-  coap-simulator-container:
-    needs: [stack-name, unit-tests]
-
-    runs-on: ubuntu-22.04
-
-    timeout-minutes: 5
-
-    env:
-      STACK_NAME: ${{ needs.stack-name.outputs.stackName }}
-
-    outputs:
-      tag: ${{ steps.build.outputs.tag }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci --no-audit
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          # The role is set up via https://github.com/hello-nrfcloud/ci
-          # secrets.AWS_ACCOUNT_ID_CI is an organization secret
-          role-to-assume: |
-            arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/${{ github.repository_owner }}-ci-${{ github.event.repository.name }}
-          # vars.AWS_REGION_CI is an organization variable
-          aws-region: ${{ vars.AWS_REGION_CI }}
-
-      # The health check does not run, but this will test at least that the image can be generated
-      - name: Configure CoAP Health Check Simulator Download URL
-        run: |
-          ./cli.sh configure-coap-health-check simulatorDownloadURL ${{ env.COAP_SIMULATOR_DOWNLOAD_URL }}
-
-      - name: Build CoAP simulator container
-        id: build
-        run: |
-          TAG=$(./cli.sh build-container --pull coap-simulator)
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-      - name: Publish Docker image to repository registry
-        run: |
-          docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
-          docker tag coap-simulator:${{ steps.build.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.build.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.build.outputs.tag }}
-
   e2e-tests:
     needs:
       - http-api-mock
       - unit-tests
       - stack-name
       - mqtt-bridge-container
-      - coap-simulator-container
 
     runs-on: ubuntu-22.04
 
@@ -222,8 +170,6 @@ jobs:
     env:
       STACK_NAME: ${{ needs.stack-name.outputs.stackName }}
       MQTT_BRIDGE_CONTAINER_TAG: ${{ needs.mqtt-bridge-container.outputs.tag }}
-      COAP_SIMULATOR_CONTAINER_TAG:
-        ${{ needs.coap-simulator-container.outputs.tag }}
       HTTP_API_MOCK_RESPONSES_TABLE_NAME:
         ${{ needs.http-api-mock.outputs.responsesTableName }}
       HTTP_API_MOCK_REQUESTS_TABLE_NAME:
@@ -241,6 +187,10 @@ jobs:
         with:
           node-version: "20.x"
           cache: "npm"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "^1.21.6"
 
       - name: Install dependencies
         run: npm ci --no-audit
@@ -307,14 +257,12 @@ jobs:
           gh workflow run cleanup.yaml --ref ${{ github.ref_name }} \
             -F stackName=${{ env.STACK_NAME }} \
             -F mqtt_bridge_tag=${{ needs.mqtt-bridge-container.outputs.tag }} \
-            -F coap_simulator_tag=${{ needs.coap-simulator-container.outputs.tag }} \
             -F http_api_mock_stack_name=${{ needs.http-api-mock.outputs.stackName }}
 
   release:
     needs:
       - e2e-tests
       - mqtt-bridge-container
-      - coap-simulator-container
 
     runs-on: ubuntu-22.04
 
@@ -367,11 +315,8 @@ jobs:
         if: github.ref == 'refs/heads/saga'
         run: |
           docker pull ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ needs.mqtt-bridge-container.outputs.tag }}
-          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ needs.coap-simulator-container.outputs.tag }}
           docker tag ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ needs.mqtt-bridge-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.version.outputs.version }}
-          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ needs.coap-simulator-container.outputs.tag }} ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.version.outputs.version }}
           docker push ${{ env.REGISTRY }}/${{ github.repository }}/mqtt-bridge:${{ steps.version.outputs.version }}
-          docker push ${{ env.REGISTRY }}/${{ github.repository }}/coap-simulator:${{ steps.version.outputs.version }}
 
       - name: Trigger deployment workflow
         if: steps.semantic-release.outcome == 'success'
@@ -380,5 +325,4 @@ jobs:
         run: |
           gh workflow run deploy.yaml \
             -F ref=${{ needs.e2e-tests.outputs.ref }} \
-            -F mqtt_bridge_tag=${{ needs.mqtt-bridge-container.outputs.tag }} \
-            -F coap_simulator_tag=${{ needs.coap-simulator-container.outputs.tag }}
+            -F mqtt_bridge_tag=${{ needs.mqtt-bridge-container.outputs.tag }}

@@ -12,9 +12,6 @@ on:
       mqtt_bridge_tag:
         description: "MQTT bridge container tag to deploy"
         required: true
-      coap_simulator_tag:
-        description: "CoAP simulator container tag to deploy"
-        required: true
       http_api_mock_stack_name:
         description: "Stack name of the HTTP API mock instance"
         required: true
@@ -24,7 +21,6 @@ env:
   JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: 1
   STACK_NAME: ${{ github.event.inputs.stackName }}
   MQTT_BRIDGE_CONTAINER_TAG: ${{ github.event.inputs.mqtt_bridge_tag }}
-  COAP_SIMULATOR_CONTAINER_TAG: ${{ github.event.inputs.coap_simulator_tag }}
 
 jobs:
   cleanup:
@@ -72,7 +68,6 @@ jobs:
 
       - name: Delete ECR repositories
         run: |
-          aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-coap-simulator
           aws ecr delete-repository --force --repository-name ${{ env.STACK_NAME }}-mqtt-bridge
 
   cleanup-http-api-mock:

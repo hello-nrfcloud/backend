@@ -13,10 +13,6 @@ export const ScopeContexts = {
 		scope: Scopes.STACK,
 		context: 'mqttBridge',
 	},
-	STACK_COAP_HEALTH_CHECK: <ScopeContext>{
-		scope: Scopes.STACK,
-		context: 'coap-health-check',
-	},
 	NRFCLOUD_BRIDGE_CERTIFICATE_MQTT: <ScopeContext>{
 		scope: Scopes.NRFCLOUD_BRIDGE_CERTIFICATE,
 		context: 'MQTT',
