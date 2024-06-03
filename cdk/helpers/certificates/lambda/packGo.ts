@@ -26,10 +26,11 @@ export const packGo = async (
 	const zipFile = join(distFolder, `${id}.zip`)
 	const absLambdaFolder = join(process.cwd(), lambdaFolder)
 	await run({
-		command: '/usr/local/go/bin/go',
+		command: 'go',
 		args: ['mod', 'tidy'],
 		cwd: absLambdaFolder,
 		env: {
+			...process.env,
 			GOOS: 'linux',
 			GOARCH: 'arm64',
 			GOMODCACHE: join(distFolder, 'gomodcache'),
@@ -37,10 +38,11 @@ export const packGo = async (
 		},
 	})
 	await run({
-		command: '/usr/local/go/bin/go',
+		command: 'go',
 		args: ['build', '-tags', 'lambda.norpc', '-o', 'bootstrap', 'bootstrap.go'],
 		cwd: absLambdaFolder,
 		env: {
+			...process.env,
 			GOOS: 'linux',
 			GOARCH: 'arm64',
 			GOMODCACHE: join(distFolder, 'gomodcache'),
