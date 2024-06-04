@@ -227,11 +227,7 @@ jobs:
         run: npx cdk deploy --all --require-approval never
 
       - name: Run End-to-End Tests
-        uses: nick-fields/retry@v3
-        with:
-          max_attempts: 3
-          timeout_minutes: 10
-          command: npm run test:e2e
+        run: npm run test:e2e
 
       - name: Print failed End-to-End tests
         if: failure()
@@ -245,9 +241,13 @@ jobs:
           name: e2e-test-result
           path: e2e-test-result.json
 
-      - name: Get logs
+      - name: Get error logs
         if: failure()
         run: ./cli.sh logs -f ERROR
+
+      - name: Get all log streams that have errors
+        if: failure()
+        run: npx tsx ./aws/error-log-streams.ts
 
       - name: Trigger cleanup workflow
         if: always()
