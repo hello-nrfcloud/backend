@@ -3,7 +3,10 @@ import type { WebsocketPayload } from '../publishToWebsocketClients.js'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import type { Static } from '@sinclair/typebox'
 import type { Resources as LwM2MResources } from '@hello.nrfcloud.com/proto-map/api'
-import type { LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import {
+	timestampResources,
+	type LwM2MObjectInstance,
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
 
 export const deviceLwM2MObjectUpdate =
 	(eventBus: EventBridge, EventBusName: string) =>
@@ -15,7 +18,14 @@ export const deviceLwM2MObjectUpdate =
 			ObjectVersion,
 			Resources,
 		}: LwM2MObjectInstance,
-	): Promise<void> => {
+	): Promise<{ success: boolean } | { error: Error }> => {
+		const tsResourceId = timestampResources[ObjectID as number] as number
+		const tsResource = Resources[tsResourceId]
+		if (tsResource === undefined)
+			return {
+				error: new Error(`No timestamp resource found for ${ObjectID}!`),
+			}
+
 		const message = {
 			'@context': Context.lwm2mObjectUpdate.toString(),
 			ObjectID,
@@ -23,7 +33,7 @@ export const deviceLwM2MObjectUpdate =
 			ObjectVersion,
 			Resources: {
 				...(Resources as Static<typeof LwM2MResources>),
-				[99]: Resources['99'],
+				[tsResourceId]: tsResource,
 			},
 		}
 		console.debug('websocket message', JSON.stringify({ payload: message }))
@@ -40,4 +50,5 @@ export const deviceLwM2MObjectUpdate =
 				},
 			],
 		})
+		return { success: true }
 	}

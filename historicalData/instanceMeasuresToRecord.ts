@@ -3,7 +3,10 @@ import {
 	TimeUnit,
 	type _Record,
 } from '@aws-sdk/client-timestream-write'
-import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import {
+	timestampResources,
+	type LwM2MObjectInstance,
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { instanceToMeasures } from './instanceToMeasures.js'
 
 export const instanceMeasuresToRecord = ({
@@ -19,6 +22,9 @@ export const instanceMeasuresToRecord = ({
 		Resources,
 	})
 	if ('error' in maybeMeasures) return maybeMeasures
+	const tsResource = Resources[timestampResources[ObjectID as number] as number]
+	if (tsResource === undefined)
+		return { error: new Error(`No timestamp resource found for ${ObjectID}!`) }
 	return {
 		record: {
 			Dimensions: [
@@ -38,7 +44,7 @@ export const instanceMeasuresToRecord = ({
 			MeasureName: `${ObjectID}/${ObjectInstanceID ?? 0}`,
 			MeasureValues: maybeMeasures.measures,
 			MeasureValueType: MeasureValueType.MULTI,
-			Time: (Resources[99] as number).toString(),
+			Time: tsResource.toString(),
 			TimeUnit: TimeUnit.MILLISECONDS,
 		},
 	}
