@@ -85,14 +85,20 @@ const initializeAccount =
 		const effectiveEndpoint =
 			apiEndpoint === undefined ? defaultApiEndpoint : new URL(apiEndpoint)
 
-		const accountInfo = await getAccountInfo({
+		const maybeAccountInfo = await getAccountInfo({
 			endpoint: effectiveEndpoint,
 			apiKey,
 		})
-		if ('error' in accountInfo) {
-			console.error(chalk.red('⚠️'), '', chalk.red(accountInfo.error.message))
+		if ('error' in maybeAccountInfo) {
+			console.error(
+				chalk.red('⚠️'),
+				'',
+				chalk.red(maybeAccountInfo.error.message),
+			)
 			process.exit(1)
 		}
+
+		const accountInfo = maybeAccountInfo.result
 
 		console.log(chalk.yellow('AWS IoT endpoint:'), chalk.blue(iotEndpoint))
 		console.log()

@@ -66,11 +66,20 @@ export const showDeviceCommand = ({
 
 		const maybeNrfCloudDevice = await client.get(device.id)
 
-		const account = await getAccountInfo({ endpoint: apiEndpoint, apiKey })
-		if ('error' in account) {
-			console.error(chalk.red('⚠️'), '', chalk.red(account.error.message))
+		const maybeAccountInfo = await getAccountInfo({
+			endpoint: apiEndpoint,
+			apiKey,
+		})
+		if ('error' in maybeAccountInfo) {
+			console.error(
+				chalk.red('⚠️'),
+				'',
+				chalk.red(maybeAccountInfo.error.message),
+			)
 			process.exit(1)
 		}
+
+		const account = maybeAccountInfo.result
 
 		console.log(
 			table([
