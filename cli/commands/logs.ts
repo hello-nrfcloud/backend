@@ -6,7 +6,7 @@ import {
 	GetLogEventsCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
 import chalk from 'chalk'
-import { listStackResources } from '../../aws/listStackResources.js'
+import { listStackResources } from '@nordicsemiconductor/cloudformation-helpers'
 import type { CommandDefinition } from './CommandDefinition.js'
 
 export const logsCommand = ({
