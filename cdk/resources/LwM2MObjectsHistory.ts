@@ -138,6 +138,7 @@ export class LwM2MObjectsHistory extends Construct {
 				environment: {
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+					IS_TEST: this.node.getContext('isTest') === true ? '1' : '0',
 				},
 				initialPolicy: [
 					new IAM.PolicyStatement({

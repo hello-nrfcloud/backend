@@ -41,11 +41,14 @@ import {
 } from '../historicalData/HistoricalDataTimeSpans.js'
 import { isNumeric } from '../lwm2m/isNumeric.js'
 import { createTrailOfCoordinates } from './historical-data/createTrailOfCoordinates.js'
+import { once } from 'lodash-es'
+import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
 
-const { tableInfo, DevicesTableName, version } = fromEnv({
+const { tableInfo, DevicesTableName, version, isTest } = fromEnv({
 	version: 'VERSION',
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
+	isTest: 'IS_TEST',
 })(process.env)
 
 const [DatabaseName, TableName] = tableInfo.split('|')
@@ -97,14 +100,11 @@ const getDevice = getDeviceById({
 })
 
 // TODO: cache globally
-const availableColumns =
-	(
-		await ts.send(
-			new QueryCommand({
-				QueryString: `SELECT * FROM "${DatabaseName}"."${TableName}" LIMIT 1`,
-			}),
-		)
-	)?.ColumnInfo?.map(({ Name }) => Name) ?? []
+// Do not cache the result if we are in test mode
+const availableColumnsPromise =
+	isTest === '1'
+		? getAvailableColumns(ts, DatabaseName, TableName)
+		: once(getAvailableColumns(ts, DatabaseName, TableName))
 
 const h = async (
 	event: APIGatewayProxyEventV2,
@@ -263,18 +263,28 @@ const binResourceHistory = async ({
 			ResourceID,
 		])
 
+	const availableColumns = await availableColumnsPromise()
+
+	const columns = [
+		...resourceNames
+			// Only select the columns that exist
+			.filter(([name]) => availableColumns.includes(name))
+			.map(
+				([alias, ResourceID]) =>
+					`${aggregateFn}("${alias}") AS "${ResourceID}"`,
+			),
+		`bin(time, ${binIntervalMinutes}m) AS ts`,
+	]
+
+	if (columns.length === 0) {
+		console.error(`No columns found for ${def.ObjectID}/${instance}!`)
+		console.error(`Available columns: ${availableColumns.join(', ')}`)
+		return []
+	}
+
 	const QueryString = [
 		`SELECT `,
-		[
-			...resourceNames
-				// Only select the columns that exist
-				.filter(([name]) => availableColumns.includes(name))
-				.map(
-					([alias, ResourceID]) =>
-						`${aggregateFn}("${alias}") AS "${ResourceID}"`,
-				),
-			`bin(time, ${binIntervalMinutes}m) AS ts`,
-		].join(','),
+		columns.join(','),
 		`FROM "${DatabaseName}"."${TableName}"`,
 		`WHERE measure_name = '${def.ObjectID}/${instance}'`,
 		`AND time > date_add('hour', -${durationHours}, now())`,
@@ -317,14 +327,24 @@ const getResourceHistory = async ({
 			ResourceID,
 		])
 
+	const availableColumns = await availableColumnsPromise()
+
+	const columns = [
+		...resourceNames
+			// Only select the columns that exist
+			.filter(([name]) => availableColumns.includes(name))
+			.map(([alias, ResourceID]) => `"${alias}" AS "${ResourceID}"`),
+	]
+
+	if (columns.length === 0) {
+		console.error(`No columns found for ${def.ObjectID}/${instance}!`)
+		console.error(`Available columns: ${availableColumns.join(', ')}`)
+		return []
+	}
+
 	const QueryString = [
 		`SELECT `,
-		[
-			...resourceNames
-				// Only select the columns that exist
-				.filter(([name]) => availableColumns.includes(name))
-				.map(([alias, ResourceID]) => `"${alias}" AS "${ResourceID}"`),
-		].join(', '),
+		columns.join(', '),
 		`FROM "${DatabaseName}"."${TableName}"`,
 		`WHERE measure_name = '${def.ObjectID}/${instance}'`,
 		`AND time > date_add('hour', -${durationHours}, now())`,
