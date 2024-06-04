@@ -22,14 +22,21 @@ import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRe
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { loggingFetch } from './loggingFetch.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { EventBridge } from '@aws-sdk/client-eventbridge'
+import { deviceLwM2MObjectUpdate } from './eventbus/deviceLwM2MObjectUpdate.js'
 
-const { stackName, tableInfo } = fromEnv({
+const { stackName, tableInfo, EventBusName } = fromEnv({
 	stackName: 'STACK_NAME',
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
+	EventBusName: 'EVENTBUS_NAME',
 })(process.env)
 const [DatabaseName, TableName] = tableInfo.split('|')
 if (DatabaseName === undefined || TableName === undefined)
 	throw new Error('Historical database is invalid')
+
+const eventBus = new EventBridge({})
+
+const notifyWebsocket = deviceLwM2MObjectUpdate(eventBus, EventBusName)
 
 const { track, metrics } = metricsForComponent('fetchLocationHistory')
 
@@ -101,9 +108,12 @@ const h = async (event: SQSEvent): Promise<void> => {
 		log.debug('locations', locations)
 
 		const [latestLocation, ...rest] = locations
+		console.log('latestLocation', latestLocation)
+		console.log('rest', rest)
 		// Update the shadow with the latest
 		if (latestLocation !== undefined)
 			await updateShadow(deviceId, [latestLocation])
+
 		// And put the rest in TimeStream (the first entry will also be persisted in TimeStream by the shadow update handler)
 		const Records: _Record[] = []
 		for (const {
@@ -124,21 +134,29 @@ const h = async (event: SQSEvent): Promise<void> => {
 			}
 			Records.push(maybeRecord.record)
 		}
-		console.debug('records', Records)
-		await client.send(
-			new WriteRecordsCommand({
-				DatabaseName,
-				TableName,
-				Records,
-				CommonAttributes: {
-					Dimensions: [
-						{
-							Name: 'deviceId',
-							Value: deviceId,
-						},
-					],
-				},
-			}),
+
+		if (Records.length > 0) {
+			console.debug('records', Records)
+			await client.send(
+				new WriteRecordsCommand({
+					DatabaseName,
+					TableName,
+					Records,
+					CommonAttributes: {
+						Dimensions: [
+							{
+								Name: 'deviceId',
+								Value: deviceId,
+							},
+						],
+					},
+				}),
+			)
+		}
+
+		// Put updates on the event bus
+		await Promise.all(
+			locations.map(async (location) => notifyWebsocket(deviceId, location)),
 		)
 	}
 }
@@ -174,11 +192,11 @@ const paginateHistory = async (
 				ObjectInstanceID,
 				ObjectVersion: '1.0',
 				Resources: {
-					'0': parseInt(item.lat, 10),
-					'1': parseInt(item.lon, 10),
+					'0': parseFloat(item.lat),
+					'1': parseFloat(item.lon),
 					'6': item.serviceType,
 					'99': new Date(item.insertedAt).getTime(),
-					'3': parseInt(item.uncertainty, 10),
+					'3': parseFloat(item.uncertainty),
 				},
 			}
 			return l

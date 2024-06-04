@@ -227,6 +227,7 @@ export class BackendStack extends Stack {
 			layers: [baseLayerVersion],
 			connectionsTable: websocketConnectionsTable,
 			lwm2mHistory: lwm2mObjectHistory,
+			websocketEventBus,
 		})
 
 		// Outputs

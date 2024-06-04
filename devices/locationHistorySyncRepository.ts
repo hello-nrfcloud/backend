@@ -37,8 +37,6 @@ export const locationHistorySyncRepository: (
 			}),
 		)
 
-		console.log(JSON.stringify(res))
-
 		return {
 			from:
 				res.Attributes?.lastFetchTime?.S !== undefined

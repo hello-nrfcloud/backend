@@ -14,6 +14,7 @@ import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { LwM2MObjectsHistory } from './LwM2MObjectsHistory.js'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
  * Updates the location history for each device from nRF Cloud
@@ -26,6 +27,7 @@ export class DeviceLocationHistory extends Construct {
 			layers,
 			connectionsTable,
 			lwm2mHistory,
+			websocketEventBus,
 		}: {
 			lambdaSources: Pick<
 				BackendLambdas,
@@ -34,6 +36,7 @@ export class DeviceLocationHistory extends Construct {
 			layers: Lambda.ILayerVersion[]
 			connectionsTable: WebsocketConnectionsTable
 			lwm2mHistory: LwM2MObjectsHistory
+			websocketEventBus: WebsocketEventBus
 		},
 	) {
 		super(parent, 'DeviceLocationHistory')
@@ -96,6 +99,7 @@ export class DeviceLocationHistory extends Construct {
 					'Fetch the location history and write it to TimeStream and the device shadow',
 				environment: {
 					HISTORICAL_DATA_TABLE_INFO: lwm2mHistory.table.ref,
+					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				},
 				layers,
 				timeout: Duration.minutes(1),
@@ -121,5 +125,6 @@ export class DeviceLocationHistory extends Construct {
 				maxConcurrency: 10,
 			}),
 		)
+		websocketEventBus.eventBus.grantPutEventsTo(fetcher)
 	}
 }
