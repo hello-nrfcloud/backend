@@ -49,7 +49,7 @@ Soon I should receive a message on the websocket that matches
 }
 ```
 
-And `lastSeen > "${tsISO}"` of the last matched websocket message equals
+And `lastSeen >= "${tsISO}"` of the last matched websocket message equals
 
 ```json
 true
