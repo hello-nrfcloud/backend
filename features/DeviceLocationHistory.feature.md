@@ -30,7 +30,34 @@ Given I store `ts - 60 * 1000` into `pastTs`
 
 And I store `$fromMillis(${pastTs})` into `pastTsISO`
 
-And this nRF Cloud API is queued for a `GET /v1/location/history` request
+And this nRF Cloud API is queued for a
+`GET /v1/location/history?deviceId=${fingerprint_deviceId}&pageNextToken=some`
+request
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "deviceId": "${fingerprint_deviceId}",
+      "id": "61b0d775-8384-4867-a25a-0a77f71f07ca",
+      "insertedAt": "${pastTsISO}",
+      "lat": "63.42061758",
+      "lon": "10.43720484",
+      "meta": {},
+      "serviceType": "SCELL",
+      "uncertainty": "366"
+    }
+  ],
+  "total": 1
+}
+
+```
+
+And this nRF Cloud API is queued for a
+`GET /v1/location/history?deviceId=${fingerprint_deviceId}` request
 
 ```
 HTTP/1.1 200 OK
@@ -47,19 +74,12 @@ Content-Type: application/json
       "meta": {},
       "serviceType": "WIFI",
       "uncertainty": "14.042"
-    },
-    {
-      "deviceId": "${fingerprint_deviceId}",
-      "id": "61b0d775-8384-4867-a25a-0a77f71f07ca",
-      "insertedAt": "${pastTsISO}",
-      "lat": "63.42061758",
-      "lon": "10.43720484",
-      "meta": {},
-      "serviceType": "SCELL",
-      "uncertainty": "366"
     }
-  ]
+  ],
+  "total": 1,
+  "pageNextToken": "some-token"
 }
+
 
 ```
 
@@ -84,12 +104,6 @@ Soon I should receive a message on the websocket that matches after 20 retries
     "99": "$number{ts}"
   }
 }
-```
-
-Soon the nRF Cloud API should have been called with
-
-```
-POST /v1/location/history?deviceId=${fingerprint_deviceId} HTTP/1.1
 ```
 
 ## The latest location should be persisted in the device shadow

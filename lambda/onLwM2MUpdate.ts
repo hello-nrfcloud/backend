@@ -4,20 +4,17 @@ import { EventBridge } from '@aws-sdk/client-eventbridge'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import { decode } from 'cbor-x'
 import {
 	fromCBOR,
 	senMLtoLwM2M,
 	type SenMLType,
 } from '@hello.nrfcloud.com/proto-map/senml'
-import { Context } from '@hello.nrfcloud.com/proto/hello'
-import type { Static } from '@sinclair/typebox'
-import type { Resources as LwM2MResources } from '@hello.nrfcloud.com/proto-map/api'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { importLogs } from '../lwm2m/importLogs.js'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { deviceLwM2MObjectUpdate } from './eventbus/deviceLwM2MObjectUpdate.js'
 
 const { EventBusName, importLogsTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -25,6 +22,8 @@ const { EventBusName, importLogsTableName } = fromEnv({
 })(process.env)
 
 const eventBus = new EventBridge({})
+
+const notifyWebsocket = deviceLwM2MObjectUpdate(eventBus, EventBusName)
 
 const { track, metrics } = metricsForComponent('deviceMessage')
 
@@ -95,34 +94,7 @@ const h = async (
 	await updateShadow(deviceId, objects)
 
 	await Promise.all(
-		objects.map(
-			async ({ ObjectID, ObjectInstanceID, ObjectVersion, Resources }) => {
-				const message = {
-					'@context': Context.lwm2mObjectUpdate.toString(),
-					ObjectID,
-					ObjectInstanceID,
-					ObjectVersion,
-					Resources: {
-						...(Resources as Static<typeof LwM2MResources>),
-						[99]: Resources['99'],
-					},
-				}
-				console.debug('websocket message', JSON.stringify({ payload: message }))
-				return eventBus.putEvents({
-					Entries: [
-						{
-							EventBusName,
-							Source: 'hello.ws',
-							DetailType: Context.lwm2mObjectUpdate.toString(),
-							Detail: JSON.stringify(<WebsocketPayload>{
-								deviceId,
-								message,
-							}),
-						},
-					],
-				})
-			},
-		),
+		objects.map(async (object) => notifyWebsocket(deviceId, object)),
 	)
 }
 
