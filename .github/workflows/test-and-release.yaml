@@ -249,6 +249,12 @@ jobs:
         if: failure()
         run: npx tsx ./aws/error-log-streams.ts
 
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: logs
+          path: logs
+
       - name: Trigger cleanup workflow
         if: always()
         env:

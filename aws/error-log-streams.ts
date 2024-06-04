@@ -8,6 +8,8 @@ import {
 import { STACK_NAME } from '../cdk/stackConfig.js'
 import { listStackResources } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
+import { mkdir, stat, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 
 export const getLogEventsWithErrors =
 	(cloudWatchLogs: CloudWatchLogsClient) =>
@@ -62,10 +64,28 @@ const logGroups = await listStackResources(cf, stackName, [
 	'Custom::LogRetention',
 ])
 
+const logDir = path.join(process.cwd(), 'logs')
+try {
+	await stat(logDir)
+} catch {
+	await mkdir(logDir)
+}
+
 const list = getLogEventsWithErrors(logs)
 for (const logGroup of logGroups) {
 	console.log(chalk.yellow(logGroup.PhysicalResourceId))
-	for (const log of await list(logGroup.PhysicalResourceId)) {
-		console.log(log.message)
-	}
+	const logs = await list(logGroup.PhysicalResourceId)
+
+	const logStreamFile = path.parse(
+		path.join(logDir, `${logGroup.PhysicalResourceId}.log`),
+	)
+	await mkdir(logStreamFile.dir, { recursive: true })
+	await writeFile(
+		path.join(logDir, `${logGroup.PhysicalResourceId}.log`),
+		logs
+			.map((l) => l.message)
+			.map((m) => m?.trim())
+			.join('\n'),
+		'utf-8',
+	)
 }
