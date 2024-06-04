@@ -32,10 +32,10 @@ import { CoAPSenMLtoLwM2M } from './resources/SenMLtoLwM2M.js'
 import { SenMLImportLogs } from './resources/SenMLImportLogs.js'
 import { Feedback } from './resources/Feedback.js'
 import { DeviceInfo } from './resources/DeviceInfo.js'
-import { ConnectionInformationGeoLocation } from './resources/ConnectionInformationGeoLocation.js'
 import { APIHealthCheck } from './resources/APIHealthCheck.js'
 import { LwM2MObjectsHistory } from './resources/LwM2MObjectsHistory.js'
 import { ConvertNrfCloudDeviceMessages } from './resources/ConvertDeviceMessages.js'
+import { DeviceLocationHistory } from './resources/DeviceLocationHistory.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -212,12 +212,6 @@ export class BackendStack extends Stack {
 		})
 		api.addRoute('GET /device', deviceInfo.fn)
 
-		new ConnectionInformationGeoLocation(this, {
-			layers: [baseLayerVersion],
-			lambdaSources,
-			websocketEventBus,
-		})
-
 		const lwm2mObjectHistory = new LwM2MObjectsHistory(this, {
 			deviceStorage,
 			layers: [baseLayerVersion],
@@ -227,6 +221,13 @@ export class BackendStack extends Stack {
 			'GET /device/{deviceId}/history/{objectId}/{instanceId}',
 			lwm2mObjectHistory.historyFn,
 		)
+
+		new DeviceLocationHistory(this, {
+			lambdaSources,
+			layers: [baseLayerVersion],
+			connectionsTable: websocketConnectionsTable,
+			lwm2mHistory: lwm2mObjectHistory,
+		})
 
 		// Outputs
 		new CfnOutput(this, 'webSocketURI', {

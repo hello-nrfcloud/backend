@@ -22,11 +22,12 @@ export type BackendLambdas = {
 	configureDevice: PackedLambda
 	getDeviceByFingerprint: PackedLambda
 	feedback: PackedLambda
-	connectionInformationGeoLocation: PackedLambda
 	storeObjectsInTimestream: PackedLambda
 	queryLwM2MHistory: PackedLambda
 	apiHealthCheck: PackedLambda
 	onNrfCloudDeviceMessage: PackedLambda
+	scheduleLocationFetchHistory: PackedLambda
+	fetchLocationHistory: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -54,11 +55,10 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	configureDevice: await pack('configureDevice'),
 	getDeviceByFingerprint: await pack('getDeviceByFingerprint'),
 	feedback: await pack('feedback'),
-	connectionInformationGeoLocation: await pack(
-		'connectionInformationGeoLocation',
-	),
 	storeObjectsInTimestream: await pack('storeObjectsInTimestream'),
 	queryLwM2MHistory: await pack('queryLwM2MHistory'),
 	apiHealthCheck: await pack('apiHealthCheck'),
 	onNrfCloudDeviceMessage: await pack('onNrfCloudDeviceMessage'),
+	scheduleLocationFetchHistory: await pack('scheduleLocationFetchHistory'),
+	fetchLocationHistory: await pack('fetchLocationHistory'),
 })

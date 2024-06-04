@@ -69,15 +69,21 @@ const matchedMessages: Array<unknown> = []
 const receive = regExpMatchedStep(
 	{
 		regExp:
-			/^I should receive a message on the websocket that (?<equalOrMatch>is equal to|matches)$/,
+			/^I should receive a message on the websocket that (?<equalOrMatch>is equal to|matches)(?: after (?<retries>[0-9]+) retries?)?$/,
 		schema: Type.Object({
 			equalOrMatch: Type.Union([
 				Type.Literal('is equal to'),
 				Type.Literal('matches'),
 			]),
+			retries: Type.Optional(Type.String({ minLength: 1 })),
 		}),
 	},
-	async ({ match: { equalOrMatch }, log: { debug }, step, context }) => {
+	async ({
+		match: { equalOrMatch, retries },
+		log: { debug },
+		step,
+		context,
+	}) => {
 		const { wsClient } = context as { wsClient: WebSocketClient }
 		const expected = JSON.parse(codeBlockOrThrow(step).code)
 
@@ -111,7 +117,7 @@ const receive = regExpMatchedStep(
 		}
 
 		await pRetry(findMessages, {
-			retries: 5,
+			retries: parseInt(retries ?? '5', 10),
 			minTimeout: 1000,
 			maxTimeout: 5000,
 		})
