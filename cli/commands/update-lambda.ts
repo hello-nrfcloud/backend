@@ -1,6 +1,5 @@
 import {
 	DescribeStackResourceCommand,
-	ListStackResourcesCommand,
 	type CloudFormationClient,
 } from '@aws-sdk/client-cloudformation'
 import {
@@ -19,31 +18,7 @@ import { readFile } from 'node:fs/promises'
 import pRetry from 'p-retry'
 import assert from 'node:assert/strict'
 import { packGo } from '../../cdk/helpers/certificates/lambda/packGo.js'
-
-const listStackLambdas = async (
-	cf: CloudFormationClient,
-	stackName: string,
-	lambdas: Array<string> = [],
-	nextToken?: string,
-): Promise<Array<string>> => {
-	const { StackResourceSummaries, NextToken } = await cf.send(
-		new ListStackResourcesCommand({
-			StackName: stackName,
-			NextToken: nextToken,
-		}),
-	)
-
-	lambdas.push(
-		...(StackResourceSummaries ?? [])
-			.filter(({ ResourceType }) => ResourceType === 'AWS::Lambda::Function')
-			.map(({ LogicalResourceId }) => LogicalResourceId as string),
-	)
-
-	if (NextToken !== undefined)
-		return listStackLambdas(cf, stackName, lambdas, NextToken)
-
-	return lambdas
-}
+import { listStackResources } from '../../aws/listStackResources.js'
 
 export const updateLambda = ({
 	stackName,
@@ -66,7 +41,11 @@ export const updateLambda = ({
 		},
 	],
 	action: async (id, { physicalResourceId: pId, version }) => {
-		const stackFunctionIds = await listStackLambdas(cf, stackName)
+		const stackFunctionIds = await listStackResources(
+			cf,
+			stackName,
+			'AWS::Lambda::Function',
+		)
 
 		const stackFunctions: Array<{
 			PhysicalResourceId: string
@@ -74,7 +53,7 @@ export const updateLambda = ({
 		}> = []
 
 		for (const { StackResourceDetail } of await Promise.all(
-			stackFunctionIds.map(async (LogicalResourceId) =>
+			stackFunctionIds.map(async ({ LogicalResourceId }) =>
 				cf.send(
 					new DescribeStackResourceCommand({
 						StackName: stackName,
