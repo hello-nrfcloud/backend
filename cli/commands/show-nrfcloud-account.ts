@@ -20,21 +20,27 @@ export const showNRFCloudAccount = ({
 			account,
 		})()
 
-		const accountNRF = await getAccountInfo({
+		const maybedAccountInfo = await getAccountInfo({
 			endpoint: apiEndpoint,
 			apiKey,
 		})
-		if ('error' in accountNRF) {
-			console.error(chalk.red('⚠️'), '', chalk.red(accountNRF.error.message))
+		if ('error' in maybedAccountInfo) {
+			console.error(
+				chalk.red('⚠️'),
+				'',
+				chalk.red(maybedAccountInfo.error.message),
+			)
 			process.exit(1)
 		}
+
+		const accountInfo = maybedAccountInfo.result
 
 		console.log(
 			table([
 				['Team name', 'Tenant ID', 'API endpoint', 'API key'],
 				[
-					chalk.cyan(accountNRF.team.name),
-					chalk.cyan(accountNRF.team.tenantId),
+					chalk.cyan(accountInfo.team.name),
+					chalk.cyan(accountInfo.team.tenantId),
 					chalk.magenta(apiEndpoint.toString()),
 					chalk.magenta(`${apiKey.slice(0, 5)}***`),
 				],
