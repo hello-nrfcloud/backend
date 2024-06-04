@@ -1,15 +1,11 @@
-import { definitions } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { isLwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import {
-	TimeUnit,
 	TimestreamWriteClient,
-	type MeasureValue,
-	type _Record,
 	WriteRecordsCommand,
+	type _Record,
 } from '@aws-sdk/client-timestream-write'
-import { MeasureValueType } from '@aws-sdk/client-timestream-write'
+import { isLwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { isNumeric } from '../lwm2m/isNumeric.js'
+import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.js'
 
 const { tableInfo } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
@@ -27,7 +23,7 @@ export type LwM2MShadow = Record<
 		string, // InstanceID
 		Record<
 			string, // ResourceID
-			number | string | boolean | null
+			number | string | boolean
 		>
 	>
 >
@@ -51,50 +47,23 @@ export const handler = async (event: {
 		for (const [InstanceIDString, Resources] of Object.entries(Instances)) {
 			const ObjectInstanceID = parseInt(InstanceIDString ?? '0', 10)
 
-			const measures: MeasureValue[] = []
+			const maybeRecord = instanceMeasuresToRecord({
+				ObjectID,
+				ObjectInstanceID,
+				ObjectVersion,
+				Resources,
+			})
 
-			for (const [ResourceID, Value] of Object.entries(Resources)) {
-				const def = definitions[ObjectID].Resources[parseInt(ResourceID, 10)]
-				if (def === undefined) {
-					console.error(
-						`No definition found for ${ObjectID}/${ObjectInstanceID}/${ResourceID}`,
-					)
-					continue
-				}
-
-				if (Value === null) continue
-
-				if (!isNumeric(def)) continue
-
-				measures.push({
-					Name: `${ObjectID}/${ObjectVersion}/${ResourceID}`,
-					Value: Value.toString(),
-					Type: MeasureValueType.DOUBLE,
-				})
+			if ('error' in maybeRecord) {
+				console.error(maybeRecord.error)
+				continue
 			}
 
 			Records.push({
-				Dimensions: [
-					{
-						Name: 'ObjectID',
-						Value: ObjectID.toString(),
-					},
-					{
-						Name: 'ObjectInstanceID',
-						Value: ObjectInstanceID.toString(),
-					},
-					{
-						Name: 'ObjectVersion',
-						Value: ObjectVersion,
-					},
-				],
-				MeasureName: `${ObjectID}/${ObjectInstanceID}`,
-				MeasureValues: measures,
-				MeasureValueType: MeasureValueType.MULTI,
+				...maybeRecord.record,
 				// Use current timestamp for record, because the device can send the same
 				// object multiple times with the same timestamp but different resources
 				Time: Date.now().toString(),
-				TimeUnit: TimeUnit.MILLISECONDS,
 			})
 		}
 	}

@@ -114,9 +114,6 @@ export const steps = ({
 						ttl: {
 							N: `${Math.round(Date.now() / 1000) + 5 * 60}`,
 						},
-						keep: {
-							BOOL: true,
-						},
 					},
 				}),
 			)
