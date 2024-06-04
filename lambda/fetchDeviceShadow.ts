@@ -17,7 +17,7 @@ import {
 import { validate, validators } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { chunk, groupBy, once, uniqBy } from 'lodash-es'
+import { chunk, groupBy, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
 import { nrfCloudShadowToObjects } from '../devices/nrfCloudShadowToObjects.js'
 import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
@@ -55,17 +55,15 @@ const connectionsRepo = connectionsRepository(
 const ssm = new SSMClient({})
 const iot = new IoTDataPlaneClient({})
 
-// Make sure to call it in the handler, so the AWS Parameters and Secrets Lambda Extension is ready.
-const allNRFCloudAccountSettings = once(async () =>
-	getAllNRFCloudAccountSettings({
-		ssm,
-		stackName,
-	}),
-)
-const allHealthCheckClientIds = once(async () => {
+const allNRFCloudSettings = await getAllNRFCloudAccountSettings({
+	ssm,
+	stackName,
+})
+
+const healthCheckClientIds = await (async () => {
 	const settings = await getAllAccountsSettings({ ssm, stackName })
 	return Object.values(settings).map((settings) => settings.healthCheckClientId)
-})
+})()
 
 const validateLwM2MObjectInstance = validate(validators)
 
@@ -77,9 +75,6 @@ const h = async (): Promise<void> => {
 			log.info(`Other process is still running, then ignore`)
 			return
 		}
-
-		const allNRFCloudSettings = await allNRFCloudAccountSettings()
-		const healthCheckClientIds = await allHealthCheckClientIds()
 
 		const executionTime = new Date()
 

@@ -17,8 +17,8 @@ import type { DeviceStorage } from './DeviceStorage.js'
  */
 export class LwM2MObjectsHistory extends Construct {
 	public readonly historyFn: Lambda.IFunction
-
 	public readonly table: Timestream.CfnTable
+	public readonly memoryStoreRetentionPeriodInHours = 24
 	public constructor(
 		parent: Construct,
 		{
@@ -40,7 +40,7 @@ export class LwM2MObjectsHistory extends Construct {
 		this.table = new Timestream.CfnTable(this, 'historicalDataTable', {
 			databaseName: db.ref,
 			retentionProperties: {
-				MemoryStoreRetentionPeriodInHours: '24',
+				MemoryStoreRetentionPeriodInHours: `${this.memoryStoreRetentionPeriodInHours}`,
 				MagneticStoreRetentionPeriodInDays: '365',
 			},
 		})
