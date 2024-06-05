@@ -11,7 +11,7 @@ import chalk from 'chalk'
 import { mkdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-export const getLogEventsWithErrors =
+export const getLogEvents =
 	(cloudWatchLogs: CloudWatchLogsClient) =>
 	async (logGroupName: string): Promise<FilteredLogEvent[]> => {
 		// Get the log streams within the log group
@@ -29,27 +29,16 @@ export const getLogEventsWithErrors =
 		// Iterate over each log stream
 		const logEntries: FilteredLogEvent[] = []
 		for (const logStream of logStreams) {
-			// Get the log events within the log stream
-			const logEventsWithError = await cloudWatchLogs.send(
+			const allLogEvents = await cloudWatchLogs.send(
 				new FilterLogEventsCommand({
 					logGroupName,
 					logStreamNames: [logStream.logStreamName as string],
-					filterPattern: 'ERROR',
 				}),
 			)
-
-			if ((logEventsWithError.events ?? []).length > 0) {
-				const allLogEvents = await cloudWatchLogs.send(
-					new FilterLogEventsCommand({
-						logGroupName,
-						logStreamNames: [logStream.logStreamName as string],
-					}),
-				)
-				const logEvents = allLogEvents.events ?? []
-				if (logEvents.length > 0) {
-					// Add the log events to the result array
-					logEntries.push(...logEvents)
-				}
+			const logEvents = allLogEvents.events ?? []
+			if (logEvents.length > 0) {
+				// Add the log events to the result array
+				logEntries.push(...logEvents)
 			}
 		}
 
@@ -71,7 +60,7 @@ try {
 	await mkdir(logDir)
 }
 
-const list = getLogEventsWithErrors(logs)
+const list = getLogEvents(logs)
 for (const logGroup of logGroups) {
 	console.log(chalk.yellow(logGroup.PhysicalResourceId))
 	const logs = await list(logGroup.PhysicalResourceId)

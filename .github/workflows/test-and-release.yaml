@@ -245,9 +245,9 @@ jobs:
         if: failure()
         run: ./cli.sh logs -f ERROR
 
-      - name: Get all log streams that have errors
+      - name: Get all logs
         if: failure()
-        run: npx tsx ./aws/error-log-streams.ts
+        run: npx tsx ./aws/export-logs.ts
 
       - uses: actions/upload-artifact@v4
         if: failure()
