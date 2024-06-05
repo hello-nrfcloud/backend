@@ -22,6 +22,7 @@ import { parseMockRequest } from '@bifravst/http-api-mock/parseMockRequest'
 import { parseMockResponse } from '@bifravst/http-api-mock/parseMockResponse'
 import { URLSearchParamsToObject } from '@bifravst/http-api-mock/URLSearchParamsToObject'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { registerResponse } from '@bifravst/http-api-mock/responses'
 
 export const steps = ({
 	db,
@@ -88,8 +89,14 @@ export const steps = ({
 			const expectedResponse = codeBlockOrThrow(step).code
 			const response = parseMockResponse(expectedResponse)
 			progress(`expected query: ${methodPathQuery}`)
-			const [method, resource] = methodPathQuery.split(' ') as [string, string]
-
+			const [method, resourceWithQuery] = methodPathQuery.split(' ') as [
+				string,
+				string,
+			]
+			const [resource, queryParams] = resourceWithQuery.split('?') as [
+				string,
+				string,
+			]
 			const body: string[] = [
 				...Object.entries(response.headers).map(([k, v]) => `${k}: ${v}`),
 			].filter((v) => v)
@@ -97,26 +104,14 @@ export const steps = ({
 				body.push(``, response.body)
 			}
 
-			await db.send(
-				new PutItemCommand({
-					TableName: responsesTableName,
-					Item: {
-						methodPathQuery: {
-							S: `${method} ${sortQueryString(resource.slice(1))}`,
-						},
-						timestamp: {
-							S: new Date().toISOString(),
-						},
-						statusCode: {
-							N: response.statusCode.toString(),
-						},
-						body: body.length > 0 ? { S: body.join('\n') } : { NULL: true },
-						ttl: {
-							N: `${Math.round(Date.now() / 1000) + 5 * 60}`,
-						},
-					},
-				}),
-			)
+			await registerResponse(db, responsesTableName, {
+				method,
+				path: resource.slice(1),
+				body: body.length > 0 ? body.join('\n') : undefined,
+				queryParams: queryParams ? new URLSearchParams(queryParams) : undefined,
+				statusCode: response.statusCode,
+				ttl: Math.round(Date.now() / 1000) + 5 * 60,
+			})
 		},
 	)
 
