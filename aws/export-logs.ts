@@ -65,11 +65,11 @@ for (const logGroup of logGroups) {
 	const logs = await list(logGroup.PhysicalResourceId)
 
 	const logStreamFile = path.parse(
-		path.join(logDir, stackName, `${logGroup.PhysicalResourceId}.log`),
+		path.join(logDir, `${logGroup.PhysicalResourceId}.log`),
 	)
 	await mkdir(logStreamFile.dir, { recursive: true })
 	await writeFile(
-		path.join(logDir, stackName, `${logGroup.PhysicalResourceId}.log`),
+		path.join(logDir, `${logGroup.PhysicalResourceId}.log`),
 		logs
 			.map((l) => l.message)
 			.map((m) => m?.trim())
