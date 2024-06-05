@@ -19,7 +19,7 @@ export const deviceLwM2MObjectUpdate =
 			Resources,
 		}: LwM2MObjectInstance,
 	): Promise<{ success: boolean } | { error: Error }> => {
-		const tsResourceId = timestampResources[ObjectID as number] as number
+		const tsResourceId = timestampResources.get(ObjectID) as number
 		const tsResource = Resources[tsResourceId]
 		if (tsResource === undefined)
 			return {

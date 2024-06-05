@@ -13,8 +13,8 @@ export const objectsToShadow = (
 ): LwM2MShadow =>
 	objects
 		.sort((u1, u2) => {
-			const tsResource1 = timestampResources[u1.ObjectID]
-			const tsResource2 = timestampResources[u2.ObjectID]
+			const tsResource1 = timestampResources.get(u1.ObjectID)
+			const tsResource2 = timestampResources.get(u2.ObjectID)
 			const d1 = u1.Resources[tsResource1 as number] as number
 			const d2 = u1.Resources[tsResource2 as number] as number
 			return d1 - d2 ? 1 : -1

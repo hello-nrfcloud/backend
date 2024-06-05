@@ -12,7 +12,7 @@ export const shadowToObjects = (shadow: LwM2MShadow): LwM2MObjectInstance[] =>
 				string,
 			]
 			const ObjectID = parseInt(ObjectIDString, 10)
-			const tsResource = timestampResources[ObjectID]
+			const tsResource = timestampResources.get(ObjectID)
 			if (tsResource === undefined) return null
 			return Object.entries(Instances).map(([instanceId, Resources]) => {
 				const ObjectInstanceID = parseInt(instanceId, 10)

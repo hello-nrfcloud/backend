@@ -22,7 +22,7 @@ export const instanceMeasuresToRecord = ({
 		Resources,
 	})
 	if ('error' in maybeMeasures) return maybeMeasures
-	const tsResource = Resources[timestampResources[ObjectID as number] as number]
+	const tsResource = Resources[timestampResources.get(ObjectID) as number]
 	if (tsResource === undefined)
 		return { error: new Error(`No timestamp resource found for ${ObjectID}!`) }
 	return {
