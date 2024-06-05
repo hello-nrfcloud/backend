@@ -31,32 +31,6 @@ Given I store `ts - 60 * 1000` into `pastTs`
 And I store `$fromMillis(${pastTs})` into `pastTsISO`
 
 And this nRF Cloud API is queued for a
-`GET /v1/location/history?deviceId=${fingerprint_deviceId}&pageNextToken=some`
-request
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "items": [
-    {
-      "deviceId": "${fingerprint_deviceId}",
-      "id": "61b0d775-8384-4867-a25a-0a77f71f07ca",
-      "insertedAt": "${pastTsISO}",
-      "lat": "63.42061758",
-      "lon": "10.43720484",
-      "meta": {},
-      "serviceType": "SCELL",
-      "uncertainty": "366"
-    }
-  ],
-  "total": 1
-}
-
-```
-
-And this nRF Cloud API is queued for a
 `GET /v1/location/history?deviceId=${fingerprint_deviceId}` request
 
 ```
@@ -80,6 +54,31 @@ Content-Type: application/json
   "pageNextToken": "some-token"
 }
 
+```
+
+And this nRF Cloud API is queued for a
+`GET /v1/location/history?deviceId=${fingerprint_deviceId}&pageNextToken=some-token`
+request
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "deviceId": "${fingerprint_deviceId}",
+      "id": "61b0d775-8384-4867-a25a-0a77f71f07ca",
+      "insertedAt": "${pastTsISO}",
+      "lat": "63.42061758",
+      "lon": "10.43720484",
+      "meta": {},
+      "serviceType": "SCELL",
+      "uncertainty": "366"
+    }
+  ],
+  "total": 1
+}
 
 ```
 
