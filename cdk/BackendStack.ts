@@ -36,6 +36,7 @@ import { APIHealthCheck } from './resources/APIHealthCheck.js'
 import { LwM2MObjectsHistory } from './resources/LwM2MObjectsHistory.js'
 import { ConvertNrfCloudDeviceMessages } from './resources/ConvertDeviceMessages.js'
 import { DeviceLocationHistory } from './resources/DeviceLocationHistory.js'
+import { DeviceFOTA } from './resources/DeviceFOTA.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -221,6 +222,13 @@ export class BackendStack extends Stack {
 			'GET /device/{deviceId}/history/{objectId}/{instanceId}',
 			lwm2mObjectHistory.historyFn,
 		)
+
+		const deviceFOTA = new DeviceFOTA(this, {
+			lambdaSources,
+			layers: [baseLayerVersion],
+			deviceStorage,
+		})
+		api.addRoute('PATCH /device/{id}/firmware', deviceFOTA.fn)
 
 		new DeviceLocationHistory(this, {
 			lambdaSources,

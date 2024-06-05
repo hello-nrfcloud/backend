@@ -5,9 +5,9 @@ import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 
 /**
- * Handles device configuration requests
+ * Schedules FOTA jobs for devices
  */
-export class ConfigureDevice extends Construct {
+export class DeviceFOTA extends Construct {
 	public readonly fn: Lambda.Function
 	public constructor(
 		parent: Construct,
@@ -16,25 +16,20 @@ export class ConfigureDevice extends Construct {
 			layers,
 			deviceStorage,
 		}: {
-			lambdaSources: Pick<BackendLambdas, 'configureDevice'>
+			lambdaSources: Pick<BackendLambdas, 'deviceFOTA'>
 			layers: Lambda.ILayerVersion[]
 			deviceStorage: DeviceStorage
 		},
 	) {
-		super(parent, 'configureDevice')
+		super(parent, 'DeviceFOTA')
 
-		this.fn = new PackedLambdaFn(
-			this,
-			'configureDevice',
-			lambdaSources.configureDevice,
-			{
-				description: 'Handle device configuration request',
-				environment: {
-					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-				},
-				layers,
+		this.fn = new PackedLambdaFn(this, 'schedule', lambdaSources.deviceFOTA, {
+			description: 'Schedule device FOTA jobs',
+			environment: {
+				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 			},
-		).fn
+			layers,
+		}).fn
 		deviceStorage.devicesTable.grantReadData(this.fn)
 	}
 }

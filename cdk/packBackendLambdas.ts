@@ -28,6 +28,7 @@ export type BackendLambdas = {
 	onNrfCloudDeviceMessage: PackedLambda
 	scheduleLocationFetchHistory: PackedLambda
 	fetchLocationHistory: PackedLambda
+	deviceFOTA: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -61,4 +62,5 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	onNrfCloudDeviceMessage: await pack('onNrfCloudDeviceMessage'),
 	scheduleLocationFetchHistory: await pack('scheduleLocationFetchHistory'),
 	fetchLocationHistory: await pack('fetchLocationHistory'),
+	deviceFOTA: await pack('deviceFOTA'),
 })

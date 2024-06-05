@@ -1,3 +1,4 @@
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
@@ -6,30 +7,28 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { devices } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
+import { createFOTAJob } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
-	BadRequestError,
 	HttpStatusCode,
-	LwM2MObjectUpdate,
+	InternalError,
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { Type } from '@sinclair/typebox/type'
+import { Type } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { getDeviceById } from '../devices/getDeviceById.js'
-import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
-import { loggingFetch } from './loggingFetch.js'
-import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
 import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
+import { loggingFetch } from './loggingFetch.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -38,30 +37,32 @@ const { stackName, version, DevicesTableName } = fromEnv({
 })(process.env)
 
 const db = new DynamoDBClient({})
+const ssm = new SSMClient({})
+
+const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
+
 const getDevice = getDeviceById({
 	db,
 	DevicesTableName,
 })
 
-const ssm = new SSMClient({})
-
-const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
-
-const { track } = metricsForComponent('configureDevice')
-
-const trackFetch = loggingFetch({ track, log: logger('configureDevice') })
+const { track } = metricsForComponent('deviceFOTA')
+const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
 		id: deviceId,
+		bundleId: Type.RegExp(
+			/^(APP|MODEM|BOOT|SOFTDEVICE|BOOTLOADER|MDM_FULL)\*[0-9a-zA-Z]{8}\*.*$/,
+			{
+				title: 'Bundle ID',
+				description: 'The nRF Cloud firmware bundle ID',
+			},
+		),
 		fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
-		update: LwM2MObjectUpdate,
 	}),
 )
 
-/**
- * Handle configure device request
- */
 const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
@@ -70,10 +71,7 @@ const h = async (
 	const maybeValidInput = validateInput({
 		...(event.queryStringParameters ?? {}),
 		...(event.pathParameters ?? {}),
-		update: {
-			...tryAsJSON(event.body),
-			ts: new Date().toISOString(),
-		},
+		...tryAsJSON(event.body),
 	})
 	if ('errors' in maybeValidInput) {
 		return aProblem({
@@ -93,6 +91,7 @@ const h = async (
 			status: HttpStatusCode.NOT_FOUND,
 		})
 	}
+
 	const device = maybeDevice.device
 	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
 		return aProblem({
@@ -107,33 +106,34 @@ const h = async (
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
 
-	const update = devices(
+	const createJob = createFOTAJob(
 		{
 			endpoint: apiEndpoint,
 			apiKey,
 		},
 		trackFetch,
 	)
-	const res = await update.updateState(deviceId, {
-		desired: {
-			lwm2m: objectsToShadow([maybeValidInput.value.update]),
-		},
+
+	const res = await createJob({
+		deviceId,
+		bundleId: maybeValidInput.value.bundleId,
 	})
 
-	if ('success' in res) {
+	if ('result' in res) {
 		console.debug(`Accepted`)
+		track('success', MetricUnit.Count, 1)
 		return aResponse(HttpStatusCode.ACCEPTED)
 	} else {
-		console.error(`Update failed`, JSON.stringify(res))
+		console.error(`Scheduling FOTA update failed`, JSON.stringify(res))
+		track('error', MetricUnit.Count, 1)
 		return aProblem(
-			BadRequestError({
-				title: `Configuration update failed`,
+			InternalError({
+				title: `Scheduling FOTA update failed`,
 				detail: res.error.message,
 			}),
 		)
 	}
 }
-
 export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
