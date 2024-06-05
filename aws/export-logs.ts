@@ -5,7 +5,6 @@ import {
 	FilterLogEventsCommand,
 	type FilteredLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
-import { STACK_NAME } from '../cdk/stackConfig.js'
 import { listStackResources } from '@nordicsemiconductor/cloudformation-helpers'
 import chalk from 'chalk'
 import { mkdir, stat, writeFile } from 'node:fs/promises'
@@ -47,7 +46,7 @@ export const getLogEvents =
 
 const cf = new CloudFormation({})
 const logs = new CloudWatchLogsClient({})
-const stackName = STACK_NAME
+const stackName = process.argv[process.argv.length - 1] as string
 const logGroups = await listStackResources(cf, stackName, [
 	'AWS::Logs::LogGroup',
 	'Custom::LogRetention',
@@ -66,11 +65,11 @@ for (const logGroup of logGroups) {
 	const logs = await list(logGroup.PhysicalResourceId)
 
 	const logStreamFile = path.parse(
-		path.join(logDir, `${logGroup.PhysicalResourceId}.log`),
+		path.join(logDir, stackName, `${logGroup.PhysicalResourceId}.log`),
 	)
 	await mkdir(logStreamFile.dir, { recursive: true })
 	await writeFile(
-		path.join(logDir, `${logGroup.PhysicalResourceId}.log`),
+		path.join(logDir, stackName, `${logGroup.PhysicalResourceId}.log`),
 		logs
 			.map((l) => l.message)
 			.map((m) => m?.trim())

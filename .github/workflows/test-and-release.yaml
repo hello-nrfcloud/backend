@@ -247,7 +247,9 @@ jobs:
 
       - name: Get all logs
         if: failure()
-        run: npx tsx ./aws/export-logs.ts
+        run: |
+          npx tsx ./aws/export-logs.ts ${{ env.STACK_NAME }}
+          npx tsx ./aws/export-logs.ts ${{ needs.http-api-mock.outputs.stackName }}
 
       - uses: actions/upload-artifact@v4
         if: failure()
