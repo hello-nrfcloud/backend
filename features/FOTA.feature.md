@@ -51,5 +51,5 @@ Soon the nRF Cloud API should have been called with
 POST /v1/fota-jobs HTTP/1.1
 Content-Type: application/json
 
-{"bundleId":"APP*1e29dfa3*v2.0.0","autoApply":true,"deviceIds":["${fingerprint_deviceId}"]}
+{"bundleId":"APP*1e29dfa3*v2.0.0","autoApply":true,"deviceIdentifiers":["${fingerprint_deviceId}"]}
 ```
