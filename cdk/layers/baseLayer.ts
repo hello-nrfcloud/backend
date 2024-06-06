@@ -19,6 +19,7 @@ const dependencies: Array<keyof (typeof pJson)['dependencies']> = [
 	'@hello.nrfcloud.com/nrfcloud-api-helpers',
 	'cbor-x',
 	'id128',
+	'p-retry',
 ]
 
 export const pack = async (): Promise<PackedLayer> =>
