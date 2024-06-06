@@ -7,11 +7,11 @@ export const isNumeric = (def: { Type: ResourceType }): boolean => {
 	switch (def.Type) {
 		case ResourceType.Float:
 		case ResourceType.Integer:
-		case ResourceType.Time:
 			return true
 		case ResourceType.String:
 		case ResourceType.Opaque:
 		case ResourceType.Boolean:
+		case ResourceType.Time: // Time is numeric, but is stored as timestamp
 			return false
 	}
 }

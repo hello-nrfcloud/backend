@@ -8,7 +8,6 @@ void describe('isNumeric', () => {
 		const numericTypes = [
 			{ Type: ResourceType.Float },
 			{ Type: ResourceType.Integer },
-			{ Type: ResourceType.Time },
 		]
 
 		numericTypes.forEach((def) => {
@@ -21,6 +20,7 @@ void describe('isNumeric', () => {
 			{ Type: ResourceType.String },
 			{ Type: ResourceType.Opaque },
 			{ Type: ResourceType.Boolean },
+			{ Type: ResourceType.Time },
 		]
 
 		nonNumericTypes.forEach((def) => {

@@ -59,16 +59,11 @@ export const handler = async (event: {
 				continue
 			}
 
-			Records.push({
-				...maybeRecord.record,
-				// Use current timestamp for record, because the device can send the same
-				// object multiple times with the same timestamp but different resources
-				Time: Date.now().toString(),
-			})
+			Records.push(maybeRecord.record)
 		}
 	}
 
-	console.log(JSON.stringify(Records, null, 2))
+	console.log(JSON.stringify({ Records }))
 	await client.send(
 		new WriteRecordsCommand({
 			DatabaseName,
