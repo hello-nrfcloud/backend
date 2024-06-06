@@ -43,6 +43,9 @@ import { isNumeric } from '../lwm2m/isNumeric.js'
 import { createTrailOfCoordinates } from './historical-data/createTrailOfCoordinates.js'
 import { once } from 'lodash-es'
 import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
 
 const { tableInfo, DevicesTableName, version, isTest } = fromEnv({
 	version: 'VERSION',
@@ -68,6 +71,8 @@ const Aggregate = Type.Union(
 		default: 'avg',
 	},
 )
+
+const { track, metrics } = metricsForComponent('history')
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
@@ -304,15 +309,16 @@ const binResourceHistory = async ({
 		`ORDER BY bin(time, ${binIntervalMinutes}m) DESC`,
 	].join(' ')
 
-	console.log(QueryString)
-
-	return parseResult(
-		await ts.send(
-			new QueryCommand({
-				QueryString,
-			}),
-		),
+	console.log({ QueryString })
+	const start = Date.now()
+	const result = await ts.send(
+		new QueryCommand({
+			QueryString,
+		}),
 	)
+	console.debug(JSON.stringify({ result }))
+	track('QueryTime', MetricUnit.Milliseconds, Date.now() - start)
+	return parseResult(result)
 }
 
 const getResourceHistory = async ({
@@ -367,18 +373,22 @@ const getResourceHistory = async ({
 		`ORDER BY time ${dir ?? 'DESC'}`,
 	].join(' ')
 
-	console.log(QueryString)
+	console.log({ QueryString })
 
-	return parseResult(
-		await ts.send(
-			new QueryCommand({
-				QueryString,
-			}),
-		),
+	const start = Date.now()
+	const result = await ts.send(
+		new QueryCommand({
+			QueryString,
+		}),
 	)
+	track('QueryTime', MetricUnit.Milliseconds, Date.now() - start)
+	console.debug(JSON.stringify({ result }))
+
+	return parseResult(result)
 }
 
 export const handler = middy()
+	.use(logMetrics(metrics))
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
 	.handler(h)
