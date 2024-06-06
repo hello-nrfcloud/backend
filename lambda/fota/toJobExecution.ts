@@ -4,9 +4,10 @@ import type { Job } from './Job.js'
 
 export const toJobExecution = (job: Job): Static<typeof FOTAJobExecution> => ({
 	'@context': Context.fotaJobExecution.toString(),
+	id: job.jobId,
 	deviceId: job.deviceId,
 	lastUpdatedAt: job.lastUpdatedAt,
 	status: job.status,
-	statusDetails: job.statusDetails ?? undefined,
-	version: job.firmare?.version ?? 'unknown',
+	statusDetail: job.statusDetail ?? undefined,
+	version: job.firmware?.version ?? 'unknown',
 })

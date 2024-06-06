@@ -65,7 +65,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 		const maybeJob = await fetcher({ jobId })
 		if ('error' in maybeJob) {
 			console.error(`Fetching the FOTA job failed!`, maybeJob.error)
-			return
+			continue
 		}
 		const job = maybeJob.result
 		track('success', MetricUnit.Count, 1)

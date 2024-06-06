@@ -9,7 +9,7 @@ export type Job = {
 	nextUpdateAt: string
 	account: string
 	lastUpdatedAt: string
-	statusDetails: Static<typeof FOTAJobType>['statusDetail'] | null
-	firmare: Static<typeof FOTAJobType>['firmware'] | null
+	statusDetail: Static<typeof FOTAJobType>['statusDetail'] | null
+	firmware: Static<typeof FOTAJobType>['firmware'] | null
 	target: Static<typeof FOTAJobType>['target'] | null
 }

@@ -83,7 +83,8 @@ export class DeviceFOTA extends Construct {
 				name: 'nextUpdateAt',
 				type: DynamoDB.AttributeType.STRING,
 			},
-			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
+			projectionType: DynamoDB.ProjectionType.INCLUDE,
+			nonKeyAttributes: ['createdAt'],
 		})
 		const workQueue = new SQS.Queue(this, 'workQueue', {
 			retentionPeriod: scheduleDuration,
@@ -105,7 +106,7 @@ export class DeviceFOTA extends Construct {
 				timeout: Duration.seconds(10),
 			},
 		).fn
-		jobStatusTable.grantReadData(this.scheduleFOTAJobFn)
+		jobStatusTable.grantReadWriteData(scheduleFetches)
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
 			schedule: Events.Schedule.rate(scheduleDuration),
@@ -128,6 +129,7 @@ export class DeviceFOTA extends Construct {
 				timeout: Duration.minutes(1),
 			},
 		).fn
+		jobStatusTable.grantWriteData(updater)
 		updater.addEventSource(
 			new EventSources.SqsEventSource(workQueue, {
 				batchSize: 10,
@@ -203,7 +205,7 @@ export class DeviceFOTA extends Construct {
 				layers,
 			},
 		).fn
-		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn)
-		jobStatusTable.grantReadData(this.scheduleFOTAJobFn)
+		deviceStorage.devicesTable.grantReadData(this.getFOTAJobStatusFn)
+		jobStatusTable.grantReadData(this.getFOTAJobStatusFn)
 	}
 }

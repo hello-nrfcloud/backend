@@ -96,6 +96,7 @@ const h = async (
 			KeyConditionExpression: '#deviceId = :deviceId',
 			ExpressionAttributeNames: {
 				'#deviceId': 'deviceId',
+				'#jobId': 'jobId',
 			},
 			ExpressionAttributeValues: {
 				':deviceId': {
@@ -113,28 +114,26 @@ const h = async (
 		new BatchGetItemCommand({
 			RequestItems: {
 				[jobStatusTableName]: {
-					Keys: (deviceJobs.Items ?? []).map((item) => ({
-						jobId: unmarshall(item).jobId,
-					})),
+					Keys: deviceJobs.Items ?? [],
+					ProjectionExpression: '',
 				},
 			},
 		}),
 	)
 
-	console.log(
-		JSON.stringify({
-			jobDetails: jobDetails.Responses?.[jobStatusTableName] ?? [],
-		}),
-	)
+	const jobs: Array<Job> =
+		jobDetails.Responses?.[jobStatusTableName]?.map(
+			(item) => unmarshall(item) as Job,
+		) ?? []
+
+	console.debug(JSON.stringify({ jobs }))
 
 	return aResponse(
 		HttpStatusCode.OK,
 		{
 			'@context': Context.fotaJobExecutions,
 			id: device.id,
-			jobs: (jobDetails.Responses?.[jobStatusTableName] ?? []).map((item) =>
-				toJobExecution(unmarshall(item) as Job),
-			),
+			jobs: jobs.map((job) => toJobExecution(job)),
 		},
 		60,
 	)
