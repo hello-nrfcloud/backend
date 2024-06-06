@@ -28,7 +28,11 @@ export type BackendLambdas = {
 	onNrfCloudDeviceMessage: PackedLambda
 	scheduleLocationFetchHistory: PackedLambda
 	fetchLocationHistory: PackedLambda
-	deviceFOTA: PackedLambda
+	scheduleFOTAJob: PackedLambda
+	getFOTAJobStatus: PackedLambda
+	scheduleFOTAJobStatusUpdate: PackedLambda
+	updateFOTAJobStatus: PackedLambda
+	notifyFOTAJobStatus: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -62,5 +66,24 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	onNrfCloudDeviceMessage: await pack('onNrfCloudDeviceMessage'),
 	scheduleLocationFetchHistory: await pack('scheduleLocationFetchHistory'),
 	fetchLocationHistory: await pack('fetchLocationHistory'),
-	deviceFOTA: await pack('deviceFOTA'),
+	scheduleFOTAJob: await packLambdaFromPath(
+		'scheduleFOTAJob',
+		`lambda/fota/scheduleFOTAJob.ts`,
+	),
+	scheduleFOTAJobStatusUpdate: await packLambdaFromPath(
+		'scheduleFOTAJobStatusUpdate',
+		`lambda/fota/scheduleFOTAJobStatusUpdate.ts`,
+	),
+	getFOTAJobStatus: await packLambdaFromPath(
+		'getFOTAJobStatus',
+		`lambda/fota/getFOTAJobStatus.ts`,
+	),
+	updateFOTAJobStatus: await packLambdaFromPath(
+		'updateFOTAJobStatus',
+		`lambda/fota/updateFOTAJobStatus.ts`,
+	),
+	notifyFOTAJobStatus: await packLambdaFromPath(
+		'notifyFOTAJobStatus',
+		`lambda/fota/notifyFOTAJobStatus.ts`,
+	),
 })

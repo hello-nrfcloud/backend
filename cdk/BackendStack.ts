@@ -227,8 +227,10 @@ export class BackendStack extends Stack {
 			lambdaSources,
 			layers: [baseLayerVersion],
 			deviceStorage,
+			websocketEventBus,
 		})
-		api.addRoute('PATCH /device/{id}/firmware', deviceFOTA.fn)
+		api.addRoute('POST /device/{id}/fota', deviceFOTA.scheduleFOTAJobFn)
+		api.addRoute('GET /device/{id}/fota/jobs', deviceFOTA.getFOTAJobStatusFn)
 
 		new DeviceLocationHistory(this, {
 			lambdaSources,

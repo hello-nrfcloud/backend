@@ -1,6 +1,7 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { marshall } from '@aws-sdk/util-dynamodb'
 import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
@@ -26,14 +27,15 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { getDeviceById } from '../devices/getDeviceById.js'
-import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
-import { loggingFetch } from './loggingFetch.js'
+import { getDeviceById } from '../../devices/getDeviceById.js'
+import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
+import { loggingFetch } from '../loggingFetch.js'
 
-const { stackName, version, DevicesTableName } = fromEnv({
+const { stackName, version, DevicesTableName, jobStatusTableName } = fromEnv({
 	stackName: 'STACK_NAME',
 	version: 'VERSION',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
+	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
 })(process.env)
 
 const db = new DynamoDBClient({})
@@ -122,6 +124,23 @@ const h = async (
 	if ('result' in res) {
 		console.debug(`Accepted`)
 		track('success', MetricUnit.Count, 1)
+
+		const now = new Date().toISOString()
+		await db.send(
+			new PutItemCommand({
+				TableName: jobStatusTableName,
+				Item: marshall({
+					deviceId,
+					jobId: res.result.jobId,
+					status: 'QUEUED',
+					createdAt: now,
+					lastUpdatedAt: now,
+					nextUpdateAt: now,
+					account,
+				}),
+			}),
+		)
+
 		return aResponse(HttpStatusCode.ACCEPTED)
 	} else {
 		console.error(`Scheduling FOTA update failed`, JSON.stringify(res))
