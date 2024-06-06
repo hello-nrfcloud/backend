@@ -101,9 +101,16 @@ const getDevice = getDeviceById({
 
 // TODO: cache globally
 // Do not cache the result if we are in test mode
-const availableColumnsPromise =
+const availableColumnsCache =
 	isTest === '1'
-		? getAvailableColumns(ts, DatabaseName, TableName)
+		? async () => {
+				console.warn(
+					`Fetching available columns for ${DatabaseName}.${TableName}.`,
+				)
+				const cols = await getAvailableColumns(ts, DatabaseName, TableName)()
+				console.warn(`Available columns`, JSON.stringify(cols))
+				return cols
+			}
 		: once(getAvailableColumns(ts, DatabaseName, TableName))
 
 const h = async (
@@ -256,23 +263,24 @@ const binResourceHistory = async ({
 }): Promise<
 	Array<Record<number, string | number | boolean> & { ts: string }>
 > => {
+	const availableColumns = await availableColumnsCache()
 	const resourceNames = Object.values(def.Resources)
 		.filter(isNumeric)
 		.map<[string, number]>(({ ResourceID }) => [
 			`${def.ObjectID}/${def.ObjectVersion}/${ResourceID}`,
 			ResourceID,
 		])
-
-	const availableColumns = await availableColumnsPromise()
+		// Only select the columns that exist
+		.filter(([name]) => {
+			const available = availableColumns.includes(name)
+			if (!available) console.error(`Column not found: ${name}!`)
+			return available
+		})
 
 	const columns = [
-		...resourceNames
-			// Only select the columns that exist
-			.filter(([name]) => availableColumns.includes(name))
-			.map(
-				([alias, ResourceID]) =>
-					`${aggregateFn}("${alias}") AS "${ResourceID}"`,
-			),
+		...resourceNames.map(
+			([alias, ResourceID]) => `${aggregateFn}("${alias}") AS "${ResourceID}"`,
+		),
 		`bin(time, ${binIntervalMinutes}m) AS ts`,
 	]
 
@@ -320,20 +328,24 @@ const getResourceHistory = async ({
 	timeSpan: HistoricalDataTimeSpan
 	dir?: string
 }): Promise<Array<Record<number, string | number | boolean>>> => {
+	const availableColumns = await availableColumnsCache()
 	const resourceNames = Object.values(def.Resources)
 		.filter(isNumeric)
 		.map<[string, number]>(({ ResourceID }) => [
 			`${def.ObjectID}/${def.ObjectVersion}/${ResourceID}`,
 			ResourceID,
 		])
-
-	const availableColumns = await availableColumnsPromise()
+		// Only select the columns that exist
+		.filter(([name]) => {
+			const available = availableColumns.includes(name)
+			if (!available) console.error(`Column not found: ${name}!`)
+			return available
+		})
 
 	const columns = [
-		...resourceNames
-			// Only select the columns that exist
-			.filter(([name]) => availableColumns.includes(name))
-			.map(([alias, ResourceID]) => `"${alias}" AS "${ResourceID}"`),
+		...resourceNames.map(
+			([alias, ResourceID]) => `"${alias}" AS "${ResourceID}"`,
+		),
 	]
 
 	if (columns.length === 0) {
