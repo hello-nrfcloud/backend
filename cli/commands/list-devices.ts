@@ -42,7 +42,6 @@ export const listDevicesCommand = ({
 				apiKey,
 			})
 
-			// FIXME: client needs to implement pagination
 			const maybeDevices = await client.list()
 			if ('error' in maybeDevices) {
 				console.error(maybeDevices.error)
@@ -61,7 +60,7 @@ export const listDevicesCommand = ({
 					: {}
 
 			let i = 0
-			const header = ['#', 'ID', 'Firmware version']
+			const header = ['#', 'ID']
 			if (lastSeen === true) header.push('Last seen')
 			const data = [
 				header,
