@@ -51,7 +51,7 @@
     "@bifravst/http-api-mock": "1.4.78",
     "@bifravst/prettier-config": "1.0.2",
     "@commitlint/config-conventional": "19.2.2",
-    "@hello.nrfcloud.com/bdd-markdown-steps": "2.4.79",
+    "@hello.nrfcloud.com/bdd-markdown-steps": "2.4.80",
     "@nordicsemiconductor/bdd-markdown": "8.1.15",
     "@nordicsemiconductor/cloudformation-helpers": "9.1.0",
     "@nordicsemiconductor/firmware-ci-device-helpers": "14.0.201",
@@ -79,7 +79,7 @@
     "p-retry": "6.2.0",
     "semver": "7.6.2",
     "tsmatchers": "5.0.2",
-    "tsx": "4.11.2",
+    "tsx": "4.12.0",
     "yazl": "2.5.1"
   },
   "lint-staged": {
@@ -118,8 +118,8 @@
     "@bifravst/aws-ssm-settings-helpers": "1.1.27",
     "@bifravst/run": "1.2.0",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
-    "@hello.nrfcloud.com/lambda-helpers": "1.2.0",
-    "@hello.nrfcloud.com/nrfcloud-api-helpers": "4.1.1",
+    "@hello.nrfcloud.com/lambda-helpers": "1.2.1",
+    "@hello.nrfcloud.com/nrfcloud-api-helpers": "4.1.2",
     "@hello.nrfcloud.com/proto": "13.0.10",
     "@hello.nrfcloud.com/proto-map": "12.0.0",
     "@middy/core": "5.4.0",
