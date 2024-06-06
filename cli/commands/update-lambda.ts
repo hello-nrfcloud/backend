@@ -32,6 +32,10 @@ export const updateLambda = ({
 	command: 'update-lambda <id>',
 	options: [
 		{
+			flags: '-s, --source-file <sourceFile>',
+			description: `Update the lambda from this source file`,
+		},
+		{
 			flags: '-p, --physical-resource-id <physicalResourceId>',
 			description: `Update the lambda with this physical resource ID`,
 		},
@@ -40,7 +44,7 @@ export const updateLambda = ({
 			description: `Set the version environment variable`,
 		},
 	],
-	action: async (id, { physicalResourceId: pId, version }) => {
+	action: async (id, { physicalResourceId: pId, version, sourceFile }) => {
 		const stackFunctionIds = await listStackResources(
 			cf,
 			stackName,
@@ -102,7 +106,7 @@ export const updateLambda = ({
 
 		switch (fnInfo.Configuration?.Runtime) {
 			case 'nodejs20.x':
-				res = await packLambdaFromPath(id, `lambda/${id}.ts`)
+				res = await packLambdaFromPath(id, `lambda/${sourceFile ?? id}.ts`)
 				break
 			case 'provided.al2023':
 				if (id !== 'healthCheckForCoAPClient')
