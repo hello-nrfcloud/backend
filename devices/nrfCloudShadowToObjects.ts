@@ -1,11 +1,9 @@
-import type { DeviceShadow } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	LwM2MObjectID,
 	type ConnectionInformation_14203,
 	type DeviceInformation_14204,
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import type { Static } from '@sinclair/typebox'
 
 const max = (timestamps: Array<number>) =>
 	timestamps
@@ -13,11 +11,11 @@ const max = (timestamps: Array<number>) =>
 		.reduce((acc, timestamp) => Math.max(acc, timestamp), 0)
 
 export const nrfCloudShadowToObjects = ({
-	state: { reported, metadata },
-}: Static<typeof DeviceShadow> & {
-	state: {
-		metadata: Record<string, any>
-	}
+	reported,
+	metadata,
+}: {
+	reported?: Record<string, any>
+	metadata: Record<string, any>
 }): Array<LwM2MObjectInstance> => {
 	const objects: Array<LwM2MObjectInstance> = []
 	if (reported === undefined) return []

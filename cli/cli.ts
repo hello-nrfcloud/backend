@@ -135,6 +135,8 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 				importDeviceCommand({
 					db,
 					devicesTableName: outputs.devicesTableName,
+					devicesTableFingerprintIndexName:
+						outputs.devicesTableFingerprintIndexName,
 					ssm,
 					stackName: STACK_NAME,
 				}),

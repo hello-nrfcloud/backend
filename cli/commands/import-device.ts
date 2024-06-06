@@ -12,16 +12,19 @@ import { readFile } from 'node:fs/promises'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { CommandDefinition } from './CommandDefinition.js'
 import { isIMEI } from './import-devices.js'
+import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.js'
 
 export const importDeviceCommand = ({
 	ssm,
 	db,
 	devicesTableName,
+	devicesTableFingerprintIndexName,
 	stackName,
 }: {
 	ssm: SSMClient
 	db: DynamoDBClient
 	devicesTableName: string
+	devicesTableFingerprintIndexName: string
 	stackName: string
 }): CommandDefinition => ({
 	command: 'import-device <account> <model> <imei> <publicKeyFile>',
@@ -30,8 +33,19 @@ export const importDeviceCommand = ({
 			flags: '-f, --fingerprint <fingerprint>',
 			description: 'Use fingerprint provided instead of generating one.',
 		},
+
+		{
+			flags: '-r, --reRegister',
+			description: `Re-register the device on nRF Cloud`,
+		},
 	],
-	action: async (account, model, imei, publicKeyFile, { fingerprint }) => {
+	action: async (
+		account,
+		model,
+		imei,
+		publicKeyFile,
+		{ fingerprint, reRegister },
+	) => {
 		if (!isIMEI(imei)) {
 			console.error(
 				chalk.yellow('⚠️'),
@@ -94,6 +108,22 @@ export const importDeviceCommand = ({
 			chalk.yellow.dim(`Bulk ops ID:`),
 			chalk.yellow(registration.bulkOpsRequestId),
 		)
+
+		if (reRegister === true) {
+			if (
+				'error' in
+				(await getDeviceByFingerprint({
+					db,
+					DevicesTableName: devicesTableName,
+					DevicesIndexName: devicesTableFingerprintIndexName,
+				})(fingerprint))
+			) {
+				console.error(`Device not found with fingerprint ${fingerprint}!`)
+				process.exit(1)
+			}
+			console.log(chalk.gray('Skipped registering device in backend.'))
+			return
+		}
 
 		const res = await registerDevice({
 			db,

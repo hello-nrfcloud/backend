@@ -159,7 +159,6 @@ export const provisionDkCommand = ({
 				subType: model.replace(/[^0-9a-z-]/gi, '-'),
 				tags: [model.replace(/[^0-9a-z-]/gi, ':')],
 				certPem: await readFile(path.join(deviceSignedCertLocation), 'utf-8'),
-				fwTypes: ['APP', 'MODEM'],
 			},
 		])
 

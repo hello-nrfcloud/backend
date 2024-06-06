@@ -182,6 +182,10 @@ const h = async (): Promise<void> => {
 		).flat()
 
 		for (const deviceShadow of deviceShadows) {
+			if (deviceShadow.state === undefined) {
+				track('noShadow', MetricUnit.Count, 1)
+				continue
+			}
 			// In case multiple web sockets per device
 			const connections = deviceConnectionsMap[deviceShadow.id]
 			for (const d of connections ?? []) {
@@ -227,7 +231,7 @@ const h = async (): Promise<void> => {
 				log.debug('deviceShadow', deviceShadow)
 
 				// Convert parts written by the nRF Cloud library in the firmware to LwM2M objects
-				const lwm2mObjects = nrfCloudShadowToObjects(deviceShadow)
+				const lwm2mObjects = nrfCloudShadowToObjects(deviceShadow.state)
 				log.debug('deviceShadow', deviceShadow)
 				log.debug('nrfCloudShadow', lwm2mObjects)
 				const nrfCloudShadow = lwm2mObjects.filter((o) => {
