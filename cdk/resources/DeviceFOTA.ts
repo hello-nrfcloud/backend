@@ -155,23 +155,21 @@ export class DeviceFOTA extends Construct {
 			new EventSources.DynamoEventSource(jobStatusTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
 				filters: [
-					{
-						Pattern: JSON.stringify({
-							dynamodb: {
-								NewImage: {
-									status: {
-										S: [
-											'FAILED',
-											'SUCCEEDED',
-											'TIMED_OUT',
-											'CANCELLED',
-											'REJECTED',
-										],
-									},
+					Lambda.FilterCriteria.filter({
+						dynamodb: {
+							NewImage: {
+								status: {
+									S: [
+										'FAILED',
+										'SUCCEEDED',
+										'TIMED_OUT',
+										'CANCELLED',
+										'REJECTED',
+									],
 								},
 							},
-						}),
-					},
+						},
+					}),
 				],
 			}),
 		)
