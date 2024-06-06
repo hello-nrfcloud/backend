@@ -115,7 +115,6 @@ const h = async (
 			RequestItems: {
 				[jobStatusTableName]: {
 					Keys: deviceJobs.Items ?? [],
-					ProjectionExpression: '',
 				},
 			},
 		}),
