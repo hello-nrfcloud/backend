@@ -4,6 +4,7 @@ import {
 } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
+	Duration,
 	aws_dynamodb as DynamoDB,
 	aws_iam as IAM,
 	aws_iot as IoT,
@@ -60,6 +61,7 @@ export class CoAPSenMLtoLwM2M extends Construct {
 					resources: ['*'],
 				}),
 			],
+			timeout: Duration.minutes(2),
 		}).fn
 		websocketEventBus.eventBus.grantPutEventsTo(fn)
 		this.importLogs.grantReadWriteData(fn)

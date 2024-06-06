@@ -89,13 +89,20 @@ const h = async (
 	}
 	track('convertedDeviceMessageLwM2M', MetricUnit.Count, objects.length)
 
-	await logDb.recordSuccess(deviceId, senML, objects)
-
-	await updateShadow(deviceId, objects)
-
-	await Promise.all(
-		objects.map(async (object) => notifyWebsocket(deviceId, object)),
-	)
+	await Promise.all([
+		// Mark import as as successful
+		logDb.recordSuccess(deviceId, senML, objects),
+		// Notify websocket about updates
+		...objects.map(async (object) => notifyWebsocket(deviceId, object)),
+		// Write update to device shadow
+		updateShadow(deviceId, objects).catch((err) => {
+			console.error(
+				`[${deviceId}]`,
+				`Failed to update shadow for ${deviceId}!`,
+				err,
+			)
+		}),
+	])
 }
 
 export const handler = middy(h).use(logMetrics(metrics))
