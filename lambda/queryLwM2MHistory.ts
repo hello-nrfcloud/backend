@@ -197,17 +197,17 @@ const h = async (
 				0: number
 				1: number
 				6: string
-				99: number
+				ts: string
 			}>
 
 			const source = history[0]?.[6] ?? 'GNSS'
 
 			result.partialInstances = createTrailOfCoordinates(
 				maybeValidInput.value.trail,
-				history.map(({ '0': lat, '1': lng, '99': ts }) => ({
+				history.map(({ '0': lat, '1': lng, ts }) => ({
 					lat,
 					lng,
-					ts,
+					ts: new Date(ts).getTime(),
 				})),
 			).map(({ lat, lng, ts, radiusKm }) => ({
 				'0': lat,
@@ -352,6 +352,7 @@ const getResourceHistory = async ({
 		...resourceNames.map(
 			([alias, ResourceID]) => `"${alias}" AS "${ResourceID}"`,
 		),
+		`time AS ts`,
 	]
 
 	if (columns.length === 0) {
