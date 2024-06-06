@@ -118,7 +118,7 @@
     "@bifravst/aws-ssm-settings-helpers": "1.1.27",
     "@bifravst/run": "1.2.0",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
-    "@hello.nrfcloud.com/lambda-helpers": "1.2.0",
+    "@hello.nrfcloud.com/lambda-helpers": "1.2.1",
     "@hello.nrfcloud.com/nrfcloud-api-helpers": "4.1.1",
     "@hello.nrfcloud.com/proto": "13.0.10",
     "@hello.nrfcloud.com/proto-map": "12.0.0",
