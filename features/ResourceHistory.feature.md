@@ -46,6 +46,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 
 When I `GET`
 `${APIURL}/device/${fingerprint_deviceId}/history/14202/0?fingerprint=${fingerprint}&timeSpan=lastDay`
+retrying 10 times
 
 Then I should receive a
 `https://github.com/hello-nrfcloud/proto/lwm2m/object/history` response
