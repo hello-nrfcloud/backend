@@ -112,22 +112,25 @@ const h = async (
 
 	console.debug(JSON.stringify({ deviceJobs }))
 
-	const jobDetails = await db.send(
-		new BatchGetItemCommand({
-			RequestItems: {
-				[jobStatusTableName]: {
-					Keys: deviceJobs.Items ?? [],
+	const jobs: Array<Job> = []
+
+	if ((deviceJobs.Items ?? []).length > 0) {
+		const jobDetails = await db.send(
+			new BatchGetItemCommand({
+				RequestItems: {
+					[jobStatusTableName]: {
+						Keys: deviceJobs.Items ?? [],
+					},
 				},
-			},
-		}),
-	)
-
-	const jobs: Array<Job> =
-		jobDetails.Responses?.[jobStatusTableName]?.map(
-			(item) => unmarshall(item) as Job,
-		) ?? []
-
-	console.debug(JSON.stringify({ jobs }))
+			}),
+		)
+		jobs.push(
+			...(jobDetails.Responses?.[jobStatusTableName]?.map(
+				(item) => unmarshall(item) as Job,
+			) ?? []),
+		)
+		console.debug(JSON.stringify({ jobs }))
+	}
 
 	return aResponse(
 		HttpStatusCode.OK,
