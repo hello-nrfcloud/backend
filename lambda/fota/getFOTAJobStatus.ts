@@ -136,7 +136,7 @@ const h = async (
 		HttpStatusCode.OK,
 		{
 			'@context': Context.fotaJobExecutions,
-			id: device.id,
+			deviceId: device.id,
 			jobs: jobs.map((job) => toJobExecution(job)),
 		},
 		parseInt(responseCacheMaxAge, 10),
