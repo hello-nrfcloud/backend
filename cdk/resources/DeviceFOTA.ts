@@ -51,6 +51,7 @@ export class DeviceFOTA extends Construct {
 			},
 			removalPolicy: RemovalPolicy.DESTROY,
 			stream: DynamoDB.StreamViewType.NEW_IMAGE,
+			timeToLiveAttribute: 'ttl',
 		})
 
 		// Create a new FOTA job

@@ -48,6 +48,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 			jobId,
 			account,
 			lastUpdatedAt: currentLastUpdatedAt,
+			createdAt,
 		} = JSON.parse(record.body) as Job
 
 		if (jobId === undefined || account === undefined) {
@@ -65,6 +66,37 @@ const h = async (event: SQSEvent): Promise<void> => {
 		const maybeJob = await fetcher({ jobId })
 		if ('error' in maybeJob) {
 			console.error(`Fetching the FOTA job failed!`, maybeJob.error)
+			// Mark the job as failed
+			if (Date.now() - new Date(createdAt).getTime() > 24 * 60 * 60 * 1000) {
+				await db.send(
+					new UpdateItemCommand({
+						TableName: jobStatusTableName,
+						Key: {
+							jobId: {
+								S: jobId,
+							},
+						},
+						UpdateExpression:
+							'SET #lastUpdatedAt = :lastUpdatedAt, #status = :status, #statusDetail = :statusDetail',
+						ExpressionAttributeNames: {
+							'#lastUpdatedAt': 'lastUpdatedAt',
+							'#status': 'status',
+							'#statusDetail': 'statusDetail',
+						},
+						ExpressionAttributeValues: {
+							':lastUpdatedAt': {
+								S: new Date().toISOString(),
+							},
+							':status': {
+								S: 'FAILED',
+							},
+							':statusDetail': {
+								S: 'The job was not found on nRF Cloud. It may have been deleted.',
+							},
+						},
+					}),
+				)
+			}
 			continue
 		}
 		const job = maybeJob.result
@@ -78,7 +110,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 				TableName: jobStatusTableName,
 				Key: {
 					jobId: {
-						S: job.jobId,
+						S: jobId,
 					},
 				},
 				UpdateExpression:

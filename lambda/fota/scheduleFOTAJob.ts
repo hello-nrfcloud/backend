@@ -137,6 +137,7 @@ const h = async (
 					lastUpdatedAt: now,
 					nextUpdateAt: now,
 					account,
+					ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
 				}),
 			}),
 		)
