@@ -3,6 +3,7 @@ import {
 	type ConnectionInformation_14203,
 	type DeviceInformation_14204,
 	type LwM2MObjectInstance,
+	type NRFCloudServiceInfo_14401,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 
 const max = (timestamps: Array<number>) =>
@@ -84,6 +85,29 @@ export const nrfCloudShadowToObjects = ({
 			},
 		}
 		objects.push(n)
+	}
+
+	if (
+		'serviceInfo' in (reported.device ?? {}) &&
+		'fota_v2' in reported.device.serviceInfo
+	) {
+		const serviceInfo: NRFCloudServiceInfo_14401 = {
+			ObjectID: LwM2MObjectID.NRFCloudServiceInfo_14401,
+			ObjectVersion: '1.0',
+			Resources: {
+				0: reported.device.serviceInfo.fota_v2,
+				// Timestamp
+				99:
+					max(
+						(
+							(metadata.reported.device.serviceInfo.fota_v2 ?? []) as Array<{
+								timestamp: number
+							}>
+						)?.map(({ timestamp }) => timestamp),
+					) * 1000,
+			},
+		}
+		objects.push(serviceInfo)
 	}
 
 	return objects

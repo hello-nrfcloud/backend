@@ -8,6 +8,7 @@ import {
 	aws_lambda as Lambda,
 	RemovalPolicy,
 	aws_sqs as SQS,
+	aws_iam as IAM,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
@@ -66,6 +67,12 @@ export class DeviceFOTA extends Construct {
 					JOB_STATUS_TABLE_NAME: jobStatusTable.tableName,
 				},
 				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['iot:GetThingShadow'],
+						resources: ['*'],
+					}),
+				],
 			},
 		).fn
 		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn)

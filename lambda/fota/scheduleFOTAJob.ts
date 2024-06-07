@@ -1,5 +1,6 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
@@ -14,6 +15,10 @@ import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
+import {
+	LwM2MObjectID,
+	type NRFCloudServiceInfo_14401,
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
@@ -28,8 +33,10 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
+import { isObject } from 'lodash-es'
 import { getDeviceById } from '../../devices/getDeviceById.js'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
+import { getLwM2MShadow } from '../getLwM2MShadow.js'
 import { loggingFetch } from '../loggingFetch.js'
 import { toJobExecution } from './toJobExecution.js'
 import type { Job } from './Job.js'
@@ -43,6 +50,7 @@ const { stackName, version, DevicesTableName, jobStatusTableName } = fromEnv({
 
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
+const iotData = new IoTDataPlaneClient({})
 
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
@@ -50,6 +58,8 @@ const getDevice = getDeviceById({
 	db,
 	DevicesTableName,
 })
+
+const getShadow = getLwM2MShadow(iotData)
 
 const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
@@ -103,6 +113,37 @@ const h = async (
 			title: `Fingerprint does not match!`,
 			detail: maybeValidInput.value.fingerprint,
 			status: HttpStatusCode.FORBIDDEN,
+		})
+	}
+
+	const maybeShadow = await getShadow(deviceId)
+	if ('error' in maybeShadow) {
+		console.error(maybeShadow.error)
+		return aProblem({
+			title: `Unknown device state!`,
+			detail: maybeShadow.error.message,
+			status: HttpStatusCode.INTERNAL_SERVER_ERROR,
+		})
+	}
+	const supportedFOTATypes =
+		maybeShadow.shadow.reported.find(isNRFCloudServiceInfo)?.Resources[0] ?? []
+
+	if (supportedFOTATypes.length === 0) {
+		return aProblem({
+			title: `This device does not support FOTA!`,
+			status: HttpStatusCode.BAD_REQUEST,
+		})
+	}
+
+	if (
+		supportedFOTATypes.find((type) =>
+			maybeValidInput.value.bundleId.startsWith(type),
+		) === undefined
+	) {
+		return aProblem({
+			title: `This device does not support the bundle type!`,
+			detail: `Supported FOTA types are: ${supportedFOTATypes.join(', ')}`,
+			status: HttpStatusCode.BAD_REQUEST,
 		})
 	}
 
@@ -170,3 +211,10 @@ export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
 	.handler(h)
+
+const isNRFCloudServiceInfo = (
+	instance: unknown,
+): instance is NRFCloudServiceInfo_14401 =>
+	isObject(instance) &&
+	'ObjectID' in instance &&
+	instance.ObjectID === LwM2MObjectID.NRFCloudServiceInfo_14401

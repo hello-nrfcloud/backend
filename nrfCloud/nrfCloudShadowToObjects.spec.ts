@@ -2,6 +2,7 @@ import {
 	LwM2MObjectID,
 	type ConnectionInformation_14203,
 	type DeviceInformation_14204,
+	type NRFCloudServiceInfo_14401,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
@@ -51,6 +52,16 @@ const connectionInfo: ConnectionInformation_14203 = {
 	},
 }
 
+const serviceInfo: NRFCloudServiceInfo_14401 = {
+	ObjectID: LwM2MObjectID.NRFCloudServiceInfo_14401,
+	ObjectVersion: '1.0',
+	Resources: {
+		0: ['BOOT', 'MODEM', 'APP'],
+		// Timestamp
+		99: 1717409966 * 1000,
+	},
+}
+
 void describe('nrfCloudShadowToObjects()', () => {
 	void it('should convert the device information stored in the nRF Cloud shadow to LwM2M objects', () =>
 		assert.deepEqual(
@@ -86,6 +97,9 @@ void describe('nrfCloudShadowToObjects()', () => {
 							imsi: '242016000941158',
 						},
 						connectionInfo: { protocol: 'CoAP', method: 'LTE' },
+						serviceInfo: {
+							fota_v2: ['BOOT', 'MODEM', 'APP'],
+						},
 					},
 				},
 				metadata: {
@@ -121,11 +135,23 @@ void describe('nrfCloudShadowToObjects()', () => {
 								protocol: { timestamp: 1716560679 },
 								method: { timestamp: 1716560679 },
 							},
-							serviceInfo: {},
+							serviceInfo: {
+								fota_v2: [
+									{
+										timestamp: 1717409966,
+									},
+									{
+										timestamp: 1717409966,
+									},
+									{
+										timestamp: 1717409966,
+									},
+								],
+							},
 						},
 					},
 				},
 			}),
-			[deviceInfo, connectionInfo],
+			[deviceInfo, connectionInfo, serviceInfo],
 		))
 })

@@ -5,7 +5,13 @@ import {
 
 export type LwM2MShadow = Record<
 	string,
-	Record<number, Record<number, string | number | boolean>>
+	Record<
+		number,
+		Record<
+			number,
+			string | number | boolean | Array<string> | Array<number> | Array<boolean>
+		>
+	>
 >
 
 export const objectsToShadow = (
@@ -26,7 +32,12 @@ export const objectsToShadow = (
 				[key]: {
 					[update.ObjectInstanceID ?? 0]: update.Resources as Record<
 						number,
-						string | number | boolean
+						| string
+						| number
+						| boolean
+						| Array<string>
+						| Array<number>
+						| Array<boolean>
 					>,
 				},
 			}

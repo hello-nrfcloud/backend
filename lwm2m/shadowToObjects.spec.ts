@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { shadowToObjects } from './shadowToObjects.js'
+import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 
 void describe('shadowToObjects()', () => {
 	void it('should convert a shadow to LwM2M objects', () =>
@@ -38,6 +39,12 @@ void describe('shadowToObjects()', () => {
 						'2': 0,
 						'3': 25.9,
 						'99': 1699217657553,
+					},
+				},
+				'14401:1.0': {
+					0: {
+						0: ['BOOT', 'MODEM', 'APP'],
+						99: 1717409966 * 1000,
 					},
 				},
 			}),
@@ -85,6 +92,14 @@ void describe('shadowToObjects()', () => {
 						'2': 0,
 						'3': 25.9,
 						'99': 1699217657553,
+					},
+				},
+				{
+					ObjectID: LwM2MObjectID.NRFCloudServiceInfo_14401,
+					ObjectVersion: '1.0',
+					Resources: {
+						0: ['BOOT', 'MODEM', 'APP'],
+						99: 1717409966 * 1000,
 					},
 				},
 			],

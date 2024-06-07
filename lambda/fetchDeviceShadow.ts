@@ -19,7 +19,7 @@ import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, groupBy, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
-import { nrfCloudShadowToObjects } from '../devices/nrfCloudShadowToObjects.js'
+import { nrfCloudShadowToObjects } from '../nrfCloud/nrfCloudShadowToObjects.js'
 import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 import { getAllAccountsSettings } from '../settings/health-check/device.js'
 import {
