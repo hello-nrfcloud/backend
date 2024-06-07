@@ -101,6 +101,8 @@ export class DeviceFOTA extends Construct {
 					WORK_QUEUE_URL: workQueue.queueUrl,
 					JOB_STATUS_TABLE_NAME: jobStatusTable.tableName,
 					JOB_STATUS_TABLE_STATUS_INDEX_NAME: statusIndex,
+					FRESH_INTERVAL_SECONDS:
+						this.node.getContext('isTest') === true ? '10' : '60',
 				},
 				layers,
 				timeout: Duration.seconds(10),
@@ -167,6 +169,7 @@ export class DeviceFOTA extends Construct {
 										'TIMED_OUT',
 										'CANCELLED',
 										'REJECTED',
+										'COMPLETED',
 									],
 								},
 							},
@@ -201,6 +204,8 @@ export class DeviceFOTA extends Construct {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 					JOB_STATUS_TABLE_NAME: jobStatusTable.tableName,
 					JOB_STATUS_TABLE_DEVICE_INDEX_NAME: deviceIdIndex,
+					RESPONSE_CACHE_MAX_AGE:
+						this.node.getContext('isTest') === true ? '0' : '60',
 				},
 				layers,
 			},

@@ -34,11 +34,13 @@ const {
 	jobStatusTableName,
 	jobStatusTableDeviceIndexName,
 	version,
+	responseCacheMaxAge,
 } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
 	jobStatusTableDeviceIndexName: 'JOB_STATUS_TABLE_DEVICE_INDEX_NAME',
 	version: 'VERSION',
+	responseCacheMaxAge: 'RESPONSE_CACHE_MAX_AGE',
 })(process.env)
 
 const db = new DynamoDBClient({})
@@ -134,7 +136,7 @@ const h = async (
 			id: device.id,
 			jobs: jobs.map((job) => toJobExecution(job)),
 		},
-		60,
+		parseInt(responseCacheMaxAge, 10),
 	)
 }
 

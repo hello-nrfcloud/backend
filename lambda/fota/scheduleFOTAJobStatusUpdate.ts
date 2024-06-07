@@ -11,13 +11,18 @@ import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Job } from './Job.js'
 
-const { jobStatusTableName, jobStatusTableStatusIndexName, workQueueUrl } =
-	fromEnv({
-		jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
-		jobStatusTableStatusIndexName: 'JOB_STATUS_TABLE_STATUS_INDEX_NAME',
-		version: 'VERSION',
-		workQueueUrl: 'WORK_QUEUE_URL',
-	})(process.env)
+const {
+	jobStatusTableName,
+	jobStatusTableStatusIndexName,
+	workQueueUrl,
+	freshIntervalSeconds,
+} = fromEnv({
+	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
+	jobStatusTableStatusIndexName: 'JOB_STATUS_TABLE_STATUS_INDEX_NAME',
+	version: 'VERSION',
+	workQueueUrl: 'WORK_QUEUE_URL',
+	freshIntervalSeconds: 'FRESH_INTERVAL_SECONDS',
+})(process.env)
 
 const db = new DynamoDBClient({})
 const sqs = new SQSClient({})
@@ -82,7 +87,10 @@ const h = async (): Promise<void> => {
 					},
 					ExpressionAttributeValues: {
 						':nextUpdateAt': {
-							S: nextUpdateAt(new Date(job.createdAt)).toISOString(),
+							S: nextUpdateAt(
+								new Date(job.createdAt),
+								parseInt(freshIntervalSeconds, 10),
+							).toISOString(),
 						},
 						':currentNextUpdateAt': {
 							S: job.nextUpdateAt,
@@ -109,10 +117,16 @@ export const handler = middy().handler(h)
  * < 1 hour: 5 minutes
  * >= 1 hour: 1 hour
  */
-const nextUpdateAt = (createdAt: Date): Date => {
+const nextUpdateAt = (
+	createdAt: Date,
+	// The interval between updates if a Job is considered fresh
+	freshIntervalSeconds = 5 * 60,
+	// The age in minutes at which a Job is considered fresh
+	freshnessAgeMinutes = 60,
+): Date => {
 	const deltaMinutes = (Date.now() - createdAt.getTime()) / 1000 / 60
-	if (deltaMinutes < 60) {
-		return new Date(createdAt.getTime() + 5 * 60 * 1000)
+	if (deltaMinutes < freshnessAgeMinutes) {
+		return new Date(createdAt.getTime() + freshIntervalSeconds * 1000)
 	}
 	return new Date(createdAt.getTime() + 60 * 60 * 1000)
 }
