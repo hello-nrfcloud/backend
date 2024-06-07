@@ -1,20 +1,17 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { Context, type DeviceIdentity } from '@hello.nrfcloud.com/proto/hello'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Static } from '@sinclair/typebox'
 import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
 import { lastSeenRepo } from '../lastSeen/lastSeenRepo.js'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
+import { getLwM2MShadow } from './getLwM2MShadow.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
-import {
-	GetThingShadowCommand,
-	IoTDataPlaneClient,
-} from '@aws-sdk/client-iot-data-plane'
-import { shadowToObjects } from '../lwm2m/shadowToObjects.js'
 
 const { EventBusName, TableName, LastSeenTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -35,6 +32,7 @@ const sendShadow = sendShadowToConnection({
 	eventBusName: EventBusName,
 	log,
 })
+const getShadow = getLwM2MShadow(iotData)
 
 export const handler = async (
 	event: AuthorizedEvent,
@@ -79,24 +77,13 @@ export const handler = async (
 	})
 
 	// Send the LwM2M shadow
-	let lwm2mShadow: Record<string, any> | undefined = undefined
-	try {
-		const { payload } = await iotData.send(
-			new GetThingShadowCommand({
-				shadowName: 'lwm2m',
-				thingName: deviceId,
-			}),
-		)
-		if (payload !== undefined) {
-			lwm2mShadow = JSON.parse(new TextDecoder('utf-8').decode(payload))
-		}
-	} catch (error) {
+	const maybeShadow = await getShadow(deviceId)
+	if ('error' in maybeShadow) {
 		log.debug('failed to fetch shadow', {
 			deviceId,
-			error: (error as Error).message,
+			error: maybeShadow.error.message,
 		})
-	}
-	if (lwm2mShadow !== undefined) {
+	} else {
 		log.debug('sending shadow', {
 			deviceId,
 			connectionId,
@@ -104,10 +91,7 @@ export const handler = async (
 		await sendShadow({
 			deviceId,
 			model,
-			shadow: {
-				desired: shadowToObjects(lwm2mShadow.state.desired ?? {}),
-				reported: shadowToObjects(lwm2mShadow.state.reported ?? {}),
-			},
+			shadow: maybeShadow.shadow,
 			connectionId,
 		})
 	}

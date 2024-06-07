@@ -14,14 +14,15 @@ exampleContext:
 
 > A user can schedule a firmware update for a device.
 >
-> The bundleId provided by the web application, which provides the user with a
-> list of suitable bundles for their device.
+> The `bundleId` is provided by the web application, which provides the user
+> with a list of suitable bundles for their device.
+>
+> In order for device to be able to receive updates from nRF Cloud, they have to
+> report the supported FOTA types.
 
 ## Background
 
 Given I have the fingerprint for a `PCA20065` device in `fingerprint`
-
-And I connect to the websocket using fingerprint `${fingerprint}`
 
 And I have a random UUIDv4 in `jobId`
 
@@ -33,6 +34,56 @@ And I store `$millis() + 30 * 1000` into `ts2`
 
 And I store `$fromMillis(${ts2})` into `ts2ISO`
 
+<!-- Devices have to report that they support FOTA. -->
+
+And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
+
+```json
+{
+  "items": [
+    {
+      "id": "${fingerprint_deviceId}",
+      "$meta": {
+        "createdAt": "${$fromMillis($millis())}",
+        "updatedAt": "${$fromMillis($millis())}"
+      },
+      "state": {
+        "reported": {
+          "device": {
+            "serviceInfo": {
+              "fota_v2": ["BOOT", "MODEM", "APP"]
+            }
+          }
+        },
+        "metadata": {
+          "reported": {
+            "device": {
+              "serviceInfo": {
+                "fota_v2": [
+                  {
+                    "timestamp": 1717409966
+                  },
+                  {
+                    "timestamp": 1717409966
+                  },
+                  {
+                    "timestamp": 1717409966
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "version": 8835
+      }
+    }
+  ],
+  "total": 1
+}
+```
+
+<!-- This is the response nRF Cloud returns on job creation. -->
+
 And this nRF Cloud API is queued for a `POST /v1/fota-jobs` request
 
 ```
@@ -42,6 +93,8 @@ Content-Type: application/json
 {"jobId": "${jobId}"}
 ```
 
+<!-- Device fetches details about the job. -->
+
 And this nRF Cloud API is queued for a `GET /v1/fota-jobs/${jobId}` request
 
 ```
@@ -50,20 +103,6 @@ Content-Type: application/json
 
 {
     "createdAt": "${tsISO}",
-    "executionStats": {
-        "cancelled": 0,
-        "completedExecutions": 0,
-        "devices": 1,
-        "downloading": 0,
-        "executions": 1,
-        "failed": 0,
-        "inProgress": 0,
-        "queued": 1,
-        "rejected": 0,
-        "removed": 0,
-        "succeeded": 0,
-        "timedOut": 0
-    },
     "firmware": {
         "bundleId": "APP*1e29dfa3*v2.0.0",
         "fileSize": 425860,
@@ -85,6 +124,27 @@ Content-Type: application/json
         ],
         "tags": []
     }
+}
+```
+
+## The device reports that it is eligible for FOTA
+
+Given I connect to the websocket using fingerprint `${fingerprint}`
+
+Soon I should receive a message on the websocket that matches after 20 retries
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/shadow",
+  "reported": [
+    {
+      "ObjectID": 14401,
+      "Resources": {
+        "0": ["BOOT", "MODEM", "APP"],
+        "99": 1717409966000
+      }
+    }
+  ]
 }
 ```
 
@@ -137,6 +197,8 @@ And `$.jobs[0]` of the last response should match
 
 ## Job completes
 
+> The job is marked as completed by nRF Cloud
+
 Given this nRF Cloud API is queued for a `GET /v1/fota-jobs/${jobId}` request
 
 ```
@@ -145,20 +207,6 @@ Content-Type: application/json
 
 {
     "createdAt": "${tsISO}",
-    "executionStats": {
-        "cancelled": 0,
-        "completedExecutions": 1,
-        "devices": 1,
-        "downloading": 0,
-        "executions": 1,
-        "failed": 0,
-        "inProgress": 0,
-        "queued": 1,
-        "rejected": 0,
-        "removed": 0,
-        "succeeded": 0,
-        "timedOut": 0
-    },
     "firmware": {
         "bundleId": "APP*1e29dfa3*v2.0.0",
         "fileSize": 425860,
