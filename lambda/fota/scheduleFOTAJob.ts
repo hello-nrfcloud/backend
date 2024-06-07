@@ -16,6 +16,7 @@ import {
 } from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
+	Context,
 	HttpStatusCode,
 	InternalError,
 	deviceId,
@@ -30,6 +31,8 @@ import type {
 import { getDeviceById } from '../../devices/getDeviceById.js'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from '../loggingFetch.js'
+import { toJobExecution } from './toJobExecution.js'
+import type { Job } from './Job.js'
 
 const { stackName, version, DevicesTableName, jobStatusTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -126,25 +129,34 @@ const h = async (
 		track('success', MetricUnit.Count, 1)
 
 		const now = new Date().toISOString()
+		const job: Job = {
+			deviceId,
+			jobId: res.result.jobId,
+			status: 'QUEUED',
+			createdAt: now,
+			lastUpdatedAt: now,
+			nextUpdateAt: now,
+			account,
+			firmware: null,
+			statusDetail: null,
+			target: null,
+		}
 		await db.send(
 			new PutItemCommand({
 				TableName: jobStatusTableName,
 				Item: marshall({
-					deviceId,
-					jobId: res.result.jobId,
-					status: 'QUEUED',
-					createdAt: now,
-					lastUpdatedAt: now,
-					nextUpdateAt: now,
-					account,
+					...job,
 					ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
 				}),
 			}),
 		)
 
-		return aResponse(HttpStatusCode.ACCEPTED)
+		return aResponse(HttpStatusCode.CREATED, {
+			...toJobExecution(job),
+			'@context': Context.fotaJobExecution,
+		})
 	} else {
-		console.error(`Scheduling FOTA update failed`, JSON.stringify(res))
+		console.error(`Scheduling FOTA update failed`, res.error)
 		track('error', MetricUnit.Count, 1)
 		return aProblem(
 			InternalError({

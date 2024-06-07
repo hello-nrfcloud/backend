@@ -99,7 +99,10 @@ When I `POST`
 }
 ```
 
-Then the status code of the last response should be `202`
+Then the status code of the last response should be `201`
+
+And I should receive a
+`https://github.com/hello-nrfcloud/proto/fota/job-execution` response
 
 Soon the nRF Cloud API should have been called with
 
