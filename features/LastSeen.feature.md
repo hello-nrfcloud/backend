@@ -39,7 +39,7 @@ Given I store `$fromMillis(${ts})` into `tsISO`
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
-Soon I should receive a message on the websocket that matches
+Soon I should receive a message on the websocket that matches after 20 retries
 
 ```json
 {
