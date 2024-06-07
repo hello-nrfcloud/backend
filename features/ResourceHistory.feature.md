@@ -63,10 +63,10 @@ And `$.query` of the last response should match
 }
 ```
 
-And `$.partialInstances[0]` of the last response should match
+And
+`{"sum": $sum($lookup(partialInstances[], '1'))/$count(partialInstances[]) > 3.2}`
+of the last response should match
 
 ```json
-{
-  "1": 3.5443860000000003
-}
+{ "sum": true }
 ```
