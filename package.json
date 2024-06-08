@@ -78,7 +78,7 @@
     "jsonata": "2.0.5",
     "semver": "7.6.2",
     "tsmatchers": "5.0.2",
-    "tsx": "4.13.2",
+    "tsx": "4.13.3",
     "yazl": "2.5.1"
   },
   "lint-staged": {
