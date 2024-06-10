@@ -21,7 +21,7 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, groupBy, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
 import { nrfCloudShadowToObjects } from '../nrfCloud/nrfCloudShadowToObjects.js'
-import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
+import { objectsToShadow, type LwM2MShadow } from '../lwm2m/objectsToShadow.js'
 import { getAllAccountsSettings } from '../settings/health-check/device.js'
 import {
 	connectionsRepository,
@@ -259,29 +259,47 @@ const h = async (): Promise<void> => {
 				const desiredConfig = deviceShadow.state.desired?.lwm2m ?? {}
 				const reportedConfig = deviceShadow.state.reported?.lwm2m ?? {}
 
-				const update = {
+				const update: {
+					reported?: LwM2MShadow
+					desired?: LwM2MShadow
+				} = {
 					desired: desiredConfig,
 					reported: { ...reportedConfig, ...objectsToShadow(nrfCloudShadow) },
 				}
 
 				log.debug('update', update)
 
-				const { payload } = await iot.send(
-					new GetThingShadowCommand({
-						thingName: d.deviceId,
-						shadowName: 'lwm2m',
-					}),
-				)
-				const lwm2mShadow =
-					payload !== undefined
-						? JSON.parse(new TextDecoder('utf-8').decode(payload))
-						: { state: { desired: {}, reported: {} } }
+				let diff = update
 
-				log.debug('state', lwm2mShadow.state)
+				// Compare with the current device state
+				let state:
+					| {
+							reported?: LwM2MShadow
+							desired?: LwM2MShadow
+					  }
+					| undefined = undefined
+				try {
+					const { payload } = await iot.send(
+						new GetThingShadowCommand({
+							thingName: d.deviceId,
+							shadowName: 'lwm2m',
+						}),
+					)
+					const lwm2mShadow =
+						payload !== undefined
+							? JSON.parse(new TextDecoder('utf-8').decode(payload))
+							: { state: { desired: {}, reported: {} } }
 
-				const diff = shadowDiff(lwm2mShadow.state, update)
+					state = lwm2mShadow.state
+				} catch {
+					log.debug(`No existing shadow for ${d.deviceId}.`)
+				}
 
-				log.debug('diff', diff)
+				if (state !== undefined) {
+					log.debug('state', state)
+					diff = shadowDiff(state, update)
+					log.debug('diff', diff)
+				}
 
 				if (Object.keys(diff).length === 0) {
 					console.debug(`No diff for ${d.deviceId}.`)
