@@ -33,8 +33,16 @@ const h = async (event: {
 	}
 	track('deviceMessage:success', MetricUnit.Count, 1)
 
+	const reported = objectsToShadow([converted])
+
+	if (Object.keys(reported).length === 0) {
+		console.error(`Failed to convert object to shadow!`)
+		track('deviceMessage:error', MetricUnit.Count, 1)
+		return
+	}
+
 	const state = {
-		reported: objectsToShadow([converted]),
+		reported,
 	}
 
 	log.debug('state', state)

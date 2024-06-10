@@ -9,6 +9,13 @@ import pRetry from 'p-retry'
 export const updateLwM2MShadow =
 	(iotData: IoTDataPlaneClient) =>
 	async (deviceId: string, objects: LwM2MObjectInstance[]): Promise<void> => {
+		const reported = objectsToShadow(objects)
+
+		if (Object.keys(reported).length === 0) {
+			console.error(`Failed to convert object to shadow!`)
+			return
+		}
+
 		await pRetry(
 			async () =>
 				iotData.send(
@@ -17,7 +24,7 @@ export const updateLwM2MShadow =
 						shadowName: 'lwm2m',
 						payload: JSON.stringify({
 							state: {
-								reported: objectsToShadow(objects),
+								reported,
 							},
 						}),
 					}),
