@@ -109,7 +109,7 @@ export class DeviceShadow extends Construct {
 				layers,
 				initialPolicy: [
 					new IAM.PolicyStatement({
-						actions: ['iot:UpdateThingShadow'],
+						actions: ['iot:GetThingShadow', 'iot:UpdateThingShadow'],
 						resources: ['*'],
 					}),
 				],

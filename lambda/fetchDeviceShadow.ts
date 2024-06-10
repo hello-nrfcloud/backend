@@ -2,6 +2,7 @@ import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
+	GetThingShadowCommand,
 	IoTDataPlaneClient,
 	UpdateThingShadowCommand,
 } from '@aws-sdk/client-iot-data-plane'
@@ -29,6 +30,7 @@ import {
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
 import { loggingFetch } from './loggingFetch.js'
+import { shadowDiff } from '../historicalData/shadowDiff.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 
@@ -257,22 +259,43 @@ const h = async (): Promise<void> => {
 				const desiredConfig = deviceShadow.state.desired?.lwm2m ?? {}
 				const reportedConfig = deviceShadow.state.reported?.lwm2m ?? {}
 
-				const state = {
+				const update = {
 					desired: desiredConfig,
 					reported: { ...reportedConfig, ...objectsToShadow(nrfCloudShadow) },
 				}
 
-				log.debug('state', state)
+				log.debug('update', update)
 
-				await iot.send(
-					new UpdateThingShadowCommand({
+				const { payload } = await iot.send(
+					new GetThingShadowCommand({
 						thingName: d.deviceId,
 						shadowName: 'lwm2m',
-						payload: JSON.stringify({
-							state,
-						}),
 					}),
 				)
+				const lwm2mShadow =
+					payload !== undefined
+						? JSON.parse(new TextDecoder('utf-8').decode(payload))
+						: { state: { desired: {}, reported: {} } }
+
+				log.debug('state', lwm2mShadow.state)
+
+				const diff = shadowDiff(lwm2mShadow.state, update)
+
+				log.debug('diff', diff)
+
+				if (Object.keys(diff).length === 0) {
+					console.debug(`No diff for ${d.deviceId}.`)
+				} else {
+					await iot.send(
+						new UpdateThingShadowCommand({
+							thingName: d.deviceId,
+							shadowName: 'lwm2m',
+							payload: JSON.stringify({
+								state: diff,
+							}),
+						}),
+					)
+				}
 			}
 		}
 	} catch (error) {
