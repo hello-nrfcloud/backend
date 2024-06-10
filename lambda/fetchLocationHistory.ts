@@ -18,7 +18,10 @@ import {
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { SQSEvent } from 'aws-lambda'
-import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.js'
+import {
+	NoHistoryMeasuresError,
+	instanceMeasuresToRecord,
+} from '../historicalData/instanceMeasuresToRecord.js'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { loggingFetch } from './loggingFetch.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
@@ -129,7 +132,11 @@ const h = async (event: SQSEvent): Promise<void> => {
 				Resources,
 			})
 			if ('error' in maybeRecord) {
-				log.error(maybeRecord.error.message)
+				if (maybeRecord.error instanceof NoHistoryMeasuresError) {
+					console.debug(`No history measures for ${ObjectID}!`)
+				} else {
+					log.error(maybeRecord.error.message)
+				}
 				continue
 			}
 			Records.push(maybeRecord.record)

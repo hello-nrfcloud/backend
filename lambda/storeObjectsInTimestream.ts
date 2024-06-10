@@ -5,7 +5,10 @@ import {
 } from '@aws-sdk/client-timestream-write'
 import { isLwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.js'
+import {
+	NoHistoryMeasuresError,
+	instanceMeasuresToRecord,
+} from '../historicalData/instanceMeasuresToRecord.js'
 
 const { tableInfo } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
@@ -55,7 +58,11 @@ export const handler = async (event: {
 			})
 
 			if ('error' in maybeRecord) {
-				console.error(maybeRecord.error)
+				if (maybeRecord.error instanceof NoHistoryMeasuresError) {
+					console.debug(`No history measures for ${ObjectID}!`)
+				} else {
+					console.error(maybeRecord.error)
+				}
 				continue
 			}
 

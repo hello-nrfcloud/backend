@@ -9,12 +9,21 @@ import {
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { instanceToMeasures } from './instanceToMeasures.js'
 
+export class NoHistoryMeasuresError extends Error {
+	constructor(message: string) {
+		super(message)
+		this.name = 'NoHistoryMeasuresError'
+	}
+}
+
 export const instanceMeasuresToRecord = ({
 	ObjectID,
 	ObjectInstanceID,
 	ObjectVersion,
 	Resources,
-}: LwM2MObjectInstance): { error: Error } | { record: _Record } => {
+}: LwM2MObjectInstance):
+	| { error: Error | NoHistoryMeasuresError }
+	| { record: _Record } => {
 	const maybeMeasures = instanceToMeasures({
 		ObjectID,
 		ObjectInstanceID,
@@ -22,6 +31,12 @@ export const instanceMeasuresToRecord = ({
 		Resources,
 	})
 	if ('error' in maybeMeasures) return maybeMeasures
+	if (maybeMeasures.measures.length === 0)
+		return {
+			error: new NoHistoryMeasuresError(
+				`No measure to be stored in history for object ${ObjectID}!`,
+			),
+		}
 	const tsResource = Resources[timestampResources.get(ObjectID) as number]
 	if (tsResource === undefined)
 		return { error: new Error(`No timestamp resource found for ${ObjectID}!`) }
