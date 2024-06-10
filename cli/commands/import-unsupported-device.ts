@@ -3,7 +3,7 @@ import { isFingerprint } from '@hello.nrfcloud.com/proto/fingerprint'
 import chalk from 'chalk'
 import { registerUnsupportedDevice } from '../../devices/registerUnsupportedDevice.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { isIMEI } from './import-devices.js'
+import { isIMEI } from '../../devices/isIMEI.js'
 import { readFile } from 'node:fs/promises'
 
 export const importUnsupportedDevice = ({

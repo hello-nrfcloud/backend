@@ -1,15 +1,14 @@
 import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { isFingerprint } from '@hello.nrfcloud.com/proto/fingerprint'
-import chalk from 'chalk'
-import { readFile } from 'node:fs/promises'
-import os from 'node:os'
-import { table } from 'table'
-import { registerDevice } from '../../devices/registerDevice.js'
 import { devices as devicesApi } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import chalk from 'chalk'
+import { table } from 'table'
+import { compareLists } from '../../devices/import/compareLists.js'
+import { readDeviceCertificates } from '../../devices/import/readDeviceCertificates.js'
+import { readDevicesList } from '../../devices/import/readDevicesList.js'
+import { registerDevice } from '../../devices/registerDevice.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { inspectString } from '@hello.nrfcloud.com/certificate-helpers/inspect'
 
 export const importDevicesCommand = ({
 	ssm,
@@ -22,94 +21,55 @@ export const importDevicesCommand = ({
 	devicesTableName: string
 	stackName: string
 }): CommandDefinition => ({
-	command: 'import-devices <account> <model> <provisioningList>',
+	command:
+		'import-devices <account> <model> <devicesListFile> <certificatesZipFile>',
 	options: [
 		{
-			flags: '-w, --windows',
-			description: `Use Windows line ends`,
+			flags: '-l, --linux',
+			description: `Use Linux line ends`,
 		},
 	],
-	action: async (account, model, provisioningList, { windows }) => {
-		const devicesList = (await readFile(provisioningList, 'utf-8'))
-			.trim()
-			.split(windows === true ? '\r\n' : '\n')
-			.map((s) =>
-				s.split(';').map((s) => s.replace(/^"/, '').replace(/"$/, '')),
-			)
-			.slice(1)
-
-		let devices: [imei: string, fingerprint: string, publicKey: string][] =
-			devicesList
-				.map(
-					([imei, fingerprint, publicKey]) =>
-						[imei, fingerprint, (publicKey ?? '').replace(/\\n/g, os.EOL)] as [
-							string,
-							string,
-							string,
-						],
-				)
-				.filter(([imei]) => {
-					if (!isIMEI(imei)) {
-						console.error(
-							chalk.yellow('⚠️'),
-							chalk.yellow(`Not an IMEI:`),
-							chalk.red(JSON.stringify(imei)),
-						)
-						return false
-					}
-					return true
-				})
-				.filter(([, fingerprint]) => {
-					if (!isFingerprint(fingerprint)) {
-						console.error(
-							chalk.yellow('⚠️'),
-							chalk.yellow(`Not a fingerprint:`),
-							chalk.red(JSON.stringify(fingerprint)),
-						)
-						return false
-					}
-					return true
-				})
-
-		// Filter out invalid keys
-		devices = (
-			await Promise.all(
-				devices.map(async (device) => [
-					...device,
-					await (async (publicKey: string) => {
-						try {
-							await inspectString(publicKey)
-						} catch (err) {
-							console.error(err)
-							console.error(
-								chalk.yellow('⚠️'),
-								chalk.yellow(`Not a public key:`),
-								chalk.red(publicKey),
-							)
-							return false
-						}
-						return true
-					})(device[2]),
-				]),
-			)
+	action: async (
+		account,
+		model,
+		devicesListFile,
+		certificatesZipFile,
+		{ linux },
+	) => {
+		const devices = await readDevicesList(
+			devicesListFile,
+			model,
+			linux === true ? '\n' : '\r\n',
 		)
-			.filter(([, , , valid]) => valid === true)
-			.map<[string, string, string]>(([imei, fingerprint, publicKey]) => [
-				imei as string,
-				fingerprint as string,
-				publicKey as string,
-			])
 
-		if (devices.length === 0) {
+		console.log(chalk.blue(`Found ${devices.size} devices in the list.`))
+
+		const deviceCertificates = await readDeviceCertificates(certificatesZipFile)
+
+		console.log(
+			chalk.blue(`Found ${deviceCertificates.size} device certificates.`),
+		)
+
+		if (
+			!compareLists(deviceCertificates, devices) ||
+			!compareLists(devices, deviceCertificates)
+		) {
+			console.error(chalk.red(`Device lists do not match!`))
+			process.exit(1)
+		}
+
+		console.log(chalk.green(`Device list and certificates match.`))
+
+		if (devices.size === 0) {
 			console.error(chalk.red(`No devices found in`))
-			console.error(devicesList)
+			console.error(devicesListFile)
 			process.exit(1)
 		}
 
 		console.log(
 			table([
 				['Fingerprint', 'Device ID'],
-				...devices.map(([imei, fingerprint]) => [
+				...Array.from(devices.entries()).map(([imei, { fingerprint }]) => [
 					chalk.green(fingerprint),
 					chalk.blue(imei),
 				]),
@@ -128,16 +88,17 @@ export const importDevicesCommand = ({
 		})
 
 		const registration = await client.register(
-			devices.map(([imei, , publicKey]) => {
-				const deviceId = `oob-${imei}`
-				const certPem = publicKey
-				return {
-					deviceId,
-					subType: model.replace(/[^0-9a-z-]/gi, '-'),
-					tags: [model.replace(/[^0-9a-z-]/gi, ':')],
-					certPem,
-				}
-			}),
+			Array.from(deviceCertificates.entries()).map(
+				([imei, { certificate: certPem }]) => {
+					const deviceId = `oob-${imei}`
+					return {
+						deviceId,
+						subType: model.replace(/[^0-9a-z-]/gi, '-'),
+						tags: [model.replace(/[^0-9a-z-]/gi, ':')],
+						certPem,
+					}
+				},
+			),
 		)
 
 		if ('error' in registration) {
@@ -151,7 +112,7 @@ export const importDevicesCommand = ({
 			chalk.yellow(registration.bulkOpsRequestId),
 		)
 
-		for (const [imei, fingerprint] of devices) {
+		for (const [imei, { fingerprint }] of devices.entries()) {
 			const deviceId = `oob-${imei}`
 
 			const res = await registerDevice({
@@ -178,6 +139,3 @@ export const importDevicesCommand = ({
 	},
 	help: 'Import factory provisioned devices',
 })
-
-export const isIMEI = (imei?: string): imei is string =>
-	/^35[0-9]{13}$/.test(imei ?? '')
