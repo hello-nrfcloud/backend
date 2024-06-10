@@ -12,7 +12,7 @@ import type { DeviceStorage } from './DeviceStorage.js'
  * Provides the lambda function to access the import logs
  */
 export class SenMLImportLogs extends Construct {
-	public readonly fn: Lambda.IFunction
+	public readonly fn: PackedLambdaFn
 	constructor(
 		parent: Construct,
 		{
@@ -38,8 +38,8 @@ export class SenMLImportLogs extends Construct {
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 			},
-		}).fn
-		importLogsTable.grantReadData(this.fn)
-		deviceStorage.devicesTable.grantReadData(this.fn)
+		})
+		importLogsTable.grantReadData(this.fn.fn)
+		deviceStorage.devicesTable.grantReadData(this.fn.fn)
 	}
 }

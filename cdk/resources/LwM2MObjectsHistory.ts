@@ -16,7 +16,8 @@ import type { DeviceStorage } from './DeviceStorage.js'
  * Store history of LwM2M objects
  */
 export class LwM2MObjectsHistory extends Construct {
-	public readonly historyFn: Lambda.IFunction
+	public readonly storeFn: PackedLambdaFn
+	public readonly historyFn: PackedLambdaFn
 	public readonly table: Timestream.CfnTable
 	public readonly memoryStoreRetentionPeriodInHours = 24
 	public constructor(
@@ -51,7 +52,7 @@ export class LwM2MObjectsHistory extends Construct {
 				: RemovalPolicy.RETAIN,
 		)
 
-		const fn = new PackedLambdaFn(
+		this.storeFn = new PackedLambdaFn(
 			this,
 			'storeFn',
 			lambdaSources.storeObjectsInTimestream,
@@ -72,7 +73,7 @@ export class LwM2MObjectsHistory extends Construct {
 					}),
 				],
 			},
-		).fn
+		)
 
 		const ruleRole = new IAM.Role(this, 'ruleRole', {
 			assumedBy: new IAM.ServicePrincipal(
@@ -107,7 +108,7 @@ export class LwM2MObjectsHistory extends Construct {
 				actions: [
 					{
 						lambda: {
-							functionArn: fn.functionArn,
+							functionArn: this.storeFn.fn.functionArn,
 						},
 					},
 				],
@@ -120,7 +121,7 @@ export class LwM2MObjectsHistory extends Construct {
 			},
 		})
 
-		fn.addPermission('invokeByRule', {
+		this.storeFn.fn.addPermission('invokeByRule', {
 			principal: new IAM.ServicePrincipal(
 				'iot.amazonaws.com',
 			) as IAM.IPrincipal,
@@ -159,7 +160,7 @@ export class LwM2MObjectsHistory extends Construct {
 					}),
 				],
 			},
-		).fn
-		deviceStorage.devicesTable.grantReadData(this.historyFn)
+		)
+		deviceStorage.devicesTable.grantReadData(this.historyFn.fn)
 	}
 }

@@ -20,6 +20,8 @@ import type { WebsocketEventBus } from './WebsocketEventBus.js'
  * Updates the location history for each device from nRF Cloud
  */
 export class DeviceLocationHistory extends Construct {
+	public scheduleFetches: PackedLambdaFn
+	public fetcher: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -62,7 +64,7 @@ export class DeviceLocationHistory extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 			visibilityTimeout: scheduleDuration,
 		})
-		const scheduleFetches = new PackedLambdaFn(
+		this.scheduleFetches = new PackedLambdaFn(
 			this,
 			'scheduleLocationFetchHistory',
 			lambdaSources.scheduleLocationFetchHistory,
@@ -79,18 +81,20 @@ export class DeviceLocationHistory extends Construct {
 				layers,
 				timeout: Duration.seconds(10),
 			},
-		).fn
-		locationHistorySyncTable.grantReadWriteData(scheduleFetches)
-		connectionsTable.table.grantReadWriteData(scheduleFetches)
+		)
+		locationHistorySyncTable.grantReadWriteData(this.scheduleFetches.fn)
+		connectionsTable.table.grantReadWriteData(this.scheduleFetches.fn)
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
 			schedule: Events.Schedule.rate(scheduleDuration),
 		})
-		scheduler.addTarget(new EventTargets.LambdaFunction(scheduleFetches))
-		workQueue.grantSendMessages(scheduleFetches)
+		scheduler.addTarget(
+			new EventTargets.LambdaFunction(this.scheduleFetches.fn),
+		)
+		workQueue.grantSendMessages(this.scheduleFetches.fn)
 
 		// The fetcher reads tasks from the work queue and fetches the location history
-		const fetcher = new PackedLambdaFn(
+		this.fetcher = new PackedLambdaFn(
 			this,
 			'fetchLocationHistory',
 			lambdaSources.fetchLocationHistory,
@@ -118,13 +122,13 @@ export class DeviceLocationHistory extends Construct {
 					}),
 				],
 			},
-		).fn
-		fetcher.addEventSource(
+		)
+		this.fetcher.fn.addEventSource(
 			new EventSources.SqsEventSource(workQueue, {
 				batchSize: 1,
 				maxConcurrency: 10,
 			}),
 		)
-		websocketEventBus.eventBus.grantPutEventsTo(fetcher)
+		websocketEventBus.eventBus.grantPutEventsTo(this.fetcher.fn)
 	}
 }

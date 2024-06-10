@@ -25,6 +25,9 @@ import type { DeviceStorage } from './DeviceStorage.js'
  * Updates the LwM2M shadow for each device from nRF Cloud
  */
 export class DeviceShadow extends Construct {
+	public readonly prepareDeviceShadow: PackedLambdaFn
+	public readonly fetchDeviceShadow: PackedLambdaFn
+	public readonly publishShadowUpdatesToWebsocket: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -80,7 +83,7 @@ export class DeviceShadow extends Construct {
 		})
 
 		// Lambda functions
-		const prepareDeviceShadow = new PackedLambdaFn(
+		this.prepareDeviceShadow = new PackedLambdaFn(
 			this,
 			'prepareDeviceShadow',
 			lambdaSources.prepareDeviceShadow,
@@ -91,11 +94,13 @@ export class DeviceShadow extends Construct {
 				},
 				layers,
 			},
-		).fn
-		scheduler.addTarget(new EventTargets.LambdaFunction(prepareDeviceShadow))
-		shadowQueue.grantSendMessages(prepareDeviceShadow)
+		)
+		scheduler.addTarget(
+			new EventTargets.LambdaFunction(this.prepareDeviceShadow.fn),
+		)
+		shadowQueue.grantSendMessages(this.prepareDeviceShadow.fn)
 
-		const fetchDeviceShadow = new PackedLambdaFn(
+		this.fetchDeviceShadow = new PackedLambdaFn(
 			this,
 			'fetchDeviceShadow',
 			lambdaSources.fetchDeviceShadow,
@@ -114,8 +119,8 @@ export class DeviceShadow extends Construct {
 					}),
 				],
 			},
-		).fn
-		connectionsTable.table.grantReadWriteData(fetchDeviceShadow)
+		)
+		connectionsTable.table.grantReadWriteData(this.fetchDeviceShadow.fn)
 		const ssmReadPolicy = new IAM.PolicyStatement({
 			effect: IAM.Effect.ALLOW,
 			actions: ['ssm:GetParametersByPath'],
@@ -125,9 +130,9 @@ export class DeviceShadow extends Construct {
 				}:parameter/${Stack.of(this).stackName}/stack/context`,
 			],
 		})
-		fetchDeviceShadow.addToRolePolicy(ssmReadPolicy)
-		lockTable.grantReadWriteData(fetchDeviceShadow)
-		fetchDeviceShadow.addEventSource(
+		this.fetchDeviceShadow.fn.addToRolePolicy(ssmReadPolicy)
+		lockTable.grantReadWriteData(this.fetchDeviceShadow.fn)
+		this.fetchDeviceShadow.fn.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {
 				batchSize: 10,
 				maxConcurrency: 15,
@@ -135,7 +140,7 @@ export class DeviceShadow extends Construct {
 		)
 
 		// Publish shadow updates to the websocket clients
-		const publishShadowUpdatesToWebsocket = new PackedLambdaFn(
+		this.publishShadowUpdatesToWebsocket = new PackedLambdaFn(
 			this,
 			'publishShadowUpdatesToWebsocket',
 			lambdaSources.publishShadowUpdatesToWebsocket,
@@ -154,9 +159,11 @@ export class DeviceShadow extends Construct {
 					}),
 				],
 			},
-		).fn
-		connectionsTable.table.grantReadWriteData(publishShadowUpdatesToWebsocket)
-		eventBus.eventBus.grantPutEventsTo(publishShadowUpdatesToWebsocket)
+		)
+		connectionsTable.table.grantReadWriteData(
+			this.publishShadowUpdatesToWebsocket.fn,
+		)
+		eventBus.eventBus.grantPutEventsTo(this.publishShadowUpdatesToWebsocket.fn)
 
 		// AWS IoT Rule
 		const updateShadowRuleRole = new IoTActionRole(this).role
@@ -178,7 +185,7 @@ export class DeviceShadow extends Construct {
 				actions: [
 					{
 						lambda: {
-							functionArn: publishShadowUpdatesToWebsocket.functionArn,
+							functionArn: this.publishShadowUpdatesToWebsocket.fn.functionArn,
 						},
 					},
 				],
@@ -191,7 +198,7 @@ export class DeviceShadow extends Construct {
 			},
 		})
 
-		publishShadowUpdatesToWebsocket.addPermission('updateShadowRule', {
+		this.publishShadowUpdatesToWebsocket.fn.addPermission('updateShadowRule', {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
 			sourceArn: updateShadowRule.attrArn,
 		})

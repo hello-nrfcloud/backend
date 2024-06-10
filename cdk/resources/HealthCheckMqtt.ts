@@ -13,7 +13,8 @@ import type { WebsocketAPI } from './WebsocketAPI.js'
 
 export type BridgeImageSettings = BridgeSettings
 
-export class HealthCheckMqttBridge extends Construct {
+export class HealthCheckMqtt extends Construct {
+	public readonly healthCheck: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -28,7 +29,7 @@ export class HealthCheckMqttBridge extends Construct {
 			lambdaSources: Pick<BackendLambdas, 'healthCheck' | 'healthCheckForCoAP'>
 		},
 	) {
-		super(parent, 'healthCheckMqttBridge')
+		super(parent, 'HealthCheckMqtt')
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
 			description: `Scheduler to health check mqtt bridge`,
@@ -36,7 +37,7 @@ export class HealthCheckMqttBridge extends Construct {
 		})
 
 		// Lambda functions
-		const healthCheck = new PackedLambdaFn(
+		this.healthCheck = new PackedLambdaFn(
 			this,
 			'healthCheck',
 			lambdaSources.healthCheck,
@@ -49,8 +50,8 @@ export class HealthCheckMqttBridge extends Construct {
 				},
 				layers,
 			},
-		).fn
-		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheck))
-		deviceStorage.devicesTable.grantWriteData(healthCheck)
+		)
+		scheduler.addTarget(new EventTargets.LambdaFunction(this.healthCheck.fn))
+		deviceStorage.devicesTable.grantWriteData(this.healthCheck.fn)
 	}
 }

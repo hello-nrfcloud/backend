@@ -19,8 +19,11 @@ import type { WebsocketEventBus } from './WebsocketEventBus.js'
  * Schedules FOTA jobs for devices
  */
 export class DeviceFOTA extends Construct {
-	public readonly scheduleFOTAJobFn: Lambda.Function
-	public readonly getFOTAJobStatusFn: Lambda.Function
+	public readonly scheduleFOTAJobFn: PackedLambdaFn
+	public readonly scheduleFetches: PackedLambdaFn
+	public readonly updater: PackedLambdaFn
+	public readonly notifier: PackedLambdaFn
+	public readonly getFOTAJobStatusFn: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -74,9 +77,9 @@ export class DeviceFOTA extends Construct {
 					}),
 				],
 			},
-		).fn
-		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn)
-		jobStatusTable.grantWriteData(this.scheduleFOTAJobFn)
+		)
+		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn.fn)
+		jobStatusTable.grantWriteData(this.scheduleFOTAJobFn.fn)
 
 		// The scheduleFetches puts location history fetch tasks in this queue
 		const scheduleDuration = Duration.seconds(60)
@@ -99,7 +102,7 @@ export class DeviceFOTA extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 			visibilityTimeout: scheduleDuration,
 		})
-		const scheduleFetches = new PackedLambdaFn(
+		this.scheduleFetches = new PackedLambdaFn(
 			this,
 			'scheduleFOTAJobStatusUpdate',
 			lambdaSources.scheduleFOTAJobStatusUpdate,
@@ -115,17 +118,19 @@ export class DeviceFOTA extends Construct {
 				layers,
 				timeout: Duration.seconds(10),
 			},
-		).fn
-		jobStatusTable.grantReadWriteData(scheduleFetches)
+		)
+		jobStatusTable.grantReadWriteData(this.scheduleFetches.fn)
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
 			schedule: Events.Schedule.rate(scheduleDuration),
 		})
-		scheduler.addTarget(new EventTargets.LambdaFunction(scheduleFetches))
-		workQueue.grantSendMessages(scheduleFetches)
+		scheduler.addTarget(
+			new EventTargets.LambdaFunction(this.scheduleFetches.fn),
+		)
+		workQueue.grantSendMessages(this.scheduleFetches.fn)
 
 		// The updater reads tasks from the work queue and updates the FOTA job status
-		const updater = new PackedLambdaFn(
+		this.updater = new PackedLambdaFn(
 			this,
 			'updateFOTAJobStatus',
 			lambdaSources.updateFOTAJobStatus,
@@ -138,18 +143,18 @@ export class DeviceFOTA extends Construct {
 				layers,
 				timeout: Duration.minutes(1),
 			},
-		).fn
-		jobStatusTable.grantWriteData(updater)
-		updater.addEventSource(
+		)
+		jobStatusTable.grantWriteData(this.updater.fn)
+		this.updater.fn.addEventSource(
 			new EventSources.SqsEventSource(workQueue, {
 				batchSize: 10,
 				maxConcurrency: 10,
 			}),
 		)
-		websocketEventBus.eventBus.grantPutEventsTo(updater)
+		websocketEventBus.eventBus.grantPutEventsTo(this.updater.fn)
 
 		// Publish notifications about completed FOTA jobs to the websocket
-		const notifier = new PackedLambdaFn(
+		this.notifier = new PackedLambdaFn(
 			this,
 			'notifyFOTAJobStatus',
 			lambdaSources.notifyFOTAJobStatus,
@@ -162,8 +167,8 @@ export class DeviceFOTA extends Construct {
 				layers,
 				timeout: Duration.minutes(1),
 			},
-		).fn
-		notifier.addEventSource(
+		)
+		this.notifier.fn.addEventSource(
 			new EventSources.DynamoEventSource(jobStatusTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
 				filters: [
@@ -186,7 +191,7 @@ export class DeviceFOTA extends Construct {
 				],
 			}),
 		)
-		websocketEventBus.eventBus.grantPutEventsTo(notifier)
+		websocketEventBus.eventBus.grantPutEventsTo(this.notifier.fn)
 
 		// Return FOTA jobs per device
 		const deviceIdIndex = 'deviceIdIndex'
@@ -217,8 +222,8 @@ export class DeviceFOTA extends Construct {
 				},
 				layers,
 			},
-		).fn
-		deviceStorage.devicesTable.grantReadData(this.getFOTAJobStatusFn)
-		jobStatusTable.grantReadData(this.getFOTAJobStatusFn)
+		)
+		deviceStorage.devicesTable.grantReadData(this.getFOTAJobStatusFn.fn)
+		jobStatusTable.grantReadData(this.getFOTAJobStatusFn.fn)
 	}
 }

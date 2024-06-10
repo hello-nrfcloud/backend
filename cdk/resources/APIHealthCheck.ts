@@ -7,7 +7,7 @@ import type { BackendLambdas } from '../packBackendLambdas.js'
  * API health check
  */
 export class APIHealthCheck extends Construct {
-	public readonly fn: Lambda.IFunction
+	public readonly fn: PackedLambdaFn
 	constructor(
 		parent: Construct,
 		{
@@ -23,6 +23,6 @@ export class APIHealthCheck extends Construct {
 		this.fn = new PackedLambdaFn(this, 'fn', lambdaSources.apiHealthCheck, {
 			description: 'Simple health-check resource.',
 			layers,
-		}).fn
+		})
 	}
 }

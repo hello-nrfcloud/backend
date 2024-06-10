@@ -5,7 +5,7 @@ import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 
 export class DeviceInfo extends Construct {
-	public readonly fn: Lambda.IFunction
+	public readonly fn: PackedLambdaFn
 	constructor(
 		parent: Construct,
 		{
@@ -33,7 +33,7 @@ export class DeviceInfo extends Construct {
 					DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				},
 			},
-		).fn
-		deviceStorage.devicesTable.grantReadData(this.fn)
+		)
+		deviceStorage.devicesTable.grantReadData(this.fn.fn)
 	}
 }

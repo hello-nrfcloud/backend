@@ -8,7 +8,7 @@ import type { DeviceStorage } from './DeviceStorage.js'
  * Handles device configuration requests
  */
 export class ConfigureDevice extends Construct {
-	public readonly fn: Lambda.Function
+	public readonly fn: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -34,7 +34,7 @@ export class ConfigureDevice extends Construct {
 				},
 				layers,
 			},
-		).fn
-		deviceStorage.devicesTable.grantReadData(this.fn)
+		)
+		deviceStorage.devicesTable.grantReadData(this.fn.fn)
 	}
 }

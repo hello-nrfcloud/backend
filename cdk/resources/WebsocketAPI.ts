@@ -5,16 +5,16 @@ import {
 	aws_events as Events,
 	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
-	type aws_lambda as Lambda,
 	Stack,
+	type aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
+import { ApiLogging } from './APILogging.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import { ApiLogging } from './APILogging.js'
 
 export const integrationUri = (
 	parent: Construct,
@@ -30,6 +30,11 @@ export class WebsocketAPI extends Construct {
 	public readonly websocketURI: string
 	public readonly websocketAPIArn: string
 	public readonly websocketManagementAPIURL: string
+	public readonly onConnectFn: PackedLambdaFn
+	public readonly onMessageFn: PackedLambdaFn
+	public readonly onDisconnectFn: PackedLambdaFn
+	public readonly authorizerFn: PackedLambdaFn
+	public readonly publishToWebsocketClientsFn: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -58,7 +63,7 @@ export class WebsocketAPI extends Construct {
 		super(parent, 'WebsocketAPI')
 
 		// OnConnect
-		const onConnect = new PackedLambdaFn(
+		this.onConnectFn = new PackedLambdaFn(
 			this,
 			'onConnect',
 			lambdaSources.onConnect,
@@ -77,13 +82,13 @@ export class WebsocketAPI extends Construct {
 					}),
 				],
 			},
-		).fn
-		eventBus.eventBus.grantPutEventsTo(onConnect)
-		connectionsTable.table.grantWriteData(onConnect)
-		lastSeen.table.grantReadData(onConnect)
+		)
+		eventBus.eventBus.grantPutEventsTo(this.onConnectFn.fn)
+		connectionsTable.table.grantWriteData(this.onConnectFn.fn)
+		lastSeen.table.grantReadData(this.onConnectFn.fn)
 
 		// onMessage
-		const onMessage = new PackedLambdaFn(
+		this.onMessageFn = new PackedLambdaFn(
 			this,
 			'onMessage',
 			lambdaSources.onMessage,
@@ -94,11 +99,11 @@ export class WebsocketAPI extends Construct {
 				},
 				layers,
 			},
-		).fn
-		connectionsTable.table.grantWriteData(onMessage)
+		)
+		connectionsTable.table.grantWriteData(this.onMessageFn.fn)
 
 		// OnDisconnect
-		const onDisconnect = new PackedLambdaFn(
+		this.onDisconnectFn = new PackedLambdaFn(
 			this,
 			'onDisconnect',
 			lambdaSources.onDisconnect,
@@ -110,12 +115,12 @@ export class WebsocketAPI extends Construct {
 				},
 				layers,
 			},
-		).fn
-		connectionsTable.table.grantWriteData(onDisconnect)
-		eventBus.eventBus.grantPutEventsTo(onDisconnect)
+		)
+		connectionsTable.table.grantWriteData(this.onDisconnectFn.fn)
+		eventBus.eventBus.grantPutEventsTo(this.onDisconnectFn.fn)
 
 		// Request authorizer
-		const authorizerLambda = new PackedLambdaFn(
+		this.authorizerFn = new PackedLambdaFn(
 			this,
 			'authorizerLambda',
 			lambdaSources.authorizer,
@@ -128,8 +133,8 @@ export class WebsocketAPI extends Construct {
 					DEVICES_INDEX_NAME: deviceStorage.devicesTableFingerprintIndexName,
 				},
 			},
-		).fn
-		deviceStorage.devicesTable.grantReadWriteData(authorizerLambda)
+		)
+		deviceStorage.devicesTable.grantReadWriteData(this.authorizerFn.fn)
 
 		// API
 		const api = new ApiGatewayV2.CfnApi(this, 'api', {
@@ -145,10 +150,10 @@ export class WebsocketAPI extends Construct {
 				apiId: api.ref,
 				authorizerType: 'REQUEST',
 				name: `fingerprintAuthorizer`,
-				authorizerUri: integrationUri(this, authorizerLambda),
+				authorizerUri: integrationUri(this, this.authorizerFn.fn),
 			},
 		)
-		authorizerLambda.addPermission('invokeByHttpApi', {
+		this.authorizerFn.fn.addPermission('invokeByHttpApi', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
 			) as IAM.IPrincipal,
@@ -164,7 +169,7 @@ export class WebsocketAPI extends Construct {
 				apiId: api.ref,
 				description: 'Connect integration',
 				integrationType: 'AWS_PROXY',
-				integrationUri: integrationUri(this, onConnect),
+				integrationUri: integrationUri(this, this.onConnectFn.fn),
 			},
 		)
 		const connectRoute = new ApiGatewayV2.CfnRoute(this, 'connectRoute', {
@@ -183,7 +188,7 @@ export class WebsocketAPI extends Construct {
 				apiId: api.ref,
 				description: 'On message integration',
 				integrationType: 'AWS_PROXY',
-				integrationUri: integrationUri(this, onMessage),
+				integrationUri: integrationUri(this, this.onMessageFn.fn),
 			},
 		)
 		const onMessageRoute = new ApiGatewayV2.CfnRoute(this, 'onMessageRoute', {
@@ -201,7 +206,7 @@ export class WebsocketAPI extends Construct {
 				apiId: api.ref,
 				description: 'Disconnect integration',
 				integrationType: 'AWS_PROXY',
-				integrationUri: integrationUri(this, onDisconnect),
+				integrationUri: integrationUri(this, this.onDisconnectFn.fn),
 			},
 		)
 		const disconnectRoute = new ApiGatewayV2.CfnRoute(this, 'disconnectRoute', {
@@ -225,7 +230,7 @@ export class WebsocketAPI extends Construct {
 		})
 		this.websocketURI = `${api.attrApiEndpoint}/${prodStage.ref}`
 		// API invoke lambda permissions
-		onConnect.addPermission('invokeByAPI', {
+		this.onConnectFn.fn.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
 			) as IAM.IPrincipal,
@@ -233,7 +238,7 @@ export class WebsocketAPI extends Construct {
 				Stack.of(this).account
 			}:${api.ref}/${prodStage.stageName}/$connect`,
 		})
-		onMessage.addPermission('invokeByAPI', {
+		this.onMessageFn.fn.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
 			) as IAM.IPrincipal,
@@ -241,7 +246,7 @@ export class WebsocketAPI extends Construct {
 				Stack.of(this).account
 			}:${api.ref}/${prodStage.stageName}/message`,
 		})
-		onDisconnect.addPermission('invokeByAPI', {
+		this.onDisconnectFn.fn.addPermission('invokeByAPI', {
 			principal: new IAM.ServicePrincipal(
 				'apigateway.amazonaws.com',
 			) as IAM.IPrincipal,
@@ -262,7 +267,7 @@ export class WebsocketAPI extends Construct {
 		}.amazonaws.com/${prodStage.stageName}`
 
 		// Publish event to sockets
-		const publishToWebsocketClients = new PackedLambdaFn(
+		this.publishToWebsocketClientsFn = new PackedLambdaFn(
 			this,
 			'publishToWebsocketClients',
 			lambdaSources.publishToWebsocketClients,
@@ -286,13 +291,17 @@ export class WebsocketAPI extends Construct {
 				],
 				layers,
 			},
-		).fn
-		connectionsTable.table.grantReadWriteData(publishToWebsocketClients)
+		)
+		connectionsTable.table.grantReadWriteData(
+			this.publishToWebsocketClientsFn.fn,
+		)
 		new Events.Rule(this, 'publishToWebsocketClientsRule', {
 			eventPattern: {
 				source: ['hello.ws'],
 			},
-			targets: [new EventsTargets.LambdaFunction(publishToWebsocketClients)],
+			targets: [
+				new EventsTargets.LambdaFunction(this.publishToWebsocketClientsFn.fn),
+			],
 			eventBus: eventBus.eventBus,
 		})
 

@@ -11,6 +11,7 @@ import type { DeviceLastSeen } from '../DeviceLastSeen.js'
 import type { DeviceStorage } from '../DeviceStorage.js'
 
 export class KPIs extends Construct {
+	public readonly fn: PackedLambdaFn
 	constructor(
 		parent: Construct,
 		{
@@ -27,7 +28,7 @@ export class KPIs extends Construct {
 	) {
 		super(parent, 'kpis')
 
-		const lambda = new PackedLambdaFn(this, 'lambda', lambdaSources.kpis, {
+		this.fn = new PackedLambdaFn(this, 'lambda', lambdaSources.kpis, {
 			timeout: Duration.seconds(10),
 			description: 'Collect KPIs and publish them as metrics',
 			environment: {
@@ -35,14 +36,14 @@ export class KPIs extends Construct {
 				DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 			},
 			layers,
-		}).fn
-		lastSeen.table.grantReadData(lambda)
-		deviceStorage.devicesTable.grantReadData(lambda)
+		})
+		lastSeen.table.grantReadData(this.fn.fn)
+		deviceStorage.devicesTable.grantReadData(this.fn.fn)
 
 		const rule = new Events.Rule(this, 'rule', {
 			description: `Rule to schedule KPI lambda invocations`,
 			schedule: Events.Schedule.rate(Duration.hours(1)),
 		})
-		rule.addTarget(new EventTargets.LambdaFunction(lambda))
+		rule.addTarget(new EventTargets.LambdaFunction(this.fn.fn))
 	}
 }

@@ -5,7 +5,7 @@ import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 
 export class Feedback extends Construct {
-	public readonly fn: Lambda.IFunction
+	public readonly fn: PackedLambdaFn
 
 	constructor(
 		parent: Construct,
@@ -23,6 +23,6 @@ export class Feedback extends Construct {
 			timeout: Duration.seconds(10),
 			description: 'Publishes user feedback to teams.',
 			layers,
-		}).fn
+		})
 	}
 }

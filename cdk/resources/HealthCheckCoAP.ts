@@ -11,6 +11,8 @@ import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketAPI } from './WebsocketAPI.js'
 
 export class HealthCheckCoAP extends Construct {
+	public readonly healthCheckCoAP: PackedLambdaFn
+	public readonly coapLambda: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -36,7 +38,7 @@ export class HealthCheckCoAP extends Construct {
 		})
 
 		// Lambda functions
-		const coapLambda = new PackedLambdaFn(
+		this.coapLambda = new PackedLambdaFn(
 			this,
 			'client',
 			lambdaSources.healthCheckForCoAPClient,
@@ -46,9 +48,9 @@ export class HealthCheckCoAP extends Construct {
 				description: 'Sends binary payload to the nRF Cloud CoAP server',
 				environment: {},
 			},
-		).fn
+		)
 
-		const healthCheckCoAP = new PackedLambdaFn(
+		this.healthCheckCoAP = new PackedLambdaFn(
 			this,
 			'healthCheckCoAP',
 			lambdaSources.healthCheckForCoAP,
@@ -58,13 +60,15 @@ export class HealthCheckCoAP extends Construct {
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 					WEBSOCKET_URL: websocketAPI.websocketURI,
-					COAP_LAMBDA: coapLambda.functionName,
+					COAP_LAMBDA: this.coapLambda.fn.functionName,
 				},
 				layers,
 			},
-		).fn
-		scheduler.addTarget(new EventTargets.LambdaFunction(healthCheckCoAP))
-		deviceStorage.devicesTable.grantWriteData(healthCheckCoAP)
-		coapLambda.grantInvoke(healthCheckCoAP)
+		)
+		scheduler.addTarget(
+			new EventTargets.LambdaFunction(this.healthCheckCoAP.fn),
+		)
+		deviceStorage.devicesTable.grantWriteData(this.healthCheckCoAP.fn)
+		this.coapLambda.fn.grantInvoke(this.healthCheckCoAP.fn)
 	}
 }

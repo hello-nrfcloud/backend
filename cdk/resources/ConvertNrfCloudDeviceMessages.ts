@@ -14,6 +14,7 @@ import type { BackendLambdas } from '../packBackendLambdas.js'
  * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects
  */
 export class ConvertNrfCloudDeviceMessages extends Construct {
+	public readonly onNrfCloudDeviceMessage: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -26,7 +27,7 @@ export class ConvertNrfCloudDeviceMessages extends Construct {
 	) {
 		super(parent, 'converter')
 
-		const onNrfCloudDeviceMessage = new PackedLambdaFn(
+		this.onNrfCloudDeviceMessage = new PackedLambdaFn(
 			this,
 			'onNrfCloudDeviceMessage',
 			lambdaSources.onNrfCloudDeviceMessage,
@@ -61,7 +62,7 @@ export class ConvertNrfCloudDeviceMessages extends Construct {
 				actions: [
 					{
 						lambda: {
-							functionArn: onNrfCloudDeviceMessage.fn.functionArn,
+							functionArn: this.onNrfCloudDeviceMessage.fn.functionArn,
 						},
 					},
 				],
@@ -74,7 +75,7 @@ export class ConvertNrfCloudDeviceMessages extends Construct {
 			},
 		})
 
-		onNrfCloudDeviceMessage.fn.addPermission('topicRule', {
+		this.onNrfCloudDeviceMessage.fn.addPermission('topicRule', {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
 			sourceArn: rule.attrArn,
 		})

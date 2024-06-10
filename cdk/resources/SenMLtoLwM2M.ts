@@ -19,6 +19,7 @@ import type { WebsocketEventBus } from './WebsocketEventBus.js'
  */
 export class CoAPSenMLtoLwM2M extends Construct {
 	public readonly importLogs: DynamoDB.ITable
+	public readonly fn: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -48,7 +49,7 @@ export class CoAPSenMLtoLwM2M extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 		})
 
-		const fn = new PackedLambdaFn(this, 'fn', lambdaSources.onLwM2MUpdate, {
+		this.fn = new PackedLambdaFn(this, 'fn', lambdaSources.onLwM2MUpdate, {
 			description: 'Convert LwM2M updates and publish them on the EventBus',
 			environment: {
 				EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
@@ -62,9 +63,9 @@ export class CoAPSenMLtoLwM2M extends Construct {
 				}),
 			],
 			timeout: Duration.minutes(2),
-		}).fn
-		websocketEventBus.eventBus.grantPutEventsTo(fn)
-		this.importLogs.grantReadWriteData(fn)
+		})
+		websocketEventBus.eventBus.grantPutEventsTo(this.fn.fn)
+		this.importLogs.grantReadWriteData(this.fn.fn)
 
 		const role = new IoTActionRole(this)
 
@@ -84,7 +85,7 @@ export class CoAPSenMLtoLwM2M extends Construct {
 				actions: [
 					{
 						lambda: {
-							functionArn: fn.functionArn,
+							functionArn: this.fn.fn.functionArn,
 						},
 					},
 				],
@@ -97,7 +98,7 @@ export class CoAPSenMLtoLwM2M extends Construct {
 			},
 		})
 
-		fn.addPermission('coapTopicRule', {
+		this.fn.fn.addPermission('coapTopicRule', {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
 			sourceArn: coapRule.attrArn,
 		})
@@ -118,7 +119,7 @@ export class CoAPSenMLtoLwM2M extends Construct {
 				actions: [
 					{
 						lambda: {
-							functionArn: fn.functionArn,
+							functionArn: this.fn.fn.functionArn,
 						},
 					},
 				],
@@ -131,7 +132,7 @@ export class CoAPSenMLtoLwM2M extends Construct {
 			},
 		})
 
-		fn.addPermission('mqttTopicRule', {
+		this.fn.fn.addPermission('mqttTopicRule', {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
 			sourceArn: mqttRule.attrArn,
 		})

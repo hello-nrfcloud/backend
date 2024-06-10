@@ -1,42 +1,43 @@
+import { repositoryName } from '@bifravst/aws-cdk-ecr-helpers/repository'
+import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
 import type { App } from 'aws-cdk-lib'
 import {
 	CfnOutput,
+	aws_ecr as ECR,
+	aws_ecs as ECS,
 	aws_lambda as Lambda,
 	Stack,
 	type Environment,
-	aws_ecr as ECR,
-	aws_ecs as ECS,
 } from 'aws-cdk-lib'
+import { ContainerRepositoryId } from '../aws/ecr.js'
 import { type CAFiles } from '../bridge/caLocation.js'
 import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from './packBackendLambdas.js'
-import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
+import { API } from './resources/API.js'
+import { APIHealthCheck } from './resources/APIHealthCheck.js'
+import { ConfigureDevice } from './resources/ConfigureDevice.js'
 import { ContinuousDeployment } from './resources/ContinuousDeployment.js'
+import { ConvertNrfCloudDeviceMessages } from './resources/ConvertNrfCloudDeviceMessages.js'
+import { DeviceFOTA } from './resources/DeviceFOTA.js'
+import { DeviceInfo } from './resources/DeviceInfo.js'
 import { DeviceLastSeen } from './resources/DeviceLastSeen.js'
+import { DeviceLocationHistory } from './resources/DeviceLocationHistory.js'
 import { DeviceShadow } from './resources/DeviceShadow.js'
 import { DeviceStorage } from './resources/DeviceStorage.js'
-import { HealthCheckMqttBridge } from './resources/HealthCheckMqttBridge.js'
+import { Feedback } from './resources/Feedback.js'
+import { HealthCheckCoAP } from './resources/HealthCheckCoAP.js'
+import { HealthCheckMqtt } from './resources/HealthCheckMqtt.js'
 import { Integration } from './resources/Integration.js'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { LwM2MObjectsHistory } from './resources/LwM2MObjectsHistory.js'
+import { Monitoring } from './resources/Monitoring.js'
+import { SenMLImportLogs } from './resources/SenMLImportLogs.js'
+import { CoAPSenMLtoLwM2M } from './resources/SenMLtoLwM2M.js'
 import { WebsocketAPI } from './resources/WebsocketAPI.js'
-import { KPIs } from './resources/kpis/KPIs.js'
-import { STACK_NAME } from './stackConfig.js'
-import { ConfigureDevice } from './resources/ConfigureDevice.js'
 import { WebsocketConnectionsTable } from './resources/WebsocketConnectionsTable.js'
 import { WebsocketEventBus } from './resources/WebsocketEventBus.js'
-import { HealthCheckCoAP } from './resources/HealthCheckCoAP.js'
-import { ContainerRepositoryId } from '../aws/ecr.js'
-import { repositoryName } from '@bifravst/aws-cdk-ecr-helpers/repository'
-import { API } from './resources/API.js'
-import { CoAPSenMLtoLwM2M } from './resources/SenMLtoLwM2M.js'
-import { SenMLImportLogs } from './resources/SenMLImportLogs.js'
-import { Feedback } from './resources/Feedback.js'
-import { DeviceInfo } from './resources/DeviceInfo.js'
-import { APIHealthCheck } from './resources/APIHealthCheck.js'
-import { LwM2MObjectsHistory } from './resources/LwM2MObjectsHistory.js'
-import { ConvertNrfCloudDeviceMessages } from './resources/ConvertDeviceMessages.js'
-import { DeviceLocationHistory } from './resources/DeviceLocationHistory.js'
-import { DeviceFOTA } from './resources/DeviceFOTA.js'
+import { KPIs } from './resources/kpis/KPIs.js'
+import { STACK_NAME } from './stackConfig.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -106,7 +107,7 @@ export class BackendStack extends Stack {
 		const websocketConnectionsTable = new WebsocketConnectionsTable(this)
 		const websocketEventBus = new WebsocketEventBus(this)
 
-		new DeviceShadow(this, {
+		const deviceShadow = new DeviceShadow(this, {
 			layers: [baseLayerVersion],
 			lambdaSources,
 			connectionsTable: websocketConnectionsTable,
@@ -114,10 +115,13 @@ export class BackendStack extends Stack {
 			deviceStorage,
 		})
 
-		new ConvertNrfCloudDeviceMessages(this, {
-			layers: [baseLayerVersion],
-			lambdaSources,
-		})
+		const convertNrfCloudDeviceMessages = new ConvertNrfCloudDeviceMessages(
+			this,
+			{
+				layers: [baseLayerVersion],
+				lambdaSources,
+			},
+		)
 
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
@@ -129,11 +133,11 @@ export class BackendStack extends Stack {
 		})
 
 		const api = new API(this)
-		api.addRoute(
-			'GET /health',
-			new APIHealthCheck(this, { layers: [baseLayerVersion], lambdaSources })
-				.fn,
-		)
+		const apiHealth = new APIHealthCheck(this, {
+			layers: [baseLayerVersion],
+			lambdaSources,
+		})
+		api.addRoute('GET /health', apiHealth.fn.fn)
 
 		new Integration(this, {
 			iotEndpoint,
@@ -153,14 +157,14 @@ export class BackendStack extends Stack {
 			nRFCloudAccounts,
 		})
 
-		new HealthCheckMqttBridge(this, {
+		const healthCheckMqtt = new HealthCheckMqtt(this, {
 			websocketAPI,
 			deviceStorage,
 			layers: [baseLayerVersion, healthCheckLayerVersion],
 			lambdaSources,
 		})
 
-		new HealthCheckCoAP(this, {
+		const healthCheckCoAP = new HealthCheckCoAP(this, {
 			websocketAPI,
 			deviceStorage,
 			layers: [baseLayerVersion, healthCheckLayerVersion],
@@ -179,14 +183,14 @@ export class BackendStack extends Stack {
 			layers: [baseLayerVersion],
 			importLogsTable: convertLwM2M.importLogs,
 		})
-		api.addRoute('GET /device/{id}/senml-imports', senMLImportLogs.fn)
+		api.addRoute('GET /device/{id}/senml-imports', senMLImportLogs.fn.fn)
 
 		const cd = new ContinuousDeployment(this, {
 			repository,
 			gitHubOICDProviderArn,
 		})
 
-		new KPIs(this, {
+		const kpis = new KPIs(this, {
 			lambdaSources,
 			layers: [baseLayerVersion],
 			lastSeen,
@@ -198,29 +202,29 @@ export class BackendStack extends Stack {
 			layers: [baseLayerVersion],
 			deviceStorage,
 		})
-		api.addRoute('PATCH /device/{id}/state', configureDevice.fn)
+		api.addRoute('PATCH /device/{id}/state', configureDevice.fn.fn)
 
 		const feedback = new Feedback(this, {
 			lambdaSources,
 			layers: [baseLayerVersion],
 		})
-		api.addRoute('POST /feedback', feedback.fn)
+		api.addRoute('POST /feedback', feedback.fn.fn)
 
 		const deviceInfo = new DeviceInfo(this, {
 			deviceStorage,
 			lambdaSources,
 			layers: [baseLayerVersion],
 		})
-		api.addRoute('GET /device', deviceInfo.fn)
+		api.addRoute('GET /device', deviceInfo.fn.fn)
 
-		const lwm2mObjectHistory = new LwM2MObjectsHistory(this, {
+		const lwm2mObjectsHistory = new LwM2MObjectsHistory(this, {
 			deviceStorage,
 			layers: [baseLayerVersion],
 			lambdaSources,
 		})
 		api.addRoute(
 			'GET /device/{deviceId}/history/{objectId}/{instanceId}',
-			lwm2mObjectHistory.historyFn,
+			lwm2mObjectsHistory.historyFn.fn,
 		)
 
 		const deviceFOTA = new DeviceFOTA(this, {
@@ -229,15 +233,48 @@ export class BackendStack extends Stack {
 			deviceStorage,
 			websocketEventBus,
 		})
-		api.addRoute('POST /device/{id}/fota', deviceFOTA.scheduleFOTAJobFn)
-		api.addRoute('GET /device/{id}/fota/jobs', deviceFOTA.getFOTAJobStatusFn)
+		api.addRoute('POST /device/{id}/fota', deviceFOTA.scheduleFOTAJobFn.fn)
+		api.addRoute('GET /device/{id}/fota/jobs', deviceFOTA.getFOTAJobStatusFn.fn)
 
-		new DeviceLocationHistory(this, {
+		const deviceLocationHistory = new DeviceLocationHistory(this, {
 			lambdaSources,
 			layers: [baseLayerVersion],
 			connectionsTable: websocketConnectionsTable,
-			lwm2mHistory: lwm2mObjectHistory,
+			lwm2mHistory: lwm2mObjectsHistory,
 			websocketEventBus,
+		})
+
+		new Monitoring(this, {
+			logGroups: [
+				apiHealth.fn.logGroup,
+				configureDevice.fn.logGroup,
+				convertNrfCloudDeviceMessages.onNrfCloudDeviceMessage.logGroup,
+				deviceFOTA.scheduleFOTAJobFn.logGroup,
+				deviceFOTA.scheduleFetches.logGroup,
+				deviceFOTA.updater.logGroup,
+				deviceFOTA.notifier.logGroup,
+				deviceFOTA.getFOTAJobStatusFn.logGroup,
+				deviceInfo.fn.logGroup,
+				deviceLocationHistory.scheduleFetches.logGroup,
+				deviceLocationHistory.fetcher.logGroup,
+				deviceShadow.prepareDeviceShadow.logGroup,
+				deviceShadow.fetchDeviceShadow.logGroup,
+				deviceShadow.publishShadowUpdatesToWebsocket.logGroup,
+				feedback.fn.logGroup,
+				healthCheckCoAP.coapLambda.logGroup,
+				healthCheckCoAP.healthCheckCoAP.logGroup,
+				healthCheckMqtt.healthCheck.logGroup,
+				lwm2mObjectsHistory.storeFn.logGroup,
+				lwm2mObjectsHistory.historyFn.logGroup,
+				senMLImportLogs.fn.logGroup,
+				convertLwM2M.fn.logGroup,
+				websocketAPI.onConnectFn.logGroup,
+				websocketAPI.onMessageFn.logGroup,
+				websocketAPI.onDisconnectFn.logGroup,
+				websocketAPI.authorizerFn.logGroup,
+				websocketAPI.publishToWebsocketClientsFn.logGroup,
+				kpis.fn.logGroup,
+			],
 		})
 
 		// Outputs
@@ -260,7 +297,7 @@ export class BackendStack extends Stack {
 			exportName: `${this.stackName}:lwm2mObjectHistoryTableInfo`,
 			description:
 				'DB and Name of the Timestream table that stores LwM2M object updates',
-			value: lwm2mObjectHistory.table.ref,
+			value: lwm2mObjectsHistory.table.ref,
 		})
 		new CfnOutput(this, 'lastSeenTableName', {
 			exportName: `${this.stackName}:lastSeenTableName`,
