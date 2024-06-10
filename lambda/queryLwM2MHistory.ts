@@ -278,7 +278,7 @@ const binResourceHistory = async ({
 		// Only select the columns that exist
 		.filter(([name]) => {
 			const available = availableColumns.includes(name)
-			if (!available) console.error(`Column not found: ${name}!`)
+			if (!available) console.warn(`Column not found: ${name}!`)
 			return available
 		})
 
@@ -344,7 +344,7 @@ const getResourceHistory = async ({
 		// Only select the columns that exist
 		.filter(([name]) => {
 			const available = availableColumns.includes(name)
-			if (!available) console.error(`Column not found: ${name}!`)
+			if (!available) console.warn(`Column not found: ${name}!`)
 			return available
 		})
 
