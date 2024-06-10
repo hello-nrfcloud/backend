@@ -1,0 +1,4 @@
+date_time,pca_number,hw_version,imei,pin_dua,fingerprint,modem_fw_version,final_fw_filename
+240422-111436,PCA20065,0.7.0,355066600000001,016362,974.test42,mfw_nrf91x1_2.0.0,t91x-at-client-db19aafd0.hex
+240418-153052,PCA20065,0.7.0,355066600000002,588702,971.test43,mfw_nrf91x1_2.0.0,t91x-at-client-db19aafd0.hex
+240419-160055,PCA20065,0.7.0,355066600000003,917237,971.test44,mfw_nrf91x1_2.0.0,t91x-at-client-db19aafd0.hex

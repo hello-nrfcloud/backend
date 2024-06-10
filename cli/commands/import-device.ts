@@ -11,7 +11,7 @@ import chalk from 'chalk'
 import { readFile } from 'node:fs/promises'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { isIMEI } from './import-devices.js'
+import { isIMEI } from '../../devices/isIMEI.js'
 import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.js'
 
 export const importDeviceCommand = ({
