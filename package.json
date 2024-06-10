@@ -121,7 +121,7 @@
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
     "@hello.nrfcloud.com/lambda-helpers": "1.2.4",
     "@hello.nrfcloud.com/nrfcloud-api-helpers": "5.0.9",
-    "@hello.nrfcloud.com/proto": "13.2.4",
+    "@hello.nrfcloud.com/proto": "13.2.5",
     "@hello.nrfcloud.com/proto-map": "12.1.2",
     "@middy/core": "5.4.0",
     "@nordicsemiconductor/from-env": "3.0.1",
