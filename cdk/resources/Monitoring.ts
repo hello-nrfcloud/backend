@@ -1,4 +1,4 @@
-import type { aws_logs as Logs } from 'aws-cdk-lib'
+import { Stack, type aws_logs as Logs } from 'aws-cdk-lib'
 import { QueryDefinition, QueryString } from 'aws-cdk-lib/aws-logs'
 import { Construct } from 'constructs'
 
@@ -14,7 +14,7 @@ export class Monitoring extends Construct {
 
 		// Get all error logs from all lambda errors
 		new QueryDefinition(this, 'ErrorLogsQuery', {
-			queryDefinitionName: 'Lambda errors',
+			queryDefinitionName: `${Stack.of(this).stackName} lambda errors`,
 			queryString: new QueryString({
 				fields: ['@timestamp', '@message', '@logStream', '@log'],
 				sort: '@timestamp desc',
