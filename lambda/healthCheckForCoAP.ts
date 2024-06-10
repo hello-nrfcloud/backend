@@ -205,7 +205,7 @@ const h = async (): Promise<void> => {
 										},
 									)
 								} catch (err) {
-									console.error(JSON.stringify(err))
+									console.debug(`Message not matched`, JSON.stringify(err))
 									return ValidateResponse.skip
 								}
 
