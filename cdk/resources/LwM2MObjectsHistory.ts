@@ -90,6 +90,7 @@ export class LwM2MObjectsHistory extends Construct {
 					`topic(3) as deviceId,`,
 					`get_dynamodb("${deviceStorage.devicesTable.tableName}", "deviceId", topic(3), "${ruleRole.roleArn}").model AS model`,
 					`FROM '$aws/things/+/shadow/name/lwm2m/update/accepted'`,
+					`WHERE isUndefined(state.reported) = false`,
 				].join(' '),
 				actions: [
 					{
