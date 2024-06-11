@@ -5,7 +5,10 @@ import { SSMClient } from '@aws-sdk/client-ssm'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { getFOTAJob } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import {
+	FetchError,
+	getFOTAJob,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
@@ -65,37 +68,44 @@ const h = async (event: SQSEvent): Promise<void> => {
 
 		const maybeJob = await fetcher({ jobId })
 		if ('error' in maybeJob) {
-			console.error(`Fetching the FOTA job failed!`, maybeJob.error)
-			// Mark the job as failed
-			if (Date.now() - new Date(createdAt).getTime() > 24 * 60 * 60 * 1000) {
-				await db.send(
-					new UpdateItemCommand({
-						TableName: jobStatusTableName,
-						Key: {
-							jobId: {
-								S: jobId,
+			if (
+				maybeJob.error instanceof FetchError &&
+				maybeJob.error.statusCode === 404
+			) {
+				console.debug(`FOTA job ${jobId} not found!`, maybeJob.error)
+				// Mark the job as failed
+				if (Date.now() - new Date(createdAt).getTime() > 24 * 60 * 60 * 1000) {
+					await db.send(
+						new UpdateItemCommand({
+							TableName: jobStatusTableName,
+							Key: {
+								jobId: {
+									S: jobId,
+								},
 							},
-						},
-						UpdateExpression:
-							'SET #lastUpdatedAt = :lastUpdatedAt, #status = :status, #statusDetail = :statusDetail',
-						ExpressionAttributeNames: {
-							'#lastUpdatedAt': 'lastUpdatedAt',
-							'#status': 'status',
-							'#statusDetail': 'statusDetail',
-						},
-						ExpressionAttributeValues: {
-							':lastUpdatedAt': {
-								S: new Date().toISOString(),
+							UpdateExpression:
+								'SET #lastUpdatedAt = :lastUpdatedAt, #status = :status, #statusDetail = :statusDetail',
+							ExpressionAttributeNames: {
+								'#lastUpdatedAt': 'lastUpdatedAt',
+								'#status': 'status',
+								'#statusDetail': 'statusDetail',
 							},
-							':status': {
-								S: 'FAILED',
+							ExpressionAttributeValues: {
+								':lastUpdatedAt': {
+									S: new Date().toISOString(),
+								},
+								':status': {
+									S: 'FAILED',
+								},
+								':statusDetail': {
+									S: 'The job was not found on nRF Cloud. It may have been deleted.',
+								},
 							},
-							':statusDetail': {
-								S: 'The job was not found on nRF Cloud. It may have been deleted.',
-							},
-						},
-					}),
-				)
+						}),
+					)
+				}
+			} else {
+				console.error(`Fetching the FOTA job failed!`, maybeJob.error)
 			}
 			continue
 		}
