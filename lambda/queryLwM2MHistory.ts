@@ -79,7 +79,7 @@ const validateInput = validateWithTypeBox(
 		deviceId,
 		objectId: Type.Union(LwM2MObjectIDs.map((id) => Type.Literal(id))),
 		instanceId: Type.Integer({ minimum: 0 }),
-		fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
+		fingerprint: Type.RegExp(fingerprintRegExp),
 		timeSpan: Type.Optional(
 			Type.Union(
 				Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>

@@ -235,6 +235,7 @@ export class BackendStack extends Stack {
 		})
 		api.addRoute('POST /device/{id}/fota', deviceFOTA.scheduleFOTAJobFn.fn)
 		api.addRoute('GET /device/{id}/fota/jobs', deviceFOTA.getFOTAJobStatusFn.fn)
+		api.addRoute('GET /device/{id}/fota/bundles', deviceFOTA.listFOTABundles.fn)
 
 		const deviceLocationHistory = new DeviceLocationHistory(this, {
 			lambdaSources,
@@ -254,6 +255,7 @@ export class BackendStack extends Stack {
 				deviceFOTA.updater.logGroup,
 				deviceFOTA.notifier.logGroup,
 				deviceFOTA.getFOTAJobStatusFn.logGroup,
+				deviceFOTA.listFOTABundles.logGroup,
 				deviceInfo.fn.logGroup,
 				deviceLocationHistory.scheduleFetches.logGroup,
 				deviceLocationHistory.fetcher.logGroup,

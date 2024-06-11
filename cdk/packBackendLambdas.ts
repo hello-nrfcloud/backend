@@ -33,6 +33,7 @@ export type BackendLambdas = {
 	scheduleFOTAJobStatusUpdate: PackedLambda
 	updateFOTAJobStatus: PackedLambda
 	notifyFOTAJobStatus: PackedLambda
+	listFOTABundles: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -85,5 +86,9 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	notifyFOTAJobStatus: await packLambdaFromPath(
 		'notifyFOTAJobStatus',
 		`lambda/fota/notifyFOTAJobStatus.ts`,
+	),
+	listFOTABundles: await packLambdaFromPath(
+		'listFOTABundles',
+		`lambda/fota/listFOTABundles.ts`,
 	),
 })

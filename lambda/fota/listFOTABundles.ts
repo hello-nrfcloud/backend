@@ -6,30 +6,32 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { devices } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import {
+	getFOTABundles,
+	type FOTABundle as nRFCloudFOTABundle,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
-	BadRequestError,
+	Context,
+	type FOTABundle,
 	HttpStatusCode,
-	LwM2MObjectUpdate,
+	InternalError,
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import { Type } from '@sinclair/typebox/type'
+import { Type, type Static } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { getDeviceById } from '../devices/getDeviceById.js'
-import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
-import { loggingFetch } from './loggingFetch.js'
-import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
-import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
+import { getDeviceById } from '../../devices/getDeviceById.js'
+import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
+import { loggingFetch } from '../loggingFetch.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -38,30 +40,25 @@ const { stackName, version, DevicesTableName } = fromEnv({
 })(process.env)
 
 const db = new DynamoDBClient({})
+const ssm = new SSMClient({})
+
+const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
+
 const getDevice = getDeviceById({
 	db,
 	DevicesTableName,
 })
 
-const ssm = new SSMClient({})
-
-const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
-
-const { track } = metricsForComponent('configureDevice')
-
-const trackFetch = loggingFetch({ track, log: logger('configureDevice') })
+const { track } = metricsForComponent('deviceFOTA')
+const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
 const validateInput = validateWithTypeBox(
 	Type.Object({
 		id: deviceId,
 		fingerprint: Type.RegExp(fingerprintRegExp),
-		update: LwM2MObjectUpdate,
 	}),
 )
 
-/**
- * Handle configure device request
- */
 const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
@@ -70,10 +67,6 @@ const h = async (
 	const maybeValidInput = validateInput({
 		...(event.queryStringParameters ?? {}),
 		...(event.pathParameters ?? {}),
-		update: {
-			...tryAsJSON(event.body),
-			ts: new Date().toISOString(),
-		},
 	})
 	if ('errors' in maybeValidInput) {
 		return aProblem({
@@ -93,6 +86,7 @@ const h = async (
 			status: HttpStatusCode.NOT_FOUND,
 		})
 	}
+
 	const device = maybeDevice.device
 	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
 		return aProblem({
@@ -107,34 +101,41 @@ const h = async (
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
 
-	const update = devices(
+	const list = getFOTABundles(
 		{
 			endpoint: apiEndpoint,
 			apiKey,
 		},
 		trackFetch,
 	)
-	const res = await update.updateState(deviceId, {
-		desired: {
-			lwm2m: objectsToShadow([maybeValidInput.value.update]),
-		},
-	})
 
-	if ('success' in res) {
-		console.debug(`Accepted`)
-		return aResponse(HttpStatusCode.ACCEPTED)
-	} else {
-		console.error(`Update failed`, JSON.stringify(res))
+	const res = await list()
+
+	if ('error' in res) {
 		return aProblem(
-			BadRequestError({
-				title: `Configuration update failed`,
+			InternalError({
+				title: `Fetching FOTA bundles failed`,
 				detail: res.error.message,
 			}),
 		)
 	}
-}
 
+	return aResponse(HttpStatusCode.OK, {
+		'@context': Context.fotaBundles,
+		deviceId,
+		bundles: res.bundles.map(toBundle),
+	})
+}
 export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
 	.handler(h)
+
+const toBundle = (
+	bundleInfo: Static<typeof nRFCloudFOTABundle>,
+): Static<typeof FOTABundle> => ({
+	'@context': Context.fotaBundle.toString(),
+	bundleId: bundleInfo.bundleId,
+	type: bundleInfo.type,
+	version: bundleInfo.version,
+})

@@ -24,6 +24,7 @@ export class DeviceFOTA extends Construct {
 	public readonly updater: PackedLambdaFn
 	public readonly notifier: PackedLambdaFn
 	public readonly getFOTAJobStatusFn: PackedLambdaFn
+	public readonly listFOTABundles: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -39,6 +40,7 @@ export class DeviceFOTA extends Construct {
 				| 'scheduleFOTAJobStatusUpdate'
 				| 'updateFOTAJobStatus'
 				| 'notifyFOTAJobStatus'
+				| 'listFOTABundles'
 			>
 			layers: Lambda.ILayerVersion[]
 			deviceStorage: DeviceStorage
@@ -225,5 +227,20 @@ export class DeviceFOTA extends Construct {
 		)
 		deviceStorage.devicesTable.grantReadData(this.getFOTAJobStatusFn.fn)
 		jobStatusTable.grantReadData(this.getFOTAJobStatusFn.fn)
+
+		// List FOTA bundles
+		this.listFOTABundles = new PackedLambdaFn(
+			this,
+			'listFOTABundles',
+			lambdaSources.listFOTABundles,
+			{
+				description: 'List FOTA bundles',
+				environment: {
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+				},
+				layers,
+			},
+		)
+		deviceStorage.devicesTable.grantReadData(this.listFOTABundles.fn)
 	}
 }

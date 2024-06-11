@@ -48,7 +48,7 @@ const db = new DynamoDBClient({})
 const validateInput = validateWithTypeBox(
 	Type.Object({
 		id: deviceId,
-		fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
+		fingerprint: Type.RegExp(fingerprintRegExp),
 	}),
 )
 

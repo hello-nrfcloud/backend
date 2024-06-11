@@ -74,7 +74,7 @@ const validateInput = validateWithTypeBox(
 				description: 'The nRF Cloud firmware bundle ID',
 			},
 		),
-		fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
+		fingerprint: Type.RegExp(fingerprintRegExp),
 	}),
 )
 
