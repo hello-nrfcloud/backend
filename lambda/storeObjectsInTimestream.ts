@@ -102,6 +102,7 @@ const h = async (event: {
 			)
 		} else {
 			console.error(err)
+			track(`error:${event.model}`, MetricUnit.Count, 1)
 		}
 	}
 }
