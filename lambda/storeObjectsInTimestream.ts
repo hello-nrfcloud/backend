@@ -69,6 +69,12 @@ const h = async (event: {
 	}
 
 	console.log(JSON.stringify({ Records }))
+
+	if (Records.length === 0) {
+		console.debug('No records to store')
+		return
+	}
+
 	try {
 		await client.send(
 			new WriteRecordsCommand({
