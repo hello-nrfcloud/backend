@@ -1,11 +1,13 @@
-import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import {
+	IoTActionRole,
+	PackedLambdaFn,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
 	Duration,
 	aws_iam as IAM,
 	aws_iot as IoT,
 	RemovalPolicy,
-	Stack,
 	aws_timestream as Timestream,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
@@ -75,25 +77,8 @@ export class LwM2MObjectsHistory extends Construct {
 			},
 		)
 
-		const ruleRole = new IAM.Role(this, 'ruleRole', {
-			assumedBy: new IAM.ServicePrincipal(
-				'iot.amazonaws.com',
-			) as IAM.IPrincipal,
-			inlinePolicies: {
-				rootPermissions: new IAM.PolicyDocument({
-					statements: [
-						new IAM.PolicyStatement({
-							actions: ['iot:Publish'],
-							resources: [
-								`arn:aws:iot:${Stack.of(parent).region}:${
-									Stack.of(parent).account
-								}:topic/errors`,
-							],
-						}),
-					],
-				}),
-			},
-		})
+		const ruleRole = new IoTActionRole(this).role
+		deviceStorage.devicesTable.grantReadData(ruleRole)
 
 		const rule = new IoT.CfnTopicRule(this, 'rule', {
 			topicRulePayload: {
@@ -102,7 +87,8 @@ export class LwM2MObjectsHistory extends Construct {
 				awsIotSqlVersion: '2016-03-23',
 				sql: [
 					`SELECT state.reported as reported,`,
-					`topic(3) as deviceId`,
+					`topic(3) as deviceId,`,
+					`get_dynamodb("${deviceStorage.devicesTable.tableName}", "deviceId", topic(3), "${ruleRole.roleArn}").model AS model`,
 					`FROM '$aws/things/+/shadow/name/lwm2m/update/accepted'`,
 				].join(' '),
 				actions: [

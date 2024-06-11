@@ -1,4 +1,5 @@
 import {
+	RejectedRecordsException,
 	TimestreamWriteClient,
 	WriteRecordsCommand,
 	type _Record,
@@ -9,6 +10,11 @@ import {
 	NoHistoryMeasuresError,
 	instanceMeasuresToRecord,
 } from '../historicalData/instanceMeasuresToRecord.js'
+import middy from '@middy/core'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import type { LwM2MShadow } from '../lwm2m/objectsToShadow.js'
 
 const { tableInfo } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
@@ -20,23 +26,15 @@ if (DatabaseName === undefined || TableName === undefined)
 
 const client = new TimestreamWriteClient({})
 
-export type LwM2MShadow = Record<
-	string, // e.g. 14201:1.0 (ObjectID:ObjectVersion)
-	Record<
-		string, // InstanceID
-		Record<
-			string, // ResourceID
-			number | string | boolean
-		>
-	>
->
+const { track, metrics } = metricsForComponent('storeObjectsInTimestream')
 
 /**
  * Store updates to LwM2M objects in Timestream
  */
-export const handler = async (event: {
+const h = async (event: {
 	deviceId: string
 	reported: LwM2MShadow
+	model: string
 }): Promise<void> => {
 	console.debug(JSON.stringify({ event }))
 
@@ -71,19 +69,41 @@ export const handler = async (event: {
 	}
 
 	console.log(JSON.stringify({ Records }))
-	await client.send(
-		new WriteRecordsCommand({
-			DatabaseName,
-			TableName,
-			Records,
-			CommonAttributes: {
-				Dimensions: [
-					{
-						Name: 'deviceId',
-						Value: event.deviceId,
-					},
-				],
-			},
-		}),
-	)
+	try {
+		await client.send(
+			new WriteRecordsCommand({
+				DatabaseName,
+				TableName,
+				Records,
+				CommonAttributes: {
+					Dimensions: [
+						{
+							Name: 'deviceId',
+							Value: event.deviceId,
+						},
+					],
+				},
+			}),
+		)
+		track(`success:${event.model}`, MetricUnit.Count, Records.length)
+	} catch (err) {
+		console.debug(`Failed to persist records!`, err)
+		if (err instanceof RejectedRecordsException) {
+			console.debug(`Rejected records`, JSON.stringify(err.RejectedRecords))
+			track(
+				`error:${event.model}`,
+				MetricUnit.Count,
+				err.RejectedRecords?.length ?? 0,
+			)
+			track(
+				`success:${event.model}`,
+				MetricUnit.Count,
+				Records.length - (err.RejectedRecords?.length ?? 0),
+			)
+		} else {
+			console.error(err)
+		}
+	}
 }
+
+export const handler = middy().use(logMetrics(metrics)).handler(h)
