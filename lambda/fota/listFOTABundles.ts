@@ -138,12 +138,16 @@ const h = async (
 	return aResponse(HttpStatusCode.OK, {
 		'@context': Context.fotaBundles,
 		deviceId,
-		bundles: res.bundles.map(toBundle),
+		bundles: res.bundles
+			.sort((b1, b2) =>
+				(b2.lastModified ?? '').localeCompare(b1.lastModified ?? ''),
+			)
+			.map(toBundle),
 	})
 }
 export const handler = middy()
 	.use(addVersionHeader(version))
-	.use(corsOPTIONS('PATCH'))
+	.use(corsOPTIONS('GET'))
 	.handler(h)
 
 const toBundle = (
