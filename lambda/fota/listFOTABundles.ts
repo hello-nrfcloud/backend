@@ -7,6 +7,7 @@ import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import {
+	type ValidationError,
 	getFOTABundles,
 	type FOTABundle as nRFCloudFOTABundle,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
@@ -59,6 +60,18 @@ const validateInput = validateWithTypeBox(
 	}),
 )
 
+const bundlesPromise = new Map<
+	string,
+	Promise<
+		| {
+				error: Error | ValidationError
+		  }
+		| {
+				bundles: Array<Static<typeof nRFCloudFOTABundle>>
+		  }
+	>
+>()
+
 const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
@@ -101,15 +114,17 @@ const h = async (
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
 
-	const list = getFOTABundles(
-		{
-			endpoint: apiEndpoint,
-			apiKey,
-		},
-		trackFetch,
-	)
-
-	const res = await list()
+	if (!bundlesPromise.has(account)) {
+		const list = getFOTABundles(
+			{
+				endpoint: apiEndpoint,
+				apiKey,
+			},
+			trackFetch,
+		)
+		bundlesPromise.set(account, list())
+	}
+	const res = await bundlesPromise.get(account)!
 
 	if ('error' in res) {
 		return aProblem(

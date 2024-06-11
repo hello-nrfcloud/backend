@@ -239,6 +239,7 @@ export class DeviceFOTA extends Construct {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				},
 				layers,
+				timeout: Duration.seconds(10),
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.listFOTABundles.fn)
