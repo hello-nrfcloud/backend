@@ -15,7 +15,7 @@ export class API extends Construct {
 		const stageName = '2024-04-17'
 
 		this.api = new HttpApi.CfnApi(this, 'api', {
-			name: 'hello.nrfcloud.com/map API',
+			name: 'hello.nrfcloud.com API',
 			protocolType: 'HTTP',
 		})
 

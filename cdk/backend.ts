@@ -23,6 +23,8 @@ import { pack as packHealthCheckLayer } from './layers/healthCheckLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { STACK_NAME } from './stackConfig.js'
 import { ScopeContexts, type ScopeContext } from '../settings/scope.js'
+import { getCertificateForDomain } from '../aws/acm.js'
+import { ACMClient } from '@aws-sdk/client-acm'
 
 const repoUrl = new URL(pJSON.repository.url)
 const repository = {
@@ -34,6 +36,7 @@ const iot = new IoTClient({})
 const sts = new STS({})
 const iam = new IAMClient({})
 const ssm = new SSMClient({})
+const acm = new ACMClient({})
 
 const accountEnv = await env({ sts })
 
@@ -114,6 +117,9 @@ const nRFCloudAccounts = await getAllAccounts({
 	stackName: STACK_NAME,
 })
 
+const isTest = process.env.IS_TEST === '1'
+const apiDomainName = process.env.API_DOMAIN_NAME
+
 new BackendApp({
 	lambdaSources: await packBackendLambdas(),
 	baseLayer: await packBaseLayer(),
@@ -128,8 +134,11 @@ new BackendApp({
 		iam,
 	}),
 	env: accountEnv,
-	isTest: process.env.IS_TEST === '1',
-	domain: 'hello.nrfcloud.com',
+	isTest,
+	apiDomain:
+		apiDomainName !== undefined
+			? await getCertificateForDomain(acm)(apiDomainName)
+			: undefined,
 	version: (() => {
 		const v = process.env.VERSION
 		const defaultVersion = '0.0.0-development'

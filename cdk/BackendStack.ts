@@ -38,6 +38,8 @@ import { WebsocketConnectionsTable } from './resources/WebsocketConnectionsTable
 import { WebsocketEventBus } from './resources/WebsocketEventBus.js'
 import { KPIs } from './resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
+import type { DomainCert } from '../aws/acm.js'
+import { APICustomDomain } from './resources/APICustomDomain.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -54,6 +56,7 @@ export class BackendStack extends Stack {
 			repository,
 			gitHubOICDProviderArn,
 			env,
+			apiDomain,
 		}: {
 			lambdaSources: BackendLambdas
 			baseLayer: PackedLayer
@@ -69,6 +72,7 @@ export class BackendStack extends Stack {
 				repo: string
 			}
 			env: Required<Environment>
+			apiDomain?: DomainCert
 		},
 	) {
 		super(parent, STACK_NAME, {
@@ -138,6 +142,30 @@ export class BackendStack extends Stack {
 			lambdaSources,
 		})
 		api.addRoute('GET /health', apiHealth.fn.fn)
+
+		if (apiDomain === undefined) {
+			new CfnOutput(this, 'APIURL', {
+				exportName: `${this.stackName}:APIURL`,
+				description: 'API endpoint',
+				value: api.URL,
+			})
+		} else {
+			const domain = new APICustomDomain(this, {
+				api,
+				apiDomain,
+			})
+			new CfnOutput(this, 'gatewayDomainName', {
+				exportName: `${this.stackName}:gatewayDomainName`,
+				description:
+					'The domain name associated with the regional endpoint for the custom domain name. Use this as the target for the CNAME record for your custom domain name.',
+				value: domain.gatewayDomainName.toString(),
+			})
+			new CfnOutput(this, 'APIURL', {
+				exportName: `${this.stackName}:APIURL`,
+				description: 'API endpoint',
+				value: domain.URL,
+			})
+		}
 
 		new Integration(this, {
 			iotEndpoint,
@@ -310,11 +338,6 @@ export class BackendStack extends Stack {
 			exportName: `${this.stackName}:cdRoleArn`,
 			description: 'Role ARN to use in the deploy GitHub Actions Workflow',
 			value: cd.role.roleArn,
-		})
-		new CfnOutput(this, 'APIURL', {
-			exportName: `${this.stackName}:APIURL`,
-			description: 'API endpoint',
-			value: api.URL,
 		})
 	}
 }
