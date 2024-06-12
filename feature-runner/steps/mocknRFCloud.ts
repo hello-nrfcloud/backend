@@ -80,7 +80,7 @@ export const steps = ({
 	const queueResponse = regExpMatchedStep(
 		{
 			regExp:
-				/^this nRF Cloud API is queued for a `(?<methodPathQuery>[^`]+)` request$/,
+				/^this nRF Cloud API request is queued for a `(?<methodPathQuery>[^`]+)` request$/,
 			schema: Type.Object({
 				methodPathQuery: Type.String(),
 			}),

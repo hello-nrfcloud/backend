@@ -84,7 +84,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
 <!-- This is the response nRF Cloud returns on job creation. -->
 
-And this nRF Cloud API is queued for a `POST /v1/fota-jobs` request
+And this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
 
 ```
 HTTP/1.1 200 OK
@@ -95,7 +95,8 @@ Content-Type: application/json
 
 <!-- Device fetches details about the job. -->
 
-And this nRF Cloud API is queued for a `GET /v1/fota-jobs/${jobId}` request
+And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId}`
+request
 
 ```
 HTTP/1.1 200 OK
@@ -199,7 +200,8 @@ And `$.jobs[0]` of the last response should match
 
 > The job is marked as completed by nRF Cloud
 
-Given this nRF Cloud API is queued for a `GET /v1/fota-jobs/${jobId}` request
+Given this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId}`
+request
 
 ```
 HTTP/1.1 200 OK

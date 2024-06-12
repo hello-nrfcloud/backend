@@ -4,7 +4,10 @@ import {
 	WriteRecordsCommand,
 	type _Record,
 } from '@aws-sdk/client-timestream-write'
-import { isLwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import {
+	LwM2MObjectID,
+	isLwM2MObjectID,
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import {
 	NoHistoryMeasuresError,
@@ -45,6 +48,8 @@ const h = async (event: {
 		const [ObjectIDString, ObjectVersion] = ObjectIDAndVersion.split(':')
 		const ObjectID = parseInt(ObjectIDString ?? '0', 10)
 		if (!isLwM2MObjectID(ObjectID)) continue
+		// Do not store GeoLocation objects
+		if (ObjectID === LwM2MObjectID.Geolocation_14201) continue
 		for (const [InstanceIDString, Resources] of Object.entries(Instances)) {
 			const ObjectInstanceID = parseInt(InstanceIDString ?? '0', 10)
 

@@ -14,7 +14,7 @@ exampleContext:
 
 Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
-And this nRF Cloud API is queued for a `GET /v1/firmwares` request
+And this nRF Cloud API request is queued for a `GET /v1/firmwares` request
 
 ```
 HTTP/1.1 200 OK
