@@ -30,7 +30,7 @@ Given I store `ts - 60 * 1000` into `pastTs`
 
 And I store `$fromMillis(${pastTs})` into `pastTsISO`
 
-And this nRF Cloud API is queued for a
+And this nRF Cloud API request is queued for a
 `GET /v1/location/history?deviceId=${fingerprint_deviceId}` request
 
 ```
@@ -56,7 +56,7 @@ Content-Type: application/json
 
 ```
 
-And this nRF Cloud API is queued for a
+And this nRF Cloud API request is queued for a
 `GET /v1/location/history?deviceId=${fingerprint_deviceId}&pageNextToken=some-token`
 request
 

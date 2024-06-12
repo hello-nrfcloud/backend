@@ -91,6 +91,7 @@ void describe('createTrailOfCoordinates()', () => {
 					lat: 63.422214376965165,
 					lng: 10.43763831347703,
 					ts: 1691114567,
+					source: 'GNSS',
 				},
 			]),
 			[
@@ -100,6 +101,7 @@ void describe('createTrailOfCoordinates()', () => {
 					ts: 1691114567,
 					count: 1,
 					radiusKm: 0,
+					sources: new Set(['GNSS']),
 				},
 			],
 		)
@@ -111,11 +113,13 @@ void describe('createTrailOfCoordinates()', () => {
 					lat: 63.422214376965165,
 					lng: 10.43763831347703,
 					ts: 1691114567,
+					source: 'GNSS',
 				},
 				{
 					lat: 63.36316007133849,
 					lng: 10.355729671057269,
 					ts: 1691114567,
+					source: 'GNSS',
 				},
 			]),
 			[
@@ -125,6 +129,7 @@ void describe('createTrailOfCoordinates()', () => {
 					ts: 1691114567,
 					count: 1,
 					radiusKm: 0,
+					sources: new Set(['GNSS']),
 				},
 				{
 					lat: 63.36316007133849,
@@ -132,6 +137,7 @@ void describe('createTrailOfCoordinates()', () => {
 					ts: 1691114567,
 					count: 1,
 					radiusKm: 0,
+					sources: new Set(['GNSS']),
 				},
 			],
 		)
@@ -143,11 +149,13 @@ void describe('createTrailOfCoordinates()', () => {
 					lat: 63.422214376965165,
 					lng: 10.43763831347703,
 					ts: 1691114567,
+					source: 'GNSS',
 				},
 				{
 					lat: 63.422214376965165,
 					lng: 10.43763831347703,
 					ts: 1691114667,
+					source: 'WIFI',
 				},
 			]),
 			[
@@ -157,6 +165,7 @@ void describe('createTrailOfCoordinates()', () => {
 					ts: 1691114567,
 					count: 2,
 					radiusKm: 0,
+					sources: new Set(['GNSS', 'WIFI']),
 				},
 			],
 		)
@@ -169,6 +178,7 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691114567,
 				count: 2,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 			{
 				lat: 63.42161345025134,
@@ -176,6 +186,7 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691114687,
 				count: 11,
 				radiusKm: 0.049514654728146604,
+				sources: new Set(['GNSS']),
 			},
 			{
 				lat: 63.421482406605705,
@@ -183,11 +194,15 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691115887,
 				count: 2,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 		]
 
 		assert.deepEqual(
-			createTrailOfCoordinates(0.05, coordinates),
+			createTrailOfCoordinates(
+				0.05,
+				coordinates.map((c) => ({ ...c, source: 'GNSS' })),
+			),
 			expectedResults50m,
 		)
 	})
@@ -200,6 +215,7 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691114567,
 				count: 2,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 			{
 				lat: 63.42161345025134,
@@ -207,6 +223,7 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691114687,
 				count: 4,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 			{
 				lat: 63.42154475460784,
@@ -214,6 +231,7 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691115187,
 				count: 1,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 			{
 				lat: 63.42135082023726,
@@ -221,6 +239,7 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691115287,
 				count: 1,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 			{
 				lat: 63.42130758628152,
@@ -228,6 +247,7 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691115387,
 				count: 5,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 
 			{
@@ -236,10 +256,14 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691115887,
 				count: 2,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 		]
 		assert.deepEqual(
-			createTrailOfCoordinates(0.0001, coordinates),
+			createTrailOfCoordinates(
+				0.0001,
+				coordinates.map((c) => ({ ...c, source: 'GNSS' })),
+			),
 			expectedResults1m,
 		)
 	})
@@ -251,10 +275,14 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691114567,
 				radiusKm: 0.10948726763782791,
 				count: 15,
+				sources: new Set(['GNSS']),
 			},
 		]
 		assert.deepEqual(
-			createTrailOfCoordinates(1, coordinates),
+			createTrailOfCoordinates(
+				1,
+				coordinates.map((c) => ({ ...c, source: 'GNSS' })),
+			),
 			expectedResults1Km,
 		)
 	})
@@ -264,16 +292,19 @@ void describe('createTrailOfCoordinates()', () => {
 				lat: 63.422214376965165,
 				lng: 10.43763831347703,
 				ts: 1691114567,
+				source: 'GNSS',
 			},
 			{
 				lat: 63.422214376965165,
 				lng: 10.43763831347703,
 				ts: 1691114567,
+				source: 'GNSS',
 			},
 			{
 				lat: 63.422214376965165,
 				lng: 10.43763831347703,
 				ts: 1691114567,
+				source: 'GNSS',
 			},
 		]
 
@@ -284,10 +315,14 @@ void describe('createTrailOfCoordinates()', () => {
 				ts: 1691114567,
 				count: 3,
 				radiusKm: 0,
+				sources: new Set(['GNSS']),
 			},
 		]
 		assert.deepEqual(
-			createTrailOfCoordinates(1, oneCoordinate),
+			createTrailOfCoordinates(
+				1,
+				oneCoordinate.map((c) => ({ ...c, source: 'GNSS' })),
+			),
 			expectedResults1coordinate,
 		)
 	})

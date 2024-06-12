@@ -13,32 +13,35 @@ import {
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
-import type { LwM2MObjectsHistory } from './LwM2MObjectsHistory.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import type { DeviceStorage } from './DeviceStorage.js'
 
 /**
- * Updates the location history for each device from nRF Cloud
+ * Makes the device location history available to the frontend
  */
 export class DeviceLocationHistory extends Construct {
 	public scheduleFetches: PackedLambdaFn
 	public fetcher: PackedLambdaFn
+	public queryFn: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
 			lambdaSources,
 			layers,
 			connectionsTable,
-			lwm2mHistory,
 			websocketEventBus,
+			deviceStorage,
 		}: {
 			lambdaSources: Pick<
 				BackendLambdas,
-				'scheduleLocationFetchHistory' | 'fetchLocationHistory'
+				| 'scheduleLocationFetchHistory'
+				| 'fetchLocationHistory'
+				| 'queryLocationHistory'
 			>
 			layers: Lambda.ILayerVersion[]
 			connectionsTable: WebsocketConnectionsTable
-			lwm2mHistory: LwM2MObjectsHistory
 			websocketEventBus: WebsocketEventBus
+			deviceStorage: DeviceStorage
 		},
 	) {
 		super(parent, 'DeviceLocationHistory')
@@ -55,6 +58,39 @@ export class DeviceLocationHistory extends Construct {
 				removalPolicy: RemovalPolicy.DESTROY,
 			},
 		)
+
+		const locationHistoryTable = new DynamoDB.Table(
+			this,
+			'locationHistoryTable',
+			{
+				billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+				partitionKey: {
+					name: 'id',
+					type: DynamoDB.AttributeType.STRING,
+				},
+				sortKey: {
+					name: 'timestamp',
+					type: DynamoDB.AttributeType.STRING,
+				},
+				timeToLiveAttribute: 'ttl',
+				removalPolicy: RemovalPolicy.DESTROY,
+			},
+		)
+
+		const deviceIdTimestampIndex = 'deviceIdTimestampIndex'
+		locationHistoryTable.addGlobalSecondaryIndex({
+			indexName: deviceIdTimestampIndex,
+			partitionKey: {
+				name: 'deviceId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			sortKey: {
+				name: 'timestamp',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.INCLUDE,
+			nonKeyAttributes: ['source', 'lat', 'lon', 'uncertainty'],
+		})
 
 		const scheduleDuration = Duration.seconds(60)
 
@@ -75,8 +111,7 @@ export class DeviceLocationHistory extends Construct {
 					LOCATION_HISTORY_SYNC_TABLE_NAME: locationHistorySyncTable.tableName,
 					WORK_QUEUE_URL: workQueue.queueUrl,
 					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
-					MAX_AGE_HOURS:
-						lwm2mHistory.memoryStoreRetentionPeriodInHours.toString(),
+					MAX_AGE_HOURS: '24',
 				},
 				layers,
 				timeout: Duration.seconds(10),
@@ -100,9 +135,9 @@ export class DeviceLocationHistory extends Construct {
 			lambdaSources.fetchLocationHistory,
 			{
 				description:
-					'Fetch the location history and write it to TimeStream and the device shadow',
+					'Fetch the location history and write it to the history table and the device shadow',
 				environment: {
-					HISTORICAL_DATA_TABLE_INFO: lwm2mHistory.table.ref,
+					LOCATION_HISTORY_TABLE_NAME: locationHistoryTable.tableName,
 					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				},
 				layers,
@@ -110,14 +145,6 @@ export class DeviceLocationHistory extends Construct {
 				initialPolicy: [
 					new IAM.PolicyStatement({
 						actions: ['iot:UpdateThingShadow'],
-						resources: ['*'],
-					}),
-					new IAM.PolicyStatement({
-						actions: ['timestream:WriteRecords'],
-						resources: [lwm2mHistory.table.attrArn],
-					}),
-					new IAM.PolicyStatement({
-						actions: ['timestream:DescribeEndpoints'],
 						resources: ['*'],
 					}),
 				],
@@ -130,5 +157,25 @@ export class DeviceLocationHistory extends Construct {
 			}),
 		)
 		websocketEventBus.eventBus.grantPutEventsTo(this.fetcher.fn)
+		locationHistoryTable.grantWriteData(this.fetcher.fn)
+
+		this.queryFn = new PackedLambdaFn(
+			this,
+			'queryFn',
+			lambdaSources.queryLocationHistory,
+			{
+				timeout: Duration.seconds(10),
+				description: 'Queries the location history',
+				layers,
+				environment: {
+					LOCATION_HISTORY_TABLE_NAME: locationHistoryTable.tableName,
+					LOCATION_HISTORY_TABLE_DEVICE_ID_TIMESTAMP_INDEX:
+						deviceIdTimestampIndex,
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+				},
+			},
+		)
+		deviceStorage.devicesTable.grantReadData(this.queryFn.fn)
+		locationHistoryTable.grantReadData(this.queryFn.fn)
 	}
 }

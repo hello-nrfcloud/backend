@@ -1,3 +1,5 @@
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	QueryCommand,
@@ -8,12 +10,12 @@ import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import {
 	formatTypeBoxErrors,
 	validateWithTypeBox,
 } from '@hello.nrfcloud.com/proto'
 import {
-	LwM2MObjectID,
 	LwM2MObjectIDs,
 	definitions,
 	type LWM2MObjectInfo,
@@ -22,8 +24,8 @@ import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
 	HttpStatusCode,
-	type LwM2MObjectHistory,
 	deviceId,
+	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { fromEnv } from '@nordicsemiconductor/from-env'
@@ -33,19 +35,15 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
+import { once } from 'lodash-es'
 import { getDeviceById } from '../devices/getDeviceById.js'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
 	type HistoricalDataTimeSpan,
 } from '../historicalData/HistoricalDataTimeSpans.js'
-import { isNumeric } from '../lwm2m/isNumeric.js'
-import { createTrailOfCoordinates } from './historical-data/createTrailOfCoordinates.js'
-import { once } from 'lodash-es'
 import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
-import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { isNumeric } from '../lwm2m/isNumeric.js'
 
 const { tableInfo, DevicesTableName, version, isTest } = fromEnv({
 	version: 'VERSION',
@@ -88,13 +86,6 @@ const validateInput = validateWithTypeBox(
 			),
 		),
 		aggregate: Type.Optional(Aggregate),
-		trail: Type.Optional(
-			Type.Integer({
-				minimum: 1,
-				description:
-					'Create a location trail with the minimum distance in kilometers. Only applicable with ObjectID 14201.',
-			}),
-		),
 	}),
 )
 
@@ -124,10 +115,8 @@ const h = async (
 	console.log(JSON.stringify(event))
 
 	const { deviceId, objectId, instanceId } = event.pathParameters ?? {}
-	const { trail } = event.queryStringParameters ?? {}
 	const maybeValidInput = validateInput({
 		...(event.queryStringParameters ?? {}),
-		trail: trail !== undefined ? parseInt(trail, 10) : undefined,
 		deviceId,
 		objectId: parseInt(objectId ?? '-1', 10),
 		instanceId: parseInt(instanceId ?? '-1', 10),
@@ -178,53 +167,14 @@ const h = async (
 			},
 			partialInstances: [],
 		}
-		if (maybeValidInput.value.trail !== undefined) {
-			if (ObjectID !== LwM2MObjectID.Geolocation_14201) {
-				return aProblem({
-					title: `Trail option must only be used with ObjectID ${LwM2MObjectID.Geolocation_14201}!`,
-					detail: `${maybeValidInput.value.objectId}`,
-					status: HttpStatusCode.BAD_REQUEST,
-				})
-			}
-			// Request the location history, but fold similar locations
-			const history = (await getResourceHistory({
-				def,
-				instance: InstanceID,
-				deviceId: device.id,
-				timeSpan,
-				dir: 'ASC',
-			})) as Array<{
-				0: number
-				1: number
-				6: string
-				ts: string
-			}>
 
-			const source = history[0]?.[6] ?? 'GNSS'
-
-			result.partialInstances = createTrailOfCoordinates(
-				maybeValidInput.value.trail,
-				history.map(({ '0': lat, '1': lng, ts }) => ({
-					lat,
-					lng,
-					ts: new Date(ts).getTime(),
-				})),
-			).map(({ lat, lng, ts, radiusKm }) => ({
-				'0': lat,
-				'1': lng,
-				'3': radiusKm * 1000,
-				'6': source,
-				'99': ts,
-			}))
-		} else {
-			result.partialInstances = await binResourceHistory({
-				def,
-				instance: InstanceID,
-				deviceId: device.id,
-				timeSpan,
-				aggregateFn: aggregate ?? 'avg',
-			})
-		}
+		result.partialInstances = await binResourceHistory({
+			def,
+			instance: InstanceID,
+			deviceId: device.id,
+			timeSpan,
+			aggregateFn: aggregate ?? 'avg',
+		})
 
 		return aResponse(
 			200,
@@ -318,73 +268,6 @@ const binResourceHistory = async ({
 	)
 	console.debug(JSON.stringify({ result }))
 	track('QueryTime', MetricUnit.Milliseconds, Date.now() - start)
-	return parseResult(result)
-}
-
-const getResourceHistory = async ({
-	def,
-	instance,
-	deviceId,
-	timeSpan: { durationHours },
-	dir,
-}: {
-	def: LWM2MObjectInfo
-	instance: number
-	deviceId: string
-	timeSpan: HistoricalDataTimeSpan
-	dir?: string
-}): Promise<Array<Record<number, string | number | boolean>>> => {
-	const availableColumns = await availableColumnsCache()
-	const resourceNames = Object.values(def.Resources)
-		.filter(isNumeric)
-		.map<[string, number]>(({ ResourceID }) => [
-			`${def.ObjectID}/${def.ObjectVersion}/${ResourceID}`,
-			ResourceID,
-		])
-		// Only select the columns that exist
-		.filter(([name]) => {
-			const available = availableColumns.includes(name)
-			if (!available) console.warn(`Column not found: ${name}!`)
-			return available
-		})
-
-	const columns = [
-		...resourceNames.map(
-			([alias, ResourceID]) => `"${alias}" AS "${ResourceID}"`,
-		),
-		`time AS ts`,
-	]
-
-	if (columns.length === 0) {
-		console.error(`No columns found for ${def.ObjectID}/${instance}!`)
-		console.error(`Available columns: ${availableColumns.join(', ')}`)
-		return []
-	}
-
-	const QueryString = [
-		`SELECT `,
-		columns.join(', '),
-		`FROM "${DatabaseName}"."${TableName}"`,
-		`WHERE measure_name = '${def.ObjectID}/${instance}'`,
-		`AND time > date_add('hour', -${durationHours}, now())`,
-		`AND ObjectID = '${def.ObjectID}'`,
-		`AND ObjectInstanceID = '${instance}'`,
-		`AND ObjectVersion = '${def.ObjectVersion}'`,
-		`AND deviceId = '${deviceId}'`,
-		`ORDER BY time ${dir ?? 'DESC'}`,
-	].join(' ')
-
-	console.log({ QueryString })
-
-	const start = Date.now()
-	const result = await ts.send(
-		new QueryCommand({
-			QueryString,
-		}),
-	)
-	track('QueryTime', MetricUnit.Milliseconds, Date.now() - start)
-	console.debug(JSON.stringify({ result }))
-
 	return parseResult(result)
 }
 

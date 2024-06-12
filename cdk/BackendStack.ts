@@ -245,6 +245,18 @@ export class BackendStack extends Stack {
 		})
 		api.addRoute('GET /device', deviceInfo.fn.fn)
 
+		const deviceLocationHistory = new DeviceLocationHistory(this, {
+			lambdaSources,
+			layers: [baseLayerVersion],
+			connectionsTable: websocketConnectionsTable,
+			websocketEventBus,
+			deviceStorage,
+		})
+		api.addRoute(
+			'GET /device/{deviceId}/history/14201/0',
+			deviceLocationHistory.queryFn.fn,
+		)
+
 		const lwm2mObjectsHistory = new LwM2MObjectsHistory(this, {
 			deviceStorage,
 			layers: [baseLayerVersion],
@@ -265,14 +277,6 @@ export class BackendStack extends Stack {
 		api.addRoute('GET /device/{id}/fota/jobs', deviceFOTA.getFOTAJobStatusFn.fn)
 		api.addRoute('GET /device/{id}/fota/bundles', deviceFOTA.listFOTABundles.fn)
 
-		const deviceLocationHistory = new DeviceLocationHistory(this, {
-			lambdaSources,
-			layers: [baseLayerVersion],
-			connectionsTable: websocketConnectionsTable,
-			lwm2mHistory: lwm2mObjectsHistory,
-			websocketEventBus,
-		})
-
 		new Monitoring(this, {
 			logGroups: [
 				apiHealth.fn.logGroup,
@@ -287,6 +291,7 @@ export class BackendStack extends Stack {
 				deviceInfo.fn.logGroup,
 				deviceLocationHistory.scheduleFetches.logGroup,
 				deviceLocationHistory.fetcher.logGroup,
+				deviceLocationHistory.queryFn.logGroup,
 				deviceShadow.prepareDeviceShadow.logGroup,
 				deviceShadow.fetchDeviceShadow.logGroup,
 				deviceShadow.publishShadowUpdatesToWebsocket.logGroup,

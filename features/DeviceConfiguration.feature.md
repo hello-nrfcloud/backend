@@ -19,7 +19,7 @@ Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 ## Turn the LED on
 
-Given this nRF Cloud API is queued for a
+Given this nRF Cloud API request is queued for a
 `PATCH /v1/devices/${fingerprint_deviceId}/state` request
 
 ```
