@@ -20,7 +20,6 @@ import {
 } from '@bifravst/http-api-mock/sortQueryString'
 import { parseMockRequest } from '@bifravst/http-api-mock/parseMockRequest'
 import { parseMockResponse } from '@bifravst/http-api-mock/parseMockResponse'
-import { URLSearchParamsToObject } from '@bifravst/http-api-mock/URLSearchParamsToObject'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { registerResponse } from '@bifravst/http-api-mock/responses'
 
@@ -66,7 +65,7 @@ export const steps = ({
 						statusCode: 200,
 						body: [`Content-Type: application/json`, ``, data].join('\n'),
 						queryParams: {
-							...URLSearchParamsToObject(query),
+							...Object.fromEntries(query),
 							deviceIds: `/\\b${deviceId}\\b/`, // Check using RegEx
 						},
 						ttl: Math.round(Date.now() / 1000) + 5 * 60,
