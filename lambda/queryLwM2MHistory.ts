@@ -18,6 +18,7 @@ import {
 import {
 	LwM2MObjectIDs,
 	definitions,
+	timestampResources,
 	type LWM2MObjectInfo,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
@@ -231,12 +232,18 @@ const binResourceHistory = async ({
 			if (!available) console.warn(`Column not found: ${name}!`)
 			return available
 		})
-
+	const tsResource = timestampResources.get(def.ObjectID)
+	if (tsResource === undefined) {
+		console.error(
+			`No timestamp resource defined for found for ${def.ObjectID}!`,
+		)
+		return []
+	}
 	const columns = [
 		...resourceNames.map(
 			([alias, ResourceID]) => `${aggregateFn}("${alias}") AS "${ResourceID}"`,
 		),
-		`bin(time, ${binIntervalMinutes}m) AS ts`,
+		`floor(to_unixtime(bin(time, ${binIntervalMinutes}m))) AS "${tsResource}"`,
 	]
 
 	if (columns.length === 0) {
