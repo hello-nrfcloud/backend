@@ -52,7 +52,7 @@ Soon I should receive a message on the websocket that matches
     "2": 311.5220642089844,
     "3": 18.412057876586914,
     "6": "GNSS",
-    "99": "${tsISO}"
+    "99": "$number{$floor(ts/1000)}"
   }
 }
 ```

@@ -39,7 +39,7 @@ When I `PATCH`
     "0": 255,
     "1": 255,
     "2": 255,
-    "99": "$number{ts}"
+    "99": "$number{$floor(ts/1000)}"
   }
 }
 ```
@@ -52,5 +52,5 @@ Soon the nRF Cloud API should have been called with
 PATCH /v1/devices/${fingerprint_deviceId}/state HTTP/1.1
 Content-Type: application/json
 
-{"desired":{"lwm2m":{"14240:1.0":{"0":{"0":255,"1":255,"2":255,"99":${ts}}}}}}
+{"desired":{"lwm2m":{"14240:1.0":{"0":{"0":255,"1":255,"2":255,"99":${$floor(ts/1000)}}}}}}
 ```

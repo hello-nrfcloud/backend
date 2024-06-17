@@ -4,8 +4,8 @@ import {
 	type _Record,
 } from '@aws-sdk/client-timestream-write'
 import {
-	timestampResources,
 	type LwM2MObjectInstance,
+	instanceTsAsDate,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { instanceToMeasures } from './instanceToMeasures.js'
 
@@ -37,9 +37,13 @@ export const instanceMeasuresToRecord = ({
 				`No measure to be stored in history for object ${ObjectID}!`,
 			),
 		}
-	const tsResource = Resources[timestampResources.get(ObjectID) as number]
-	if (tsResource === undefined)
-		return { error: new Error(`No timestamp resource found for ${ObjectID}!`) }
+	const instanceTs = instanceTsAsDate({
+		ObjectID,
+		ObjectInstanceID,
+		Resources,
+	})
+	if (instanceTs === undefined)
+		return { error: new Error(`No timestamp found for ${ObjectID}!`) }
 	return {
 		record: {
 			Dimensions: [
@@ -59,7 +63,7 @@ export const instanceMeasuresToRecord = ({
 			MeasureName: `${ObjectID}/${ObjectInstanceID ?? 0}`,
 			MeasureValues: maybeMeasures.measures,
 			MeasureValueType: MeasureValueType.MULTI,
-			Time: tsResource.toString(),
+			Time: instanceTs.getTime().toString(),
 			TimeUnit: TimeUnit.MILLISECONDS,
 		},
 	}

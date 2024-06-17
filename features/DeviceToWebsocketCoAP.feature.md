@@ -28,7 +28,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 [
   {
     "bn": "14201/0/",
-    "bt": "$number{ts}",
+    "bt": "$number{$floor(ts/1000)}",
     "n": "0",
     "v": 62.469414
   },
@@ -79,7 +79,7 @@ And `$.imports[0]` of the last response should match
   "senML": [
     {
       "bn": "14201/0/",
-      "bt": "$number{ts}",
+      "bt": "$number{$floor(ts/1000)}",
       "n": "0",
       "v": 62.469414
     },
@@ -95,7 +95,7 @@ And `$.imports[0]` of the last response should match
         "1": 6.151946,
         "3": 1,
         "6": "Fixed",
-        "99": "$number{ts}"
+        "99": "$number{$floor(ts/1000)}"
       }
     }
   ]

@@ -21,7 +21,7 @@ const deviceInfo: DeviceInformation_14204 = {
 		// Board version
 		4: 'thingy91x',
 		// Timestamp
-		99: 1716560679 * 1000,
+		99: 1716560679,
 		// SIM ICCID
 		1: '89470060200703359994',
 	},
@@ -32,7 +32,7 @@ const connectionInfo: ConnectionInformation_14203 = {
 	ObjectVersion: '1.0',
 	Resources: {
 		// Timestamp
-		99: 1716560679 * 1000,
+		99: 1716560679,
 		// Network mode
 		0: 'LTE-M GPS',
 		// Band
@@ -58,7 +58,7 @@ const serviceInfo: NRFCloudServiceInfo_14401 = {
 	Resources: {
 		0: ['BOOT', 'MODEM', 'APP'],
 		// Timestamp
-		99: 1717409966 * 1000,
+		99: 1717409966,
 	},
 }
 

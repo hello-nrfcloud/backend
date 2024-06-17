@@ -44,9 +44,11 @@ const h = async (
 		| { senML: SenMLType }
 	),
 ): Promise<void> => {
-	console.debug({
-		event,
-	})
+	console.debug(
+		JSON.stringify({
+			event,
+		}),
+	)
 	const { deviceId } = event
 	track('deviceMessageLwM2M', MetricUnit.Count, 1)
 

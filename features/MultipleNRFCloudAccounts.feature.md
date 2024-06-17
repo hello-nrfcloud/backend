@@ -36,7 +36,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
                 "0": 0,
                 "1": 162,
                 "2": 198,
-                "99": 1699197208705
+                "99": 1699197208
               }
             }
           }
@@ -48,7 +48,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
                 "0": 0,
                 "1": 162,
                 "2": 198,
-                "99": 1699197208705
+                "99": 1699197208
               }
             }
           }
@@ -58,10 +58,10 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
             "lwm2m": {
               "14240:1.0": {
                 "0": {
-                  "0": { "timestamp": 1699197208705 },
-                  "1": { "timestamp": 1699197208705 },
-                  "2": { "timestamp": 1699197208705 },
-                  "99": { "timestamp": 1699197208705 }
+                  "0": { "timestamp": 1699197208 },
+                  "1": { "timestamp": 1699197208 },
+                  "2": { "timestamp": 1699197208 },
+                  "99": { "timestamp": 1699197208 }
                 }
               }
             }
@@ -70,10 +70,10 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
             "lwm2m": {
               "14240:1.0": {
                 "0": {
-                  "0": { "timestamp": 1699197208705 },
-                  "1": { "timestamp": 1699197208705 },
-                  "2": { "timestamp": 1699197208705 },
-                  "99": { "timestamp": 1699197208705 }
+                  "0": { "timestamp": 1699197208 },
+                  "1": { "timestamp": 1699197208 },
+                  "2": { "timestamp": 1699197208 },
+                  "99": { "timestamp": 1699197208 }
                 }
               }
             }

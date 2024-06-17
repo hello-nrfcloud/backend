@@ -142,7 +142,7 @@ Soon I should receive a message on the websocket that matches after 20 retries
       "ObjectID": 14401,
       "Resources": {
         "0": ["BOOT", "MODEM", "APP"],
-        "99": 1717409966000
+        "99": 1717409966
       }
     }
   ]

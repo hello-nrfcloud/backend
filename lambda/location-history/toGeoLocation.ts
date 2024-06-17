@@ -26,7 +26,7 @@ export const toGeoLocation = (
 			'0': parseFloat(item.lat),
 			'1': parseFloat(item.lon),
 			'6': item.serviceType,
-			'99': new Date(item.insertedAt).getTime(),
+			'99': Math.floor(new Date(item.insertedAt).getTime() / 1000),
 			'3': parseFloat(item.uncertainty),
 		},
 	}
