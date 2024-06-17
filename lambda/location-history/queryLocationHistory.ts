@@ -159,7 +159,7 @@ const h = async (
 			'1': item.lon as number,
 			'3': item.uncertainty as number,
 			'6': item.source as string,
-			'99': new Date(item.timestamp).getTime(),
+			'99': Math.floor(new Date(item.timestamp).getTime() / 1000),
 		}),
 	)
 

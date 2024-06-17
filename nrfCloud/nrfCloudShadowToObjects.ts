@@ -47,7 +47,7 @@ export const nrfCloudShadowToObjects = ({
 			d.Resources[1] = reported.device.simInfo.iccid
 			timestamps.push(metadata.reported.device.simInfo.iccid?.timestamp)
 		}
-		d.Resources[99] = max(timestamps) * 1000
+		d.Resources[99] = max(timestamps)
 		objects.push(d)
 	}
 
@@ -73,15 +73,14 @@ export const nrfCloudShadowToObjects = ({
 				// Energy Estimate
 				11: reported.device.networkInfo.eest,
 				// Timestamp
-				99:
-					max([
-						metadata.reported.device.networkInfo.ipAddress?.timestamp,
-						metadata.reported.device.networkInfo.band?.timestamp,
-						metadata.reported.device.networkInfo.areaCode?.timestamp,
-						metadata.reported.device.networkInfo.cellID?.timestamp,
-						metadata.reported.device.networkInfo.mccmnc?.timestamp,
-						metadata.reported.device.networkInfo.ipAddress?.timestamp,
-					]) * 1000,
+				99: max([
+					metadata.reported.device.networkInfo.ipAddress?.timestamp,
+					metadata.reported.device.networkInfo.band?.timestamp,
+					metadata.reported.device.networkInfo.areaCode?.timestamp,
+					metadata.reported.device.networkInfo.cellID?.timestamp,
+					metadata.reported.device.networkInfo.mccmnc?.timestamp,
+					metadata.reported.device.networkInfo.ipAddress?.timestamp,
+				]),
 			},
 		}
 		objects.push(n)
@@ -97,14 +96,13 @@ export const nrfCloudShadowToObjects = ({
 			Resources: {
 				0: reported.device.serviceInfo.fota_v2,
 				// Timestamp
-				99:
-					max(
-						(
-							(metadata.reported.device.serviceInfo.fota_v2 ?? []) as Array<{
-								timestamp: number
-							}>
-						)?.map(({ timestamp }) => timestamp),
-					) * 1000,
+				99: max(
+					(
+						(metadata.reported.device.serviceInfo.fota_v2 ?? []) as Array<{
+							timestamp: number
+						}>
+					)?.map(({ timestamp }) => timestamp),
+				),
 			},
 		}
 		objects.push(serviceInfo)

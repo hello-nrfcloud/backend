@@ -100,7 +100,7 @@ Soon I should receive a message on the websocket that matches after 20 retries
     "1": 10.4377896,
     "3": 14.042,
     "6": "WIFI",
-    "99": "$number{ts}"
+    "99": "$number{$floor(ts/1000)}"
   }
 }
 ```
@@ -123,7 +123,7 @@ Soon I should receive a message on the websocket that matches
         "1": 10.4377896,
         "3": 14.042,
         "6": "WIFI",
-        "99": "$number{ts}"
+        "99": "$number{$floor(ts/1000)}"
       }
     }
   ]

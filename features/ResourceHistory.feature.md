@@ -25,7 +25,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 [
   {
     "bn": "14202/0/",
-    "bt": "$number{pastTs}",
+    "bt": "$number{$floor(pastTs/1000)}",
     "n": "1",
     "v": "$number{v}"
   }

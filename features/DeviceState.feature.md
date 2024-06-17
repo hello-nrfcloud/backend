@@ -32,7 +32,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
                 "0": 0,
                 "1": 162,
                 "2": 198,
-                "99": 1699197208705
+                "99": 1699197208
               }
             }
           }
@@ -44,7 +44,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
                 "0": 0,
                 "1": 162,
                 "2": 198,
-                "99": 1699197208705
+                "99": 1699197208
               }
             }
           },
@@ -142,7 +142,7 @@ Soon I should receive a message on the websocket that matches
         "0": 0,
         "1": 162,
         "2": 198,
-        "99": 1699197208705
+        "99": 1699197208
       }
     }
   ],
@@ -153,7 +153,7 @@ Soon I should receive a message on the websocket that matches
         "0": 0,
         "1": 162,
         "2": 198,
-        "99": 1699197208705
+        "99": 1699197208
       }
     },
     {
@@ -164,13 +164,13 @@ Soon I should receive a message on the websocket that matches
         "2": "mfw_nrf91x1_2.0.1",
         "3": "2.0.0-development",
         "4": "thingy91x",
-        "99": "1716801888000"
+        "99": 1716801888
       }
     },
     {
       "ObjectID": 14203,
       "Resources": {
-        "99": 1716801888000,
+        "99": 1716801888,
         "0": "LTE-M GPS",
         "1": 20,
         "2": -107,
@@ -206,7 +206,7 @@ Soon I should receive a message on the websocket that matches
         "0": 0,
         "1": 162,
         "2": 198,
-        "99": 1699197208705
+        "99": 1699197208
       }
     }
   ],
@@ -217,7 +217,7 @@ Soon I should receive a message on the websocket that matches
         "0": 0,
         "1": 162,
         "2": 198,
-        "99": 1699197208705
+        "99": 1699197208
       }
     }
   ]

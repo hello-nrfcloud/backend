@@ -17,7 +17,7 @@ Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 <!-- The device sends in data to the cloud -->
 
-And I store `$floor($millis()/1000)*1000` into `ts`
+And I store `$floor($millis()/1000)` into `ts`
 
 When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 `/msg/d2c/raw` with this SenML payload
@@ -35,7 +35,7 @@ When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
 
 ## Retrieve last seen timestamp on connect
 
-Given I store `$fromMillis(${ts})` into `tsISO`
+Given I store `$fromMillis(${ts}*1000)` into `tsISO`
 
 When I connect to the websocket using fingerprint `${fingerprint}`
 
