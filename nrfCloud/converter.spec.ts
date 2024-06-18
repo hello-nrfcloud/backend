@@ -25,7 +25,7 @@ void describe('convert()', () => {
 						4: 0.02938256226480007,
 						5: 185.11207580566406,
 						6: 'GNSS',
-						99: GNSS.ts,
+						99: Math.floor(GNSS.ts / 1000),
 					},
 				},
 			],

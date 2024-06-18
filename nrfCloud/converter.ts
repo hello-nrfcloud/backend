@@ -46,7 +46,7 @@ const converters: Array<
 				4: spd,
 				5: hdg,
 				6: 'GNSS',
-				99: ts,
+				99: Math.floor(ts / 1000),
 			})
 		},
 	],
