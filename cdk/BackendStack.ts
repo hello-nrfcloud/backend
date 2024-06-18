@@ -77,6 +77,7 @@ export class BackendStack extends Stack {
 	) {
 		super(parent, STACK_NAME, {
 			env,
+			description: 'Provides the hello.nrfcloud.com backend',
 		})
 
 		const baseLayerVersion = new Lambda.LayerVersion(this, 'baseLayer', {

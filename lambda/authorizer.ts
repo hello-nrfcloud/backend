@@ -34,6 +34,12 @@ const validateInput = validateWithTypeBox(
 	}),
 )
 
+type Result = {
+	principalId: string
+	policyDocument: PolicyDocument
+	context?: WebsocketConnectionContext
+}
+
 /**
  * Verifies the fingerprint passed as a query parameter and creates a context for the websocket connect that includes the deviceId and the model.
  */
@@ -43,14 +49,10 @@ const h = async (event: {
 	requestContext: {
 		connectionId: string
 	}
-}): Promise<{
-	principalId: string
-	policyDocument: PolicyDocument
-	context?: WebsocketConnectionContext
-}> => {
+}): Promise<Result> => {
 	log.debug('event', { event })
 
-	const deny = {
+	const deny: Result = {
 		principalId: 'me',
 		policyDocument: {
 			Version: '2012-10-17',
