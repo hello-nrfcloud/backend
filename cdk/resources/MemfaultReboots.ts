@@ -1,25 +1,25 @@
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
 	Duration,
 	aws_dynamodb as DynamoDB,
+	aws_lambda_event_sources as EventSources,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
-	aws_lambda_event_sources as EventSources,
-	RemovalPolicy,
 	aws_iam as IAM,
+	type aws_lambda as Lambda,
+	RemovalPolicy,
 	aws_sqs as SQS,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
+import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import type { DeviceStorage } from './DeviceStorage.js'
 
 /**
- * Makes the device location history available to the frontend
+ * Makes the Memfault reboots available to the frontend
  */
-export class DeviceLocationHistory extends Construct {
+export class MemfaultReboots extends Construct {
 	public scheduleFetches: PackedLambdaFn
 	public fetcher: PackedLambdaFn
 	public queryFn: PackedLambdaFn
@@ -34,9 +34,9 @@ export class DeviceLocationHistory extends Construct {
 		}: {
 			lambdaSources: Pick<
 				BackendLambdas,
-				| 'scheduleFetchLocationHistory'
-				| 'fetchLocationHistory'
-				| 'queryLocationHistory'
+				| 'scheduleFetchMemfaultReboots'
+				| 'fetchMemfaultReboots'
+				| 'queryMemfaultReboots'
 			>
 			layers: Lambda.ILayerVersion[]
 			connectionsTable: WebsocketConnectionsTable
@@ -44,9 +44,9 @@ export class DeviceLocationHistory extends Construct {
 			deviceStorage: DeviceStorage
 		},
 	) {
-		super(parent, 'DeviceLocationHistory')
+		super(parent, 'MemfaultReboots')
 
-		const syncTable = new DynamoDB.Table(this, 'locationHistorySyncTable', {
+		const syncTable = new DynamoDB.Table(this, 'syncTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
 				name: 'deviceId',
@@ -55,10 +55,10 @@ export class DeviceLocationHistory extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 		})
 
-		const historyTable = new DynamoDB.Table(this, 'locationHistoryTable', {
+		const rebootsTable = new DynamoDB.Table(this, 'rebootsTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
-				name: 'id',
+				name: 'deviceId',
 				type: DynamoDB.AttributeType.STRING,
 			},
 			sortKey: {
@@ -69,24 +69,12 @@ export class DeviceLocationHistory extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 		})
 
-		const deviceIdTimestampIndex = 'deviceIdTimestampIndex'
-		historyTable.addGlobalSecondaryIndex({
-			indexName: deviceIdTimestampIndex,
-			partitionKey: {
-				name: 'deviceId',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			sortKey: {
-				name: 'timestamp',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			projectionType: DynamoDB.ProjectionType.INCLUDE,
-			nonKeyAttributes: ['source', 'lat', 'lon', 'uncertainty'],
-		})
+		const scheduleDuration =
+			this.node.getContext('isTest') === true
+				? Duration.minutes(1)
+				: Duration.minutes(5)
 
-		const scheduleDuration = Duration.seconds(60)
-
-		// The scheduleFetches puts location history fetch tasks in this queue
+		// The scheduleFetches puts device reboots fetch tasks in this queue
 		const workQueue = new SQS.Queue(this, 'workQueue', {
 			retentionPeriod: scheduleDuration,
 			removalPolicy: RemovalPolicy.DESTROY,
@@ -94,13 +82,13 @@ export class DeviceLocationHistory extends Construct {
 		})
 		this.scheduleFetches = new PackedLambdaFn(
 			this,
-			'scheduleFetchLocationHistory',
-			lambdaSources.scheduleFetchLocationHistory,
+			'scheduleFetchMemfaultReboots',
+			lambdaSources.scheduleFetchMemfaultReboots,
 			{
 				description:
-					'Schedule fetching of the location history for currently observed devices',
+					'Schedule fetching of the device reboots for currently observed devices',
 				environment: {
-					LOCATION_HISTORY_SYNC_TABLE_NAME: syncTable.tableName,
+					SYNC_TABLE_NAME: syncTable.tableName,
 					WORK_QUEUE_URL: workQueue.queueUrl,
 					WEBSOCKET_CONNECTIONS_TABLE_NAME: connectionsTable.table.tableName,
 					MAX_AGE_HOURS: '24',
@@ -120,16 +108,16 @@ export class DeviceLocationHistory extends Construct {
 		)
 		workQueue.grantSendMessages(this.scheduleFetches.fn)
 
-		// The fetcher reads tasks from the work queue and fetches the location history
+		// The fetcher reads tasks from the work queue and fetches the device reboots
 		this.fetcher = new PackedLambdaFn(
 			this,
-			'fetchLocationHistory',
-			lambdaSources.fetchLocationHistory,
+			'fetchMemfaultReboots',
+			lambdaSources.fetchMemfaultReboots,
 			{
 				description:
-					'Fetch the location history and write it to the history table and the device shadow',
+					'Fetch the device reboots and write it to the history table and the device shadow',
 				environment: {
-					LOCATION_HISTORY_TABLE_NAME: historyTable.tableName,
+					TABLE_NAME: rebootsTable.tableName,
 					EVENTBUS_NAME: websocketEventBus.eventBus.eventBusName,
 				},
 				layers,
@@ -149,25 +137,23 @@ export class DeviceLocationHistory extends Construct {
 			}),
 		)
 		websocketEventBus.eventBus.grantPutEventsTo(this.fetcher.fn)
-		historyTable.grantWriteData(this.fetcher.fn)
+		rebootsTable.grantWriteData(this.fetcher.fn)
 
 		this.queryFn = new PackedLambdaFn(
 			this,
 			'queryFn',
-			lambdaSources.queryLocationHistory,
+			lambdaSources.queryMemfaultReboots,
 			{
 				timeout: Duration.seconds(10),
-				description: 'Queries the location history',
+				description: 'Queries the device reboots',
 				layers,
 				environment: {
-					LOCATION_HISTORY_TABLE_NAME: historyTable.tableName,
-					LOCATION_HISTORY_TABLE_DEVICE_ID_TIMESTAMP_INDEX:
-						deviceIdTimestampIndex,
+					TABLE_NAME: rebootsTable.tableName,
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				},
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.queryFn.fn)
-		historyTable.grantReadData(this.queryFn.fn)
+		rebootsTable.grantReadData(this.queryFn.fn)
 	}
 }

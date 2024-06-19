@@ -150,6 +150,9 @@ const res = await runner.run({
 		'./webhook.office.com/',
 		httpApiMockURL,
 	).toString(),
+	memfaultApiEndpoint: new URL('./api.memfault.com/', httpApiMockURL)
+		.toString()
+		.replace(/\/+$/, ''),
 	VERSION: process.env.VERSION ?? '0.0.0-development',
 })
 

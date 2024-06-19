@@ -2,7 +2,7 @@
 exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: oob-352656108602296
-  APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
+  APIURL: https://api.hello.nordicsemi.cloud
 ---
 
 # Device Info

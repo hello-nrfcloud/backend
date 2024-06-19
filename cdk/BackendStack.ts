@@ -40,6 +40,8 @@ import { KPIs } from './resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
 import type { DomainCert } from '../aws/acm.js'
 import { APICustomDomain } from './resources/APICustomDomain.js'
+import { MemfaultReboots } from './resources/MemfaultReboots.js'
+import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -254,8 +256,20 @@ export class BackendStack extends Stack {
 			deviceStorage,
 		})
 		api.addRoute(
-			'GET /device/{deviceId}/history/14201/0',
+			`GET /device/{deviceId}/history/${LwM2MObjectID.Geolocation_14201}/0`,
 			deviceLocationHistory.queryFn.fn,
+		)
+
+		const memfaultReboots = new MemfaultReboots(this, {
+			lambdaSources,
+			layers: [baseLayerVersion],
+			connectionsTable: websocketConnectionsTable,
+			websocketEventBus,
+			deviceStorage,
+		})
+		api.addRoute(
+			`GET /device/{deviceId}/history/${LwM2MObjectID.Reboot_14250}/0`,
+			memfaultReboots.queryFn.fn,
 		)
 
 		const lwm2mObjectsHistory = new LwM2MObjectsHistory(this, {
@@ -293,6 +307,9 @@ export class BackendStack extends Stack {
 				deviceLocationHistory.scheduleFetches.logGroup,
 				deviceLocationHistory.fetcher.logGroup,
 				deviceLocationHistory.queryFn.logGroup,
+				memfaultReboots.scheduleFetches.logGroup,
+				memfaultReboots.fetcher.logGroup,
+				memfaultReboots.queryFn.logGroup,
 				deviceShadow.prepareDeviceShadow.logGroup,
 				deviceShadow.fetchDeviceShadow.logGroup,
 				deviceShadow.publishShadowUpdatesToWebsocket.logGroup,

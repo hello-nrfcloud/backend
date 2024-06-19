@@ -1,0 +1,35 @@
+{
+  "data": [
+    {
+      "time": "2024-06-19T14:52:38.794000+00:00",
+      "software_version": {
+        "version": "2.0.1+thingy91.low-power.solar.memfault",
+        "archived": false,
+        "software_type": { "id": 32069, "name": "thingy_world" },
+        "id": 570762
+      },
+      "type": "memfault",
+      "mcu_reason_register": 65536,
+      "reason": 8
+    },
+    {
+      "time": "2024-06-18T23:32:24.690000+00:00",
+      "software_version": {
+        "version": "2.0.1+thingy91.low-power.solar.memfault",
+        "archived": false,
+        "software_type": { "id": 32069, "name": "thingy_world" },
+        "id": 570762
+      },
+      "type": "memfault",
+      "mcu_reason_register": 65536,
+      "reason": 8
+    }
+  ],
+  "paging": {
+    "total_count": 54,
+    "item_count": 2,
+    "per_page": 2,
+    "page": 1,
+    "page_count": 27
+  }
+}
