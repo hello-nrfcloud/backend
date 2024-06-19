@@ -3,7 +3,7 @@ exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
   ts: 1694503339523
-  APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
+  APIURL: https://api.hello.nordicsemi.cloud
 ---
 
 # Device to websocket (MQTT)

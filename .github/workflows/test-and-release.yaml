@@ -220,6 +220,10 @@ jobs:
           ./cli.sh configure-nrfcloud-account elite apiEndpoint ${{ env.HTTP_API_MOCK_API_URL }}
           ./cli.sh configure-nrfcloud-account elite apiKey apiKey_Elite
           ./cli.sh configure-feedback webhookURL ${{ env.HTTP_API_MOCK_API_URL }}webhook.office.com/
+          ./cli.sh configure-memfault apiEndpoint ${{ env.HTTP_API_MOCK_API_URL }}api.memfault.com/
+          ./cli.sh configure-memfault organizationAuthToken oat_18By8mEdkEj666666666666kIt9HwsMZ
+          ./cli.sh configure-memfault organizationSlug nordic-semiconductor-asa123456
+          ./cli.sh configure-memfault projectSlug hello-nrfcloud-com
 
       - name: Deploy solution stack
         env:

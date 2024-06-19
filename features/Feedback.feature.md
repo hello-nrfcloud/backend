@@ -1,7 +1,7 @@
 ---
 exampleContext:
   feedbackWebhookURL: https://acme.webhook.office.com/webhookb2/ff5da9b3-7653-4279-a8b5-1eeca7ee33bb
-  APIURL: https://r8hwx148u8.execute-api.eu-west-1.amazonaws.com/prod
+  APIURL: https://api.hello.nordicsemi.cloud
 ---
 
 # Feedback

@@ -26,7 +26,7 @@ export type BackendLambdas = {
 	queryLwM2MHistory: PackedLambda
 	apiHealthCheck: PackedLambda
 	onNrfCloudDeviceMessage: PackedLambda
-	scheduleLocationFetchHistory: PackedLambda
+	scheduleFetchLocationHistory: PackedLambda
 	fetchLocationHistory: PackedLambda
 	queryLocationHistory: PackedLambda
 	scheduleFOTAJob: PackedLambda
@@ -35,6 +35,9 @@ export type BackendLambdas = {
 	updateFOTAJobStatus: PackedLambda
 	notifyFOTAJobStatus: PackedLambda
 	listFOTABundles: PackedLambda
+	scheduleFetchMemfaultReboots: PackedLambda
+	fetchMemfaultReboots: PackedLambda
+	queryMemfaultReboots: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -66,9 +69,9 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	queryLwM2MHistory: await pack('queryLwM2MHistory'),
 	apiHealthCheck: await pack('apiHealthCheck'),
 	onNrfCloudDeviceMessage: await pack('onNrfCloudDeviceMessage'),
-	scheduleLocationFetchHistory: await packLambdaFromPath(
-		'scheduleLocationFetchHistory',
-		'lambda/location-history/scheduleLocationFetchHistory.ts',
+	scheduleFetchLocationHistory: await packLambdaFromPath(
+		'scheduleFetchLocationHistory',
+		'lambda/location-history/scheduleFetchLocationHistory.ts',
 	),
 	fetchLocationHistory: await packLambdaFromPath(
 		'fetchLocationHistory',
@@ -101,5 +104,17 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	listFOTABundles: await packLambdaFromPath(
 		'listFOTABundles',
 		`lambda/fota/listFOTABundles.ts`,
+	),
+	scheduleFetchMemfaultReboots: await packLambdaFromPath(
+		'scheduleFetchMemfaultReboots',
+		'lambda/memfault/scheduleFetchReboots.ts',
+	),
+	fetchMemfaultReboots: await packLambdaFromPath(
+		'fetchMemfaultReboots',
+		'lambda/memfault/fetchReboots.ts',
+	),
+	queryMemfaultReboots: await packLambdaFromPath(
+		'queryMemfaultReboots',
+		'lambda/memfault/queryReboots.ts',
 	),
 })

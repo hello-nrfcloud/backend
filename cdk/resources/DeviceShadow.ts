@@ -13,7 +13,6 @@ import {
 	aws_iot as IoT,
 	RemovalPolicy,
 	aws_sqs as SQS,
-	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
@@ -121,16 +120,6 @@ export class DeviceShadow extends Construct {
 			},
 		)
 		connectionsTable.table.grantReadWriteData(this.fetchDeviceShadow.fn)
-		const ssmReadPolicy = new IAM.PolicyStatement({
-			effect: IAM.Effect.ALLOW,
-			actions: ['ssm:GetParametersByPath'],
-			resources: [
-				`arn:aws:ssm:${Stack.of(this).region}:${
-					Stack.of(this).account
-				}:parameter/${Stack.of(this).stackName}/stack/context`,
-			],
-		})
-		this.fetchDeviceShadow.fn.addToRolePolicy(ssmReadPolicy)
 		lockTable.grantReadWriteData(this.fetchDeviceShadow.fn)
 		this.fetchDeviceShadow.fn.addEventSource(
 			new EventSources.SqsEventSource(shadowQueue, {

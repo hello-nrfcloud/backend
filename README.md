@@ -45,6 +45,17 @@ The single-cell geo-location features uses the nRF Cloud
 service to be enabled in the account's plan. Manage the account at
 <https://nrfcloud.com/#/manage-plan>.
 
+#### Memfault integration
+
+The backend fetches device metrics from [Memfault](https://memfault.com/). For
+this you need to configure the settings for your Memfault project:
+
+```bash
+./cli.sh configure-memfault organizationAuthToken <organizationAuthToken> # e.g. oat_18By8mEdkEj666666666666kIt9HwsMZ
+./cli.sh configure-memfault organizationSlug <organizationSlug> # e.g. nordic-semiconductor-asa123456
+./cli.sh configure-memfault projectSlug <projectSlug> # e.g. hello-nrfcloud-com
+```
+
 ### Build the docker images
 
 Some of the feature are run from docker containers, ensure they have been built
