@@ -29,7 +29,10 @@ import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
-import type { APIGatewayProxyResultV2 } from 'aws-lambda'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+} from 'aws-lambda'
 import { once } from 'lodash-es'
 import {
 	HistoricalDataTimeSpans,
@@ -100,16 +103,17 @@ const availableColumnsCache =
 		: once(getAvailableColumns(ts, DatabaseName, TableName))
 
 const h = async (
-	event: ValidInput<typeof InputSchema> & WithDevice,
+	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
 	const {
 		objectId: ObjectID,
 		instanceId: InstanceID,
 		aggregate,
-	} = event.validInput
+	} = context.validInput
 	const def = definitions[ObjectID]
 	const timeSpan =
-		HistoricalDataTimeSpans[event.validInput.timeSpan ?? ''] ?? LastHour
+		HistoricalDataTimeSpans[context.validInput.timeSpan ?? ''] ?? LastHour
 
 	try {
 		const result: Static<typeof LwM2MObjectHistory> = {
@@ -118,7 +122,7 @@ const h = async (
 				ObjectID,
 				ObjectVersion: def.ObjectVersion,
 				ObjectInstanceID: InstanceID,
-				deviceId: event.device.id,
+				deviceId: context.device.id,
 				binIntervalMinutes: timeSpan.binIntervalMinutes,
 			},
 			partialInstances: [],
@@ -127,7 +131,7 @@ const h = async (
 		result.partialInstances = await binResourceHistory({
 			def,
 			instance: InstanceID,
-			deviceId: event.device.id,
+			deviceId: context.device.id,
 			timeSpan,
 			aggregateFn: aggregate ?? 'avg',
 		})
@@ -234,10 +238,10 @@ const binResourceHistory = async ({
 }
 
 export const handler = middy()
+	.use(corsOPTIONS('GET'))
+	.use(addVersionHeader(version))
 	.use(requestLogger())
 	.use(logMetrics(metrics))
-	.use(addVersionHeader(version))
-	.use(corsOPTIONS('GET'))
 	.use(
 		validateInput(InputSchema, (event) => {
 			const { deviceId, objectId, instanceId } = event.pathParameters ?? {}

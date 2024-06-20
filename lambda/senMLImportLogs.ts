@@ -12,9 +12,12 @@ import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
-import type { APIGatewayProxyResultV2 } from 'aws-lambda'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+} from 'aws-lambda'
 import { importLogs } from '../lwm2m/importLogs.js'
-import { validateInput } from './middleware/validateInput.js'
+import { validateInput, type ValidInput } from './middleware/validateInput.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 
 const { importLogsTableName, DevicesTableName, version } = fromEnv({
@@ -32,21 +35,24 @@ const InputSchema = Type.Object({
 
 const logDb = importLogs(db, importLogsTableName)
 
-const h = async (event: WithDevice): Promise<APIGatewayProxyResultV2> =>
+const h = async (
+	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & WithDevice,
+): Promise<APIGatewayProxyResultV2> =>
 	aResponse(
 		HttpStatusCode.OK,
 		{
 			'@context': Context.senMLImports,
-			id: event.device.id,
-			imports: await logDb.findLogs(event.device.id),
+			id: context.device.id,
+			imports: await logDb.findLogs(context.device.id),
 		},
 		60,
 	)
 
 export const handler = middy()
-	.use(requestLogger())
-	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(addVersionHeader(version))
+	.use(requestLogger())
 	.use(validateInput(InputSchema))
 	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)

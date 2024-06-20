@@ -1,6 +1,7 @@
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyStructuredResultV2,
+	Context,
 } from 'aws-lambda'
 import type { MiddlewareObj } from '@middy/core'
 import type { Static, TSchema } from '@sinclair/typebox'
@@ -12,10 +13,15 @@ import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
 
-export const validateInput = (
-	schema: TSchema,
+export const validateInput = <Schema extends TSchema>(
+	schema: Schema,
 	mapInput?: (e: APIGatewayProxyEventV2) => unknown,
-): MiddlewareObj<APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2> => {
+): MiddlewareObj<
+	APIGatewayProxyEventV2,
+	APIGatewayProxyStructuredResultV2,
+	Error,
+	Context & ValidInput<Schema>
+> => {
 	const v = validateWithTypeBox(schema)
 	return {
 		before: async (req) => {
@@ -48,7 +54,7 @@ export const validateInput = (
 				})
 			}
 			console.debug(`[validateInput]`, `Input valid`)
-			;(req.context as any).validInput = maybeValidInput.value
+			req.context.validInput = maybeValidInput.value
 			return undefined
 		},
 	}

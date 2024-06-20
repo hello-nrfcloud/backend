@@ -87,7 +87,7 @@ const h = async (
 }
 
 export const handler = middy()
-	.use(requestLogger())
 	.use(corsOPTIONS('POST'))
 	.use(addVersionHeader(version))
+	.use(requestLogger())
 	.handler(h)

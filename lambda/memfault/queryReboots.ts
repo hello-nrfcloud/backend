@@ -18,7 +18,10 @@ import middy from '@middy/core'
 import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type, type Static } from '@sinclair/typebox'
-import type { APIGatewayProxyResultV2 } from 'aws-lambda'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+} from 'aws-lambda'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
@@ -46,11 +49,12 @@ const InputSchema = Type.Object({
 const db = new DynamoDBClient({})
 
 const h = async (
-	event: ValidInput<typeof InputSchema> & WithDevice,
+	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
 	const timeSpan =
-		event.validInput.timeSpan !== undefined
-			? HistoricalDataTimeSpans[event.validInput.timeSpan] ?? LastHour
+		context.validInput.timeSpan !== undefined
+			? HistoricalDataTimeSpans[context.validInput.timeSpan] ?? LastHour
 			: LastHour
 
 	const result: Static<typeof LwM2MObjectHistory> = {
@@ -58,7 +62,7 @@ const h = async (
 		query: {
 			ObjectID: LwM2MObjectID.Reboot_14250,
 			ObjectVersion: definitions[LwM2MObjectID.Reboot_14250].ObjectVersion,
-			deviceId: event.device.id,
+			deviceId: context.device.id,
 			binIntervalMinutes: timeSpan.binIntervalMinutes,
 			ObjectInstanceID: 0, // Not used
 		},
@@ -75,7 +79,7 @@ const h = async (
 		},
 		ExpressionAttributeValues: {
 			':deviceId': {
-				S: event.device.id,
+				S: context.device.id,
 			},
 			':from': {
 				S: new Date(
@@ -111,9 +115,9 @@ const h = async (
 }
 
 export const handler = middy()
-	.use(requestLogger())
-	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(addVersionHeader(version))
+	.use(requestLogger())
 	.use(validateInput(InputSchema))
 	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)

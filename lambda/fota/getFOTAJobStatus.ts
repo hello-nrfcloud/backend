@@ -17,8 +17,11 @@ import middy from '@middy/core'
 import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
-import type { APIGatewayProxyResultV2 } from 'aws-lambda'
-import { validateInput } from '../middleware/validateInput.js'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+} from 'aws-lambda'
+import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import type { Job } from './Job.js'
 import { toJobExecution } from './toJobExecution.js'
@@ -44,7 +47,10 @@ const InputSchema = Type.Object({
 	fingerprint: Type.RegExp(fingerprintRegExp),
 })
 
-const h = async (event: WithDevice): Promise<APIGatewayProxyResultV2> => {
+const h = async (
+	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & WithDevice,
+): Promise<APIGatewayProxyResultV2> => {
 	const deviceJobs = await db.send(
 		new QueryCommand({
 			TableName: jobStatusTableName,
@@ -56,7 +62,7 @@ const h = async (event: WithDevice): Promise<APIGatewayProxyResultV2> => {
 			},
 			ExpressionAttributeValues: {
 				':deviceId': {
-					S: event.device.id,
+					S: context.device.id,
 				},
 			},
 			ProjectionExpression: '#jobId',
@@ -90,7 +96,7 @@ const h = async (event: WithDevice): Promise<APIGatewayProxyResultV2> => {
 		HttpStatusCode.OK,
 		{
 			'@context': Context.fotaJobExecutions,
-			deviceId: event.device.id,
+			deviceId: context.device.id,
 			jobs: jobs.map((job) => toJobExecution(job)),
 		},
 		parseInt(responseCacheMaxAge, 10),
@@ -98,9 +104,9 @@ const h = async (event: WithDevice): Promise<APIGatewayProxyResultV2> => {
 }
 
 export const handler = middy()
-	.use(requestLogger())
-	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(addVersionHeader(version))
+	.use(requestLogger())
 	.use(validateInput(InputSchema))
 	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)

@@ -19,7 +19,7 @@ const h = async (): Promise<APIGatewayProxyResultV2> => {
 }
 
 export const handler = middy()
-	.use(requestLogger())
-	.use(addVersionHeader(version))
 	.use(corsOPTIONS('POST'))
+	.use(addVersionHeader(version))
+	.use(requestLogger())
 	.handler(h)

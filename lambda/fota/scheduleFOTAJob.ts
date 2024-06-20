@@ -25,7 +25,10 @@ import middy from '@middy/core'
 import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
-import type { APIGatewayProxyResultV2 } from 'aws-lambda'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+} from 'aws-lambda'
 import { isObject } from 'lodash-es'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
 import { getLwM2MShadow } from '../getLwM2MShadow.js'
@@ -66,9 +69,10 @@ const InputSchema = Type.Object({
 })
 
 const h = async (
-	event: ValidInput<typeof InputSchema> & WithDevice,
+	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-	const maybeShadow = await getShadow(event.device.id)
+	const maybeShadow = await getShadow(context.device.id)
 	if ('error' in maybeShadow) {
 		console.error(maybeShadow.error)
 		return aProblem({
@@ -89,7 +93,7 @@ const h = async (
 
 	if (
 		supportedFOTATypes.find((type) =>
-			event.validInput.bundleId.startsWith(type),
+			context.validInput.bundleId.startsWith(type),
 		) === undefined
 	) {
 		return aProblem({
@@ -99,7 +103,7 @@ const h = async (
 		})
 	}
 
-	const account = event.device.account
+	const account = context.device.account
 	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
@@ -113,8 +117,8 @@ const h = async (
 	)
 
 	const res = await createJob({
-		deviceId: event.device.id,
-		bundleId: event.validInput.bundleId,
+		deviceId: context.device.id,
+		bundleId: context.validInput.bundleId,
 	})
 
 	if ('result' in res) {
@@ -123,7 +127,7 @@ const h = async (
 
 		const now = new Date().toISOString()
 		const job: Job = {
-			deviceId: event.device.id,
+			deviceId: context.device.id,
 			jobId: res.result.jobId,
 			status: 'QUEUED',
 			createdAt: now,
@@ -160,9 +164,9 @@ const h = async (
 	}
 }
 export const handler = middy()
-	.use(requestLogger())
-	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
+	.use(addVersionHeader(version))
+	.use(requestLogger())
 	.use(validateInput(InputSchema))
 	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)

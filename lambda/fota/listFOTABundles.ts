@@ -23,10 +23,13 @@ import middy from '@middy/core'
 import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type, type Static } from '@sinclair/typebox'
-import type { APIGatewayProxyResultV2 } from 'aws-lambda'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+} from 'aws-lambda'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from '../loggingFetch.js'
-import { validateInput } from '../middleware/validateInput.js'
+import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({
@@ -60,8 +63,11 @@ const bundlesPromise = new Map<
 	>
 >()
 
-const h = async (event: WithDevice): Promise<APIGatewayProxyResultV2> => {
-	const account = event.device.account
+const h = async (
+	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & WithDevice,
+): Promise<APIGatewayProxyResultV2> => {
+	const account = context.device.account
 	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
@@ -98,9 +104,9 @@ const h = async (event: WithDevice): Promise<APIGatewayProxyResultV2> => {
 	})
 }
 export const handler = middy()
-	.use(requestLogger())
-	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(addVersionHeader(version))
+	.use(requestLogger())
 	.use(validateInput(InputSchema))
 	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)

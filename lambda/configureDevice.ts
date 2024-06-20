@@ -19,7 +19,11 @@ import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox/type'
-import type { APIGatewayProxyResultV2 } from 'aws-lambda'
+import type {
+	APIGatewayProxyEventV2,
+	APIGatewayProxyResultV2,
+	Context,
+} from 'aws-lambda'
 import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from './loggingFetch.js'
@@ -52,9 +56,10 @@ const InputSchema = Type.Object({
  * Handle configure device request
  */
 const h = async (
-	event: ValidInput<typeof InputSchema> & WithDevice,
+	event: APIGatewayProxyEventV2,
+	context: WithDevice & ValidInput<typeof InputSchema> & Context,
 ): Promise<APIGatewayProxyResultV2> => {
-	const account = event.device.account
+	const account = context.device.account
 	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
@@ -66,9 +71,9 @@ const h = async (
 		},
 		trackFetch,
 	)
-	const res = await update.updateState(event.device.id, {
+	const res = await update.updateState(context.device.id, {
 		desired: {
-			lwm2m: objectsToShadow([event.validInput.update]),
+			lwm2m: objectsToShadow([context.validInput.update]),
 		},
 	})
 
@@ -87,6 +92,8 @@ const h = async (
 }
 
 export const handler = middy()
+	.use(corsOPTIONS('PATCH'))
+	.use(addVersionHeader(version))
 	.use(requestLogger())
 	.use(
 		validateInput(InputSchema, (event) => ({
@@ -99,6 +106,4 @@ export const handler = middy()
 		})),
 	)
 	.use(withDevice({ db, DevicesTableName }))
-	.use(addVersionHeader(version))
-	.use(corsOPTIONS('PATCH'))
 	.handler(h)
