@@ -16,7 +16,7 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox/type'
 import type { APIGatewayProxyResultV2 } from 'aws-lambda'
@@ -87,7 +87,7 @@ const h = async (
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(
 		validateInput(InputSchema, (event) => ({
 			...(event.queryStringParameters ?? {}),

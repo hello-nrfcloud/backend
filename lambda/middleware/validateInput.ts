@@ -33,16 +33,13 @@ export const validateInput = (
 				...(req.event.queryStringParameters ?? {}),
 				...reqBody,
 			}
-			console.debug(`[validateInput]`, JSON.stringify({ input }))
+			console.debug(`[validateInput]`, 'input', JSON.stringify(input))
 			const maybeValidInput = v(input)
 			if ('errors' in maybeValidInput) {
 				console.debug(
 					`[validateInput]`,
 					`Input not valid`,
-					JSON.stringify({
-						input,
-						errors: maybeValidInput.errors,
-					}),
+					JSON.stringify(maybeValidInput.errors),
 				)
 				return aProblem({
 					title: 'Validation failed',
@@ -50,13 +47,7 @@ export const validateInput = (
 					detail: formatTypeBoxErrors(maybeValidInput.errors),
 				})
 			}
-			console.debug(
-				`[validateInput]`,
-				`Input valid`,
-				JSON.stringify({
-					input,
-				}),
-			)
+			console.debug(`[validateInput]`, `Input valid`)
 			;(req.context as any).validInput = maybeValidInput.value
 			return undefined
 		},

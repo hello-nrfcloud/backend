@@ -13,7 +13,7 @@ import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 
 const { EventBusName, TableName, LastSeenTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -102,4 +102,4 @@ const h = async (
 	}
 }
 
-export const handler = middy().use(inputOutputLogger()).handler(h)
+export const handler = middy().use(requestLogger()).handler(h)

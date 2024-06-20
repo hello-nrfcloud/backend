@@ -8,7 +8,7 @@ import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { Job } from './Job.js'
 
@@ -110,7 +110,7 @@ const h = async (): Promise<void> => {
 	)
 }
 
-export const handler = middy().use(inputOutputLogger()).handler(h)
+export const handler = middy().use(requestLogger()).handler(h)
 
 /**
  * Calculate the next update time based on the age of the job.

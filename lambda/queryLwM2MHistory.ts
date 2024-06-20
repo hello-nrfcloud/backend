@@ -25,7 +25,7 @@ import {
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
@@ -234,7 +234,7 @@ const binResourceHistory = async ({
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(logMetrics(metrics))
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))

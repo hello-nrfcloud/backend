@@ -6,7 +6,7 @@ import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import { Context, HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
@@ -69,6 +69,6 @@ const h = async (
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(addVersionHeader(version))
 	.handler(h)

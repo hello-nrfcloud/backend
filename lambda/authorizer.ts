@@ -4,7 +4,7 @@ import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { PolicyDocument } from 'aws-lambda'
 import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.js'
@@ -154,6 +154,6 @@ const h = async (event: {
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(logMetrics(metrics))
 	.handler(h)

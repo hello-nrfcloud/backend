@@ -8,7 +8,7 @@ import { marshall } from '@aws-sdk/util-dynamodb'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { getDeviceReboots } from '../../Memfault/api.js'
@@ -110,6 +110,6 @@ const h = async (event: SQSEvent): Promise<void> => {
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(logMetrics(metrics))
 	.handler(h)

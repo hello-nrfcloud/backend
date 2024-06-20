@@ -17,7 +17,7 @@ import {
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { validate, validators } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, groupBy, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
@@ -326,6 +326,6 @@ const h = async (): Promise<void> => {
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(logMetrics(metrics))
 	.handler(h)

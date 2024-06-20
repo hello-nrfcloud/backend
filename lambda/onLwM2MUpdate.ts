@@ -2,7 +2,7 @@ import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { decode } from 'cbor-x'
@@ -109,6 +109,6 @@ const h = async (
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(logMetrics(metrics))
 	.handler(h)

@@ -10,7 +10,7 @@ import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { getLocationHistory } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.js'
@@ -165,6 +165,6 @@ const paginateHistory = async (
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(logMetrics(metrics))
 	.handler(h)

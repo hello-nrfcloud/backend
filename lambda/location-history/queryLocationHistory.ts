@@ -15,7 +15,7 @@ import {
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type, type Static } from '@sinclair/typebox'
 import type { APIGatewayProxyResultV2 } from 'aws-lambda'
@@ -147,7 +147,7 @@ const h = async (
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
 	.use(

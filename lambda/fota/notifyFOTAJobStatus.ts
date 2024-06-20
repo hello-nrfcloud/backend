@@ -3,7 +3,7 @@ import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { DynamoDBStreamEvent } from 'aws-lambda'
 import type { WebsocketPayload } from '../publishToWebsocketClients.js'
@@ -46,4 +46,4 @@ const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 	}
 }
 
-export const handler = middy().use(inputOutputLogger()).handler(h)
+export const handler = middy().use(requestLogger()).handler(h)

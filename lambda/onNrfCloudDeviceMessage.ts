@@ -7,7 +7,7 @@ import {
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 import { converter } from '../nrfCloud/converter.js'
 
@@ -58,6 +58,6 @@ const h = async (event: {
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(logMetrics(metrics))
 	.handler(h)

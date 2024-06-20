@@ -11,7 +11,7 @@ import {
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
-import inputOutputLogger from '@middy/input-output-logger'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
@@ -43,7 +43,7 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 }
 
 export const handler = middy()
-	.use(inputOutputLogger())
+	.use(requestLogger())
 	.use(logMetrics(metrics))
 	.use({
 		after: async (request) => {
