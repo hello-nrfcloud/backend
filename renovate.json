@@ -6,7 +6,9 @@
       "matchPackagePatterns": [
         "@hello.nrfcloud.com/proto",
         "@nordicsemiconductor/bdd-markdown",
-        "@sinclair/typebox"
+        "@sinclair/typebox",
+        "@hello.nrfcloud.com/lambda-helpers",
+        "@hello.nrfcloud.com/nrfcloud-api-helpers"
       ],
       "groupName": "proto"
     },
