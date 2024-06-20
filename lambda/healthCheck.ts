@@ -161,7 +161,7 @@ const h = async (): Promise<void> => {
 						},
 						onConnect: async () => {
 							const data = {
-								ts: Date.now() / 1000,
+								ts: Date.now(),
 								gain: 3 + Number(Math.random().toFixed(5)),
 							}
 							store.set(account, data)
@@ -222,7 +222,7 @@ const h = async (): Promise<void> => {
 								track(
 									`receivingMessageDuration`,
 									MetricUnit.Seconds,
-									(Date.now() - (data?.ts ?? 0)) / 1000,
+									Math.floor(Date.now() / 1000 - data.ts),
 								)
 
 								return ValidateResponse.valid
