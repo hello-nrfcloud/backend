@@ -11,6 +11,7 @@ import {
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
@@ -27,7 +28,6 @@ const repo = connectionsRepository(db, TableName)
 const { track, metrics } = metricsForComponent('onMessage')
 
 const h = async (event: AuthorizedEvent): Promise<void> => {
-	log.info('event', { event })
 	const { connectionId } = event.requestContext
 
 	try {
@@ -42,7 +42,8 @@ const h = async (event: AuthorizedEvent): Promise<void> => {
 	}
 }
 
-export const handler = middy(h)
+export const handler = middy()
+	.use(inputOutputLogger())
 	.use(logMetrics(metrics))
 	.use({
 		after: async (request) => {
@@ -50,3 +51,4 @@ export const handler = middy(h)
 			if (response === undefined) request.response = { statusCode: 200 }
 		},
 	})
+	.handler(h)

@@ -14,6 +14,7 @@ const dependencies: Array<keyof (typeof pJson)['dependencies']> = [
 	'@aws-lambda-powertools/metrics',
 	'lodash-es',
 	'@middy/core',
+	'@middy/input-output-logger',
 	'@hello.nrfcloud.com/lambda-helpers',
 	'@bifravst/aws-ssm-settings-helpers',
 	'@hello.nrfcloud.com/nrfcloud-api-helpers',

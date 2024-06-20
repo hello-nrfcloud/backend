@@ -6,11 +6,8 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
 import { devices } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
-import {
-	formatTypeBoxErrors,
-	validateWithTypeBox,
-} from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	BadRequestError,
@@ -19,17 +16,15 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox/type'
-import type {
-	APIGatewayProxyEventV2,
-	APIGatewayProxyResultV2,
-} from 'aws-lambda'
+import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { getDeviceById } from '../devices/getDeviceById.js'
 import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
-import { loggingFetch } from './loggingFetch.js'
-import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
 import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
+import { loggingFetch } from './loggingFetch.js'
+import { validateInput, type ValidInput } from './middleware/validateInput.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -51,39 +46,19 @@ const { track } = metricsForComponent('configureDevice')
 
 const trackFetch = loggingFetch({ track, log: logger('configureDevice') })
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		id: deviceId,
-		fingerprint: Type.RegExp(fingerprintRegExp),
-		update: LwM2MObjectUpdate,
-	}),
-)
+const InputSchema = Type.Object({
+	id: deviceId,
+	fingerprint: Type.RegExp(fingerprintRegExp),
+	update: LwM2MObjectUpdate,
+})
 
 /**
  * Handle configure device request
  */
 const h = async (
-	event: APIGatewayProxyEventV2,
+	event: ValidInput<typeof InputSchema>,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.info('event', { event })
-
-	const maybeValidInput = validateInput({
-		...(event.queryStringParameters ?? {}),
-		...(event.pathParameters ?? {}),
-		update: {
-			...tryAsJSON(event.body),
-			ts: new Date().toISOString(),
-		},
-	})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Validation failed',
-			status: HttpStatusCode.BAD_REQUEST,
-			detail: formatTypeBoxErrors(maybeValidInput.errors),
-		})
-	}
-
-	const deviceId = maybeValidInput.value.id
+	const deviceId = event.validInput.id
 
 	const maybeDevice = await getDevice(deviceId)
 	if ('error' in maybeDevice) {
@@ -94,10 +69,10 @@ const h = async (
 		})
 	}
 	const device = maybeDevice.device
-	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
+	if (device.fingerprint !== event.validInput.fingerprint) {
 		return aProblem({
 			title: `Fingerprint does not match!`,
-			detail: maybeValidInput.value.fingerprint,
+			detail: event.validInput.fingerprint,
 			status: HttpStatusCode.FORBIDDEN,
 		})
 	}
@@ -116,7 +91,7 @@ const h = async (
 	)
 	const res = await update.updateState(deviceId, {
 		desired: {
-			lwm2m: objectsToShadow([maybeValidInput.value.update]),
+			lwm2m: objectsToShadow([event.validInput.update]),
 		},
 	})
 
@@ -135,6 +110,17 @@ const h = async (
 }
 
 export const handler = middy()
+	.use(inputOutputLogger())
+	.use(
+		validateInput(InputSchema, (event) => ({
+			...(event.queryStringParameters ?? {}),
+			...(event.pathParameters ?? {}),
+			update: {
+				...tryAsJSON(event.body),
+				ts: new Date().toISOString(),
+			},
+		})),
+	)
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
 	.handler(h)

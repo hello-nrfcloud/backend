@@ -7,32 +7,27 @@ import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import {
-	type ValidationError,
 	getFOTABundles,
+	type ValidationError,
 	type FOTABundle as nRFCloudFOTABundle,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
-import {
-	formatTypeBoxErrors,
-	validateWithTypeBox,
-} from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
-	type FOTABundle,
 	HttpStatusCode,
 	InternalError,
 	deviceId,
+	type FOTABundle,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type, type Static } from '@sinclair/typebox'
-import type {
-	APIGatewayProxyEventV2,
-	APIGatewayProxyResultV2,
-} from 'aws-lambda'
+import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { getDeviceById } from '../../devices/getDeviceById.js'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from '../loggingFetch.js'
+import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -53,12 +48,10 @@ const getDevice = getDeviceById({
 const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		id: deviceId,
-		fingerprint: Type.RegExp(fingerprintRegExp),
-	}),
-)
+const InputSchema = Type.Object({
+	id: deviceId,
+	fingerprint: Type.RegExp(fingerprintRegExp),
+})
 
 const bundlesPromise = new Map<
 	string,
@@ -73,23 +66,9 @@ const bundlesPromise = new Map<
 >()
 
 const h = async (
-	event: APIGatewayProxyEventV2,
+	event: ValidInput<typeof InputSchema>,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.info('event', { event })
-
-	const maybeValidInput = validateInput({
-		...(event.queryStringParameters ?? {}),
-		...(event.pathParameters ?? {}),
-	})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Validation failed',
-			status: HttpStatusCode.BAD_REQUEST,
-			detail: formatTypeBoxErrors(maybeValidInput.errors),
-		})
-	}
-
-	const deviceId = maybeValidInput.value.id
+	const deviceId = event.validInput.id
 
 	const maybeDevice = await getDevice(deviceId)
 	if ('error' in maybeDevice) {
@@ -101,10 +80,10 @@ const h = async (
 	}
 
 	const device = maybeDevice.device
-	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
+	if (device.fingerprint !== event.validInput.fingerprint) {
 		return aProblem({
 			title: `Fingerprint does not match!`,
-			detail: maybeValidInput.value.fingerprint,
+			detail: event.validInput.fingerprint,
 			status: HttpStatusCode.FORBIDDEN,
 		})
 	}
@@ -146,8 +125,10 @@ const h = async (
 	})
 }
 export const handler = middy()
+	.use(inputOutputLogger())
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(validateInput(InputSchema))
 	.handler(h)
 
 const toBundle = (

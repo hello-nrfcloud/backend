@@ -3,6 +3,7 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { type APIGatewayProxyResultV2 } from 'aws-lambda'
 
@@ -18,6 +19,7 @@ const h = async (): Promise<APIGatewayProxyResultV2> => {
 }
 
 export const handler = middy()
+	.use(inputOutputLogger())
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('POST'))
 	.handler(h)

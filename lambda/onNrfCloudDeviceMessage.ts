@@ -7,6 +7,7 @@ import {
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 import { converter } from '../nrfCloud/converter.js'
 
@@ -21,8 +22,6 @@ const h = async (event: {
 	deviceId: string
 	timestamp: number
 }): Promise<void> => {
-	log.debug('event', { event })
-
 	const { message, deviceId } = event
 
 	const converted = converter(message)
@@ -58,4 +57,7 @@ const h = async (event: {
 	)
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy()
+	.use(inputOutputLogger())
+	.use(logMetrics(metrics))
+	.handler(h)

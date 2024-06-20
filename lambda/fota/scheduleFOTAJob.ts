@@ -9,12 +9,7 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
 import { createFOTAJob } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
-import {
-	formatTypeBoxErrors,
-	validateWithTypeBox,
-} from '@hello.nrfcloud.com/proto'
 import {
 	LwM2MObjectID,
 	type NRFCloudServiceInfo_14401,
@@ -27,19 +22,18 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
-import type {
-	APIGatewayProxyEventV2,
-	APIGatewayProxyResultV2,
-} from 'aws-lambda'
+import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { isObject } from 'lodash-es'
 import { getDeviceById } from '../../devices/getDeviceById.js'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
 import { getLwM2MShadow } from '../getLwM2MShadow.js'
 import { loggingFetch } from '../loggingFetch.js'
-import { toJobExecution } from './toJobExecution.js'
+import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import type { Job } from './Job.js'
+import { toJobExecution } from './toJobExecution.js'
 
 const { stackName, version, DevicesTableName, jobStatusTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -64,39 +58,22 @@ const getShadow = getLwM2MShadow(iotData)
 const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		id: deviceId,
-		bundleId: Type.RegExp(
-			/^(APP|MODEM|BOOT|SOFTDEVICE|BOOTLOADER|MDM_FULL)\*[0-9a-zA-Z]{8}\*.*$/,
-			{
-				title: 'Bundle ID',
-				description: 'The nRF Cloud firmware bundle ID',
-			},
-		),
-		fingerprint: Type.RegExp(fingerprintRegExp),
-	}),
-)
+const InputSchema = Type.Object({
+	id: deviceId,
+	bundleId: Type.RegExp(
+		/^(APP|MODEM|BOOT|SOFTDEVICE|BOOTLOADER|MDM_FULL)\*[0-9a-zA-Z]{8}\*.*$/,
+		{
+			title: 'Bundle ID',
+			description: 'The nRF Cloud firmware bundle ID',
+		},
+	),
+	fingerprint: Type.RegExp(fingerprintRegExp),
+})
 
 const h = async (
-	event: APIGatewayProxyEventV2,
+	event: ValidInput<typeof InputSchema>,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.info('event', { event })
-
-	const maybeValidInput = validateInput({
-		...(event.queryStringParameters ?? {}),
-		...(event.pathParameters ?? {}),
-		...tryAsJSON(event.body),
-	})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Validation failed',
-			status: HttpStatusCode.BAD_REQUEST,
-			detail: formatTypeBoxErrors(maybeValidInput.errors),
-		})
-	}
-
-	const deviceId = maybeValidInput.value.id
+	const deviceId = event.validInput.id
 
 	const maybeDevice = await getDevice(deviceId)
 	if ('error' in maybeDevice) {
@@ -108,10 +85,10 @@ const h = async (
 	}
 
 	const device = maybeDevice.device
-	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
+	if (device.fingerprint !== event.validInput.fingerprint) {
 		return aProblem({
 			title: `Fingerprint does not match!`,
-			detail: maybeValidInput.value.fingerprint,
+			detail: event.validInput.fingerprint,
 			status: HttpStatusCode.FORBIDDEN,
 		})
 	}
@@ -137,7 +114,7 @@ const h = async (
 
 	if (
 		supportedFOTATypes.find((type) =>
-			maybeValidInput.value.bundleId.startsWith(type),
+			event.validInput.bundleId.startsWith(type),
 		) === undefined
 	) {
 		return aProblem({
@@ -162,7 +139,7 @@ const h = async (
 
 	const res = await createJob({
 		deviceId,
-		bundleId: maybeValidInput.value.bundleId,
+		bundleId: event.validInput.bundleId,
 	})
 
 	if ('result' in res) {
@@ -208,8 +185,10 @@ const h = async (
 	}
 }
 export const handler = middy()
+	.use(inputOutputLogger())
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
+	.use(validateInput(InputSchema))
 	.handler(h)
 
 const isNRFCloudServiceInfo = (

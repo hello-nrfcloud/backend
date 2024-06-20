@@ -12,6 +12,8 @@ import { getLwM2MShadow } from './getLwM2MShadow.js'
 import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
+import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 
 const { EventBusName, TableName, LastSeenTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -34,10 +36,9 @@ const sendShadow = sendShadowToConnection({
 })
 const getShadow = getLwM2MShadow(iotData)
 
-export const handler = async (
+const h = async (
 	event: AuthorizedEvent,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
-	log.debug('event', { event })
 	const context = event.requestContext.authorizer
 	const { connectionId } = event.requestContext
 	log.debug('ws:connect', connectionId)
@@ -100,3 +101,5 @@ export const handler = async (
 		statusCode: 200,
 	}
 }
+
+export const handler = middy().use(inputOutputLogger()).handler(h)

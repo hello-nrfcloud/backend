@@ -10,6 +10,7 @@ import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { Type } from '@sinclair/typebox'
 import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
@@ -88,6 +89,7 @@ const h = async (
 }
 
 export const handler = middy()
+	.use(inputOutputLogger())
 	.use(corsOPTIONS('POST'))
 	.use(addVersionHeader(version))
 	.handler(h)

@@ -8,10 +8,6 @@ import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
-import {
-	formatTypeBoxErrors,
-	validateWithTypeBox,
-} from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
@@ -19,13 +15,12 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
-import type {
-	APIGatewayProxyEventV2,
-	APIGatewayProxyResultV2,
-} from 'aws-lambda'
+import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { getDeviceById } from '../../devices/getDeviceById.js'
+import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import type { Job } from './Job.js'
 import { toJobExecution } from './toJobExecution.js'
 
@@ -45,12 +40,10 @@ const {
 
 const db = new DynamoDBClient({})
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		id: deviceId,
-		fingerprint: Type.RegExp(fingerprintRegExp),
-	}),
-)
+const InputSchema = Type.Object({
+	id: deviceId,
+	fingerprint: Type.RegExp(fingerprintRegExp),
+})
 
 const getDevice = getDeviceById({
 	db,
@@ -58,35 +51,23 @@ const getDevice = getDeviceById({
 })
 
 const h = async (
-	event: APIGatewayProxyEventV2,
+	event: ValidInput<typeof InputSchema>,
 ): Promise<APIGatewayProxyResultV2> => {
 	console.log(JSON.stringify({ event }))
 
-	const maybeValidInput = validateInput({
-		...(event.pathParameters ?? {}),
-		...(event.queryStringParameters ?? {}),
-	})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Validation failed',
-			status: HttpStatusCode.BAD_REQUEST,
-			detail: formatTypeBoxErrors(maybeValidInput.errors),
-		})
-	}
-
-	const maybeDevice = await getDevice(maybeValidInput.value.id)
+	const maybeDevice = await getDevice(event.validInput.id)
 	if ('error' in maybeDevice) {
 		return aProblem({
 			title: `No device found with ID!`,
-			detail: maybeValidInput.value.id,
+			detail: event.validInput.id,
 			status: HttpStatusCode.NOT_FOUND,
 		})
 	}
 	const device = maybeDevice.device
-	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
+	if (device.fingerprint !== event.validInput.fingerprint) {
 		return aProblem({
 			title: `Fingerprint does not match!`,
-			detail: maybeValidInput.value.fingerprint,
+			detail: event.validInput.fingerprint,
 			status: HttpStatusCode.FORBIDDEN,
 		})
 	}
@@ -144,6 +125,8 @@ const h = async (
 }
 
 export const handler = middy()
+	.use(inputOutputLogger())
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(validateInput(InputSchema))
 	.handler(h)

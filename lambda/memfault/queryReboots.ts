@@ -8,10 +8,6 @@ import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
-import {
-	formatTypeBoxErrors,
-	validateWithTypeBox,
-} from '@hello.nrfcloud.com/proto'
 import { LwM2MObjectID, definitions } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
@@ -21,17 +17,16 @@ import {
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type, type Static } from '@sinclair/typebox'
-import type {
-	APIGatewayProxyEventV2,
-	APIGatewayProxyResultV2,
-} from 'aws-lambda'
+import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { getDeviceById } from '../../devices/getDeviceById.js'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
 } from '../../historicalData/HistoricalDataTimeSpans.js'
+import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 
 const { tableName, DevicesTableName, version } = fromEnv({
 	version: 'VERSION',
@@ -39,20 +34,17 @@ const { tableName, DevicesTableName, version } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 })(process.env)
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		deviceId,
-		fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
-		timeSpan: Type.Optional(
-			Type.Union(
-				Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
-					Type.Literal(timeSpan),
-				),
+const InputSchema = Type.Object({
+	deviceId,
+	fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
+	timeSpan: Type.Optional(
+		Type.Union(
+			Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
+				Type.Literal(timeSpan),
 			),
 		),
-	}),
-)
-
+	),
+})
 const db = new DynamoDBClient({})
 const getDevice = getDeviceById({
 	db,
@@ -60,43 +52,28 @@ const getDevice = getDeviceById({
 })
 
 const h = async (
-	event: APIGatewayProxyEventV2,
+	event: ValidInput<typeof InputSchema>,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.log(JSON.stringify(event))
-
-	const { deviceId } = event.pathParameters ?? {}
-	const maybeValidInput = validateInput({
-		...(event.queryStringParameters ?? {}),
-		deviceId,
-	})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Validation failed',
-			status: HttpStatusCode.BAD_REQUEST,
-			detail: formatTypeBoxErrors(maybeValidInput.errors),
-		})
-	}
-
-	const maybeDevice = await getDevice(maybeValidInput.value.deviceId)
+	const maybeDevice = await getDevice(event.validInput.deviceId)
 	if ('error' in maybeDevice) {
 		return aProblem({
 			title: `No device found with ID!`,
-			detail: maybeValidInput.value.deviceId,
+			detail: event.validInput.deviceId,
 			status: HttpStatusCode.NOT_FOUND,
 		})
 	}
 	const device = maybeDevice.device
-	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
+	if (device.fingerprint !== event.validInput.fingerprint) {
 		return aProblem({
 			title: `Fingerprint does not match!`,
-			detail: maybeValidInput.value.fingerprint,
+			detail: event.validInput.fingerprint,
 			status: HttpStatusCode.FORBIDDEN,
 		})
 	}
 
 	const timeSpan =
-		maybeValidInput.value.timeSpan !== undefined
-			? HistoricalDataTimeSpans[maybeValidInput.value.timeSpan] ?? LastHour
+		event.validInput.timeSpan !== undefined
+			? HistoricalDataTimeSpans[event.validInput.timeSpan] ?? LastHour
 			: LastHour
 
 	const result: Static<typeof LwM2MObjectHistory> = {
@@ -157,6 +134,8 @@ const h = async (
 }
 
 export const handler = middy()
+	.use(inputOutputLogger())
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(validateInput(InputSchema))
 	.handler(h)

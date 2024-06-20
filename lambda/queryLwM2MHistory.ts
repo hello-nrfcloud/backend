@@ -12,10 +12,6 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import {
-	formatTypeBoxErrors,
-	validateWithTypeBox,
-} from '@hello.nrfcloud.com/proto'
-import {
 	LwM2MObjectIDs,
 	definitions,
 	timestampResources,
@@ -29,13 +25,11 @@ import {
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
-import type {
-	APIGatewayProxyEventV2,
-	APIGatewayProxyResultV2,
-} from 'aws-lambda'
+import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { once } from 'lodash-es'
 import { getDeviceById } from '../devices/getDeviceById.js'
 import {
@@ -45,6 +39,7 @@ import {
 } from '../historicalData/HistoricalDataTimeSpans.js'
 import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
 import { isNumeric } from '../lwm2m/isNumeric.js'
+import { validateInput, type ValidInput } from './middleware/validateInput.js'
 
 const { tableInfo, DevicesTableName, version, isTest } = fromEnv({
 	version: 'VERSION',
@@ -73,22 +68,20 @@ const Aggregate = Type.Union(
 
 const { track, metrics } = metricsForComponent('history')
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		deviceId,
-		objectId: Type.Union(LwM2MObjectIDs.map((id) => Type.Literal(id))),
-		instanceId: Type.Integer({ minimum: 0 }),
-		fingerprint: Type.RegExp(fingerprintRegExp),
-		timeSpan: Type.Optional(
-			Type.Union(
-				Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
-					Type.Literal(timeSpan),
-				),
+const InputSchema = Type.Object({
+	deviceId,
+	objectId: Type.Union(LwM2MObjectIDs.map((id) => Type.Literal(id))),
+	instanceId: Type.Integer({ minimum: 0 }),
+	fingerprint: Type.RegExp(fingerprintRegExp),
+	timeSpan: Type.Optional(
+		Type.Union(
+			Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
+				Type.Literal(timeSpan),
 			),
 		),
-		aggregate: Type.Optional(Aggregate),
-	}),
-)
+	),
+	aggregate: Type.Optional(Aggregate),
+})
 
 const db = new DynamoDBClient({})
 const getDevice = getDeviceById({
@@ -111,38 +104,21 @@ const availableColumnsCache =
 		: once(getAvailableColumns(ts, DatabaseName, TableName))
 
 const h = async (
-	event: APIGatewayProxyEventV2,
+	event: ValidInput<typeof InputSchema>,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.log(JSON.stringify(event))
-
-	const { deviceId, objectId, instanceId } = event.pathParameters ?? {}
-	const maybeValidInput = validateInput({
-		...(event.queryStringParameters ?? {}),
-		deviceId,
-		objectId: parseInt(objectId ?? '-1', 10),
-		instanceId: parseInt(instanceId ?? '-1', 10),
-	})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Validation failed',
-			status: HttpStatusCode.BAD_REQUEST,
-			detail: formatTypeBoxErrors(maybeValidInput.errors),
-		})
-	}
-
-	const maybeDevice = await getDevice(maybeValidInput.value.deviceId)
+	const maybeDevice = await getDevice(event.validInput.deviceId)
 	if ('error' in maybeDevice) {
 		return aProblem({
 			title: `No device found with ID!`,
-			detail: maybeValidInput.value.deviceId,
+			detail: event.validInput.deviceId,
 			status: HttpStatusCode.NOT_FOUND,
 		})
 	}
 	const device = maybeDevice.device
-	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
+	if (device.fingerprint !== event.validInput.fingerprint) {
 		return aProblem({
 			title: `Fingerprint does not match!`,
-			detail: maybeValidInput.value.fingerprint,
+			detail: event.validInput.fingerprint,
 			status: HttpStatusCode.FORBIDDEN,
 		})
 	}
@@ -151,10 +127,10 @@ const h = async (
 		objectId: ObjectID,
 		instanceId: InstanceID,
 		aggregate,
-	} = maybeValidInput.value
+	} = event.validInput
 	const def = definitions[ObjectID]
 	const timeSpan =
-		HistoricalDataTimeSpans[maybeValidInput.value.timeSpan ?? ''] ?? LastHour
+		HistoricalDataTimeSpans[event.validInput.timeSpan ?? ''] ?? LastHour
 
 	try {
 		const result: Static<typeof LwM2MObjectHistory> = {
@@ -279,7 +255,19 @@ const binResourceHistory = async ({
 }
 
 export const handler = middy()
+	.use(inputOutputLogger())
 	.use(logMetrics(metrics))
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(
+		validateInput(InputSchema, (event) => {
+			const { deviceId, objectId, instanceId } = event.pathParameters ?? {}
+			return {
+				...(event.queryStringParameters ?? {}),
+				deviceId,
+				objectId: parseInt(objectId ?? '-1', 10),
+				instanceId: parseInt(instanceId ?? '-1', 10),
+			}
+		}),
+	)
 	.handler(h)
