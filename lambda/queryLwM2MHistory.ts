@@ -31,7 +31,6 @@ import { parseResult } from '@nordicsemiconductor/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
 import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { once } from 'lodash-es'
-import { getDeviceById } from '../devices/getDeviceById.js'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
@@ -40,6 +39,7 @@ import {
 import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
 import { isNumeric } from '../lwm2m/isNumeric.js'
 import { validateInput, type ValidInput } from './middleware/validateInput.js'
+import { withDevice, type WithDevice } from './middleware/withDevice.js'
 
 const { tableInfo, DevicesTableName, version, isTest } = fromEnv({
 	version: 'VERSION',
@@ -84,10 +84,6 @@ const InputSchema = Type.Object({
 })
 
 const db = new DynamoDBClient({})
-const getDevice = getDeviceById({
-	db,
-	DevicesTableName,
-})
 
 // TODO: cache globally
 // Do not cache the result if we are in test mode
@@ -104,25 +100,8 @@ const availableColumnsCache =
 		: once(getAvailableColumns(ts, DatabaseName, TableName))
 
 const h = async (
-	event: ValidInput<typeof InputSchema>,
+	event: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-	const maybeDevice = await getDevice(event.validInput.deviceId)
-	if ('error' in maybeDevice) {
-		return aProblem({
-			title: `No device found with ID!`,
-			detail: event.validInput.deviceId,
-			status: HttpStatusCode.NOT_FOUND,
-		})
-	}
-	const device = maybeDevice.device
-	if (device.fingerprint !== event.validInput.fingerprint) {
-		return aProblem({
-			title: `Fingerprint does not match!`,
-			detail: event.validInput.fingerprint,
-			status: HttpStatusCode.FORBIDDEN,
-		})
-	}
-
 	const {
 		objectId: ObjectID,
 		instanceId: InstanceID,
@@ -139,7 +118,7 @@ const h = async (
 				ObjectID,
 				ObjectVersion: def.ObjectVersion,
 				ObjectInstanceID: InstanceID,
-				deviceId: device.id,
+				deviceId: event.device.id,
 				binIntervalMinutes: timeSpan.binIntervalMinutes,
 			},
 			partialInstances: [],
@@ -148,7 +127,7 @@ const h = async (
 		result.partialInstances = await binResourceHistory({
 			def,
 			instance: InstanceID,
-			deviceId: device.id,
+			deviceId: event.device.id,
 			timeSpan,
 			aggregateFn: aggregate ?? 'avg',
 		})
@@ -270,4 +249,5 @@ export const handler = middy()
 			}
 		}),
 	)
+	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)

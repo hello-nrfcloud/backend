@@ -4,7 +4,6 @@ import {
 	type QueryCommandInput,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
@@ -12,7 +11,6 @@ import { LwM2MObjectID, definitions } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
-	HttpStatusCode,
 	deviceId,
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
@@ -21,12 +19,12 @@ import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type, type Static } from '@sinclair/typebox'
 import type { APIGatewayProxyResultV2 } from 'aws-lambda'
-import { getDeviceById } from '../../devices/getDeviceById.js'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
 } from '../../historicalData/HistoricalDataTimeSpans.js'
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'
+import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 
 const { tableName, DevicesTableName, version } = fromEnv({
 	version: 'VERSION',
@@ -46,31 +44,10 @@ const InputSchema = Type.Object({
 	),
 })
 const db = new DynamoDBClient({})
-const getDevice = getDeviceById({
-	db,
-	DevicesTableName,
-})
 
 const h = async (
-	event: ValidInput<typeof InputSchema>,
+	event: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-	const maybeDevice = await getDevice(event.validInput.deviceId)
-	if ('error' in maybeDevice) {
-		return aProblem({
-			title: `No device found with ID!`,
-			detail: event.validInput.deviceId,
-			status: HttpStatusCode.NOT_FOUND,
-		})
-	}
-	const device = maybeDevice.device
-	if (device.fingerprint !== event.validInput.fingerprint) {
-		return aProblem({
-			title: `Fingerprint does not match!`,
-			detail: event.validInput.fingerprint,
-			status: HttpStatusCode.FORBIDDEN,
-		})
-	}
-
 	const timeSpan =
 		event.validInput.timeSpan !== undefined
 			? HistoricalDataTimeSpans[event.validInput.timeSpan] ?? LastHour
@@ -81,7 +58,7 @@ const h = async (
 		query: {
 			ObjectID: LwM2MObjectID.Reboot_14250,
 			ObjectVersion: definitions[LwM2MObjectID.Reboot_14250].ObjectVersion,
-			deviceId: device.id,
+			deviceId: event.device.id,
 			binIntervalMinutes: timeSpan.binIntervalMinutes,
 			ObjectInstanceID: 0, // Not used
 		},
@@ -98,7 +75,7 @@ const h = async (
 		},
 		ExpressionAttributeValues: {
 			':deviceId': {
-				S: device.id,
+				S: event.device.id,
 			},
 			':from': {
 				S: new Date(
@@ -138,4 +115,5 @@ export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
 	.use(validateInput(InputSchema))
+	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)

@@ -24,10 +24,10 @@ import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type, type Static } from '@sinclair/typebox'
 import type { APIGatewayProxyResultV2 } from 'aws-lambda'
-import { getDeviceById } from '../../devices/getDeviceById.js'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from '../loggingFetch.js'
-import { validateInput, type ValidInput } from '../middleware/validateInput.js'
+import { validateInput } from '../middleware/validateInput.js'
+import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -40,16 +40,11 @@ const ssm = new SSMClient({})
 
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
-const getDevice = getDeviceById({
-	db,
-	DevicesTableName,
-})
-
 const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
 const InputSchema = Type.Object({
-	id: deviceId,
+	deviceId,
 	fingerprint: Type.RegExp(fingerprintRegExp),
 })
 
@@ -65,30 +60,8 @@ const bundlesPromise = new Map<
 	>
 >()
 
-const h = async (
-	event: ValidInput<typeof InputSchema>,
-): Promise<APIGatewayProxyResultV2> => {
-	const deviceId = event.validInput.id
-
-	const maybeDevice = await getDevice(deviceId)
-	if ('error' in maybeDevice) {
-		return aProblem({
-			title: `No device found with ID!`,
-			detail: deviceId,
-			status: HttpStatusCode.NOT_FOUND,
-		})
-	}
-
-	const device = maybeDevice.device
-	if (device.fingerprint !== event.validInput.fingerprint) {
-		return aProblem({
-			title: `Fingerprint does not match!`,
-			detail: event.validInput.fingerprint,
-			status: HttpStatusCode.FORBIDDEN,
-		})
-	}
-
-	const account = device.account
+const h = async (event: WithDevice): Promise<APIGatewayProxyResultV2> => {
+	const account = event.device.account
 	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
@@ -129,6 +102,7 @@ export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
 	.use(validateInput(InputSchema))
+	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)
 
 const toBundle = (

@@ -38,8 +38,6 @@ const validateInput = validateWithTypeBox(
 const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.log(JSON.stringify({ event }))
-
 	const maybeValidInput = validateInput(event.queryStringParameters ?? {})
 	if ('errors' in maybeValidInput) {
 		return aProblem({

@@ -27,11 +27,11 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
 import type { APIGatewayProxyResultV2 } from 'aws-lambda'
 import { isObject } from 'lodash-es'
-import { getDeviceById } from '../../devices/getDeviceById.js'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
 import { getLwM2MShadow } from '../getLwM2MShadow.js'
 import { loggingFetch } from '../loggingFetch.js'
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'
+import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import type { Job } from './Job.js'
 import { toJobExecution } from './toJobExecution.js'
 
@@ -48,18 +48,13 @@ const iotData = new IoTDataPlaneClient({})
 
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
-const getDevice = getDeviceById({
-	db,
-	DevicesTableName,
-})
-
 const getShadow = getLwM2MShadow(iotData)
 
 const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
 const InputSchema = Type.Object({
-	id: deviceId,
+	deviceId,
 	bundleId: Type.RegExp(
 		/^(APP|MODEM|BOOT|SOFTDEVICE|BOOTLOADER|MDM_FULL)\*[0-9a-zA-Z]{8}\*.*$/,
 		{
@@ -71,29 +66,9 @@ const InputSchema = Type.Object({
 })
 
 const h = async (
-	event: ValidInput<typeof InputSchema>,
+	event: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-	const deviceId = event.validInput.id
-
-	const maybeDevice = await getDevice(deviceId)
-	if ('error' in maybeDevice) {
-		return aProblem({
-			title: `No device found with ID!`,
-			detail: deviceId,
-			status: HttpStatusCode.NOT_FOUND,
-		})
-	}
-
-	const device = maybeDevice.device
-	if (device.fingerprint !== event.validInput.fingerprint) {
-		return aProblem({
-			title: `Fingerprint does not match!`,
-			detail: event.validInput.fingerprint,
-			status: HttpStatusCode.FORBIDDEN,
-		})
-	}
-
-	const maybeShadow = await getShadow(deviceId)
+	const maybeShadow = await getShadow(event.device.id)
 	if ('error' in maybeShadow) {
 		console.error(maybeShadow.error)
 		return aProblem({
@@ -124,7 +99,7 @@ const h = async (
 		})
 	}
 
-	const account = device.account
+	const account = event.device.account
 	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
@@ -138,7 +113,7 @@ const h = async (
 	)
 
 	const res = await createJob({
-		deviceId,
+		deviceId: event.device.id,
 		bundleId: event.validInput.bundleId,
 	})
 
@@ -148,7 +123,7 @@ const h = async (
 
 		const now = new Date().toISOString()
 		const job: Job = {
-			deviceId,
+			deviceId: event.device.id,
 			jobId: res.result.jobId,
 			status: 'QUEUED',
 			createdAt: now,
@@ -189,6 +164,7 @@ export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
 	.use(validateInput(InputSchema))
+	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)
 
 const isNRFCloudServiceInfo = (

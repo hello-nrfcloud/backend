@@ -20,10 +20,10 @@ import inputOutputLogger from '@middy/input-output-logger'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox/type'
 import type { APIGatewayProxyResultV2 } from 'aws-lambda'
-import { getDeviceById } from '../devices/getDeviceById.js'
 import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
 import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from './loggingFetch.js'
+import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import { validateInput, type ValidInput } from './middleware/validateInput.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({
@@ -33,10 +33,6 @@ const { stackName, version, DevicesTableName } = fromEnv({
 })(process.env)
 
 const db = new DynamoDBClient({})
-const getDevice = getDeviceById({
-	db,
-	DevicesTableName,
-})
 
 const ssm = new SSMClient({})
 
@@ -47,7 +43,7 @@ const { track } = metricsForComponent('configureDevice')
 const trackFetch = loggingFetch({ track, log: logger('configureDevice') })
 
 const InputSchema = Type.Object({
-	id: deviceId,
+	deviceId,
 	fingerprint: Type.RegExp(fingerprintRegExp),
 	update: LwM2MObjectUpdate,
 })
@@ -56,28 +52,9 @@ const InputSchema = Type.Object({
  * Handle configure device request
  */
 const h = async (
-	event: ValidInput<typeof InputSchema>,
+	event: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-	const deviceId = event.validInput.id
-
-	const maybeDevice = await getDevice(deviceId)
-	if ('error' in maybeDevice) {
-		return aProblem({
-			title: `No device found with ID!`,
-			detail: deviceId,
-			status: HttpStatusCode.NOT_FOUND,
-		})
-	}
-	const device = maybeDevice.device
-	if (device.fingerprint !== event.validInput.fingerprint) {
-		return aProblem({
-			title: `Fingerprint does not match!`,
-			detail: event.validInput.fingerprint,
-			status: HttpStatusCode.FORBIDDEN,
-		})
-	}
-
-	const account = device.account
+	const account = event.device.account
 	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
@@ -89,7 +66,7 @@ const h = async (
 		},
 		trackFetch,
 	)
-	const res = await update.updateState(deviceId, {
+	const res = await update.updateState(event.device.id, {
 		desired: {
 			lwm2m: objectsToShadow([event.validInput.update]),
 		},
@@ -121,6 +98,7 @@ export const handler = middy()
 			},
 		})),
 	)
+	.use(withDevice({ db, DevicesTableName }))
 	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
 	.handler(h)
