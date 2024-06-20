@@ -9,10 +9,8 @@ import {
 	isLwM2MObjectID,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fromEnv } from '@nordicsemiconductor/from-env'
-import {
-	NoHistoryMeasuresError,
-	instanceMeasuresToRecord,
-} from '../historicalData/instanceMeasuresToRecord.js'
+import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.js'
+import { NoHistoryMeasuresError } from '../historicalData/NoHistoryMeasuresError.js'
 import middy from '@middy/core'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'

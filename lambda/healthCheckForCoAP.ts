@@ -158,7 +158,7 @@ const h = async (): Promise<void> => {
 								ObjectVersion: '1.0',
 								Resources: {
 									0: data.temperature,
-									99: data.ts,
+									99: Math.floor(data.ts / 1000),
 								},
 							})
 							if ('errors' in maybeSenML)
@@ -200,7 +200,7 @@ const h = async (): Promise<void> => {
 											ObjectID: LwM2MObjectID.Environment_14205,
 											Resources: {
 												0: data.temperature,
-												99: data.ts,
+												99: Math.floor(data.ts / 1000),
 											},
 										},
 									)

@@ -161,7 +161,7 @@ const h = async (): Promise<void> => {
 						},
 						onConnect: async () => {
 							const data = {
-								ts: Date.now(),
+								ts: Date.now() / 1000,
 								gain: 3 + Number(Math.random().toFixed(5)),
 							}
 							store.set(account, data)
@@ -170,7 +170,7 @@ const h = async (): Promise<void> => {
 								ObjectVersion: '1.0',
 								Resources: {
 									1: data.gain,
-									99: data.ts,
+									99: Math.floor(data.ts / 1000),
 								},
 							})
 							if ('errors' in maybeSenML)
@@ -210,7 +210,7 @@ const h = async (): Promise<void> => {
 											ObjectID: LwM2MObjectID.BatteryAndPower_14202,
 											Resources: {
 												1: data.gain,
-												99: data.ts,
+												99: Math.floor(data.ts / 1000),
 											},
 										},
 									)

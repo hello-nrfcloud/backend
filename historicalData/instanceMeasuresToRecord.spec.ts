@@ -1,10 +1,9 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import {
-	NoHistoryMeasuresError,
-	instanceMeasuresToRecord,
-} from './instanceMeasuresToRecord.js'
+import { instanceMeasuresToRecord } from './instanceMeasuresToRecord.js'
+import { NoHistoryMeasuresError } from './NoHistoryMeasuresError.js'
 import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { InvalidTimeError } from '../lwm2m/InvalidTimeError.js'
 
 void describe('instanceMeasuresToRecord()', () => {
 	void it('should return an error if no measures are found', () => {
@@ -23,5 +22,16 @@ void describe('instanceMeasuresToRecord()', () => {
 			'error' in res && res.error instanceof NoHistoryMeasuresError,
 			true,
 		)
+	})
+
+	void it('should return an error if the timestamp is invalid', () => {
+		const res = instanceMeasuresToRecord({
+			ObjectID: LwM2MObjectID.Environment_14205,
+			Resources: {
+				'0': 13.8,
+				'99': 1718878270596,
+			},
+		})
+		assert.equal('error' in res && res.error instanceof InvalidTimeError, true)
 	})
 })

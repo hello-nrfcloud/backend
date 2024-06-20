@@ -8,13 +8,7 @@ import {
 	instanceTsAsDate,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { instanceToMeasures } from './instanceToMeasures.js'
-
-export class NoHistoryMeasuresError extends Error {
-	constructor(message: string) {
-		super(message)
-		this.name = 'NoHistoryMeasuresError'
-	}
-}
+import { NoHistoryMeasuresError } from './NoHistoryMeasuresError.js'
 
 export const instanceMeasuresToRecord = ({
 	ObjectID,
