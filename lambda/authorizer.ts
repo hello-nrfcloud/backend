@@ -4,6 +4,7 @@ import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { PolicyDocument } from 'aws-lambda'
 import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.js'
@@ -50,8 +51,6 @@ const h = async (event: {
 		connectionId: string
 	}
 }): Promise<Result> => {
-	log.debug('event', { event })
-
 	const deny: Result = {
 		principalId: 'me',
 		policyDocument: {
@@ -154,4 +153,7 @@ const h = async (event: {
 	}
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy()
+	.use(requestLogger())
+	.use(logMetrics(metrics))
+	.handler(h)

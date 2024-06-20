@@ -12,6 +12,7 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.js'
 import { NoHistoryMeasuresError } from '../historicalData/NoHistoryMeasuresError.js'
 import middy from '@middy/core'
+import { requestLogger } from './middleware/requestLogger.js'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
@@ -116,4 +117,7 @@ const h = async (event: {
 	}
 }
 
-export const handler = middy().use(logMetrics(metrics)).handler(h)
+export const handler = middy()
+	.use(requestLogger())
+	.use(logMetrics(metrics))
+	.handler(h)

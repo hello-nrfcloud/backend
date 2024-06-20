@@ -18,6 +18,7 @@ import {
 	type SenMLType,
 } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import assert from 'node:assert/strict'
 import { registerDevice } from '../devices/registerDevice.js'
@@ -235,4 +236,7 @@ const h = async (): Promise<void> => {
 	)
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy()
+	.use(requestLogger())
+	.use(logMetrics(metrics))
+	.handler(h)

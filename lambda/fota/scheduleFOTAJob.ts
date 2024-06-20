@@ -9,12 +9,7 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
 import { createFOTAJob } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
-import {
-	formatTypeBoxErrors,
-	validateWithTypeBox,
-} from '@hello.nrfcloud.com/proto'
 import {
 	LwM2MObjectID,
 	type NRFCloudServiceInfo_14401,
@@ -27,6 +22,7 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
@@ -34,12 +30,13 @@ import type {
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { isObject } from 'lodash-es'
-import { getDeviceById } from '../../devices/getDeviceById.js'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
 import { getLwM2MShadow } from '../getLwM2MShadow.js'
 import { loggingFetch } from '../loggingFetch.js'
-import { toJobExecution } from './toJobExecution.js'
+import { validateInput, type ValidInput } from '../middleware/validateInput.js'
+import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import type { Job } from './Job.js'
+import { toJobExecution } from './toJobExecution.js'
 
 const { stackName, version, DevicesTableName, jobStatusTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -54,69 +51,28 @@ const iotData = new IoTDataPlaneClient({})
 
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
-const getDevice = getDeviceById({
-	db,
-	DevicesTableName,
-})
-
 const getShadow = getLwM2MShadow(iotData)
 
 const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		id: deviceId,
-		bundleId: Type.RegExp(
-			/^(APP|MODEM|BOOT|SOFTDEVICE|BOOTLOADER|MDM_FULL)\*[0-9a-zA-Z]{8}\*.*$/,
-			{
-				title: 'Bundle ID',
-				description: 'The nRF Cloud firmware bundle ID',
-			},
-		),
-		fingerprint: Type.RegExp(fingerprintRegExp),
-	}),
-)
+const InputSchema = Type.Object({
+	deviceId,
+	bundleId: Type.RegExp(
+		/^(APP|MODEM|BOOT|SOFTDEVICE|BOOTLOADER|MDM_FULL)\*[0-9a-zA-Z]{8}\*.*$/,
+		{
+			title: 'Bundle ID',
+			description: 'The nRF Cloud firmware bundle ID',
+		},
+	),
+	fingerprint: Type.RegExp(fingerprintRegExp),
+})
 
 const h = async (
 	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.info('event', { event })
-
-	const maybeValidInput = validateInput({
-		...(event.queryStringParameters ?? {}),
-		...(event.pathParameters ?? {}),
-		...tryAsJSON(event.body),
-	})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Validation failed',
-			status: HttpStatusCode.BAD_REQUEST,
-			detail: formatTypeBoxErrors(maybeValidInput.errors),
-		})
-	}
-
-	const deviceId = maybeValidInput.value.id
-
-	const maybeDevice = await getDevice(deviceId)
-	if ('error' in maybeDevice) {
-		return aProblem({
-			title: `No device found with ID!`,
-			detail: deviceId,
-			status: HttpStatusCode.NOT_FOUND,
-		})
-	}
-
-	const device = maybeDevice.device
-	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
-		return aProblem({
-			title: `Fingerprint does not match!`,
-			detail: maybeValidInput.value.fingerprint,
-			status: HttpStatusCode.FORBIDDEN,
-		})
-	}
-
-	const maybeShadow = await getShadow(deviceId)
+	const maybeShadow = await getShadow(context.device.id)
 	if ('error' in maybeShadow) {
 		console.error(maybeShadow.error)
 		return aProblem({
@@ -137,7 +93,7 @@ const h = async (
 
 	if (
 		supportedFOTATypes.find((type) =>
-			maybeValidInput.value.bundleId.startsWith(type),
+			context.validInput.bundleId.startsWith(type),
 		) === undefined
 	) {
 		return aProblem({
@@ -147,7 +103,7 @@ const h = async (
 		})
 	}
 
-	const account = device.account
+	const account = context.device.account
 	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
@@ -161,8 +117,8 @@ const h = async (
 	)
 
 	const res = await createJob({
-		deviceId,
-		bundleId: maybeValidInput.value.bundleId,
+		deviceId: context.device.id,
+		bundleId: context.validInput.bundleId,
 	})
 
 	if ('result' in res) {
@@ -171,7 +127,7 @@ const h = async (
 
 		const now = new Date().toISOString()
 		const job: Job = {
-			deviceId,
+			deviceId: context.device.id,
 			jobId: res.result.jobId,
 			status: 'QUEUED',
 			createdAt: now,
@@ -208,8 +164,11 @@ const h = async (
 	}
 }
 export const handler = middy()
-	.use(addVersionHeader(version))
 	.use(corsOPTIONS('PATCH'))
+	.use(addVersionHeader(version))
+	.use(requestLogger())
+	.use(validateInput(InputSchema))
+	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)
 
 const isNRFCloudServiceInfo = (

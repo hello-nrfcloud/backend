@@ -6,6 +6,7 @@ import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import { Context, HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
@@ -37,8 +38,6 @@ const validateInput = validateWithTypeBox(
 const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.log(JSON.stringify({ event }))
-
 	const maybeValidInput = validateInput(event.queryStringParameters ?? {})
 	if ('errors' in maybeValidInput) {
 		return aProblem({
@@ -69,4 +68,7 @@ const h = async (
 	)
 }
 
-export const handler = middy().use(addVersionHeader(version)).handler(h)
+export const handler = middy()
+	.use(requestLogger())
+	.use(addVersionHeader(version))
+	.handler(h)

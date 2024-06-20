@@ -8,6 +8,7 @@ import { marshall } from '@aws-sdk/util-dynamodb'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { getDeviceReboots } from '../../Memfault/api.js'
@@ -52,8 +53,6 @@ const fetchReboots = getDeviceReboots(
 const updateShadow = updateLwM2MShadow(iotData)
 
 const h = async (event: SQSEvent): Promise<void> => {
-	log.debug('event', event)
-
 	for (const record of event.Records) {
 		const { deviceId, since } = JSON.parse(record.body) as Record<
 			string,
@@ -110,4 +109,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 	}
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy()
+	.use(requestLogger())
+	.use(logMetrics(metrics))
+	.handler(h)

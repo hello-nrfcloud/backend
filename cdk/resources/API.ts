@@ -8,9 +8,12 @@ export class API extends Construct {
 	public readonly stage: HttpApi.CfnStage
 	public readonly deployment: HttpApi.CfnDeployment
 	public readonly URL: string
+	private readonly prefix: string
 
-	constructor(parent: Construct) {
+	constructor(parent: Construct, prefix?: string) {
 		super(parent, 'api')
+
+		this.prefix = prefix ?? ''
 
 		const stageName = '2024-04-17'
 
@@ -45,7 +48,7 @@ export class API extends Construct {
 			stage: this.stage,
 			function: fn,
 			method,
-			resource,
+			resource: this.prefix + resource,
 		})
 		this.deployment.node.addDependency(route)
 		// Add OPTIONS route for CORS
@@ -54,7 +57,7 @@ export class API extends Construct {
 			stage: this.stage,
 			function: fn,
 			method: 'OPTIONS' as Lambda.HttpMethod,
-			resource,
+			resource: this.prefix + resource,
 		})
 		this.deployment.node.addDependency(CORS)
 	}

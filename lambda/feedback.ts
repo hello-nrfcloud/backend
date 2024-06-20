@@ -10,6 +10,7 @@ import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { Type } from '@sinclair/typebox'
 import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import middy from '@middy/core'
+import { requestLogger } from './middleware/requestLogger.js'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
@@ -34,8 +35,6 @@ const validateInput = validateWithTypeBox(
 const h = async (
 	event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.log(JSON.stringify({ event }))
-
 	const maybeValidInput = validateInput(JSON.parse(event.body ?? '{}'))
 	if ('errors' in maybeValidInput) {
 		return aProblem({
@@ -90,4 +89,5 @@ const h = async (
 export const handler = middy()
 	.use(corsOPTIONS('POST'))
 	.use(addVersionHeader(version))
+	.use(requestLogger())
 	.handler(h)

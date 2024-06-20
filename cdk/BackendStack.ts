@@ -214,7 +214,7 @@ export class BackendStack extends Stack {
 			layers: [baseLayerVersion],
 			importLogsTable: convertLwM2M.importLogs,
 		})
-		api.addRoute('GET /device/{id}/senml-imports', senMLImportLogs.fn.fn)
+		api.addRoute('GET /device/{deviceId}/senml-imports', senMLImportLogs.fn.fn)
 
 		const cd = new ContinuousDeployment(this, {
 			repository,
@@ -233,7 +233,7 @@ export class BackendStack extends Stack {
 			layers: [baseLayerVersion],
 			deviceStorage,
 		})
-		api.addRoute('PATCH /device/{id}/state', configureDevice.fn.fn)
+		api.addRoute('PATCH /device/{deviceId}/state', configureDevice.fn.fn)
 
 		const feedback = new Feedback(this, {
 			lambdaSources,
@@ -288,9 +288,18 @@ export class BackendStack extends Stack {
 			deviceStorage,
 			websocketEventBus,
 		})
-		api.addRoute('POST /device/{id}/fota', deviceFOTA.scheduleFOTAJobFn.fn)
-		api.addRoute('GET /device/{id}/fota/jobs', deviceFOTA.getFOTAJobStatusFn.fn)
-		api.addRoute('GET /device/{id}/fota/bundles', deviceFOTA.listFOTABundles.fn)
+		api.addRoute(
+			'POST /device/{deviceId}/fota',
+			deviceFOTA.scheduleFOTAJobFn.fn,
+		)
+		api.addRoute(
+			'GET /device/{deviceId}/fota/jobs',
+			deviceFOTA.getFOTAJobStatusFn.fn,
+		)
+		api.addRoute(
+			'GET /device/{deviceId}/fota/bundles',
+			deviceFOTA.listFOTABundles.fn,
+		)
 
 		new Monitoring(this, {
 			logGroups: [

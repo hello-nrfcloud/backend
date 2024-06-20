@@ -11,6 +11,7 @@ import {
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { loggingFetch } from '../loggingFetch.js'
@@ -44,8 +45,6 @@ for (const [account, { apiEndpoint, apiKey }] of Object.entries(
 const db = new DynamoDBClient({})
 
 const h = async (event: SQSEvent): Promise<void> => {
-	log.debug('event', event)
-
 	for (const record of event.Records) {
 		const {
 			jobId,
@@ -159,4 +158,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 	}
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy()
+	.use(requestLogger())
+	.use(logMetrics(metrics))
+	.handler(h)

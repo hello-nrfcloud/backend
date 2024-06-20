@@ -4,35 +4,31 @@ import {
 	type QueryCommandInput,
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
-import {
-	formatTypeBoxErrors,
-	validateWithTypeBox,
-} from '@hello.nrfcloud.com/proto'
 import { LwM2MObjectID, definitions } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
-	HttpStatusCode,
 	deviceId,
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type, type Static } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { getDeviceById } from '../../devices/getDeviceById.js'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
 } from '../../historicalData/HistoricalDataTimeSpans.js'
 import { createTrailOfCoordinates } from '../historical-data/createTrailOfCoordinates.js'
+import { validateInput, type ValidInput } from '../middleware/validateInput.js'
+import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 
 const { tableName, deviceIdTimestampIndex, DevicesTableName, version } =
 	fromEnv({
@@ -42,73 +38,34 @@ const { tableName, deviceIdTimestampIndex, DevicesTableName, version } =
 		DevicesTableName: 'DEVICES_TABLE_NAME',
 	})(process.env)
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		deviceId,
-		fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
-		timeSpan: Type.Optional(
-			Type.Union(
-				Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
-					Type.Literal(timeSpan),
-				),
+const InputSchema = Type.Object({
+	deviceId,
+	fingerprint: Type.Optional(Type.RegExp(fingerprintRegExp)),
+	timeSpan: Type.Optional(
+		Type.Union(
+			Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
+				Type.Literal(timeSpan),
 			),
 		),
-		trail: Type.Optional(
-			Type.Integer({
-				minimum: 1,
-				description:
-					'Create a location trail with the minimum distance in kilometers.',
-			}),
-		),
-	}),
-)
+	),
+	trail: Type.Optional(
+		Type.Integer({
+			minimum: 1,
+			description:
+				'Create a location trail with the minimum distance in kilometers.',
+		}),
+	),
+})
 
 const db = new DynamoDBClient({})
-const getDevice = getDeviceById({
-	db,
-	DevicesTableName,
-})
 
 const h = async (
 	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-	console.log(JSON.stringify(event))
-
-	const { deviceId } = event.pathParameters ?? {}
-	const { trail } = event.queryStringParameters ?? {}
-	const maybeValidInput = validateInput({
-		...(event.queryStringParameters ?? {}),
-		trail: trail !== undefined ? parseInt(trail, 10) : undefined,
-		deviceId,
-	})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Validation failed',
-			status: HttpStatusCode.BAD_REQUEST,
-			detail: formatTypeBoxErrors(maybeValidInput.errors),
-		})
-	}
-
-	const maybeDevice = await getDevice(maybeValidInput.value.deviceId)
-	if ('error' in maybeDevice) {
-		return aProblem({
-			title: `No device found with ID!`,
-			detail: maybeValidInput.value.deviceId,
-			status: HttpStatusCode.NOT_FOUND,
-		})
-	}
-	const device = maybeDevice.device
-	if (device.fingerprint !== maybeValidInput.value.fingerprint) {
-		return aProblem({
-			title: `Fingerprint does not match!`,
-			detail: maybeValidInput.value.fingerprint,
-			status: HttpStatusCode.FORBIDDEN,
-		})
-	}
-
 	const timeSpan =
-		maybeValidInput.value.timeSpan !== undefined
-			? HistoricalDataTimeSpans[maybeValidInput.value.timeSpan] ?? LastHour
+		context.validInput.timeSpan !== undefined
+			? HistoricalDataTimeSpans[context.validInput.timeSpan] ?? LastHour
 			: LastHour
 
 	const result: Static<typeof LwM2MObjectHistory> = {
@@ -116,7 +73,7 @@ const h = async (
 		query: {
 			ObjectID: LwM2MObjectID.Geolocation_14201,
 			ObjectVersion: definitions[LwM2MObjectID.Geolocation_14201].ObjectVersion,
-			deviceId: device.id,
+			deviceId: context.device.id,
 			binIntervalMinutes: timeSpan.binIntervalMinutes,
 			ObjectInstanceID: 0, // Not used
 		},
@@ -137,7 +94,7 @@ const h = async (
 		},
 		ExpressionAttributeValues: {
 			':deviceId': {
-				S: device.id,
+				S: context.device.id,
 			},
 			':from': {
 				S: new Date(
@@ -163,9 +120,9 @@ const h = async (
 		}),
 	)
 
-	if (maybeValidInput.value.trail !== undefined) {
+	if (context.validInput.trail !== undefined) {
 		result.partialInstances = createTrailOfCoordinates(
-			maybeValidInput.value.trail,
+			context.validInput.trail,
 			history.map(({ '0': lat, '1': lng, 99: ts, 6: source }) => ({
 				lat,
 				lng,
@@ -194,6 +151,19 @@ const h = async (
 }
 
 export const handler = middy()
-	.use(addVersionHeader(version))
 	.use(corsOPTIONS('GET'))
+	.use(addVersionHeader(version))
+	.use(requestLogger())
+	.use(
+		validateInput(InputSchema, (event) => {
+			const { deviceId } = event.pathParameters ?? {}
+			const { trail } = event.queryStringParameters ?? {}
+			return {
+				...(event.queryStringParameters ?? {}),
+				trail: trail !== undefined ? parseInt(trail, 10) : undefined,
+				deviceId,
+			}
+		}),
+	)
+	.use(withDevice({ db, DevicesTableName }))
 	.handler(h)

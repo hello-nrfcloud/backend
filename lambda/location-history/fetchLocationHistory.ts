@@ -10,6 +10,7 @@ import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { getLocationHistory } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.js'
@@ -54,8 +55,6 @@ for (const [account, { apiEndpoint, apiKey }] of Object.entries(
 const updateShadow = updateLwM2MShadow(iotData)
 
 const h = async (event: SQSEvent): Promise<void> => {
-	log.debug('event', event)
-
 	for (const record of event.Records) {
 		const { deviceId, from, to, account } = JSON.parse(record.body) as Record<
 			string,
@@ -165,4 +164,7 @@ const paginateHistory = async (
 	return locations
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy()
+	.use(requestLogger())
+	.use(logMetrics(metrics))
+	.handler(h)

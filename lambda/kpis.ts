@@ -2,6 +2,7 @@ import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import middy from '@middy/core'
+import { requestLogger } from './middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { dailyActiveDevices } from '../kpis/dailyActiveDevices.js'
 import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
@@ -76,4 +77,7 @@ const h = async () => {
 	])
 }
 
-export const handler = middy(h).use(logMetrics(metrics))
+export const handler = middy()
+	.use(requestLogger())
+	.use(logMetrics(metrics))
+	.handler(h)
