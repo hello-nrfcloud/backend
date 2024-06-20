@@ -42,9 +42,9 @@ const ssm = new SSMClient({})
 
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
-const { track } = metricsForComponent('configureDevice')
+const { track } = metricsForComponent('updateDeviceState')
 
-const trackFetch = loggingFetch({ track, log: logger('configureDevice') })
+const trackFetch = loggingFetch({ track, log: logger('updateDeviceState') })
 
 const InputSchema = Type.Object({
 	deviceId,
@@ -52,9 +52,6 @@ const InputSchema = Type.Object({
 	update: LwM2MObjectUpdate,
 })
 
-/**
- * Handle configure device request
- */
 const h = async (
 	event: APIGatewayProxyEventV2,
 	context: WithDevice & ValidInput<typeof InputSchema> & Context,

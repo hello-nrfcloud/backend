@@ -5,9 +5,9 @@ import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
 
 /**
- * Handles device configuration requests
+ * Handles device state updates
  */
-export class ConfigureDevice extends Construct {
+export class UpdateDeviceState extends Construct {
 	public readonly fn: PackedLambdaFn
 	public constructor(
 		parent: Construct,
@@ -16,19 +16,19 @@ export class ConfigureDevice extends Construct {
 			layers,
 			deviceStorage,
 		}: {
-			lambdaSources: Pick<BackendLambdas, 'configureDevice'>
+			lambdaSources: Pick<BackendLambdas, 'updateDeviceState'>
 			layers: Lambda.ILayerVersion[]
 			deviceStorage: DeviceStorage
 		},
 	) {
-		super(parent, 'configureDevice')
+		super(parent, 'updateDeviceState')
 
 		this.fn = new PackedLambdaFn(
 			this,
-			'configureDevice',
-			lambdaSources.configureDevice,
+			'updateDeviceState',
+			lambdaSources.updateDeviceState,
 			{
-				description: 'Handle device configuration request',
+				description: 'Handles device state updates',
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				},

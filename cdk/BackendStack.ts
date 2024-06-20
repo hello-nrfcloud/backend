@@ -16,7 +16,7 @@ import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation.j
 import type { BackendLambdas } from './packBackendLambdas.js'
 import { API } from './resources/API.js'
 import { APIHealthCheck } from './resources/APIHealthCheck.js'
-import { ConfigureDevice } from './resources/ConfigureDevice.js'
+import { UpdateDeviceState } from './resources/UpdateDeviceState.js'
 import { ContinuousDeployment } from './resources/ContinuousDeployment.js'
 import { ConvertNrfCloudDeviceMessages } from './resources/ConvertNrfCloudDeviceMessages.js'
 import { DeviceFOTA } from './resources/DeviceFOTA.js'
@@ -228,12 +228,12 @@ export class BackendStack extends Stack {
 			deviceStorage,
 		})
 
-		const configureDevice = new ConfigureDevice(this, {
+		const updateDeviceState = new UpdateDeviceState(this, {
 			lambdaSources,
 			layers: [baseLayerVersion],
 			deviceStorage,
 		})
-		api.addRoute('PATCH /device/{deviceId}/state', configureDevice.fn.fn)
+		api.addRoute('PATCH /device/{deviceId}/state', updateDeviceState.fn.fn)
 
 		const feedback = new Feedback(this, {
 			lambdaSources,
@@ -304,7 +304,7 @@ export class BackendStack extends Stack {
 		new Monitoring(this, {
 			logGroups: [
 				apiHealth.fn.logGroup,
-				configureDevice.fn.logGroup,
+				updateDeviceState.fn.logGroup,
 				convertNrfCloudDeviceMessages.onNrfCloudDeviceMessage.logGroup,
 				deviceFOTA.scheduleFOTAJobFn.logGroup,
 				deviceFOTA.scheduleFetches.logGroup,

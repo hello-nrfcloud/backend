@@ -19,7 +19,7 @@ export type BackendLambdas = {
 	healthCheckForCoAP: PackedLambda
 	healthCheckForCoAPClient: PackedLambda
 	kpis: PackedLambda
-	configureDevice: PackedLambda
+	updateDeviceState: PackedLambda
 	getDeviceByFingerprint: PackedLambda
 	feedback: PackedLambda
 	storeObjectsInTimestream: PackedLambda
@@ -62,7 +62,7 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'lambda/health-check/coap/client',
 	),
 	kpis: await pack('kpis'),
-	configureDevice: await pack('configureDevice'),
+	updateDeviceState: await pack('updateDeviceState'),
 	getDeviceByFingerprint: await pack('getDeviceByFingerprint'),
 	feedback: await pack('feedback'),
 	storeObjectsInTimestream: await pack('storeObjectsInTimestream'),
