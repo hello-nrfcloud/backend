@@ -222,8 +222,8 @@ const h = async (): Promise<void> => {
 
 								track(
 									`receivingMessageDuration`,
-									MetricUnit.Seconds,
-									Math.floor(Date.now() / 1000 - data.ts),
+									MetricUnit.Milliseconds,
+									Date.now() - data.ts,
 								)
 
 								return ValidateResponse.valid
