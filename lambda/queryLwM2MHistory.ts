@@ -43,6 +43,7 @@ import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
 import { isNumeric } from '../lwm2m/isNumeric.js'
 import { validateInput, type ValidInput } from './middleware/validateInput.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
+import type { Device } from '../devices/device.js'
 
 const { tableInfo, DevicesTableName, version, isTest } = fromEnv({
 	version: 'VERSION',
@@ -131,7 +132,7 @@ const h = async (
 		result.partialInstances = await binResourceHistory({
 			def,
 			instance: InstanceID,
-			deviceId: context.device.id,
+			device: context.device,
 			timeSpan,
 			aggregateFn: aggregate ?? 'avg',
 		})
@@ -166,13 +167,13 @@ const h = async (
 const binResourceHistory = async ({
 	def,
 	instance,
-	deviceId,
+	device,
 	timeSpan: { binIntervalMinutes, durationHours },
 	aggregateFn,
 }: {
 	def: LWM2MObjectInfo
 	instance: number
-	deviceId: string
+	device: Pick<Device, 'id' | 'hideDataBefore'>
 	timeSpan: HistoricalDataTimeSpan
 	aggregateFn: string
 }): Promise<
@@ -217,10 +218,13 @@ const binResourceHistory = async ({
 		`FROM "${DatabaseName}"."${TableName}"`,
 		`WHERE measure_name = '${def.ObjectID}/${instance}'`,
 		`AND time > date_add('hour', -${durationHours}, now())`,
+		device.hideDataBefore !== undefined
+			? `AND time > from_iso8601_timestamp('${device.hideDataBefore.toISOString()}')`
+			: '',
 		`AND ObjectID = '${def.ObjectID}'`,
 		`AND ObjectInstanceID = '${instance}'`,
 		`AND ObjectVersion = '${def.ObjectVersion}'`,
-		`AND deviceId = '${deviceId}'`,
+		`AND deviceId = '${device.id}'`,
 		`GROUP BY bin(time, ${binIntervalMinutes}m)`,
 		`ORDER BY bin(time, ${binIntervalMinutes}m) DESC`,
 	].join(' ')

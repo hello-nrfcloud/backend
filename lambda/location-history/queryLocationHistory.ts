@@ -104,6 +104,12 @@ const h = async (
 		},
 		ProjectionExpression: '#source, #lat, #lon, #uncertainty, #timestamp',
 	}
+	if (context.device.hideDataBefore !== undefined) {
+		Query.FilterExpression = '#timestamp >= :hideDataBefore'
+		Query.ExpressionAttributeValues![':hideDataBefore'] = {
+			S: context.device.hideDataBefore.toISOString(),
+		}
+	}
 	console.log('Query', JSON.stringify(Query))
 
 	const maybeItems = await db.send(new QueryCommand(Query))

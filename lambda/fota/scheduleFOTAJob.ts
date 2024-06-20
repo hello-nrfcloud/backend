@@ -72,7 +72,7 @@ const h = async (
 	event: APIGatewayProxyEventV2,
 	context: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-	const maybeShadow = await getShadow(context.device.id)
+	const maybeShadow = await getShadow(context.device)
 	if ('error' in maybeShadow) {
 		console.error(maybeShadow.error)
 		return aProblem({

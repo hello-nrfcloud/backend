@@ -27,14 +27,24 @@ export const getDeviceById =
 			)
 			if (res.Item === undefined) throw new Error(`not_found`)
 
-			const { deviceId: id, model, account, fingerprint } = unmarshall(res.Item)
+			const {
+				deviceId: id,
+				model,
+				account,
+				fingerprint,
+				hideDataBefore,
+			} = unmarshall(res.Item)
+			const device: Device = {
+				id,
+				fingerprint,
+				model,
+				account,
+			}
+			if (hideDataBefore !== undefined) {
+				device.hideDataBefore = new Date(hideDataBefore)
+			}
 			return {
-				device: {
-					id,
-					fingerprint,
-					model,
-					account,
-				},
+				device,
 			}
 		} catch {
 			return {

@@ -40,6 +40,43 @@ void describe('getDeviceById()', () => {
 		})
 	})
 
+	void it('should return the device with hideDataBefore if set', async () => {
+		const deviceId = `oob-${IMEI()}`
+		const fingerprint = `29a.${generateCode()}`
+
+		const hideDataBefore = new Date()
+		const send = mock.fn(() => ({
+			Item: marshall({
+				deviceId,
+				fingerprint,
+				model: 'PCA20065',
+				account: 'nordic',
+				hideDataBefore: hideDataBefore.toISOString(),
+			}),
+		}))
+		const res = await getDeviceById({
+			db: {
+				send,
+			} as any,
+			DevicesTableName: 'devices',
+		})(deviceId)
+
+		assert.deepEqual('device' in res && res.device, {
+			id: deviceId,
+			fingerprint,
+			model: 'PCA20065',
+			account: 'nordic',
+			hideDataBefore,
+		})
+
+		assertCall(send, {
+			input: {
+				TableName: 'devices',
+				Key: marshall({ deviceId }),
+			},
+		})
+	})
+
 	void it('should return error if the device is not found', async () => {
 		const send = mock.fn(() => ({}))
 		const deviceId = `oob-${IMEI()}`

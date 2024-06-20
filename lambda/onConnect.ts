@@ -78,7 +78,13 @@ const h = async (
 	})
 
 	// Send the LwM2M shadow
-	const maybeShadow = await getShadow(deviceId)
+	const maybeShadow = await getShadow({
+		id: deviceId,
+		hideDataBefore:
+			'hideDataBefore' in context && typeof context.hideDataBefore === 'string'
+				? new Date(context.hideDataBefore)
+				: undefined,
+	})
 	if ('error' in maybeShadow) {
 		log.debug('failed to fetch shadow', {
 			deviceId,
