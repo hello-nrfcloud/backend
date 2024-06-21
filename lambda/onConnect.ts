@@ -60,6 +60,8 @@ const h = async (
 		id: deviceId,
 		lastSeen: (await getLastSeenOrNull(deviceId))?.toISOString() ?? undefined,
 	}
+	if ('hideDataBefore' in context)
+		message.hideDataBefore = context.hideDataBefore
 
 	log.debug('websocket message', { message })
 	await eventBus.putEvents({
