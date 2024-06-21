@@ -27,7 +27,7 @@ export const importDeviceCommand = ({
 	devicesTableFingerprintIndexName: string
 	stackName: string
 }): CommandDefinition => ({
-	command: 'import-device <account> <model> <imei> <publicKeyFile>',
+	command: 'import-device <account> <model> <imei> <certPEMFile>',
 	options: [
 		{
 			flags: '-f, --fingerprint <fingerprint>',
@@ -43,7 +43,7 @@ export const importDeviceCommand = ({
 		account,
 		model,
 		imei,
-		publicKeyFile,
+		certPEMFile,
 		{ fingerprint, reRegister },
 	) => {
 		if (!isIMEI(imei)) {
@@ -55,15 +55,15 @@ export const importDeviceCommand = ({
 			process.exit(1)
 		}
 		const deviceId = `oob-${imei}`
-		const publicKey = await readFile(publicKeyFile, 'utf-8')
+		const certPEM = await readFile(certPEMFile, 'utf-8')
 		try {
-			await inspectString(publicKey)
+			await inspectString(certPEM)
 		} catch (err) {
 			console.error(err)
 			console.error(
 				chalk.yellow('⚠️'),
 				chalk.yellow(`Not a public key:`),
-				chalk.red(publicKey),
+				chalk.red(certPEM),
 			)
 			process.exit(1)
 		}
@@ -94,7 +94,7 @@ export const importDeviceCommand = ({
 				deviceId,
 				subType: model.replace(/[^0-9a-z-]/gi, '-'),
 				tags: [model.replace(/[^0-9a-z-]/gi, ':')],
-				certPem: publicKey,
+				certPem: certPEM,
 			},
 		])
 
