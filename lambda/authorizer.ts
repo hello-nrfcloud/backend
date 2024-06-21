@@ -80,7 +80,7 @@ const h = async (event: {
 		return deny
 	}
 
-	const { model, id: deviceId, account } = maybeDevice.device
+	const { model, id: deviceId, account, hideDataBefore } = maybeDevice.device
 
 	if (model === undefined || deviceId === undefined) {
 		log.error(`Required information is missing`, {
@@ -149,7 +149,13 @@ const h = async (event: {
 				},
 			],
 		},
-		context: { model, deviceId, account },
+		context: {
+			model,
+			deviceId,
+			account,
+			hideDataBefore:
+				hideDataBefore !== undefined ? hideDataBefore.toISOString() : undefined,
+		},
 	}
 }
 

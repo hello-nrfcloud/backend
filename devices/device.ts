@@ -3,4 +3,8 @@ export type Device = {
 	fingerprint: string
 	model: string
 	account: string
+	/**
+	 * Hide device data before this date.
+	 */
+	hideDataBefore?: Date
 }

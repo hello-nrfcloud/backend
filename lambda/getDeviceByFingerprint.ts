@@ -63,6 +63,10 @@ const h = async (
 			'@context': Context.deviceIdentity,
 			model: device.model,
 			id: device.id,
+			hideDataBefore:
+				device.hideDataBefore !== undefined
+					? device.hideDataBefore.toISOString()
+					: undefined,
 		},
 		60 * 60 * 24,
 	)

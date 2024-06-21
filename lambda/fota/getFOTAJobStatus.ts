@@ -14,13 +14,13 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@nordicsemiconductor/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
+import { requestLogger } from '../middleware/requestLogger.js'
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import type { Job } from './Job.js'
@@ -97,7 +97,15 @@ const h = async (
 		{
 			'@context': Context.fotaJobExecutions,
 			deviceId: context.device.id,
-			jobs: jobs.map((job) => toJobExecution(job)),
+			jobs: jobs
+				.map((job) => toJobExecution(job))
+				.filter((job) => {
+					if (context.device.hideDataBefore === undefined) return true
+					return (
+						new Date(job.lastUpdatedAt).getTime() >=
+						context.device.hideDataBefore.getTime()
+					)
+				}),
 		},
 		parseInt(responseCacheMaxAge, 10),
 	)

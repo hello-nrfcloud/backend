@@ -38,6 +38,7 @@ export type BackendLambdas = {
 	scheduleFetchMemfaultReboots: PackedLambda
 	fetchMemfaultReboots: PackedLambda
 	queryMemfaultReboots: PackedLambda
+	hideDataBefore: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -117,4 +118,5 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'queryMemfaultReboots',
 		'lambda/memfault/queryReboots.ts',
 	),
+	hideDataBefore: await pack('hideDataBefore'),
 })

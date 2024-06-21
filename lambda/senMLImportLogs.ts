@@ -44,7 +44,7 @@ const h = async (
 		{
 			'@context': Context.senMLImports,
 			id: context.device.id,
-			imports: await logDb.findLogs(context.device.id),
+			imports: await logDb.findLogs(context.device),
 		},
 		60,
 	)
