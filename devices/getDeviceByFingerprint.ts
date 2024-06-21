@@ -39,13 +39,17 @@ export const getDeviceByFingerprint =
 			return {
 				error: new Error(`Device with fingerprint ${fingerprint} not found.`),
 			}
-		const { deviceId: id, model, account } = unmarshall(res.Items[0])
+		const {
+			deviceId: id,
+			model,
+			account,
+			hideDataBefore,
+		} = unmarshall(res.Items[0])
+		const device: Device = { id, fingerprint, model, account }
+		if (hideDataBefore !== undefined) {
+			device.hideDataBefore = new Date(hideDataBefore)
+		}
 		return {
-			device: {
-				id,
-				fingerprint,
-				model,
-				account,
-			},
+			device,
 		}
 	}

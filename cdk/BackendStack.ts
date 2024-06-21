@@ -42,6 +42,7 @@ import type { DomainCert } from '../aws/acm.js'
 import { APICustomDomain } from './resources/APICustomDomain.js'
 import { MemfaultReboots } from './resources/MemfaultReboots.js'
 import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { UpdateDevice } from './resources/UpdateDevice.js'
 
 export class BackendStack extends Stack {
 	public constructor(
@@ -301,6 +302,16 @@ export class BackendStack extends Stack {
 			deviceFOTA.listFOTABundles.fn,
 		)
 
+		const updateDevice = new UpdateDevice(this, {
+			lambdaSources,
+			layers: [baseLayerVersion],
+			deviceStorage,
+		})
+		api.addRoute(
+			'POST /device/{deviceId}/hideDataBefore',
+			updateDevice.hideDataBeforeFn.fn,
+		)
+
 		new Monitoring(this, {
 			logGroups: [
 				apiHealth.fn.logGroup,
@@ -336,6 +347,7 @@ export class BackendStack extends Stack {
 				websocketAPI.authorizerFn.logGroup,
 				websocketAPI.publishToWebsocketClientsFn.logGroup,
 				kpis.fn.logGroup,
+				updateDevice.hideDataBeforeFn.logGroup,
 			],
 		})
 
