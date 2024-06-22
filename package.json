@@ -46,7 +46,7 @@
     "@aws-sdk/client-timestream-write": "3.600.0",
     "@aws-sdk/util-dynamodb": "3.602.0",
     "@bifravst/aws-cdk-ecr-helpers": "1.2.21",
-    "@bifravst/aws-cdk-lambda-helpers": "1.8.13",
+    "@bifravst/aws-cdk-lambda-helpers": "1.8.14",
     "@bifravst/ci": "2.0.1",
     "@bifravst/eslint-config-typescript": "6.1.5",
     "@bifravst/http-api-mock": "2.0.16",
