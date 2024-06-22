@@ -121,7 +121,7 @@
     "@bifravst/run": "1.2.0",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
     "@hello.nrfcloud.com/lambda-helpers": "1.2.15",
-    "@hello.nrfcloud.com/nrfcloud-api-helpers": "5.2.15",
+    "@hello.nrfcloud.com/nrfcloud-api-helpers": "5.2.17",
     "@hello.nrfcloud.com/proto": "14.1.0",
     "@hello.nrfcloud.com/proto-map": "13.1.0",
     "@middy/core": "5.4.1",
