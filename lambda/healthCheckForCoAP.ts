@@ -212,7 +212,7 @@ const h = async (): Promise<void> => {
 
 								track(
 									`receivingMessageDuration`,
-									MetricUnit.Seconds,
+									MetricUnit.Milliseconds,
 									Date.now() - (data.coapTs ?? data.ts),
 								)
 								return ValidateResponse.valid
