@@ -60,6 +60,7 @@ export class APICustomDomain extends Construct {
 
 		new CustomResource(this, 'apiDomainCNAMERecord', {
 			serviceToken: createCNAMERecordFn.fn.functionArn,
+			// ServiceTimeout is not yet available: https://github.com/aws/aws-cdk/issues/30517
 			properties: {
 				roleArn: apiDomain.roleArn,
 				domainName: apiDomain.domainName,
