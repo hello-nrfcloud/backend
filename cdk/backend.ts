@@ -19,6 +19,7 @@ import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertifi
 import { storeCertificateInSSM } from './helpers/certificates/storeCertificateInSSM.js'
 import { env } from '../aws/env.js'
 import { pack as packBaseLayer } from './layers/baseLayer.js'
+import { pack as packCDKLayer } from './layers/cdkLayer.js'
 import { pack as packHealthCheckLayer } from './layers/healthCheckLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { STACK_NAME } from './stackConfig.js'
@@ -126,6 +127,7 @@ new BackendApp({
 	lambdaSources: await packBackendLambdas(),
 	baseLayer: await packBaseLayer(),
 	healthCheckLayer: await packHealthCheckLayer(),
+	cdkLayer: await packCDKLayer(),
 	iotEndpoint: await getIoTEndpoint({ iot }),
 	mqttBridgeCertificate,
 	caCertificate,

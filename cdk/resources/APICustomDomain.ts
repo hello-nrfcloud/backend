@@ -3,6 +3,7 @@ import {
 	CustomResource,
 	aws_apigatewayv2 as HttpApi,
 	ResolutionTypeHint,
+	type aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import type { API } from './API.js'
 import type { BackendLambdas } from '../packBackendLambdas.js'
@@ -26,10 +27,12 @@ export class APICustomDomain extends Construct {
 			api,
 			apiDomain,
 			lambdaSources,
+			cdkLayerVersion,
 		}: {
 			api: API
 			apiDomain: CustomDomain
 			lambdaSources: Pick<BackendLambdas, 'createCNAMERecord'>
+			cdkLayerVersion: Lambda.ILayerVersion
 		},
 	) {
 		super(parent, 'apiDomain')
@@ -55,7 +58,9 @@ export class APICustomDomain extends Construct {
 			this,
 			'createCNAMERecordFn',
 			lambdaSources.createCNAMERecord,
-			{},
+			{
+				layers: [cdkLayerVersion],
+			},
 		)
 
 		new CustomResource(this, 'apiDomainCNAMERecord', {

@@ -53,6 +53,7 @@ export class BackendStack extends Stack {
 			lambdaSources,
 			baseLayer,
 			healthCheckLayer,
+			cdkLayer,
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
@@ -66,6 +67,7 @@ export class BackendStack extends Stack {
 			lambdaSources: BackendLambdas
 			baseLayer: PackedLayer
 			healthCheckLayer: PackedLayer
+			cdkLayer: PackedLayer
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
@@ -109,6 +111,16 @@ export class BackendStack extends Stack {
 				compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
 			},
 		)
+
+		const cdkLayerVersion = new Lambda.LayerVersion(this, 'cdkLayer', {
+			code: new LambdaSource(this, {
+				id: 'cdkLayer',
+				zipFile: cdkLayer.layerZipFile,
+				hash: cdkLayer.hash,
+			}).code,
+			compatibleArchitectures: [Lambda.Architecture.ARM_64],
+			compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
+		})
 
 		const deviceStorage = new DeviceStorage(this)
 
@@ -160,6 +172,7 @@ export class BackendStack extends Stack {
 				api,
 				apiDomain,
 				lambdaSources,
+				cdkLayerVersion,
 			})
 			new CfnOutput(this, 'APIURL', {
 				exportName: `${this.stackName}:APIURL`,
