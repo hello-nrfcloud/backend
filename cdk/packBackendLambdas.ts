@@ -2,7 +2,7 @@ import {
 	packLambdaFromPath,
 	type PackedLambda,
 } from '@bifravst/aws-cdk-lambda-helpers'
-import { packGo } from './helpers/certificates/lambda/packGo.js'
+import { packGo } from './helpers/lambda/packGo.js'
 
 export type BackendLambdas = {
 	authorizer: PackedLambda
@@ -39,6 +39,7 @@ export type BackendLambdas = {
 	fetchMemfaultReboots: PackedLambda
 	queryMemfaultReboots: PackedLambda
 	hideDataBefore: PackedLambda
+	createCNAMERecord: PackedLambda
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -119,4 +120,8 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'lambda/memfault/queryReboots.ts',
 	),
 	hideDataBefore: await pack('hideDataBefore'),
+	createCNAMERecord: await packLambdaFromPath(
+		'createCNAMERecord',
+		'cdk/resources/api/createCNAMERecord.ts',
+	),
 })

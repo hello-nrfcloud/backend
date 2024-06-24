@@ -118,6 +118,53 @@ After deploying the stack manually once,
 
 to enable continuous deployment.
 
+### Custom API domain
+
+Optionally, a custom API domain can be configured.
+
+For this, create a certificate for the domain name in the Certificate Manager of
+the production account in the region of the deployment.
+
+Create a role in the account that manages the domain name, to allow the the
+production account to update the CNAME for the API domain with these permissions
+(make sure to replace `<Hosted Zone ID>`, `<api domain name>`):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "route53:ChangeResourceRecordSets",
+      "Resource": "arn:aws:route53:::hostedzone/<Hosted Zone ID>",
+      "Condition": {
+        "ForAllValues:StringEquals": {
+          "route53:ChangeResourceRecordSetsNormalizedRecordNames": [
+            "<api domain name>"
+          ],
+          "route53:ChangeResourceRecordSetsRecordTypes": ["CNAME"],
+          "route53:ChangeResourceRecordSetsActions": ["UPSERT"]
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "route53:ListHostedZonesByName",
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+Then, for continuous deployment:
+
+- create the variable `API_DOMAIN_NAME` with the name of the api domain, e.g.
+  `api.hello.nordicsemi.cloud`
+- create the variable `API_DOMAIN_ROUTE_53_REGION` with the region of the Route
+  53 zone that hosts the api domain records, e.g. `eu-north-1`
+- create the secret `API_DOMAIN_ROUTE_53_ROLE_ARN` with the role ARN of the role
+  that allows the production account to update the CNAME for the API domain.
+
 ## Websocket Protocol
 
 Message received from MQTT bridge will be published to websocket connection that

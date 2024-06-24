@@ -17,7 +17,7 @@ import {
 import { readFile } from 'node:fs/promises'
 import pRetry from 'p-retry'
 import assert from 'node:assert/strict'
-import { packGo } from '../../cdk/helpers/certificates/lambda/packGo.js'
+import { packGo } from '../../cdk/helpers/lambda/packGo.js'
 import { listStackResources } from '@nordicsemiconductor/cloudformation-helpers'
 
 export const updateLambda = ({

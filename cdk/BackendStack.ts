@@ -38,8 +38,10 @@ import { WebsocketConnectionsTable } from './resources/WebsocketConnectionsTable
 import { WebsocketEventBus } from './resources/WebsocketEventBus.js'
 import { KPIs } from './resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
-import type { DomainCert } from '../aws/acm.js'
-import { APICustomDomain } from './resources/APICustomDomain.js'
+import {
+	APICustomDomain,
+	type CustomDomain,
+} from './resources/APICustomDomain.js'
 import { MemfaultReboots } from './resources/MemfaultReboots.js'
 import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { UpdateDevice } from './resources/UpdateDevice.js'
@@ -75,7 +77,7 @@ export class BackendStack extends Stack {
 				repo: string
 			}
 			env: Required<Environment>
-			apiDomain?: DomainCert
+			apiDomain?: CustomDomain
 		},
 	) {
 		super(parent, STACK_NAME, {
@@ -157,12 +159,7 @@ export class BackendStack extends Stack {
 			const domain = new APICustomDomain(this, {
 				api,
 				apiDomain,
-			})
-			new CfnOutput(this, 'gatewayDomainName', {
-				exportName: `${this.stackName}:gatewayDomainName`,
-				description:
-					'The domain name associated with the regional endpoint for the custom domain name. Use this as the target for the CNAME record for your custom domain name.',
-				value: domain.gatewayDomainName.toString(),
+				lambdaSources,
 			})
 			new CfnOutput(this, 'APIURL', {
 				exportName: `${this.stackName}:APIURL`,
