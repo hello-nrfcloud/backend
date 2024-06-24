@@ -7,10 +7,10 @@ import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts'
 import type { CloudFormationCustomResourceEvent, Context } from 'aws-lambda'
 import response from 'cfn-response'
 
-exports.handler = (
+export const handler = (
 	event: CloudFormationCustomResourceEvent,
 	context: Context,
-) => {
+): void => {
 	console.debug(JSON.stringify({ event }))
 	if (event.RequestType === 'Delete') {
 		console.debug(`Delete not allowed.`)
