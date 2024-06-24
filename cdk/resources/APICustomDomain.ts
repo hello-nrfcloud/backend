@@ -4,6 +4,7 @@ import {
 	aws_apigatewayv2 as HttpApi,
 	ResolutionTypeHint,
 	type aws_lambda as Lambda,
+	aws_iam as IAM,
 } from 'aws-cdk-lib'
 import type { API } from './API.js'
 import type { BackendLambdas } from '../packBackendLambdas.js'
@@ -60,6 +61,12 @@ export class APICustomDomain extends Construct {
 			lambdaSources.createCNAMERecord,
 			{
 				layers: [cdkLayerVersion],
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['sts:AssumeRole'],
+						resources: [apiDomain.roleArn],
+					}),
+				],
 			},
 		)
 
