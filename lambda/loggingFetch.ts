@@ -9,6 +9,7 @@ export const loggingFetch =
 		init?: RequestInit,
 	): ReturnType<typeof fetch> => {
 		log.debug(`fetch:url`, url.toString())
+		log.debug(`fetch:method`, init?.method ?? 'GET')
 		if (init?.body !== null && init?.body !== undefined)
 			log.debug(`fetch:body`, init.body.toString())
 
