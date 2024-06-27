@@ -33,9 +33,11 @@ export const getDeviceReboots =
 		deviceId: string,
 		since: string,
 	): Promise<{ error: Error } | { value: Static<typeof MemfaultReboots> }> => {
+		// Devices use the IMEI (device_serial) as the device ID
+		const imei = deviceId.replace(/^oob-/, '')
 		const res = await (fetchImplementation ?? fetch)(
 			new URL(
-				`./api/v0/organizations/${organizationSlug}/projects/${projectSlug}/devices/${deviceId}/reboots?${new URLSearchParams(
+				`./api/v0/organizations/${organizationSlug}/projects/${projectSlug}/devices/${imei}/reboots?${new URLSearchParams(
 					{
 						since,
 					},

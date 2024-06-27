@@ -1,7 +1,8 @@
 ---
 exampleContext:
   fingerprint: 92b.y7i24q
-  fingerprint_deviceId: 33ec3829-895f-4265-a11f-6c617a2e6b87
+  fingerprint_deviceId: oob-352656108602296
+  IMEI: 352656108602296
   ts: 1694503339523
   tsISO: 2023-09-12T00:00:00.000Z
   memfaultApiEndpoint: https://api.memfault.com
@@ -19,8 +20,10 @@ And I store `$millis()` into `ts`
 
 And I store `$fromMillis(${ts})` into `tsISO`
 
+And I store `$replace(fingerprint_deviceId, /^oob-/, "")` into `IMEI`
+
 And this HTTP API Mock response for
-`GET ${memfaultApiEndpoint}/api/v0/organizations/nordic-semiconductor-asa123456/projects/hello-nrfcloud-com/devices/${fingerprint_deviceId}/reboots`
+`GET ${memfaultApiEndpoint}/api/v0/organizations/nordic-semiconductor-asa123456/projects/hello-nrfcloud-com/devices/${IMEI}/reboots`
 is queued
 
 ```
