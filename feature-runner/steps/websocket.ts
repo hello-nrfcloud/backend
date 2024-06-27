@@ -60,7 +60,7 @@ const wsConnect = ({ websocketUri }: { websocketUri: string }) =>
 				wsClients[wsURL] = conn
 			}
 
-			context.wsClient = wsClients[wsURL] as WebSocketClient
+			context.wsClient = wsClients[wsURL]
 		},
 	)
 

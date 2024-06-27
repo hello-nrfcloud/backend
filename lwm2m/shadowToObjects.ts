@@ -27,4 +27,4 @@ export const shadowToObjects = (shadow: LwM2MShadow): LwM2MObjectInstance[] =>
 			})
 		})
 		.flat()
-		.filter((o) => o !== null) as LwM2MObjectInstance[]
+		.filter((o) => o !== null)

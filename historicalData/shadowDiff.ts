@@ -13,23 +13,23 @@ const diffShadows = (
 		}
 		for (const [InstanceId, Instance] of Object.entries(Instances)) {
 			const InstanceIdN = parseInt(InstanceId, 10)
-			if (current[ObjectIDAndVersion]![InstanceIdN] === undefined) {
+			if (current[ObjectIDAndVersion][InstanceIdN] === undefined) {
 				if (diff[ObjectIDAndVersion] === undefined) {
 					diff[ObjectIDAndVersion] = {}
 				}
-				diff[ObjectIDAndVersion]![InstanceIdN] = Instance
+				diff[ObjectIDAndVersion][InstanceIdN] = Instance
 				continue
 			}
 			for (const [ResourceID, Value] of Object.entries(Instance)) {
 				const ResourceIDN = parseInt(ResourceID, 10)
-				if (current[ObjectIDAndVersion]![InstanceIdN]![ResourceIDN] !== Value) {
+				if (current[ObjectIDAndVersion][InstanceIdN][ResourceIDN] !== Value) {
 					if (diff[ObjectIDAndVersion] === undefined) {
 						diff[ObjectIDAndVersion] = {}
 					}
-					if (diff[ObjectIDAndVersion]![InstanceIdN] === undefined) {
-						diff[ObjectIDAndVersion]![InstanceIdN] = {}
+					if (diff[ObjectIDAndVersion][InstanceIdN] === undefined) {
+						diff[ObjectIDAndVersion][InstanceIdN] = {}
 					}
-					diff[ObjectIDAndVersion]![InstanceIdN]![ResourceIDN] = Value
+					diff[ObjectIDAndVersion][InstanceIdN][ResourceIDN] = Value
 				}
 			}
 		}
