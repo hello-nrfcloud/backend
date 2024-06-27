@@ -26,7 +26,7 @@
   "author": "Nordic Semiconductor ASA | nordicsemi.no",
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "@aws-sdk/client-acm": "3.600.0",
+    "@aws-sdk/client-acm": "3.606.0",
     "@aws-sdk/client-apigatewaymanagementapi": "3.600.0",
     "@aws-sdk/client-cloudformation": "3.600.0",
     "@aws-sdk/client-cloudwatch-logs": "3.600.0",
@@ -42,7 +42,7 @@
     "@aws-sdk/client-ses": "3.600.0",
     "@aws-sdk/client-sqs": "3.600.0",
     "@aws-sdk/client-ssm": "3.603.0",
-    "@aws-sdk/client-sts": "3.600.0",
+    "@aws-sdk/client-sts": "3.606.0",
     "@aws-sdk/client-timestream-query": "3.600.0",
     "@aws-sdk/client-timestream-write": "3.600.0",
     "@aws-sdk/util-dynamodb": "3.602.0",
