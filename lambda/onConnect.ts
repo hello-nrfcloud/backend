@@ -54,11 +54,24 @@ const h = async (
 		})
 	}
 
+	// Mask lastSeen if it is before the hideDataBefore date
+	let lastSeen = (await getLastSeenOrNull(deviceId))?.toISOString() ?? undefined
+	if (
+		lastSeen !== undefined &&
+		'hideDataBefore' in context &&
+		context.hideDataBefore !== undefined
+	) {
+		const hideDataBefore = new Date(context.hideDataBefore)
+		if (hideDataBefore > new Date(lastSeen)) {
+			lastSeen = undefined
+		}
+	}
+
 	const message: Static<typeof DeviceIdentity> = {
 		'@context': Context.deviceIdentity.toString(),
 		model,
 		id: deviceId,
-		lastSeen: (await getLastSeenOrNull(deviceId))?.toISOString() ?? undefined,
+		lastSeen,
 	}
 	if ('hideDataBefore' in context)
 		message.hideDataBefore = context.hideDataBefore
