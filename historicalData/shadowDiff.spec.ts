@@ -69,4 +69,38 @@ void describe('shadowDiff()', () => {
 			},
 		})
 	})
+
+	void it('should not overwrite the timestamp if the updated data is older', () => {
+		const current = {
+			reported: {
+				'14203:1.0': {
+					0: {
+						'11': 7,
+						'99': 1718009833,
+					},
+				},
+			},
+		}
+
+		const update = {
+			reported: {
+				'14203:1.0': {
+					'0': {
+						'0': 'LTE-M',
+						'99': 1699197229,
+					},
+				},
+			},
+		}
+
+		assert.deepEqual(shadowDiff(current, update), {
+			reported: {
+				'14203:1.0': {
+					'0': {
+						'0': 'LTE-M',
+					},
+				},
+			},
+		})
+	})
 })

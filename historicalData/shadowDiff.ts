@@ -1,3 +1,4 @@
+import { timestampResources } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { LwM2MShadow } from '../lwm2m/objectsToShadow.js'
 
 const diffShadows = (
@@ -13,7 +14,7 @@ const diffShadows = (
 		}
 		for (const [InstanceId, Instance] of Object.entries(Instances)) {
 			const InstanceIdN = parseInt(InstanceId, 10)
-			if (current[ObjectIDAndVersion][InstanceIdN] === undefined) {
+			if (current[ObjectIDAndVersion]?.[InstanceIdN] === undefined) {
 				if (diff[ObjectIDAndVersion] === undefined) {
 					diff[ObjectIDAndVersion] = {}
 				}
@@ -30,6 +31,23 @@ const diffShadows = (
 						diff[ObjectIDAndVersion][InstanceIdN] = {}
 					}
 					diff[ObjectIDAndVersion][InstanceIdN][ResourceIDN] = Value
+				}
+			}
+			// Do not lower the resource timestamp
+			const [ObjectID] = ObjectIDAndVersion.split(':')
+			if (ObjectID !== undefined) {
+				const tsResource = timestampResources.get(parseInt(ObjectID, 10))
+				if (tsResource !== undefined) {
+					const currentTs =
+						current[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource]
+					const diffTs = diff[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource]
+					if (
+						currentTs !== undefined &&
+						diffTs !== undefined &&
+						diffTs < currentTs
+					) {
+						delete diff[ObjectIDAndVersion]![InstanceIdN]![tsResource]
+					}
 				}
 			}
 		}
