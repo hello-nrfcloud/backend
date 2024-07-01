@@ -118,6 +118,12 @@ After deploying the stack manually once,
 
 to enable continuous deployment.
 
+```bash
+gh secret set AWS_ROLE --env production --body `arn:aws:iam::<account ID>:role/<stack name>-cd`
+gh variable set AWS_REGION --env production --body <region>
+gh variable set STACK_NAME --env production --body <stack name>
+```
+
 ### Custom API domain
 
 Optionally, a custom API domain can be configured.
@@ -164,6 +170,12 @@ Then, for continuous deployment:
   53 zone that hosts the api domain records, e.g. `eu-north-1`
 - create the secret `API_DOMAIN_ROUTE_53_ROLE_ARN` with the role ARN of the role
   that allows the production account to update the CNAME for the API domain.
+
+```bash
+gh variable set API_DOMAIN_NAME --env production --body api.sim-details.nordicsemi.cloud
+gh variable set API_DOMAIN_ROUTE_53_REGION --env production --body eu-north-1
+gh variable set API_DOMAIN_ROUTE_53_ROLE_ARN --env production --body arn:aws:iam::<account ID>:role/<role name>
+```
 
 ## Websocket Protocol
 
