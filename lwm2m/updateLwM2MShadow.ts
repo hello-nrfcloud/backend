@@ -3,7 +3,7 @@ import {
 	UpdateThingShadowCommand,
 } from '@aws-sdk/client-iot-data-plane'
 import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { objectsToShadow } from './objectsToShadow.js'
+import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import pRetry from 'p-retry'
 
 export const updateLwM2MShadow =

@@ -22,7 +22,10 @@ import { fromEnv } from '@nordicsemiconductor/from-env'
 import { chunk, groupBy, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
 import { nrfCloudShadowToObjects } from '../nrfCloud/nrfCloudShadowToObjects.js'
-import { objectsToShadow, type LwM2MShadow } from '../lwm2m/objectsToShadow.js'
+import {
+	objectsToShadow,
+	type LwM2MShadow,
+} from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { getAllAccountsSettings } from '../settings/health-check/device.js'
 import {
 	connectionsRepository,

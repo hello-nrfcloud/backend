@@ -2,7 +2,7 @@ import { describe, it, mock } from 'node:test'
 import { updateLwM2MShadow } from './updateLwM2MShadow.js'
 import { randomUUID } from 'node:crypto'
 import { assertCall } from '../util/test/assertCall.js'
-import { objectsToShadow } from './objectsToShadow.js'
+import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 
 void describe('updateLwM2MShadow()', () => {

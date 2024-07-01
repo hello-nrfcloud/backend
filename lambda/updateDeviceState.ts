@@ -24,7 +24,7 @@ import type {
 	APIGatewayProxyResultV2,
 	Context,
 } from 'aws-lambda'
-import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
+import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from './loggingFetch.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'

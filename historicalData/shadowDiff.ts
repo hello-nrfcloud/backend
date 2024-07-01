@@ -1,5 +1,5 @@
 import { timestampResources } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import type { LwM2MShadow } from '../lwm2m/objectsToShadow.js'
+import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 
 const diffShadows = (
 	current: LwM2MShadow,

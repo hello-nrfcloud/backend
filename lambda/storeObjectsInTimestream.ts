@@ -16,7 +16,7 @@ import { requestLogger } from './middleware/requestLogger.js'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
-import type { LwM2MShadow } from '../lwm2m/objectsToShadow.js'
+import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 
 const { tableInfo } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',

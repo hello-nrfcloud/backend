@@ -8,7 +8,7 @@ import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
-import { objectsToShadow } from '../lwm2m/objectsToShadow.js'
+import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { converter } from '../nrfCloud/converter.js'
 
 const iot = new IoTDataPlaneClient()
