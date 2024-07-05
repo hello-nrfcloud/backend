@@ -80,6 +80,14 @@ const h = async (
 		partialInstances: [],
 	}
 
+	let from = new Date(Date.now() - timeSpan.durationHours * 60 * 60 * 1000)
+	if (
+		context.device.hideDataBefore !== undefined &&
+		context.device.hideDataBefore > from
+	) {
+		from = context.device.hideDataBefore
+	}
+
 	const Query: QueryCommandInput = {
 		TableName: tableName,
 		IndexName: deviceIdTimestampIndex,
@@ -97,18 +105,10 @@ const h = async (
 				S: context.device.id,
 			},
 			':from': {
-				S: new Date(
-					Date.now() - timeSpan.durationHours * 60 * 60 * 1000,
-				).toISOString(),
+				S: from.toISOString(),
 			},
 		},
 		ProjectionExpression: '#source, #lat, #lon, #uncertainty, #timestamp',
-	}
-	if (context.device.hideDataBefore !== undefined) {
-		Query.FilterExpression = '#timestamp >= :hideDataBefore'
-		Query.ExpressionAttributeValues![':hideDataBefore'] = {
-			S: context.device.hideDataBefore.toISOString(),
-		}
 	}
 	console.log('Query', JSON.stringify(Query))
 
