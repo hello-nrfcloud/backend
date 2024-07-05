@@ -1,5 +1,5 @@
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import type { aws_lambda as Lambda } from 'aws-cdk-lib'
+import { type aws_lambda as Lambda, aws_iam as IAM } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
@@ -33,6 +33,12 @@ export class UpdateDeviceState extends Construct {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				},
 				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['iot:UpdateThingShadow'],
+						resources: ['*'],
+					}),
+				],
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.fn.fn)

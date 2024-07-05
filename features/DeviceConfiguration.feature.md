@@ -54,3 +54,26 @@ Content-Type: application/json
 
 {"desired":{"lwm2m":{"14240:1.0":{"0":{"0":255,"1":255,"2":255,"99":${$floor(ts/1000)}}}}}}
 ```
+
+## Desired device configuration should be published on the websocket
+
+When I connect to the websocket using fingerprint `${fingerprint}`
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/shadow",
+  "desired": [
+    {
+      "ObjectID": 14240,
+      "Resources": {
+        "0": 255,
+        "1": 255,
+        "2": 255,
+        "99": "$number{$floor(ts/1000)}"
+      }
+    }
+  ]
+}
+```
