@@ -26,7 +26,7 @@
   "author": "Nordic Semiconductor ASA | nordicsemi.no",
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "@aws-sdk/client-acm": "3.609.0",
+    "@aws-sdk/client-acm": "3.611.0",
     "@aws-sdk/client-apigatewaymanagementapi": "3.609.0",
     "@aws-sdk/client-cloudformation": "3.609.0",
     "@aws-sdk/client-cloudwatch-logs": "3.609.0",
