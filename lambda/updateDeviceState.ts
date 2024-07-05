@@ -29,6 +29,8 @@ import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from './loggingFetch.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import { validateInput, type ValidInput } from './middleware/validateInput.js'
+import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -37,7 +39,7 @@ const { stackName, version, DevicesTableName } = fromEnv({
 })(process.env)
 
 const db = new DynamoDBClient({})
-
+const iotData = new IoTDataPlaneClient({})
 const ssm = new SSMClient({})
 
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
@@ -52,6 +54,8 @@ const InputSchema = Type.Object({
 	update: LwM2MObjectUpdate,
 })
 
+const updateShadow = updateLwM2MShadow(iotData)
+
 const h = async (
 	event: APIGatewayProxyEventV2,
 	context: WithDevice & ValidInput<typeof InputSchema> & Context,
@@ -61,18 +65,20 @@ const h = async (
 	if (apiKey === undefined || apiEndpoint === undefined)
 		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
 
-	const update = devices(
+	const nrfCloud = devices(
 		{
 			endpoint: apiEndpoint,
 			apiKey,
 		},
 		trackFetch,
 	)
-	const res = await update.updateState(context.device.id, {
+	const res = await nrfCloud.updateState(context.device.id, {
 		desired: {
 			lwm2m: objectsToShadow([context.validInput.update]),
 		},
 	})
+
+	await updateShadow(context.device.id, [], [context.validInput.update])
 
 	if ('success' in res) {
 		console.debug(`Accepted`)

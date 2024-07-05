@@ -3,19 +3,27 @@ import {
 	UpdateThingShadowCommand,
 } from '@aws-sdk/client-iot-data-plane'
 import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
+import {
+	objectsToShadow,
+	type LwM2MShadow,
+} from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import pRetry from 'p-retry'
 
 export const updateLwM2MShadow =
 	(iotData: IoTDataPlaneClient) =>
-	async (deviceId: string, objects: LwM2MObjectInstance[]): Promise<void> => {
-		const reported = objectsToShadow(objects)
-
-		if (Object.keys(reported).length === 0) {
-			console.error(`Failed to convert object to shadow!`)
-			return
+	async (
+		deviceId: string,
+		reported: LwM2MObjectInstance[],
+		desired: LwM2MObjectInstance[] = [],
+	): Promise<void> => {
+		if (reported.length + desired.length === 0) return
+		const state: { reported?: LwM2MShadow; desired?: LwM2MShadow } = {}
+		if (reported.length > 0) {
+			state.reported = objectsToShadow(reported)
 		}
-
+		if (desired.length > 0) {
+			state.desired = objectsToShadow(desired)
+		}
 		await pRetry(
 			async () =>
 				iotData.send(
@@ -23,9 +31,7 @@ export const updateLwM2MShadow =
 						thingName: deviceId,
 						shadowName: 'lwm2m',
 						payload: JSON.stringify({
-							state: {
-								reported,
-							},
+							state,
 						}),
 					}),
 				),
