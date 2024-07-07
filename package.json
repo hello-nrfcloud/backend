@@ -58,7 +58,7 @@
     "@nordicsemiconductor/cloudformation-helpers": "9.1.0",
     "@nordicsemiconductor/firmware-ci-device-helpers": "14.0.201",
     "@swc/cli": "0.4.0",
-    "@swc/core": "1.6.7",
+    "@swc/core": "1.6.13",
     "@types/aws-lambda": "8.10.140",
     "@types/cfn-response": "1.0.8",
     "@types/glob": "8.1.0",
