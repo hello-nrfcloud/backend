@@ -69,9 +69,16 @@ const diffShadows = (
 	}
 
 	// Remove empty objects
-	for (const [k, v] of Object.entries(diff)) {
-		if (Object.keys(v).length === 0) {
-			delete diff[k]
+	for (const [ObjectIDAndVersion, Instances] of Object.entries(diff)) {
+		// Remove empty instances
+		for (const [InstanceId, Resources] of Object.entries(Instances)) {
+			if (Object.keys(Resources).length === 0) {
+				delete diff[ObjectIDAndVersion]![parseInt(InstanceId, 10)]
+			}
+		}
+		// Remove empty instances
+		if (Object.keys(Instances).length === 0) {
+			delete diff[ObjectIDAndVersion]
 		}
 	}
 
