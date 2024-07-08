@@ -104,7 +104,7 @@ void describe('shadowDiff()', () => {
 		})
 	})
 
-	void it.only('should not return a diff only the timestamp has changed', () => {
+	void it('should not return a diff only the timestamp has changed', () => {
 		const update = {
 			reported: {
 				'14203:1.0': {
