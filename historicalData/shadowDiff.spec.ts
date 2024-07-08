@@ -103,4 +103,66 @@ void describe('shadowDiff()', () => {
 			},
 		})
 	})
+
+	void it.only('should not return a diff only the timestamp has changed', () => {
+		const update = {
+			reported: {
+				'14203:1.0': {
+					'0': {
+						'0': 'LTE-M GPS',
+						'1': 3,
+						'3': 2801,
+						'4': 31066133,
+						'5': 24202,
+						'6': '10.94.122.198',
+						'99': 1720087757,
+					},
+				},
+			},
+		}
+		const state = {
+			reported: {
+				'14203:1.0': {
+					'0': {
+						'0': 'LTE-M GPS',
+						'1': 3,
+						'2': -92,
+						'3': 2801,
+						'4': 31066133,
+						'5': 24202,
+						'6': '10.94.122.198',
+						'11': 7,
+						'99': 1720087758,
+					},
+				},
+			},
+		}
+
+		assert.deepEqual(shadowDiff(state, update), {})
+	})
+
+	void it('should not return a diff on array changes', () => {
+		const update = {
+			reported: {
+				'14401:1.0': {
+					'0': {
+						'0': ['BOOT', 'MODEM', 'APP', 'MDM_FULL'],
+						'99': 1720087757,
+					},
+				},
+			},
+		}
+		const state = {
+			reported: {
+				'14401:1.0': {
+					'0': {
+						'0': ['BOOT', 'MODEM', 'APP', 'MDM_FULL'],
+						'99': 1720087757,
+					},
+				},
+			},
+		}
+
+		assert.deepEqual(shadowDiff(state, update), {})
+	})
 })

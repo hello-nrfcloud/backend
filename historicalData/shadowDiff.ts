@@ -1,5 +1,6 @@
 import { timestampResources } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
+import { isEqual } from 'lodash-es'
 
 const diffShadows = (
 	current: LwM2MShadow,
@@ -23,7 +24,9 @@ const diffShadows = (
 			}
 			for (const [ResourceID, Value] of Object.entries(Instance)) {
 				const ResourceIDN = parseInt(ResourceID, 10)
-				if (current[ObjectIDAndVersion][InstanceIdN][ResourceIDN] !== Value) {
+				const currentValue =
+					current[ObjectIDAndVersion][InstanceIdN][ResourceIDN]
+				if (!isEqual(currentValue, Value)) {
 					if (diff[ObjectIDAndVersion] === undefined) {
 						diff[ObjectIDAndVersion] = {}
 					}
@@ -33,23 +36,42 @@ const diffShadows = (
 					diff[ObjectIDAndVersion][InstanceIdN][ResourceIDN] = Value
 				}
 			}
-			// Do not lower the resource timestamp
+
+			// Do not return diff if only timestamp has changed
 			const [ObjectID] = ObjectIDAndVersion.split(':')
-			if (ObjectID !== undefined) {
-				const tsResource = timestampResources.get(parseInt(ObjectID, 10))
-				if (tsResource !== undefined) {
-					const currentTs =
-						current[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource]
-					const diffTs = diff[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource]
-					if (
-						currentTs !== undefined &&
-						diffTs !== undefined &&
-						diffTs < currentTs
-					) {
-						delete diff[ObjectIDAndVersion]![InstanceIdN]![tsResource]
-					}
-				}
+			if (ObjectID === undefined) continue
+			const tsResource = timestampResources.get(parseInt(ObjectID, 10))
+			if (tsResource === undefined) continue
+
+			if (
+				diff[ObjectIDAndVersion]?.[InstanceIdN] !== undefined &&
+				Object.values(diff[ObjectIDAndVersion][InstanceIdN]).length === 1 &&
+				parseInt(
+					Object.keys(diff[ObjectIDAndVersion][InstanceIdN])[0] ?? '-1',
+					10,
+				) === tsResource
+			) {
+				delete diff[ObjectIDAndVersion][InstanceIdN]
+				continue
 			}
+
+			// Do not lower the resource timestamp
+			const currentTs = current[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource]
+			const diffTs = diff[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource]
+			if (
+				currentTs !== undefined &&
+				diffTs !== undefined &&
+				diffTs < currentTs
+			) {
+				delete diff[ObjectIDAndVersion]![InstanceIdN]![tsResource]
+			}
+		}
+	}
+
+	// Remove empty objects
+	for (const [k, v] of Object.entries(diff)) {
+		if (Object.keys(v).length === 0) {
+			delete diff[k]
 		}
 	}
 
