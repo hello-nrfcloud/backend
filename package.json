@@ -77,7 +77,7 @@
     "commander": "12.1.0",
     "commitlint": "19.3.0",
     "constructs": "10.3.0",
-    "glob": "10.4.3",
+    "glob": "10.4.4",
     "globstar": "1.0.0",
     "husky": "9.0.11",
     "jsonata": "2.0.5",
