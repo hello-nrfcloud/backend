@@ -31,11 +31,9 @@ export const handler = (
 const updateCNAMERecord = async (
 	event: CloudFormationCustomResourceEvent,
 ): Promise<string> => {
-	const { roleArn, domainName, cnameValue, region } = event.ResourceProperties
+	const { roleArn, domainName, cnameValue } = event.ResourceProperties
 
-	const sts = new STSClient({
-		region,
-	})
+	const sts = new STSClient()
 	const assumeRoleResponse = await sts.send(
 		new AssumeRoleCommand({
 			RoleArn: roleArn,
@@ -56,7 +54,6 @@ const updateCNAMERecord = async (
 			sessionToken: SessionToken!,
 			expiration: Expiration!,
 		},
-		region,
 	})
 
 	const { HostedZones } = await route53.send(
@@ -97,5 +94,5 @@ const updateCNAMERecord = async (
 
 	console.debug(`CNAME record ${domainName} set to ${cnameValue}`)
 
-	return `${domainName}:${region}:CNAME:${cnameValue}`
+	return `${domainName}:CNAME:${cnameValue}`
 }

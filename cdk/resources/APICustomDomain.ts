@@ -15,8 +15,6 @@ export type CustomDomain = {
 	certificateArn: string
 	// This is the ARN of the role to assume to update the CNAME record
 	roleArn: string
-	// The region that hosts the domain zone
-	region: string
 }
 
 export class APICustomDomain extends Construct {
@@ -80,7 +78,6 @@ export class APICustomDomain extends Construct {
 					'RegionalDomainName',
 					ResolutionTypeHint.STRING,
 				),
-				region: apiDomain.region,
 			},
 		})
 	}

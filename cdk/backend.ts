@@ -121,7 +121,6 @@ const nRFCloudAccounts = await getAllAccounts({
 const isTest = process.env.IS_TEST === '1'
 const apiDomainName = process.env.API_DOMAIN_NAME
 const apiDomainRoute53RoleArn = process.env.API_DOMAIN_ROUTE_53_ROLE_ARN
-const apiDomainRoute53Region = process.env.API_DOMAIN_ROUTE_53_REGION
 
 new BackendApp({
 	lambdaSources: await packBackendLambdas(),
@@ -140,16 +139,13 @@ new BackendApp({
 	env: accountEnv,
 	isTest,
 	apiDomain:
-		apiDomainName !== undefined &&
-		apiDomainRoute53RoleArn !== undefined &&
-		apiDomainRoute53Region !== undefined
+		apiDomainName !== undefined && apiDomainRoute53RoleArn !== undefined
 			? {
 					domainName: apiDomainName,
 					certificateArn:
 						(await getCertificateForDomain(acm)(apiDomainName))
 							.certificateArn ?? '',
 					roleArn: apiDomainRoute53RoleArn,
-					region: apiDomainRoute53Region,
 				}
 			: undefined,
 	version: (() => {
