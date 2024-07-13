@@ -8,7 +8,7 @@ import {
 	LwM2MObjectID,
 	isLwM2MObjectID,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.js'
 import { NoHistoryMeasuresError } from '../historicalData/NoHistoryMeasuresError.js'
 import middy from '@middy/core'

@@ -4,7 +4,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { IoTClient } from '@aws-sdk/client-iot'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { STSClient } from '@aws-sdk/client-sts'
-import { stackOutput } from '@nordicsemiconductor/cloudformation-helpers'
+import { stackOutput } from '@bifravst/cloudformation-helpers'
 import chalk from 'chalk'
 import { program } from 'commander'
 import { env } from '../aws/env.js'
@@ -18,7 +18,6 @@ import { createHealthCheckDevice } from './commands/create-health-check-device.j
 import { importDevicesCommand } from './commands/import-devices.js'
 import { initializeNRFCloudAccountCommand } from './commands/initialize-nrfcloud-account.js'
 import { logsCommand } from './commands/logs.js'
-import { provisionDkCommand } from './commands/provision-dk.js'
 import { registerDeviceCommand } from './commands/register-device.js'
 import { showDeviceCommand } from './commands/show-device.js'
 import { showFingerprintCommand } from './commands/show-fingerprint.js'
@@ -141,13 +140,6 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 						outputs.devicesTableFingerprintIndexName,
 					ssm,
 					stackName: STACK_NAME,
-				}),
-				provisionDkCommand({
-					db,
-					devicesTableName: outputs.devicesTableName,
-					ssm,
-					stackName: STACK_NAME,
-					env: accountEnv,
 				}),
 				showFingerprintCommand({
 					db,

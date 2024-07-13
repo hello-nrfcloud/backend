@@ -9,7 +9,7 @@ import {
 	codeBlockOrThrow,
 	regExpMatchedStep,
 	type StepRunner,
-} from '@nordicsemiconductor/bdd-markdown'
+} from '@bifravst/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { check, objectMatching, stringContaining } from 'tsmatchers'

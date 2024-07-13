@@ -7,7 +7,7 @@ import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import { Context, HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,

@@ -17,7 +17,7 @@ import {
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox/type'
 import type {
 	APIGatewayProxyEventV2,

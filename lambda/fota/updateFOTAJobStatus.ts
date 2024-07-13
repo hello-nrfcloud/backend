@@ -12,7 +12,7 @@ import {
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
 import { requestLogger } from '../middleware/requestLogger.js'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { loggingFetch } from '../loggingFetch.js'
 import type { Job } from './Job.js'

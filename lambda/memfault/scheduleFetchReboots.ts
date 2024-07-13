@@ -1,6 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { connectionsRepository } from '../../websocket/connectionsRepository.js'
 import { memfaultRebootSyncRepository } from '../../devices/memfaultRebootSyncRepository.js'
 

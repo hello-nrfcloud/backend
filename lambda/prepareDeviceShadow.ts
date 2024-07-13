@@ -1,5 +1,5 @@
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 
 const { queueUrl } = fromEnv({
 	queueUrl: 'QUEUE_URL',

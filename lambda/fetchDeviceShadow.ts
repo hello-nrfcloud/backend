@@ -18,7 +18,7 @@ import {
 import { validate, validators } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { chunk, groupBy, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
 import { nrfCloudShadowToObjects } from '../nrfCloud/nrfCloudShadowToObjects.js'

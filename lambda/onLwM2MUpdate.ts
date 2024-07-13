@@ -3,7 +3,7 @@ import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { decode } from 'cbor-x'
 import {

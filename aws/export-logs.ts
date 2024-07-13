@@ -5,7 +5,7 @@ import {
 	FilterLogEventsCommand,
 	type FilteredLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
-import { listStackResources } from '@nordicsemiconductor/cloudformation-helpers'
+import { listStackResources } from '@bifravst/cloudformation-helpers'
 import chalk from 'chalk'
 import { mkdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'

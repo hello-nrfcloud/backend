@@ -12,7 +12,7 @@ import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { connectionsRepository } from '../websocket/connectionsRepository.js'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 

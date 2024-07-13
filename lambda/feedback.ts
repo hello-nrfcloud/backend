@@ -4,7 +4,7 @@ import type {
 } from 'aws-lambda'
 import { getFeedbackSettings } from '../settings/feedback.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { Type } from '@sinclair/typebox'

@@ -5,8 +5,8 @@ import {
 import type pJson from '../../package.json'
 
 const dependencies: Array<keyof (typeof pJson)['dependencies']> = [
-	'@nordicsemiconductor/from-env',
-	'@nordicsemiconductor/timestream-helpers',
+	'@bifravst/from-env',
+	'@bifravst/timestream-helpers',
 	'@sinclair/typebox',
 	'@hello.nrfcloud.com/proto',
 	'@hello.nrfcloud.com/proto-map',
