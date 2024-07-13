@@ -1,8 +1,5 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import {
-	regExpMatchedStep,
-	type StepRunner,
-} from '@nordicsemiconductor/bdd-markdown'
+import { regExpMatchedStep, type StepRunner } from '@bifravst/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import { randomUUID } from 'node:crypto'
 import pRetry from 'p-retry'

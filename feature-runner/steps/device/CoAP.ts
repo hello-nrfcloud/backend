@@ -7,7 +7,7 @@ import {
 	codeBlockOrThrow,
 	regExpMatchedStep,
 	type StepRunner,
-} from '@nordicsemiconductor/bdd-markdown'
+} from '@bifravst/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import { encode } from './senmlCbor.js'
 

@@ -9,7 +9,7 @@ import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
 import { requestLogger } from '../middleware/requestLogger.js'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import type { Job } from './Job.js'
 
 const {

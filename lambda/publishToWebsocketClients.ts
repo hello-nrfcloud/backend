@@ -1,6 +1,6 @@
 import { ApiGatewayManagementApi } from '@aws-sdk/client-apigatewaymanagementapi'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import type { EventBridgeEvent } from 'aws-lambda'
 import { notifyClients } from '../websocket/notifyClients.js'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'

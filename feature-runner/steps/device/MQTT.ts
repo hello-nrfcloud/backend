@@ -3,7 +3,7 @@ import {
 	codeBlockOrThrow,
 	regExpMatchedStep,
 	type StepRunner,
-} from '@nordicsemiconductor/bdd-markdown'
+} from '@bifravst/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'

@@ -1,7 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { shadowToObjects } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { getActiveConnections } from '../websocket/notifyClients.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'

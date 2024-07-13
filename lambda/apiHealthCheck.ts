@@ -4,7 +4,7 @@ import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { requestLogger } from './middleware/requestLogger.js'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { type APIGatewayProxyResultV2 } from 'aws-lambda'
 
 const { version } = fromEnv({

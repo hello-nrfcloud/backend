@@ -14,7 +14,7 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { fromEnv } from '@nordicsemiconductor/from-env'
+import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
