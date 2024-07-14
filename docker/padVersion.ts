@@ -5,4 +5,4 @@ import semver, { coerce } from 'semver'
  */
 
 export const padVersion = (v: string): string =>
-	semver.valid(v) !== null ? v : coerce(v)?.format() ?? '0.0.0'
+	semver.valid(v) !== null ? v : (coerce(v)?.format() ?? '0.0.0')

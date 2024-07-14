@@ -54,7 +54,7 @@ const h = async (
 ): Promise<APIGatewayProxyResultV2> => {
 	const timeSpan =
 		context.validInput.timeSpan !== undefined
-			? HistoricalDataTimeSpans[context.validInput.timeSpan] ?? LastHour
+			? (HistoricalDataTimeSpans[context.validInput.timeSpan] ?? LastHour)
 			: LastHour
 
 	const result: Static<typeof LwM2MObjectHistory> = {
