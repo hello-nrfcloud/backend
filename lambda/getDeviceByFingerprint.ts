@@ -14,6 +14,7 @@ import type {
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.js'
+import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 
 const { DevicesTableName, DevicesIndexName, version } = fromEnv({
 	version: 'VERSION',
@@ -73,6 +74,7 @@ const h = async (
 }
 
 export const handler = middy()
+	.use(corsOPTIONS('GET'))
 	.use(requestLogger())
 	.use(addVersionHeader(version))
 	.handler(h)
