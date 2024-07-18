@@ -79,7 +79,7 @@
     "constructs": "10.3.0",
     "glob": "11.0.0",
     "globstar": "1.0.0",
-    "husky": "9.0.11",
+    "husky": "9.1.1",
     "jsonata": "2.0.5",
     "semver": "7.6.3",
     "tsmatchers": "5.0.2",
