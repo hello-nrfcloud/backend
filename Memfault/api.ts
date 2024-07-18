@@ -1,17 +1,9 @@
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { type Static } from '@sinclair/typebox'
 import { MemfaultReboots } from './MemfaultReboots.js'
-import type { ValueError } from '@sinclair/typebox/errors'
+import { ValidationError } from '../util/ValidationError.js'
 
 export const v = validateWithTypeBox(MemfaultReboots)
-
-export class ValidationError extends Error {
-	public readonly errors: ValueError[]
-	constructor(errors: ValueError[]) {
-		super('Validation error')
-		this.errors = errors
-	}
-}
 
 // Pagination is not implemented, we only care about the most recent reboots.
 export const getDeviceReboots =

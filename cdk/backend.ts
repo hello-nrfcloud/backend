@@ -21,6 +21,7 @@ import { env } from '../aws/env.js'
 import { pack as packBaseLayer } from './layers/baseLayer.js'
 import { pack as packCDKLayer } from './layers/cdkLayer.js'
 import { pack as packHealthCheckLayer } from './layers/healthCheckLayer.js'
+import { pack as packJWTLayer } from './layers/jwtLayer.js'
 import { packBackendLambdas } from './packBackendLambdas.js'
 import { STACK_NAME } from './stackConfig.js'
 import { ScopeContexts, type ScopeContext } from '../settings/scope.js'
@@ -127,6 +128,7 @@ new BackendApp({
 	baseLayer: await packBaseLayer(),
 	healthCheckLayer: await packHealthCheckLayer(),
 	cdkLayer: await packCDKLayer(),
+	jwtLayer: await packJWTLayer(),
 	iotEndpoint: await getIoTEndpoint({ iot }),
 	mqttBridgeCertificate,
 	caCertificate,

@@ -44,11 +44,16 @@ import { isNumeric } from '../lwm2m/isNumeric.js'
 import { validateInput, type ValidInput } from './middleware/validateInput.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import type { Device } from '../devices/device.js'
+import { getMapSettings } from '../settings/map.js'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { fetchJWTPublicKeys } from './jwt/fetchJWTPublicKeys.js'
+import { deviceJWT } from './jwt/verifyToken.js'
 
-const { tableInfo, DevicesTableName, version, isTest } = fromEnv({
+const { tableInfo, DevicesTableName, version, isTest, stackName } = fromEnv({
 	version: 'VERSION',
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
+	stackName: 'STACK_NAME',
 	isTest: 'IS_TEST',
 })(process.env)
 
@@ -57,6 +62,8 @@ if (DatabaseName === undefined || TableName === undefined)
 	throw new Error('Historical database is invalid')
 
 const ts = new TimestreamQueryClient({})
+const db = new DynamoDBClient({})
+const ssm = new SSMClient({})
 
 const aggregateFns = ['avg', 'min', 'max', 'sum', 'count']
 
@@ -72,22 +79,41 @@ const Aggregate = Type.Union(
 
 const { track, metrics } = metricsForComponent('history')
 
-const InputSchema = Type.Object({
-	deviceId,
-	objectId: Type.Union(LwM2MObjectIDs.map((id) => Type.Literal(id))),
-	instanceId: Type.Integer({ minimum: 0 }),
-	fingerprint: Type.RegExp(fingerprintRegExp),
-	timeSpan: Type.Optional(
-		Type.Union(
-			Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
-				Type.Literal(timeSpan),
+const InputSchema = Type.Intersect([
+	Type.Object({
+		deviceId,
+		objectId: Type.Union(LwM2MObjectIDs.map((id) => Type.Literal(id))),
+		instanceId: Type.Integer({ minimum: 0 }),
+		timeSpan: Type.Optional(
+			Type.Union(
+				Object.keys(HistoricalDataTimeSpans).map((timeSpan) =>
+					Type.Literal(timeSpan),
+				),
 			),
 		),
-	),
-	aggregate: Type.Optional(Aggregate),
-})
+		aggregate: Type.Optional(Aggregate),
+	}),
+	Type.Union([
+		Type.Object({
+			fingerprint: Type.RegExp(fingerprintRegExp),
+		}),
+		Type.Object({
+			jwt: Type.String({
+				minLength: 32,
+				title: 'JWT',
+				description:
+					'A device JWT signed by the hello.nrfcloud.com/map backend',
+			}),
+		}),
+	]),
+])
 
-const db = new DynamoDBClient({})
+const mapJwtPublicKeys = await fetchJWTPublicKeys(
+	new URL(
+		'./2024-04-15/.well-known/jwks.json',
+		(await getMapSettings({ ssm, stackName })).apiEndpoint,
+	),
+)
 
 // TODO: cache globally
 // Do not cache the result if we are in test mode
@@ -257,5 +283,11 @@ export const handler = middy()
 			}
 		}),
 	)
-	.use(withDevice({ db, DevicesTableName }))
+	.use(
+		withDevice({
+			db,
+			DevicesTableName,
+			validateDeviceJWT: deviceJWT(mapJwtPublicKeys),
+		}),
+	)
 	.handler(h)
