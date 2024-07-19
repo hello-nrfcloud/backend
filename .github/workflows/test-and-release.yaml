@@ -224,6 +224,7 @@ jobs:
           ./cli.sh configure-memfault organizationAuthToken oat_18By8mEdkEj666666666666kIt9HwsMZ
           ./cli.sh configure-memfault organizationSlug nordic-semiconductor-asa123456
           ./cli.sh configure-memfault projectSlug hello-nrfcloud-com
+          ./cli.sh configure-map apiEndpoint ${{ env.HTTP_API_MOCK_API_URL }}api.nordicsemi.world/
 
       - name: Deploy solution stack
         env:

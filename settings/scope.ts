@@ -29,4 +29,8 @@ export const ScopeContexts = {
 		scope: Scopes.STACK,
 		context: 'memfault',
 	},
+	STACK_MAP: <ScopeContext>{
+		scope: Scopes.STACK,
+		context: 'map',
+	},
 } as const

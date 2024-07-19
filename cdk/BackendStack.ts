@@ -54,6 +54,7 @@ export class BackendStack extends Stack {
 			baseLayer,
 			healthCheckLayer,
 			cdkLayer,
+			jwtLayer,
 			iotEndpoint,
 			mqttBridgeCertificate,
 			caCertificate,
@@ -68,6 +69,7 @@ export class BackendStack extends Stack {
 			baseLayer: PackedLayer
 			healthCheckLayer: PackedLayer
 			cdkLayer: PackedLayer
+			jwtLayer: PackedLayer
 			iotEndpoint: string
 			mqttBridgeCertificate: CertificateFiles
 			caCertificate: CAFiles
@@ -93,6 +95,17 @@ export class BackendStack extends Stack {
 				id: 'baseLayer',
 				zipFile: baseLayer.layerZipFile,
 				hash: baseLayer.hash,
+			}).code,
+			compatibleArchitectures: [Lambda.Architecture.ARM_64],
+			compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
+		})
+
+		const jwtLayerVersion = new Lambda.LayerVersion(this, 'jwtLayer', {
+			layerVersionName: `${Stack.of(this).stackName}-jwtLayer`,
+			code: new LambdaSource(this, {
+				id: 'jwtLayer',
+				zipFile: jwtLayer.layerZipFile,
+				hash: jwtLayer.hash,
 			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
 			compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
@@ -260,7 +273,7 @@ export class BackendStack extends Stack {
 
 		const deviceLocationHistory = new DeviceLocationHistory(this, {
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion, jwtLayerVersion],
 			connectionsTable: websocketConnectionsTable,
 			websocketEventBus,
 			deviceStorage,
@@ -272,7 +285,7 @@ export class BackendStack extends Stack {
 
 		const memfaultReboots = new MemfaultReboots(this, {
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion, jwtLayerVersion],
 			connectionsTable: websocketConnectionsTable,
 			websocketEventBus,
 			deviceStorage,
@@ -284,7 +297,7 @@ export class BackendStack extends Stack {
 
 		const lwm2mObjectsHistory = new LwM2MObjectsHistory(this, {
 			deviceStorage,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion, jwtLayerVersion],
 			lambdaSources,
 		})
 		api.addRoute(

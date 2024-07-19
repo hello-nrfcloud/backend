@@ -11,6 +11,7 @@ import { steps as CoAPDeviceSteps } from './steps/device/CoAP.js'
 import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
 import { steps as deviceRegistrySteps } from './steps/device/registry.js'
 import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
+import { steps as jwtSteps } from './steps/jwt.js'
 import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
 import { steps as httpApiMockSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/httpApiMock'
 import {
@@ -25,6 +26,7 @@ import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
 import { fromEnv } from '@bifravst/from-env'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { randomWords } from '@bifravst/random-words'
 
 const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',
@@ -141,8 +143,10 @@ runner
 			IMEI,
 			cellId: () =>
 				(10000000 + Math.floor(Math.random() * 100000000)).toString(),
+			[`map public device id`]: () => randomWords({ numWords: 3 }).join('-'),
 		}),
 	)
+	.addStepRunners(...jwtSteps)
 
 const res = await runner.run({
 	APIURL: backendConfig.APIURL.toString().replace(/\/+$/, ''),
@@ -151,6 +155,9 @@ const res = await runner.run({
 		httpApiMockURL,
 	).toString(),
 	memfaultApiEndpoint: new URL('./api.memfault.com/', httpApiMockURL)
+		.toString()
+		.replace(/\/+$/, ''),
+	mapAPIURL: new URL('./api.nordicsemi.world/', httpApiMockURL)
 		.toString()
 		.replace(/\/+$/, ''),
 	VERSION: process.env.VERSION ?? '0.0.0-development',

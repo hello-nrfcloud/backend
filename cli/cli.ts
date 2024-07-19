@@ -36,6 +36,7 @@ import { updateLambda } from './commands/update-lambda.js'
 import { LambdaClient } from '@aws-sdk/client-lambda'
 import { importDeviceCommand } from './commands/import-device.js'
 import { configureMemfaultCommand } from './commands/configure-memfault.js'
+import { configureMapCommand } from './commands/configure-map.js'
 
 const ssm = new SSMClient({})
 const iot = new IoTClient({})
@@ -74,6 +75,7 @@ const CLI = async ({ isCI }: { isCI: boolean }) => {
 		listnRFCloudAccountsCommand({ ssm, stackName: STACK_NAME }),
 		configureFeedbackCommand({ ssm, stackName: STACK_NAME }),
 		configureMemfaultCommand({ ssm, stackName: STACK_NAME }),
+		configureMapCommand({ ssm, stackName: STACK_NAME }),
 		buildContainersCommand({
 			ecr,
 		}),

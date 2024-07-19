@@ -29,14 +29,24 @@ import {
 import { createTrailOfCoordinates } from '../historical-data/createTrailOfCoordinates.js'
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
+import { deviceJWT } from '../jwt/verifyToken.js'
+import { fetchJWTPublicKeys } from '../jwt/fetchJWTPublicKeys.js'
+import { getMapSettings } from '../../settings/map.js'
+import { SSMClient } from '@aws-sdk/client-ssm'
 
-const { tableName, deviceIdTimestampIndex, DevicesTableName, version } =
-	fromEnv({
-		version: 'VERSION',
-		tableName: 'LOCATION_HISTORY_TABLE_NAME',
-		deviceIdTimestampIndex: 'LOCATION_HISTORY_TABLE_DEVICE_ID_TIMESTAMP_INDEX',
-		DevicesTableName: 'DEVICES_TABLE_NAME',
-	})(process.env)
+const {
+	tableName,
+	deviceIdTimestampIndex,
+	DevicesTableName,
+	version,
+	stackName,
+} = fromEnv({
+	version: 'VERSION',
+	tableName: 'LOCATION_HISTORY_TABLE_NAME',
+	deviceIdTimestampIndex: 'LOCATION_HISTORY_TABLE_DEVICE_ID_TIMESTAMP_INDEX',
+	DevicesTableName: 'DEVICES_TABLE_NAME',
+	stackName: 'STACK_NAME',
+})(process.env)
 
 const InputSchema = Type.Object({
 	deviceId,
@@ -58,6 +68,15 @@ const InputSchema = Type.Object({
 })
 
 const db = new DynamoDBClient({})
+const ssm = new SSMClient({})
+
+const mapJwtPublicKeys = await fetchJWTPublicKeys(
+	new URL(
+		'./2024-04-15/.well-known/jwks.json',
+		(await getMapSettings({ ssm, stackName })).apiEndpoint,
+	),
+	(err) => console.error(`[fetchJWTPublicKeys]`, err),
+)
 
 const h = async (
 	event: APIGatewayProxyEventV2,
@@ -171,5 +190,11 @@ export const handler = middy()
 			}
 		}),
 	)
-	.use(withDevice({ db, DevicesTableName }))
+	.use(
+		withDevice({
+			db,
+			DevicesTableName,
+			validateDeviceJWT: deviceJWT(mapJwtPublicKeys),
+		}),
+	)
 	.handler(h)
