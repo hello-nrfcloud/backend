@@ -28,11 +28,16 @@ import {
 } from '../../historicalData/HistoricalDataTimeSpans.js'
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
+import { deviceJWT } from '../jwt/verifyToken.js'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { fetchJWTPublicKeys } from '../jwt/fetchJWTPublicKeys.js'
+import { getMapSettings } from '../../settings/map.js'
 
-const { tableName, DevicesTableName, version } = fromEnv({
+const { tableName, DevicesTableName, version, stackName } = fromEnv({
 	version: 'VERSION',
 	tableName: 'TABLE_NAME',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
+	stackName: 'STACK_NAME',
 })(process.env)
 
 const InputSchema = Type.Object({
@@ -46,7 +51,16 @@ const InputSchema = Type.Object({
 		),
 	),
 })
+
 const db = new DynamoDBClient({})
+const ssm = new SSMClient({})
+
+const mapJwtPublicKeys = await fetchJWTPublicKeys(
+	new URL(
+		'./2024-04-15/.well-known/jwks.json',
+		(await getMapSettings({ ssm, stackName })).apiEndpoint,
+	),
+)
 
 const h = async (
 	event: APIGatewayProxyEventV2,
@@ -121,5 +135,11 @@ export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(requestLogger())
 	.use(validateInput(InputSchema))
-	.use(withDevice({ db, DevicesTableName }))
+	.use(
+		withDevice({
+			db,
+			DevicesTableName,
+			validateDeviceJWT: deviceJWT(mapJwtPublicKeys),
+		}),
+	)
 	.handler(h)

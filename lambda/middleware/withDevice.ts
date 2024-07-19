@@ -25,7 +25,6 @@ type WithDeviceMiddleware = {
 	(args: {
 		db: DynamoDBClient
 		DevicesTableName: string
-		validateDeviceJWT: undefined
 	}): WithDeviceMiddlewareObject<{ fingerprint: string }>
 	(args: {
 		db: DynamoDBClient
@@ -36,11 +35,10 @@ type WithDeviceMiddleware = {
 	}): WithDeviceMiddlewareObject<{ fingerprint?: string; jwt?: string }>
 }
 
-export const withDevice: WithDeviceMiddleware = ({
-	db,
-	DevicesTableName,
-	validateDeviceJWT,
-}) => {
+export const withDevice: WithDeviceMiddleware = (args) => {
+	const { db, DevicesTableName } = args
+	const validateDeviceJWT =
+		'validateDeviceJWT' in args ? args.validateDeviceJWT : undefined
 	const getDevice = getDeviceById({
 		db,
 		DevicesTableName,
@@ -53,12 +51,14 @@ export const withDevice: WithDeviceMiddleware = ({
 				req.context.validInput.jwt !== undefined
 			) {
 				const maybeValidJWT = validateDeviceJWT(req.context.validInput.jwt)
-				if ('error' in maybeValidJWT)
+				if ('error' in maybeValidJWT) {
+					console.error(`[withDevice:jwt]`, maybeValidJWT.error)
 					return aProblem({
 						title: `Failed to validate JWT!`,
-						detail: req.context.validInput.jwt,
+						detail: maybeValidJWT.error.message,
 						status: HttpStatusCode.BAD_REQUEST,
 					})
+				}
 				if (req.context.validInput.deviceId !== maybeValidJWT.device.deviceId) {
 					return aProblem({
 						title: `Device JWT does not match!`,

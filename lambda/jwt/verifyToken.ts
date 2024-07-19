@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken'
-import { DeviceJWT } from '@hello.nrfcloud.com/proto-map/api'
+import { DeviceJWTPayload } from '@hello.nrfcloud.com/proto-map/api'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { ValidationError } from '../../util/ValidationError.js'
 
-const validateDeviceJWT = validateWithTypeBox(DeviceJWT)
+const validateDeviceJWTPayload = validateWithTypeBox(DeviceJWTPayload)
 
 /**
  * Validate a device JWT
@@ -40,7 +40,7 @@ export const deviceJWT =
 				audience: 'hello.nrfcloud.com',
 			}) as jwt.JwtPayload
 
-			const maybeValid = validateDeviceJWT(payload)
+			const maybeValid = validateDeviceJWTPayload(payload)
 
 			if ('errors' in maybeValid)
 				return {
