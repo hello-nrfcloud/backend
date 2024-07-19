@@ -57,13 +57,11 @@ Content-type: application/json; charset=utf-8
 }
 ```
 
-## Create history data
+## Fetch history
 
 Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
-## Fetch history
-
-Given I have a random map public device id in `publicDeviceId`
+And I have a random map public device id in `publicDeviceId`
 
 And I have a JWT in `deviceJwt` signed with the key `${jwtKeyId}` and with this
 payload

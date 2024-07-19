@@ -113,6 +113,7 @@ const mapJwtPublicKeys = await fetchJWTPublicKeys(
 		'./2024-04-15/.well-known/jwks.json',
 		(await getMapSettings({ ssm, stackName })).apiEndpoint,
 	),
+	(err) => console.error(`[fetchJWTPublicKeys]`, err),
 )
 
 // TODO: cache globally
