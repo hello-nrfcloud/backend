@@ -35,6 +35,7 @@ export const handler = async (): Promise<void> => {
 
 	console.log(
 		`Scheduling location history fetch for ${activeConnections.length} devices`,
+		activeConnections.map(({ deviceId }) => deviceId).join(', '),
 	)
 
 	for (const { deviceId, account } of activeConnections) {

@@ -111,6 +111,7 @@ const mapJwtPublicKeys = await fetchMapJWTPublicKeys({
 	ssm,
 	stackName,
 	onError: (err, url) => console.error(`[fetchJWTPublicKeys]`, err, url),
+	debug: console.debug,
 })
 
 // TODO: cache globally
