@@ -31,7 +31,7 @@ type WithDeviceMiddleware = {
 		DevicesTableName: string
 		validateDeviceJWT: (
 			token: string,
-		) => { device: { deviceId: string } } | { error: Error }
+		) => Promise<{ device: { deviceId: string } } | { error: Error }>
 	}): WithDeviceMiddlewareObject<{ fingerprint?: string; jwt?: string }>
 }
 
@@ -50,7 +50,9 @@ export const withDevice: WithDeviceMiddleware = (args) => {
 				'jwt' in req.context.validInput &&
 				req.context.validInput.jwt !== undefined
 			) {
-				const maybeValidJWT = validateDeviceJWT(req.context.validInput.jwt)
+				const maybeValidJWT = await validateDeviceJWT(
+					req.context.validInput.jwt,
+				)
 				if ('error' in maybeValidJWT) {
 					console.error(`[withDevice:jwt]`, maybeValidJWT.error)
 					return aProblem({

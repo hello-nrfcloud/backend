@@ -31,6 +31,7 @@ import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import { deviceJWT } from '../jwt/verifyToken.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { fetchMapJWTPublicKeys } from '../map/fetchMapJWTPublicKeys.js'
+import { once } from 'lodash-es'
 
 const { tableName, DevicesTableName, version, stackName } = fromEnv({
 	version: 'VERSION',
@@ -54,12 +55,14 @@ const InputSchema = Type.Object({
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
 
-const mapJwtPublicKeys = await fetchMapJWTPublicKeys({
-	ssm,
-	stackName,
-	onError: (err, url) => console.error(`[fetchJWTPublicKeys]`, err, url),
-	debug: console.debug,
-})
+const mapJwtPublicKeys = once(async () =>
+	fetchMapJWTPublicKeys({
+		ssm,
+		stackName,
+		onError: (err, url) => console.error(`[fetchJWTPublicKeys]`, err, url),
+		debug: console.debug,
+	}),
+)
 
 const h = async (
 	event: APIGatewayProxyEventV2,
@@ -138,7 +141,8 @@ export const handler = middy()
 		withDevice({
 			db,
 			DevicesTableName,
-			validateDeviceJWT: deviceJWT(mapJwtPublicKeys),
+			validateDeviceJWT: async (token: string) =>
+				deviceJWT(await mapJwtPublicKeys())(token),
 		}),
 	)
 	.handler(h)

@@ -107,12 +107,14 @@ const InputSchema = Type.Intersect([
 	]),
 ])
 
-const mapJwtPublicKeys = await fetchMapJWTPublicKeys({
-	ssm,
-	stackName,
-	onError: (err, url) => console.error(`[fetchJWTPublicKeys]`, err, url),
-	debug: console.debug,
-})
+const mapJwtPublicKeys = once(async () =>
+	fetchMapJWTPublicKeys({
+		ssm,
+		stackName,
+		onError: (err, url) => console.error(`[fetchJWTPublicKeys]`, err, url),
+		debug: console.debug,
+	}),
+)
 
 // TODO: cache globally
 // Do not cache the result if we are in test mode
@@ -286,7 +288,8 @@ export const handler = middy()
 		withDevice({
 			db,
 			DevicesTableName,
-			validateDeviceJWT: deviceJWT(mapJwtPublicKeys),
+			validateDeviceJWT: async (token: string) =>
+				deviceJWT(await mapJwtPublicKeys())(token),
 		}),
 	)
 	.handler(h)
