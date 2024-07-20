@@ -30,9 +30,8 @@ import { createTrailOfCoordinates } from '../historical-data/createTrailOfCoordi
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import { deviceJWT } from '../jwt/verifyToken.js'
-import { fetchJWTPublicKeys } from '../jwt/fetchJWTPublicKeys.js'
-import { getMapSettings } from '../../settings/map.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { fetchMapJWTPublicKeys } from '../map/fetchMapJWTPublicKeys.js'
 
 const {
 	tableName,
@@ -70,13 +69,11 @@ const InputSchema = Type.Object({
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
 
-const mapJwtPublicKeys = await fetchJWTPublicKeys(
-	new URL(
-		'./2024-04-15/.well-known/jwks.json',
-		(await getMapSettings({ ssm, stackName })).apiEndpoint,
-	),
-	(err) => console.error(`[fetchJWTPublicKeys]`, err),
-)
+const mapJwtPublicKeys = await fetchMapJWTPublicKeys({
+	ssm,
+	stackName,
+	onError: (err, url) => console.error(`[fetchJWTPublicKeys]`, err, url),
+})
 
 const h = async (
 	event: APIGatewayProxyEventV2,
