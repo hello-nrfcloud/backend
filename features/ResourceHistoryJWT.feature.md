@@ -40,7 +40,7 @@ d0jqKe99Cb5R20zBr5X1RvgOADQg4H41M97t3kWQ6w==
 ```
 
 And this HTTP API Mock response for
-`GET ${mapAPIURL}/2024-04-15/.well-known/jwks.json` is queued
+`GET ${mapAPIURL}/2024-04-15/.well-known/jwks.json` is queued and kept
 
 ```
 HTTP/1.1 200 OK
