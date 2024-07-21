@@ -1,6 +1,11 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { ScopeContexts } from './scope.js'
-import { remove, get, put } from '@bifravst/aws-ssm-settings-helpers'
+import {
+	remove,
+	get,
+	put,
+	ContextNotConfiguredError,
+} from '@bifravst/aws-ssm-settings-helpers'
 
 export type Settings = {
 	apiEndpoint: URL
@@ -12,12 +17,17 @@ export const getMapSettings = async ({
 	ssm: SSMClient
 	stackName: string
 }): Promise<Settings> => {
-	const r = await get(ssm)<{
-		apiEndpoint?: string
-	}>({ stackName, ...ScopeContexts.STACK_MAP })()
-	const { apiEndpoint } = r
+	let apiEndpoint = new URL('https://api.nordicsemi.world/')
+	try {
+		const r = await get(ssm)<{
+			apiEndpoint?: string
+		}>({ stackName, ...ScopeContexts.STACK_MAP })()
+		if (r.apiEndpoint !== undefined) apiEndpoint = new URL(r.apiEndpoint)
+	} catch (error) {
+		if (!(error instanceof ContextNotConfiguredError)) throw error
+	}
 	return {
-		apiEndpoint: new URL(apiEndpoint ?? `https://api.nordicsemi.world/`),
+		apiEndpoint,
 	}
 }
 
