@@ -229,6 +229,7 @@ export class BackendStack extends Stack {
 			lambdaSources,
 			layers: [baseLayerVersion],
 			websocketEventBus,
+			lastSeen,
 		})
 
 		const senMLImportLogs = new SenMLImportLogs(this, {

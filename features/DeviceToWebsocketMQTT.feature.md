@@ -1,8 +1,8 @@
 ---
 exampleContext:
-  fingerprint: 92b.y7i24q
-  fingerprint_deviceId: oob-352656108602296
-  ts: 1694503339523
+  fingerprintMQTT: 92b.y7i24q
+  fingerprintMQTT_deviceId: oob-352656108602296
+  tsMQTT: 1694503339523
   APIURL: https://api.hello.nordicsemi.cloud
 ---
 
@@ -13,22 +13,22 @@ exampleContext:
 
 ## Background
 
-Given I have the fingerprint for a `PCA20065` device in `fingerprint`
+Given I have the fingerprint for a `PCA20065` device in `fingerprintMQTT`
 
-And I connect to the websocket using fingerprint `${fingerprint}`
+And I connect to the websocket using fingerprint `${fingerprintMQTT}`
 
 ## Receive LwM2M updates published via CoAP on the Websocket connection
 
-Given I store `$millis()` into `ts`
+Given I store `$millis()` into `tsMQTT`
 
-When the device `${fingerprint_deviceId}` publishes this message to the topic
-`m/d/${fingerprint_deviceId}/d2c/senml`
+When the device `${fingerprintMQTT_deviceId}` publishes this message to the
+topic `m/d/${fingerprintMQTT_deviceId}/d2c/senml`
 
 ```json
 [
   {
     "bn": "14201/0/",
-    "bt": "$number{$floor(ts/1000)}",
+    "bt": "$number{$floor(tsMQTT/1000)}",
     "n": "0",
     "v": 62.469414
   },
@@ -58,7 +58,7 @@ Soon I should receive a message on the websocket that matches
 > The import logs can be used to debug issues with the sent data
 
 When I `GET`
-`${APIURL}/device/${fingerprint_deviceId}/senml-imports?fingerprint=${fingerprint}`
+`${APIURL}/device/${fingerprintMQTT_deviceId}/senml-imports?fingerprint=${fingerprintMQTT}`
 
 Then I should receive a `https://github.com/hello-nrfcloud/proto/senml/imports`
 response
@@ -67,7 +67,7 @@ And `$` of the last response should match
 
 ```json
 {
-  "id": "${fingerprint_deviceId}"
+  "id": "${fingerprintMQTT_deviceId}"
 }
 ```
 
@@ -79,7 +79,7 @@ And `$.imports[0]` of the last response should match
   "senML": [
     {
       "bn": "14201/0/",
-      "bt": "$number{$floor(ts/1000)}",
+      "bt": "$number{$floor(tsMQTT/1000)}",
       "n": "0",
       "v": 62.469414
     },
@@ -95,7 +95,7 @@ And `$.imports[0]` of the last response should match
         "1": 6.151946,
         "3": 1,
         "6": "Fixed",
-        "99": "$number{$floor(ts/1000)}"
+        "99": "$number{$floor(tsMQTT/1000)}"
       }
     }
   ]

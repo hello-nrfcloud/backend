@@ -1,8 +1,8 @@
 ---
 exampleContext:
-  fingerprint: 92b.y7i24q
-  fingerprint_deviceId: oob-352656108602296
-  ts: 1694503339523
+  fingerprintCoAP: 92b.y7i24q
+  fingerprintCoAP_deviceId: oob-352656108602296
+  tsCoAP: 1694503339523
   APIURL: https://api.hello.nordicsemi.cloud
 ---
 
@@ -13,22 +13,22 @@ exampleContext:
 
 ## Background
 
-Given I have the fingerprint for a `PCA20065` device in `fingerprint`
+Given I have the fingerprint for a `PCA20065` device in `fingerprintCoAP`
 
-And I connect to the websocket using fingerprint `${fingerprint}`
+And I connect to the websocket using fingerprint `${fingerprintCoAP}`
 
 ## Receive LwM2M updates published via CoAP on the Websocket connection
 
-Given I store `$millis()` into `ts`
+Given I store `$millis()` into `tsCoAP`
 
-When the device `${fingerprint_deviceId}` does a `POST` to this CoAP resource
-`/msg/d2c/raw` with this SenML payload
+When the device `${fingerprintCoAP_deviceId}` does a `POST` to this CoAP
+resource `/msg/d2c/raw` with this SenML payload
 
 ```json
 [
   {
     "bn": "14201/0/",
-    "bt": "$number{$floor(ts/1000)}",
+    "bt": "$number{$floor(tsCoAP/1000)}",
     "n": "0",
     "v": 62.469414
   },
@@ -58,7 +58,7 @@ Soon I should receive a message on the websocket that matches
 > The import logs can be used to debug issues with the sent data
 
 When I `GET`
-`${APIURL}/device/${fingerprint_deviceId}/senml-imports?fingerprint=${fingerprint}`
+`${APIURL}/device/${fingerprintCoAP_deviceId}/senml-imports?fingerprint=${fingerprintCoAP}`
 
 Then I should receive a `https://github.com/hello-nrfcloud/proto/senml/imports`
 response
@@ -67,7 +67,7 @@ And `$` of the last response should match
 
 ```json
 {
-  "id": "${fingerprint_deviceId}"
+  "id": "${fingerprintCoAP_deviceId}"
 }
 ```
 
@@ -79,7 +79,7 @@ And `$.imports[0]` of the last response should match
   "senML": [
     {
       "bn": "14201/0/",
-      "bt": "$number{$floor(ts/1000)}",
+      "bt": "$number{$floor(tsCoAP/1000)}",
       "n": "0",
       "v": 62.469414
     },
@@ -95,7 +95,7 @@ And `$.imports[0]` of the last response should match
         "1": 6.151946,
         "3": 1,
         "6": "Fixed",
-        "99": "$number{$floor(ts/1000)}"
+        "99": "$number{$floor(tsCoAP/1000)}"
       }
     }
   ]

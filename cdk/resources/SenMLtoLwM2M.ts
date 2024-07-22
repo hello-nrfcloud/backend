@@ -13,6 +13,7 @@ import {
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import type { DeviceLastSeen } from './DeviceLastSeen.js'
 
 /**
  * Resources needed to convert LwM2M updates sent by devices via CoAP to nRF Cloud to the format that hello.nrfcloud.com expects
@@ -26,10 +27,12 @@ export class CoAPSenMLtoLwM2M extends Construct {
 			lambdaSources,
 			layers,
 			websocketEventBus,
+			lastSeen,
 		}: {
 			websocketEventBus: WebsocketEventBus
 			lambdaSources: Pick<BackendLambdas, 'onLwM2MUpdate'>
 			layers: Lambda.ILayerVersion[]
+			lastSeen: DeviceLastSeen
 		},
 	) {
 		super(parent, 'CoAPSenMLtoLwM2M')
@@ -67,7 +70,7 @@ export class CoAPSenMLtoLwM2M extends Construct {
 		websocketEventBus.eventBus.grantPutEventsTo(this.fn.fn)
 		this.importLogs.grantReadWriteData(this.fn.fn)
 
-		const role = new IoTActionRole(this)
+		const role = new IoTActionRole(this).role
 
 		// SenML encoded in CBOR via CoAP
 		const coapRule = new IoT.CfnTopicRule(this, 'coapTopicRule', {
@@ -135,6 +138,41 @@ export class CoAPSenMLtoLwM2M extends Construct {
 		this.fn.fn.addPermission('mqttTopicRule', {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
 			sourceArn: mqttRule.attrArn,
+		})
+
+		// Update the lastSeen timestamp
+		lastSeen.table.grantWriteData(role)
+		new IoT.CfnTopicRule(this, 'lastSeenRule', {
+			topicRulePayload: {
+				description: `Record the timestamp when a device last sent in messages based on incoming MQTT senML messages`,
+				ruleDisabled: false,
+				awsIotSqlVersion: '2016-03-23',
+				sql: [
+					`select`,
+					`topic(4) as deviceId,`,
+					`'deviceMessage' as source,`,
+					`parse_time("yyyy-MM-dd'T'HH:mm:ss.S'Z'", timestamp()) as lastSeen,`,
+					// Used for the unique active devices per day KPI
+					`parse_time("yyyy-MM-dd", timestamp()) as day`,
+					`from 'data/m/d/+/d2c/senml'`,
+				].join(' '),
+				actions: [
+					{
+						dynamoDBv2: {
+							putItem: {
+								tableName: lastSeen.table.tableName,
+							},
+							roleArn: role.roleArn,
+						},
+					},
+				],
+				errorAction: {
+					republish: {
+						roleArn: role.roleArn,
+						topic: 'errors',
+					},
+				},
+			},
 		})
 	}
 }

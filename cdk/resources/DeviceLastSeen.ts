@@ -50,7 +50,7 @@ export class DeviceLastSeen extends Construct {
 
 		new IoT.CfnTopicRule(this, 'rule', {
 			topicRulePayload: {
-				description: `Record the timestamp when a device last sent in messages`,
+				description: `Record the timestamp when a device last sent in messages based on incoming CoAP RAW messages`,
 				ruleDisabled: false,
 				awsIotSqlVersion: '2016-03-23',
 				sql: [
