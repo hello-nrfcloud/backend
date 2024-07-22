@@ -31,7 +31,7 @@ import type {
 } from 'aws-lambda'
 import { isObject } from 'lodash-es'
 import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
-import { getLwM2MShadow } from '../getLwM2MShadow.js'
+import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.js'
 import { loggingFetch } from '../loggingFetch.js'
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'

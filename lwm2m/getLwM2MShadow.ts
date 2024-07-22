@@ -8,7 +8,7 @@ import {
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { Device } from '../devices/device.js'
-import { isUnixTimeInSeconds } from '../lwm2m/isUnixTimeInSeconds.js'
+import { isUnixTimeInSeconds } from './isUnixTimeInSeconds.js'
 
 export const getLwM2MShadow =
 	(iotData: IoTDataPlaneClient) =>
