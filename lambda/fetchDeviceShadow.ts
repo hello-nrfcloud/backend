@@ -33,7 +33,7 @@ import {
 } from '../websocket/connectionsRepository.js'
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
-import { loggingFetch } from './loggingFetch.js'
+import { loggingFetch } from '../util/loggingFetch.js'
 import { shadowDiff } from '../historicalData/shadowDiff.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')

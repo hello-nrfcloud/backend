@@ -14,7 +14,7 @@ import middy from '@middy/core'
 import { requestLogger } from '../middleware/requestLogger.js'
 import { fromEnv } from '@bifravst/from-env'
 import type { SQSEvent } from 'aws-lambda'
-import { loggingFetch } from '../loggingFetch.js'
+import { loggingFetch } from '../../util/loggingFetch.js'
 import type { Job } from './Job.js'
 
 const { stackName, jobStatusTableName } = fromEnv({

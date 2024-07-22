@@ -15,7 +15,7 @@ import { getDeviceReboots } from '../../Memfault/api.js'
 import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.js'
 import { getMemfaultSettings } from '../../settings/memfault.js'
 import { deviceLwM2MObjectUpdate } from '../eventbus/deviceLwM2MObjectUpdate.js'
-import { loggingFetch } from '../loggingFetch.js'
+import { loggingFetch } from '../../util/loggingFetch.js'
 import { toReboot } from './toReboot.js'
 
 const { stackName, tableName, EventBusName } = fromEnv({

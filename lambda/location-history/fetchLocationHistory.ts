@@ -15,7 +15,7 @@ import { fromEnv } from '@bifravst/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.js'
 import { deviceLwM2MObjectUpdate } from '../eventbus/deviceLwM2MObjectUpdate.js'
-import { loggingFetch } from '../loggingFetch.js'
+import { loggingFetch } from '../../util/loggingFetch.js'
 import { toGeoLocation, type LocationHistoryItem } from './toGeoLocation.js'
 
 const { stackName, tableName, EventBusName } = fromEnv({

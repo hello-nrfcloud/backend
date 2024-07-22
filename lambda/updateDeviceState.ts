@@ -26,7 +26,7 @@ import type {
 } from 'aws-lambda'
 import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
-import { loggingFetch } from './loggingFetch.js'
+import { loggingFetch } from '../util/loggingFetch.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import { validateInput, type ValidInput } from './middleware/validateInput.js'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
