@@ -62,6 +62,7 @@ export class LwM2MObjectsHistory extends Construct {
 				description: 'Stores LwM2M objects into Timestream database',
 				environment: {
 					HISTORICAL_DATA_TABLE_INFO: this.table.ref,
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				},
 				layers,
 				initialPolicy: [
@@ -77,9 +78,9 @@ export class LwM2MObjectsHistory extends Construct {
 			},
 		)
 
-		const ruleRole = new IoTActionRole(this).role
-		deviceStorage.devicesTable.grantReadData(ruleRole)
+		deviceStorage.devicesTable.grantReadData(this.storeFn.fn)
 
+		const ruleRole = new IoTActionRole(this).role
 		const rule = new IoT.CfnTopicRule(this, 'rule', {
 			topicRulePayload: {
 				description: `Convert shadow updates to LwM2M`,
@@ -88,7 +89,6 @@ export class LwM2MObjectsHistory extends Construct {
 				sql: [
 					`SELECT state.reported as reported,`,
 					`topic(3) as deviceId,`,
-					`get_dynamodb("${deviceStorage.devicesTable.tableName}", "deviceId", topic(3), "${ruleRole.roleArn}").model AS model`,
 					`FROM '$aws/things/+/shadow/name/lwm2m/update/accepted'`,
 					`WHERE isUndefined(state.reported) = false`,
 				].join(' '),

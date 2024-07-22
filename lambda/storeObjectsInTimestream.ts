@@ -17,9 +17,12 @@ import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { getDeviceById } from '../devices/getDeviceById.js'
 
-const { tableInfo } = fromEnv({
+const { tableInfo, DevicesTableName } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
+	DevicesTableName: 'DEVICES_TABLE_NAME',
 })(process.env)
 
 const [DatabaseName, TableName] = tableInfo.split('|')
@@ -27,8 +30,27 @@ if (DatabaseName === undefined || TableName === undefined)
 	throw new Error('Historical database is invalid')
 
 const client = new TimestreamWriteClient({})
+const db = new DynamoDBClient()
 
 const { track, metrics } = metricsForComponent('storeObjectsInTimestream')
+
+const deviceModel = new Map<string, string | undefined>()
+
+const getById = getDeviceById({ db, DevicesTableName })
+
+const getDeviceModel = async (
+	deviceId: string,
+): Promise<string | undefined> => {
+	if (!deviceModel.has(deviceId)) {
+		const maybeDevice = await getById(deviceId)
+		if ('error' in maybeDevice) {
+			deviceModel.set(deviceId, undefined)
+		} else {
+			deviceModel.set(deviceId, maybeDevice.device.model)
+		}
+	}
+	return deviceModel.get(deviceId)
+}
 
 /**
  * Store updates to LwM2M objects in Timestream
@@ -36,7 +58,6 @@ const { track, metrics } = metricsForComponent('storeObjectsInTimestream')
 const h = async (event: {
 	deviceId: string
 	reported: LwM2MShadow
-	model: string
 }): Promise<void> => {
 	console.debug(JSON.stringify({ event }))
 
@@ -79,6 +100,8 @@ const h = async (event: {
 		return
 	}
 
+	const model = (await getDeviceModel(event.deviceId)) ?? 'unknown'
+
 	try {
 		await client.send(
 			new WriteRecordsCommand({
@@ -95,24 +118,24 @@ const h = async (event: {
 				},
 			}),
 		)
-		track(`success:${event.model}`, MetricUnit.Count, Records.length)
+		track(`success:${model}`, MetricUnit.Count, Records.length)
 	} catch (err) {
 		console.debug(`Failed to persist records!`, err)
 		if (err instanceof RejectedRecordsException) {
 			console.debug(`Rejected records`, JSON.stringify(err.RejectedRecords))
 			track(
-				`error:${event.model}`,
+				`error:${model}`,
 				MetricUnit.Count,
 				err.RejectedRecords?.length ?? 0,
 			)
 			track(
-				`success:${event.model}`,
+				`success:${model}`,
 				MetricUnit.Count,
 				Records.length - (err.RejectedRecords?.length ?? 0),
 			)
 		} else {
 			console.error(err)
-			track(`error:${event.model}`, MetricUnit.Count, 1)
+			track(`error:${model}`, MetricUnit.Count, 1)
 		}
 	}
 }
