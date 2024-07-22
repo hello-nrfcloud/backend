@@ -30,7 +30,7 @@ import type {
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { isObject } from 'lodash-es'
-import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
+import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
 import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.js'
 import { loggingFetch } from '../../util/loggingFetch.js'
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'

@@ -27,7 +27,7 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { getAllNRFCloudAPIConfigs } from '../getAllNRFCloudAPIConfigs.js'
+import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from '../../util/loggingFetch.js'
 import { validateInput, type ValidInput } from '../middleware/validateInput.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'

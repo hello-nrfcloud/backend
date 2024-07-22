@@ -25,7 +25,7 @@ import type {
 	Context,
 } from 'aws-lambda'
 import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
-import { getAllNRFCloudAPIConfigs } from './getAllNRFCloudAPIConfigs.js'
+import { getAllNRFCloudAPIConfigs } from './nrfcloud/getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from '../util/loggingFetch.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import { validateInput, type ValidInput } from './middleware/validateInput.js'
