@@ -33,7 +33,7 @@
     "@aws-sdk/client-dynamodb": "3.616.0",
     "@aws-sdk/client-ecr": "3.616.0",
     "@aws-sdk/client-ecs": "3.616.0",
-    "@aws-sdk/client-eventbridge": "3.616.0",
+    "@aws-sdk/client-eventbridge": "3.617.0",
     "@aws-sdk/client-iam": "3.616.0",
     "@aws-sdk/client-iot": "3.616.0",
     "@aws-sdk/client-iot-data-plane": "3.616.0",
