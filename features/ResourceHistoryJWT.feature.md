@@ -1,8 +1,8 @@
 ---
 exampleContext:
-  fingerprint: 92b.y7i24q
-  fingerprint_deviceId: oob-352656108602296
-  publicDeviceId: d952c1bb-9028-4a0b-b8a8-94138ff7a93a
+  publicDeviceId: eugubian-deignous-texthand
+  randomID: d952c1bb-9028-4a0b-b8a8-94138ff7a93a
+  deviceId: map-d952c1bb-9028-4a0b-b8a8-94138ff7a93a
   APIURL: https://api.hello.nordicsemi.cloud
   mapAPIURL: https://api.nordicsemi.world/
   deviceJwt: eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCIsImtpZCI6ImEyMGM0NzZkLTVlZjUtNDE1NS1iODllLTdkZWRiMzJjODVhNCJ9.eyJpZCI6ImQ0OThkNzZhLWQ0ZjktNGQ4YS1iMTYwLTNlODA5NGMzOGNmYSIsImRldmljZUlkIjoidGFsbXVkaWMtb3ZlcnJhdGUtcGVuc2l2ZWQiLCJtb2RlbCI6InRoaW5neTkxeCIsImlhdCI6MTcyMTI4NjA1NywiZXhwIjoxNzIxMjg5NjU3LCJhdWQiOiJoZWxsby5ucmZjbG91ZC5jb20ifQ.Afn2Vj7V4boatn3Dwf4yZCTh09lTpfAEfsaX2uTZv0z2EvcWVH3CeVVsEmvCtDb8mnpvxJcj88-l9PlJqShKzZF5AShz6Ps0Igkzm0PueGjK-nq12I8DTgraT6fdSB3v5ALzLC9ozwyuPN7kJDLMHMHkO3j24sveBvFLg2BLsharSRBN
@@ -59,7 +59,12 @@ Content-type: application/json; charset=utf-8
 
 ## Fetch history
 
-Given I have the fingerprint for a `PCA20065` device in `fingerprint`
+> Map devices may not have a device entry in the backend's device table because
+> they may have been created by users themselves.
+
+Given I have a random UUIDv4 in `randomID`
+
+And I store `$join(["map-", "${randomID}"])` into `deviceId`
 
 And I have a random map public device id in `publicDeviceId`
 
@@ -69,14 +74,14 @@ And I have a JWT in `deviceJwt` signed with the key
 ```json
 {
   "id": "${publicDeviceId}",
-  "deviceId": "${fingerprint_deviceId}",
+  "deviceId": "${deviceId}",
   "model": "thingy91x",
   "aud": "hello.nrfcloud.com"
 }
 ```
 
 When I `GET`
-`${APIURL}/device/${fingerprint_deviceId}/history/14202/0?jwt=${deviceJwt}&timeSpan=lastDay`
+`${APIURL}/device/${deviceId}/history/14202/0?jwt=${deviceJwt}&timeSpan=lastDay`
 
 Then I should receive a
 `https://github.com/hello-nrfcloud/proto/lwm2m/object/history` response

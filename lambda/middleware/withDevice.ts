@@ -6,9 +6,13 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda'
-import { getDeviceById } from '../../devices/getDeviceById.js'
+import {
+	DeviceNotFoundError,
+	getDeviceById,
+} from '../../devices/getDeviceById.js'
 import type { Device } from '../../devices/device.js'
 import { type Context as LambdaContext } from 'aws-lambda'
+import { NRF_CLOUD_ACCOUNT } from '../../settings/account.js'
 
 type WithDeviceMiddlewareObject<AuthProps extends Record<string, string>> =
 	MiddlewareObj<
@@ -68,12 +72,22 @@ export const withDevice: WithDeviceMiddleware = (args) => {
 						status: HttpStatusCode.FORBIDDEN,
 					})
 				}
+				// Fetch the device from the database, in case it was a OOB device.
+				// A user may have configured `hideDataBefore`...
 				const maybeDevice = await getDevice(maybeValidJWT.device.deviceId)
 				if ('error' in maybeDevice) {
+					if (maybeDevice.error instanceof DeviceNotFoundError) {
+						// Device not found
+						req.context.device = {
+							id: maybeValidJWT.device.deviceId,
+							account: NRF_CLOUD_ACCOUNT,
+						}
+						return undefined
+					}
 					return aProblem({
-						title: `No device found with ID!`,
-						detail: maybeValidJWT.device.deviceId,
-						status: HttpStatusCode.NOT_FOUND,
+						title: `An unexpected error occured!`,
+						detail: maybeDevice.error.message,
+						status: HttpStatusCode.INTERNAL_SERVER_ERROR,
 					})
 				}
 				req.context.device = maybeDevice.device
@@ -105,5 +119,5 @@ export const withDevice: WithDeviceMiddleware = (args) => {
 }
 
 export type WithDevice = {
-	device: Device
+	device: Pick<Device, 'id' | 'hideDataBefore' | 'account'>
 }

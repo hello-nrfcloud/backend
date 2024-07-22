@@ -25,7 +25,10 @@ export const getDeviceById =
 					Key: marshall({ deviceId }),
 				}),
 			)
-			if (res.Item === undefined) throw new Error(`not_found`)
+			if (res.Item === undefined)
+				return {
+					error: new DeviceNotFoundError(deviceId),
+				}
 
 			const {
 				deviceId: id,
@@ -46,9 +49,18 @@ export const getDeviceById =
 			return {
 				device,
 			}
-		} catch {
+		} catch (error) {
 			return {
-				error: new Error(`Device with ID ${deviceId} not found.`),
+				error: error as Error,
 			}
 		}
 	}
+
+export class DeviceNotFoundError extends Error {
+	public readonly id: string
+	constructor(id: string) {
+		super(`Device with ID ${id} not found.`)
+		this.id = id
+		this.name = 'DeviceNotFoundError'
+	}
+}
