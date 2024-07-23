@@ -51,7 +51,7 @@
     "@bifravst/bdd-markdown": "8.2.3",
     "@bifravst/ci": "2.0.2",
     "@bifravst/cloudformation-helpers": "9.1.1",
-    "@bifravst/eslint-config-typescript": "6.1.10",
+    "@bifravst/eslint-config-typescript": "6.1.12",
     "@bifravst/http-api-mock": "2.0.49",
     "@bifravst/prettier-config": "1.0.4",
     "@bifravst/random-words": "8.0.2",
