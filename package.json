@@ -47,7 +47,7 @@
     "@aws-sdk/client-timestream-write": "3.620.0",
     "@aws-sdk/util-dynamodb": "3.620.0",
     "@bifravst/aws-cdk-ecr-helpers": "1.2.27",
-    "@bifravst/aws-cdk-lambda-helpers": "1.9.9",
+    "@bifravst/aws-cdk-lambda-helpers": "1.9.10",
     "@bifravst/bdd-markdown": "8.2.6",
     "@bifravst/ci": "2.0.2",
     "@bifravst/cloudformation-helpers": "9.1.1",
