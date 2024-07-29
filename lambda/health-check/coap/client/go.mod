@@ -5,7 +5,7 @@ go 1.21.6
 require (
 	github.com/aws/aws-lambda-go v1.47.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/pion/dtls/v2 v2.2.8-0.20240501061905-2c36d63320a0
+	github.com/pion/dtls/v2 v2.2.12
 	github.com/pion/dtls/v3 v3.0.0
 	github.com/plgd-dev/go-coap/v3 v3.3.4
 )
