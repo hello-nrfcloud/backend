@@ -10,7 +10,7 @@ import { STACK_NAME } from '../cdk/stackConfig.js'
 import { steps as CoAPDeviceSteps } from './steps/device/CoAP.js'
 import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
 import { steps as deviceRegistrySteps } from './steps/device/registry.js'
-import { steps as mocknRFCloudSteps } from './steps/mocknRFCloud.js'
+import { steps as mocknRFCloudSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/mocknRFCloud'
 import { steps as jwtSteps } from './steps/jwt.js'
 import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
 import { steps as httpApiMockSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/httpApiMock'
@@ -123,6 +123,7 @@ runner
 			stackName: STACK_NAME,
 			responsesTableName,
 			requestsTableName,
+			prefix: 'api.nrfcloud.com',
 		}),
 	)
 	.addStepRunners(...storageSteps)
