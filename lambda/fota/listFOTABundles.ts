@@ -20,7 +20,7 @@ import {
 	type FOTABundle,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { Type, type Static } from '@sinclair/typebox'
 import type {
@@ -32,7 +32,7 @@ import { loggingFetch } from '../../util/loggingFetch.js'
 import {
 	validateInput,
 	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/middleware/validateInput'
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({

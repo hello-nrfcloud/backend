@@ -16,7 +16,7 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox/type'
 import type {
@@ -31,7 +31,7 @@ import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import {
 	validateInput,
 	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/middleware/validateInput'
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 

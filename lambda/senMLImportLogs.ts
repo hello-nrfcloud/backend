@@ -9,7 +9,7 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
@@ -20,7 +20,7 @@ import { importLogs } from '../lwm2m/importLogs.js'
 import {
 	validateInput,
 	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/middleware/validateInput'
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 
 const { importLogsTableName, DevicesTableName, version } = fromEnv({

@@ -11,7 +11,7 @@ import {
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { loggingFetch } from '../../util/loggingFetch.js'

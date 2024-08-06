@@ -20,11 +20,11 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	validateInput,
 	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/middleware/validateInput'
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import type { Job } from './Job.js'
 import { toJobExecution } from './toJobExecution.js'

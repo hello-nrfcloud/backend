@@ -25,7 +25,7 @@ import {
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { parseResult } from '@bifravst/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
@@ -44,7 +44,7 @@ import { isNumeric } from '../lwm2m/isNumeric.js'
 import {
 	validateInput,
 	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/middleware/validateInput'
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import type { Device } from '../devices/device.js'
 import { SSMClient } from '@aws-sdk/client-ssm'

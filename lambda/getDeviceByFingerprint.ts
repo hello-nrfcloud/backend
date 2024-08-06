@@ -6,7 +6,7 @@ import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import { Context, HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
