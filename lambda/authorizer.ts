@@ -1,18 +1,21 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
+import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import middy from '@middy/core'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
-import type { PolicyDocument } from 'aws-lambda'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
+import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
+import middy from '@middy/core'
+import { Type } from '@sinclair/typebox'
+import type { Context, PolicyDocument } from 'aws-lambda'
 import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.js'
 import { UNSUPPORTED_MODEL } from '../devices/registerUnsupportedDevice.js'
 import type { WebsocketConnectionContext } from './ws/AuthorizedEvent.js'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
-import { Type } from '@sinclair/typebox'
 
 const { DevicesTableName, DevicesIndexName } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
@@ -29,11 +32,9 @@ const getDevice = getDeviceByFingerprint({
 	DevicesIndexName,
 })
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		fingerprint: Type.RegExp(fingerprintRegExp),
-	}),
-)
+const InputSchema = Type.Object({
+	fingerprint: Type.RegExp(fingerprintRegExp),
+})
 
 type Result = {
 	principalId: string
@@ -44,13 +45,12 @@ type Result = {
 /**
  * Verifies the fingerprint passed as a query parameter and creates a context for the websocket connect that includes the deviceId and the model.
  */
-const h = async (event: {
-	methodArn: string
-	queryStringParameters: Record<string, string>
-	requestContext: {
-		connectionId: string
-	}
-}): Promise<Result> => {
+const h = async (
+	event: {
+		methodArn: string
+	},
+	context: ValidInput<typeof InputSchema> & Context,
+): Promise<Result> => {
 	const deny: Result = {
 		principalId: 'me',
 		policyDocument: {
@@ -65,14 +65,7 @@ const h = async (event: {
 		},
 	}
 
-	const maybeValidInput = validateInput(event.queryStringParameters ?? {})
-	if ('errors' in maybeValidInput) {
-		log.error(`Invalid fingerprint!`)
-		track('authorizer:badRequest', MetricUnit.Count, 1)
-		return deny
-	}
-
-	const fingerprint = maybeValidInput.value.fingerprint
+	const fingerprint = context.validInput.fingerprint
 	const maybeDevice = await getDevice(fingerprint)
 	if ('error' in maybeDevice) {
 		log.error(`DeviceId is not found with`, { fingerprint })
@@ -161,5 +154,6 @@ const h = async (event: {
 
 export const handler = middy()
 	.use(requestLogger())
+	.use(validateInput(InputSchema))
 	.use(logMetrics(metrics))
 	.handler(h)

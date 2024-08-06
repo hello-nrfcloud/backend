@@ -1,20 +1,24 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { fromEnv } from '@bifravst/from-env'
 import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
+import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import { Context, HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
+	Context as LambdaContext,
 } from 'aws-lambda'
 import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.js'
-import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 
 const { DevicesTableName, DevicesIndexName, version } = fromEnv({
 	version: 'VERSION',
@@ -30,29 +34,19 @@ const getDevice = getDeviceByFingerprint({
 	DevicesIndexName,
 })
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		fingerprint: Type.RegExp(fingerprintRegExp),
-	}),
-)
+const InputSchema = Type.Object({
+	fingerprint: Type.RegExp(fingerprintRegExp),
+})
 
 const h = async (
 	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & LambdaContext,
 ): Promise<APIGatewayProxyResultV2> => {
-	const maybeValidInput = validateInput(event.queryStringParameters ?? {})
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Invalid fingerprint provided!',
-			detail: event.queryStringParameters?.fingerprint,
-			status: HttpStatusCode.BAD_REQUEST,
-		})
-	}
-
-	const maybeDevice = await getDevice(maybeValidInput.value.fingerprint)
+	const maybeDevice = await getDevice(context.validInput.fingerprint)
 	if ('error' in maybeDevice) {
 		return aProblem({
 			title: `No device found for fingerprint!`,
-			detail: maybeValidInput.value.fingerprint,
+			detail: context.validInput.fingerprint,
 			status: HttpStatusCode.NOT_FOUND,
 		})
 	}
@@ -77,4 +71,5 @@ export const handler = middy()
 	.use(corsOPTIONS('GET'))
 	.use(requestLogger())
 	.use(addVersionHeader(version))
+	.use(validateInput(InputSchema))
 	.handler(h)

@@ -1,12 +1,12 @@
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
+	Context,
 } from 'aws-lambda'
 import { getFeedbackSettings } from '../settings/feedback.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
-import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { Type } from '@sinclair/typebox'
 import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import middy from '@middy/core'
@@ -14,6 +14,10 @@ import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 
 const { stackName, version } = fromEnv({
 	version: 'VERSION',
@@ -24,27 +28,17 @@ const ssm = new SSMClient({})
 
 const settings = await getFeedbackSettings({ ssm, stackName })
 
-const validateInput = validateWithTypeBox(
-	Type.Object({
-		stars: Type.Integer({ minimum: 1, maximum: 5, title: 'Star rating' }),
-		suggestion: Type.String({ minLength: 1, title: 'Suggestion' }),
-		email: Type.RegExp(/.+@.+/, { title: 'Email' }),
-	}),
-)
+const InputSchema = Type.Object({
+	stars: Type.Integer({ minimum: 1, maximum: 5, title: 'Star rating' }),
+	suggestion: Type.String({ minLength: 1, title: 'Suggestion' }),
+	email: Type.RegExp(/.+@.+/, { title: 'Email' }),
+})
 
 const h = async (
 	event: APIGatewayProxyEventV2,
+	context: ValidInput<typeof InputSchema> & Context,
 ): Promise<APIGatewayProxyResultV2> => {
-	const maybeValidInput = validateInput(JSON.parse(event.body ?? '{}'))
-	if ('errors' in maybeValidInput) {
-		return aProblem({
-			title: 'Input validation failed!',
-			detail: JSON.stringify(maybeValidInput.errors),
-			status: HttpStatusCode.BAD_REQUEST,
-		})
-	}
-
-	const { stars, email, suggestion } = maybeValidInput.value
+	const { stars, email, suggestion } = context.validInput
 
 	const res = await fetch(settings.webhookURL, {
 		method: 'POST',
@@ -90,4 +84,5 @@ export const handler = middy()
 	.use(corsOPTIONS('POST'))
 	.use(addVersionHeader(version))
 	.use(requestLogger())
+	.use(validateInput(InputSchema))
 	.handler(h)

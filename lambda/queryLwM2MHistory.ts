@@ -48,7 +48,7 @@ import {
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import type { Device } from '../devices/device.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { deviceJWT } from './jwt/verifyToken.js'
+import { deviceJWT } from '../jwt/verifyToken.js'
 import { fetchMapJWTPublicKeys } from './map/fetchMapJWTPublicKeys.js'
 
 const { tableInfo, DevicesTableName, version, isTest, stackName } = fromEnv({
