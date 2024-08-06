@@ -31,7 +31,7 @@ import {
 	type ValidInput,
 } from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
-import { deviceJWT } from '../../jwt/verifyToken.js'
+import { validateDeviceJWT } from '../../jwt/validateDeviceJWT.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { fetchMapJWTPublicKeys } from '../map/fetchMapJWTPublicKeys.js'
 import { once } from 'lodash-es'
@@ -145,7 +145,7 @@ export const handler = middy()
 			db,
 			DevicesTableName,
 			validateDeviceJWT: async (token: string) =>
-				deviceJWT(await mapJwtPublicKeys())(token),
+				validateDeviceJWT(await mapJwtPublicKeys())(token),
 		}),
 	)
 	.handler(h)

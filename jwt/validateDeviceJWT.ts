@@ -8,7 +8,7 @@ const validateDeviceJWTPayload = validateWithTypeBox(DeviceJWTPayload)
 /**
  * Validate a device JWT
  */
-export const deviceJWT =
+export const validateDeviceJWT =
 	(publicKeys: Map<string, string>) =>
 	(
 		token: string,
