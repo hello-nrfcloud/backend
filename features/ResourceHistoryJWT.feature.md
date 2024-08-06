@@ -73,6 +73,7 @@ And I have a JWT in `deviceJwt` signed with the key
 
 ```json
 {
+  "@context": "https://github.com/hello-nrfcloud/proto-map/device-jwt",
   "id": "${publicDeviceId}",
   "deviceId": "${deviceId}",
   "model": "thingy91x",

@@ -16,7 +16,7 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from './middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox/type'
 import type {
@@ -28,7 +28,10 @@ import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { getAllNRFCloudAPIConfigs } from './nrfcloud/getAllNRFCloudAPIConfigs.js'
 import { loggingFetch } from '../util/loggingFetch.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
-import { validateInput, type ValidInput } from './middleware/validateInput.js'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 

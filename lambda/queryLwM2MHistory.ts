@@ -25,7 +25,7 @@ import {
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from './middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { parseResult } from '@bifravst/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
@@ -41,11 +41,14 @@ import {
 } from '../historicalData/HistoricalDataTimeSpans.js'
 import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
 import { isNumeric } from '../lwm2m/isNumeric.js'
-import { validateInput, type ValidInput } from './middleware/validateInput.js'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 import type { Device } from '../devices/device.js'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { deviceJWT } from './jwt/verifyToken.js'
+import { validateDeviceJWT } from '../jwt/validateDeviceJWT.js'
 import { fetchMapJWTPublicKeys } from './map/fetchMapJWTPublicKeys.js'
 
 const { tableInfo, DevicesTableName, version, isTest, stackName } = fromEnv({
@@ -289,7 +292,7 @@ export const handler = middy()
 			db,
 			DevicesTableName,
 			validateDeviceJWT: async (token: string) =>
-				deviceJWT(await mapJwtPublicKeys())(token),
+				validateDeviceJWT(await mapJwtPublicKeys())(token),
 		}),
 	)
 	.handler(h)

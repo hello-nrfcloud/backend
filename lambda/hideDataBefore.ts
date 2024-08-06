@@ -17,8 +17,11 @@ import type {
 	APIGatewayProxyResultV2,
 	Context,
 } from 'aws-lambda'
-import { requestLogger } from './middleware/requestLogger.js'
-import { validateInput, type ValidInput } from './middleware/validateInput.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 
 const { version, tableName } = fromEnv({

@@ -1,14 +1,14 @@
 import jwt from 'jsonwebtoken'
 import { DeviceJWTPayload } from '@hello.nrfcloud.com/proto-map/api'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
-import { ValidationError } from '../../util/ValidationError.js'
+import { ValidationError } from '../util/ValidationError.js'
 
 const validateDeviceJWTPayload = validateWithTypeBox(DeviceJWTPayload)
 
 /**
  * Validate a device JWT
  */
-export const deviceJWT =
+export const validateDeviceJWT =
 	(publicKeys: Map<string, string>) =>
 	(
 		token: string,

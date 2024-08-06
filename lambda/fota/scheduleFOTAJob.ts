@@ -22,7 +22,7 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '../middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
@@ -33,7 +33,10 @@ import { isObject } from 'lodash-es'
 import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
 import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.js'
 import { loggingFetch } from '../../util/loggingFetch.js'
-import { validateInput, type ValidInput } from '../middleware/validateInput.js'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import type { Job } from './Job.js'
 import { toJobExecution } from './toJobExecution.js'

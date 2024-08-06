@@ -14,7 +14,7 @@ import {
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { lwm2mToSenML } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
-import { requestLogger } from './middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import mqtt from 'mqtt'
 import assert from 'node:assert'

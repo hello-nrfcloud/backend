@@ -17,7 +17,7 @@ import {
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { validate, validators } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import middy from '@middy/core'
-import { requestLogger } from './middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { chunk, groupBy, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
