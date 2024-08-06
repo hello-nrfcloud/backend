@@ -15,7 +15,7 @@ import {
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '../middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { Type, type Static } from '@sinclair/typebox'
 import type {
@@ -27,7 +27,10 @@ import {
 	LastHour,
 } from '../../historicalData/HistoricalDataTimeSpans.js'
 import { createTrailOfCoordinates } from '../historical-data/createTrailOfCoordinates.js'
-import { validateInput, type ValidInput } from '../middleware/validateInput.js'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/middleware/validateInput'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import { deviceJWT } from '../jwt/verifyToken.js'
 import { SSMClient } from '@aws-sdk/client-ssm'

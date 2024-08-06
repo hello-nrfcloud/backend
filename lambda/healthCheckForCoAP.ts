@@ -18,7 +18,7 @@ import {
 	type SenMLType,
 } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
-import { requestLogger } from './middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import assert from 'node:assert/strict'
 import { registerDevice } from '../devices/registerDevice.js'

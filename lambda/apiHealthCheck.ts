@@ -3,7 +3,7 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from './middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import { type APIGatewayProxyResultV2 } from 'aws-lambda'
 

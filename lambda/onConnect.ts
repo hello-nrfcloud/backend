@@ -13,7 +13,7 @@ import type { WebsocketPayload } from './publishToWebsocketClients.js'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
 import middy from '@middy/core'
-import { requestLogger } from './middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
 
 const { EventBusName, TableName, LastSeenTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',

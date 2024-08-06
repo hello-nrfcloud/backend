@@ -8,7 +8,7 @@ import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import middy from '@middy/core'
-import { requestLogger } from '../middleware/requestLogger.js'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/middleware/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
 import type { Job } from './Job.js'
 
