@@ -5,17 +5,18 @@ import { EventBridge } from '@aws-sdk/client-eventbridge'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { marshall } from '@aws-sdk/util-dynamodb'
+import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { getLocationHistory } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.js'
-import { deviceLwM2MObjectUpdate } from '../eventbus/deviceLwM2MObjectUpdate.js'
+import { batchArray } from '../../util/batchArray.js'
 import { loggingFetch } from '../../util/loggingFetch.js'
+import { deviceLwM2MObjectUpdate } from '../eventbus/deviceLwM2MObjectUpdate.js'
 import { toGeoLocation, type LocationHistoryItem } from './toGeoLocation.js'
 
 const { stackName, tableName, EventBusName } = fromEnv({
@@ -98,31 +99,45 @@ const h = async (event: SQSEvent): Promise<void> => {
 			await updateShadow(deviceId, [toGeoLocation(locations[0])])
 
 		// And put all in the table
-		const records = locations.map((location) => ({
-			PutRequest: {
-				Item: marshall(
-					{
-						id: location.id,
-						deviceId,
-						timestamp: location.insertedAt,
-						lat: parseFloat(location.lat),
-						lon: parseFloat(location.lon),
-						source: location.serviceType,
-						uncertainty: parseFloat(location.uncertainty),
-						ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
-					},
-					{ removeUndefinedValues: true },
-				),
-			},
-		}))
-		if (records.length > 0)
-			await db.send(
-				new BatchWriteItemCommand({
-					RequestItems: {
-						[tableName]: records,
-					},
+		if (locations.length > 0) {
+			await Promise.all(
+				batchArray(locations, 25).map(async (locations) => {
+					try {
+						await db.send(
+							new BatchWriteItemCommand({
+								RequestItems: {
+									[tableName]: locations.map((location) => ({
+										PutRequest: {
+											Item: marshall(
+												{
+													id: location.id,
+													deviceId,
+													timestamp: location.insertedAt,
+													lat: parseFloat(location.lat),
+													lon: parseFloat(location.lon),
+													source: location.serviceType,
+													uncertainty: parseFloat(location.uncertainty),
+													ttl:
+														Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
+												},
+												{ removeUndefinedValues: true },
+											),
+										},
+									})),
+								},
+							}),
+						)
+					} catch (err) {
+						console.error(err)
+						console.error(
+							`Failed to write records for device`,
+							deviceId,
+							(err as Error).message,
+						)
+					}
 				}),
 			)
+		}
 
 		// Put updates on the event bus
 		await Promise.all(

@@ -1,4 +1,5 @@
 import {
+	type AttributeValue,
 	DynamoDBClient,
 	QueryCommand,
 	type QueryCommandInput,
@@ -135,19 +136,17 @@ const h = async (
 	}
 	console.log('Query', JSON.stringify(Query))
 
-	const maybeItems = await db.send(new QueryCommand(Query))
+	const items = await paginateQuery(db, Query)
 
-	console.log('Items', JSON.stringify(maybeItems.Items))
+	console.log('Items', JSON.stringify(items))
 
-	const history = (maybeItems.Items?.map((item) => unmarshall(item)) ?? []).map(
-		(item) => ({
-			'0': item.lat as number,
-			'1': item.lon as number,
-			'3': item.uncertainty as number,
-			'6': item.source as string,
-			'99': Math.floor(new Date(item.timestamp).getTime() / 1000),
-		}),
-	)
+	const history = (items.map((item) => unmarshall(item)) ?? []).map((item) => ({
+		'0': item.lat as number,
+		'1': item.lon as number,
+		'3': item.uncertainty as number,
+		'6': item.source as string,
+		'99': Math.floor(new Date(item.timestamp).getTime() / 1000),
+	}))
 
 	if (context.validInput.trail !== undefined) {
 		result.partialInstances = createTrailOfCoordinates(
@@ -203,3 +202,22 @@ export const handler = middy()
 		}),
 	)
 	.handler(h)
+
+const paginateQuery = async (
+	db: DynamoDBClient,
+	Query: QueryCommandInput,
+	items: Record<string, AttributeValue>[] = [],
+) => {
+	const res = await db.send(new QueryCommand(Query))
+	if (res.Items) {
+		items.push(...res.Items)
+	}
+	if (res.LastEvaluatedKey !== undefined) {
+		return paginateQuery(
+			db,
+			{ ...Query, ExclusiveStartKey: res.LastEvaluatedKey },
+			items,
+		)
+	}
+	return items
+}
