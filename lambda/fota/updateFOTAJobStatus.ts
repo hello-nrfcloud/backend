@@ -3,16 +3,16 @@ import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { marshall } from '@aws-sdk/util-dynamodb'
+import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	FetchError,
 	getFOTAJob,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
 import type { SQSEvent } from 'aws-lambda'
 import { loggingFetch } from '../../util/loggingFetch.js'
 import type { Job } from './Job.js'

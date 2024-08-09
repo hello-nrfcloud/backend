@@ -1,6 +1,7 @@
 import { repositoryName } from '@bifravst/aws-cdk-ecr-helpers/repository'
 import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
+import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { App } from 'aws-cdk-lib'
 import {
 	CfnOutput,
@@ -15,8 +16,11 @@ import { type CAFiles } from '../bridge/caLocation.js'
 import type { CertificateFiles } from '../bridge/mqttBridgeCertificateLocation.js'
 import type { BackendLambdas } from './packBackendLambdas.js'
 import { API } from './resources/API.js'
+import {
+	APICustomDomain,
+	type CustomDomain,
+} from './resources/APICustomDomain.js'
 import { APIHealthCheck } from './resources/APIHealthCheck.js'
-import { UpdateDeviceState } from './resources/UpdateDeviceState.js'
 import { ContinuousDeployment } from './resources/ContinuousDeployment.js'
 import { ConvertNrfCloudDeviceMessages } from './resources/ConvertNrfCloudDeviceMessages.js'
 import { DeviceFOTA } from './resources/DeviceFOTA.js'
@@ -30,21 +34,17 @@ import { HealthCheckCoAP } from './resources/HealthCheckCoAP.js'
 import { HealthCheckMqtt } from './resources/HealthCheckMqtt.js'
 import { Integration } from './resources/Integration.js'
 import { LwM2MObjectsHistory } from './resources/LwM2MObjectsHistory.js'
+import { MemfaultReboots } from './resources/MemfaultReboots.js'
 import { Monitoring } from './resources/Monitoring.js'
 import { SenMLImportLogs } from './resources/SenMLImportLogs.js'
 import { CoAPSenMLtoLwM2M } from './resources/SenMLtoLwM2M.js'
+import { UpdateDevice } from './resources/UpdateDevice.js'
+import { UpdateDeviceState } from './resources/UpdateDeviceState.js'
 import { WebsocketAPI } from './resources/WebsocketAPI.js'
 import { WebsocketConnectionsTable } from './resources/WebsocketConnectionsTable.js'
 import { WebsocketEventBus } from './resources/WebsocketEventBus.js'
 import { KPIs } from './resources/kpis/KPIs.js'
 import { STACK_NAME } from './stackConfig.js'
-import {
-	APICustomDomain,
-	type CustomDomain,
-} from './resources/APICustomDomain.js'
-import { MemfaultReboots } from './resources/MemfaultReboots.js'
-import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { UpdateDevice } from './resources/UpdateDevice.js'
 
 export class BackendStack extends Stack {
 	public constructor(

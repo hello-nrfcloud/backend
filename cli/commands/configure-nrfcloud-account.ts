@@ -1,13 +1,13 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import chalk from 'chalk'
-import fs from 'fs'
-import { STACK_NAME } from '../../cdk/stackConfig.js'
-import type { CommandDefinition } from './CommandDefinition.js'
 import {
 	deleteSettings,
 	putSetting,
 	type Settings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import chalk from 'chalk'
+import fs from 'fs'
+import { STACK_NAME } from '../../cdk/stackConfig.js'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const configureRFCloudAccountCommand = ({
 	ssm,

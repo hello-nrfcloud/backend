@@ -1,20 +1,20 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import type { CommandDefinition } from './CommandDefinition.js'
-import chalk from 'chalk'
-import {
-	NRFCLOUD_ACCOUNT_SCOPE,
-	nrfCloudAccount,
-	defaultApiEndpoint,
-	getSettings as getNRFCloudSettings,
-	putSettings as putNRFCloudSettings,
-	type Settings,
-} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { get } from '@bifravst/aws-ssm-settings-helpers'
 import {
 	createAccountDevice,
 	deleteAccountDevice,
 	getAccountInfo,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import {
+	defaultApiEndpoint,
+	getSettings as getNRFCloudSettings,
+	NRFCLOUD_ACCOUNT_SCOPE,
+	nrfCloudAccount,
+	putSettings as putNRFCloudSettings,
+	type Settings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import chalk from 'chalk'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const initializeNRFCloudAccountCommand = ({
 	ssm,

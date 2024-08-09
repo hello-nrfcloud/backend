@@ -6,10 +6,10 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { fromEnv } from '@bifravst/from-env'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import middy from '@middy/core'
 import type { Job } from './Job.js'
 
 const {

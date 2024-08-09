@@ -1,8 +1,17 @@
 import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
+import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
+import {
+	ProblemDetailError,
+	problemResponse,
+} from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	BadRequestError,
@@ -10,18 +19,12 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox/type'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 	Context,
 } from 'aws-lambda'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import {
-	validateInput,
-	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
 
 const { version, tableName } = fromEnv({
@@ -60,7 +63,7 @@ const h = async (
 		)
 		return aResponse(HttpStatusCode.OK)
 	} catch (err) {
-		return aProblem(
+		throw new ProblemDetailError(
 			BadRequestError({
 				title: `Update failed`,
 				detail: (err as Error).message,
@@ -75,4 +78,5 @@ export const handler = middy()
 	.use(requestLogger())
 	.use(validateInput(InputSchema))
 	.use(withDevice({ db, DevicesTableName: tableName }))
+	.use(problemResponse())
 	.handler(h)

@@ -1,11 +1,11 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { ScopeContexts } from './scope.js'
 import {
-	remove,
+	ContextNotConfiguredError,
 	get,
 	put,
-	ContextNotConfiguredError,
+	remove,
 } from '@bifravst/aws-ssm-settings-helpers'
+import { ScopeContexts } from './scope.js'
 
 export type Settings = {
 	apiEndpoint: URL

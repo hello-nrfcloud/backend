@@ -1,7 +1,7 @@
 import type { IoTClient } from '@aws-sdk/client-iot'
+import run from '@bifravst/run'
 import { mkdir, stat } from 'node:fs/promises'
 import type { logFn } from '../cli/log.js'
-import run from '@bifravst/run'
 import { ulid } from '../util/ulid.js'
 import { ensureCA } from './ensureCA.js'
 import {

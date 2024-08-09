@@ -1,21 +1,21 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
+import { createCA } from '@hello.nrfcloud.com/certificate-helpers/ca'
+import { createDeviceCertificate } from '@hello.nrfcloud.com/certificate-helpers/device'
+import { inspectCert } from '@hello.nrfcloud.com/certificate-helpers/inspect'
+import { ensureCertificateDir } from '@hello.nrfcloud.com/certificate-helpers/locations'
+import { devices } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 import type { Environment } from 'aws-cdk-lib'
 import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { devices } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	updateSettings,
 	type Settings,
 } from '../../settings/health-check/device.js'
-import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
-import { ensureCertificateDir } from '@hello.nrfcloud.com/certificate-helpers/locations'
-import { createCA } from '@hello.nrfcloud.com/certificate-helpers/ca'
-import { createDeviceCertificate } from '@hello.nrfcloud.com/certificate-helpers/device'
-import { inspectCert } from '@hello.nrfcloud.com/certificate-helpers/inspect'
 
 export const createHealthCheckDevice = ({
 	ssm,

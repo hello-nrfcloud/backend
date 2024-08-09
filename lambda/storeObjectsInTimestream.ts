@@ -1,24 +1,24 @@
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
 	RejectedRecordsException,
 	TimestreamWriteClient,
 	WriteRecordsCommand,
 	type _Record,
 } from '@aws-sdk/client-timestream-write'
+import { fromEnv } from '@bifravst/from-env'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	LwM2MObjectID,
 	isLwM2MObjectID,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { fromEnv } from '@bifravst/from-env'
+import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
+import middy from '@middy/core'
+import { getDeviceById } from '../devices/getDeviceById.js'
 import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.js'
 import { NoHistoryMeasuresError } from '../historicalData/NoHistoryMeasuresError.js'
-import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { MetricUnit } from '@aws-lambda-powertools/metrics'
-import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { getDeviceById } from '../devices/getDeviceById.js'
 
 const { tableInfo, DevicesTableName } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',

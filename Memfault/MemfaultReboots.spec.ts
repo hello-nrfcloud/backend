@@ -1,6 +1,6 @@
-import { describe, it } from 'node:test'
-import assert from 'node:assert'
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
+import assert from 'node:assert'
+import { describe, it } from 'node:test'
 import { MemfaultReboots } from './MemfaultReboots.js'
 import res from './reboots.json'
 

@@ -1,23 +1,22 @@
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { fromEnv } from '@bifravst/from-env'
+import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
+import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
+import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
+import { problemResponse } from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
+import middy from '@middy/core'
+import { Type } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 	Context,
 } from 'aws-lambda'
 import { getFeedbackSettings } from '../settings/feedback.js'
-import { SSMClient } from '@aws-sdk/client-ssm'
-import { fromEnv } from '@bifravst/from-env'
-import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
-import { Type } from '@sinclair/typebox'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
-import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
-import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
-import { HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
-import {
-	validateInput,
-	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 
 const { stackName, version } = fromEnv({
 	version: 'VERSION',
@@ -71,10 +70,7 @@ const h = async (
 
 	if (!res.ok) {
 		console.error(await res.text())
-		return aProblem({
-			title: 'Failed to submit feedback',
-			status: HttpStatusCode.INTERNAL_SERVER_ERROR,
-		})
+		throw new Error('Failed to submit feedback')
 	}
 
 	return aResponse(201)
@@ -85,4 +81,5 @@ export const handler = middy()
 	.use(addVersionHeader(version))
 	.use(requestLogger())
 	.use(validateInput(InputSchema))
+	.use(problemResponse())
 	.handler(h)

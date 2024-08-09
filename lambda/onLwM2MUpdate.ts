@@ -1,20 +1,20 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { fromEnv } from '@bifravst/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import { decode } from 'cbor-x'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	fromCBOR,
 	senMLtoLwM2M,
 	type SenMLType,
 } from '@hello.nrfcloud.com/proto-map/senml'
-import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
-import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
+import middy from '@middy/core'
+import { decode } from 'cbor-x'
 import { importLogs } from '../lwm2m/importLogs.js'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { deviceLwM2MObjectUpdate } from './eventbus/deviceLwM2MObjectUpdate.js'
 
 const { EventBusName, importLogsTableName } = fromEnv({

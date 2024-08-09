@@ -1,10 +1,10 @@
 import type { IoTClient } from '@aws-sdk/client-iot'
 import { GetRegistrationCodeCommand } from '@aws-sdk/client-iot'
+import run from '@bifravst/run'
 import { randomUUID } from 'crypto'
 import { unlink } from 'fs/promises'
 import path from 'path'
 import { type logFn } from '../cli/log.js'
-import run from '@bifravst/run'
 import { caLocation } from './caLocation.js'
 
 export const createCAVerificationCert = async ({

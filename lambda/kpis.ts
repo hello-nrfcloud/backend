@@ -1,19 +1,19 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
-import { dailyActiveDevices } from '../kpis/dailyActiveDevices.js'
-import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
-import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { getAllAccounts } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import { fromEnv } from '@bifravst/from-env'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { getCurrentMonthlyCosts } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
+	getAllAccounts,
 	getAPISettings,
 	type Settings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
+import middy from '@middy/core'
+import { dailyActiveDevices } from '../kpis/dailyActiveDevices.js'
+import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
 
 const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',

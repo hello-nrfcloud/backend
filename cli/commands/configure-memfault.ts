@@ -1,11 +1,11 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
-import type { CommandDefinition } from './CommandDefinition.js'
 import {
 	deleteMemfaultSettings as deleteSettings,
 	setMemfaultSettings as putSetting,
 	type Settings,
 } from '../../settings/memfault.js'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const configureMemfaultCommand = ({
 	ssm,

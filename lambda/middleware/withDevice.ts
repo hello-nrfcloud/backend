@@ -1,17 +1,17 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
+import { ProblemDetailError } from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
 import { HttpStatusCode } from '@hello.nrfcloud.com/proto/hello'
 import type { MiddlewareObj } from '@middy/core'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda'
+import { type Context as LambdaContext } from 'aws-lambda'
+import type { Device } from '../../devices/device.js'
 import {
 	DeviceNotFoundError,
 	getDeviceById,
 } from '../../devices/getDeviceById.js'
-import type { Device } from '../../devices/device.js'
-import { type Context as LambdaContext } from 'aws-lambda'
 import { NRF_CLOUD_ACCOUNT } from '../../settings/account.js'
 
 type WithDeviceMiddlewareObject<AuthProps extends Record<string, string>> =
@@ -59,14 +59,14 @@ export const withDevice: WithDeviceMiddleware = (args) => {
 				)
 				if ('error' in maybeValidJWT) {
 					console.error(`[withDevice:jwt]`, maybeValidJWT.error)
-					return aProblem({
+					throw new ProblemDetailError({
 						title: `Failed to validate JWT!`,
 						detail: maybeValidJWT.error.message,
 						status: HttpStatusCode.BAD_REQUEST,
 					})
 				}
 				if (req.context.validInput.deviceId !== maybeValidJWT.device.deviceId) {
-					return aProblem({
+					throw new ProblemDetailError({
 						title: `Device JWT does not match!`,
 						detail: maybeValidJWT.device.deviceId,
 						status: HttpStatusCode.FORBIDDEN,
@@ -84,11 +84,9 @@ export const withDevice: WithDeviceMiddleware = (args) => {
 						}
 						return undefined
 					}
-					return aProblem({
-						title: `An unexpected error occured!`,
-						detail: maybeDevice.error.message,
-						status: HttpStatusCode.INTERNAL_SERVER_ERROR,
-					})
+					throw new Error(
+						`An unexpected error occured: ${maybeDevice.error.message}!`,
+					)
 				}
 				req.context.device = maybeDevice.device
 				return undefined
@@ -98,7 +96,7 @@ export const withDevice: WithDeviceMiddleware = (args) => {
 
 			const maybeDevice = await getDevice(deviceId)
 			if ('error' in maybeDevice) {
-				return aProblem({
+				throw new ProblemDetailError({
 					title: `No device found with ID!`,
 					detail: deviceId,
 					status: HttpStatusCode.NOT_FOUND,
@@ -106,7 +104,7 @@ export const withDevice: WithDeviceMiddleware = (args) => {
 			}
 			const device = maybeDevice.device
 			if (device.fingerprint !== req.context.validInput.fingerprint) {
-				return aProblem({
+				throw new ProblemDetailError({
 					title: `Fingerprint does not match!`,
 					detail: req.context.validInput.fingerprint,
 					status: HttpStatusCode.FORBIDDEN,

@@ -1,7 +1,7 @@
 import { DeleteItemCommand, DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
-import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
 
 const { TableName } = fromEnv({

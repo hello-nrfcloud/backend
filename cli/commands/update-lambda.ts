@@ -3,22 +3,22 @@ import {
 	type CloudFormationClient,
 } from '@aws-sdk/client-cloudformation'
 import {
+	GetFunctionCommand,
+	LastUpdateStatus,
 	UpdateFunctionCodeCommand,
 	UpdateFunctionConfigurationCommand,
 	type LambdaClient,
-	GetFunctionCommand,
-	LastUpdateStatus,
 } from '@aws-sdk/client-lambda'
-import type { CommandDefinition } from './CommandDefinition.js'
 import {
 	packLambdaFromPath,
 	type PackedLambda,
 } from '@bifravst/aws-cdk-lambda-helpers'
+import { listStackResources } from '@bifravst/cloudformation-helpers'
+import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import pRetry from 'p-retry'
-import assert from 'node:assert/strict'
 import { packGo } from '../../cdk/helpers/lambda/packGo.js'
-import { listStackResources } from '@bifravst/cloudformation-helpers'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const updateLambda = ({
 	stackName,

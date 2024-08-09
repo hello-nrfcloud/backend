@@ -7,8 +7,10 @@ import {
 	UpdateThingShadowCommand,
 } from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { getDeviceShadow } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	defaultApiEndpoint,
@@ -16,25 +18,23 @@ import {
 	type Settings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { validate, validators } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
-import { chunk, groupBy, uniqBy } from 'lodash-es'
-import pLimit from 'p-limit'
-import { nrfCloudShadowToObjects } from '../nrfCloud/nrfCloudShadowToObjects.js'
 import {
 	objectsToShadow,
 	type LwM2MShadow,
 } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
+import middy from '@middy/core'
+import { chunk, groupBy, uniqBy } from 'lodash-es'
+import pLimit from 'p-limit'
+import { shadowDiff } from '../historicalData/shadowDiff.js'
+import { nrfCloudShadowToObjects } from '../nrfCloud/nrfCloudShadowToObjects.js'
 import { getAllAccountsSettings } from '../settings/health-check/device.js'
+import { loggingFetch } from '../util/loggingFetch.js'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
 } from '../websocket/connectionsRepository.js'
 import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
 import { createLock } from '../websocket/lock.js'
-import { loggingFetch } from '../util/loggingFetch.js'
-import { shadowDiff } from '../historicalData/shadowDiff.js'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 

@@ -1,3 +1,9 @@
+import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
+import {
+	NRFCLOUD_ACCOUNT_SCOPE,
+	nrfCloudAccount,
+	type Settings as nRFCloudSettings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
 	Duration,
 	aws_ec2 as EC2,
@@ -13,12 +19,6 @@ import { Construct } from 'constructs'
 import { readFileSync } from 'node:fs'
 import { type CAFiles } from '../../bridge/caLocation.js'
 import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
-import {
-	NRFCLOUD_ACCOUNT_SCOPE,
-	type Settings as nRFCloudSettings,
-} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import { nrfCloudAccount } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
 import { ScopeContexts } from '../../settings/scope.js'
 
 export class Integration extends Construct {

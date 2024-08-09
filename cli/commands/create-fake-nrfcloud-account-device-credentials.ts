@@ -17,20 +17,20 @@ import {
 	GetParametersByPathCommand,
 	PutParameterCommand,
 } from '@aws-sdk/client-ssm'
+import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
+import {
+	NRFCLOUD_ACCOUNT_SCOPE,
+	nrfCloudAccount,
+	putSettings,
+	type Settings,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
 import { randomUUID } from 'node:crypto'
 import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
 import { STACK_NAME } from '../../cdk/stackConfig.js'
-import {
-	NRFCLOUD_ACCOUNT_SCOPE,
-	putSettings,
-	type Settings,
-} from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
-import { nrfCloudAccount } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot,

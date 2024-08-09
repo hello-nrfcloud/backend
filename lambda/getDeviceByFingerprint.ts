@@ -1,9 +1,12 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
+import {
+	ProblemDetailError,
+	problemResponse,
+} from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	validateInput,
@@ -44,7 +47,7 @@ const h = async (
 ): Promise<APIGatewayProxyResultV2> => {
 	const maybeDevice = await getDevice(context.validInput.fingerprint)
 	if ('error' in maybeDevice) {
-		return aProblem({
+		throw new ProblemDetailError({
 			title: `No device found for fingerprint!`,
 			detail: context.validInput.fingerprint,
 			status: HttpStatusCode.NOT_FOUND,
@@ -72,4 +75,5 @@ export const handler = middy()
 	.use(requestLogger())
 	.use(addVersionHeader(version))
 	.use(validateInput(InputSchema))
+	.use(problemResponse())
 	.handler(h)

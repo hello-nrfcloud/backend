@@ -1,15 +1,15 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { regExpMatchedStep, type StepRunner } from '@bifravst/bdd-markdown'
+import { IMEI } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
+import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 import { Type } from '@sinclair/typebox'
 import { randomUUID } from 'node:crypto'
 import pRetry from 'p-retry'
-import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 import { getAttributesForDevice } from '../../../devices/getAttributesForDevice.js'
+import { getDeviceByFingerprint } from '../../../devices/getDeviceByFingerprint.js'
 import { registerDevice } from '../../../devices/registerDevice.js'
 import { registerUnsupportedDevice } from '../../../devices/registerUnsupportedDevice.js'
-import { IMEI } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
 import { NRF_CLOUD_ACCOUNT } from '../../../settings/account.js'
-import { getDeviceByFingerprint } from '../../../devices/getDeviceByFingerprint.js'
 
 export const createDeviceForModel = ({
 	db,

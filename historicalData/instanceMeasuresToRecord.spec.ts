@@ -1,9 +1,9 @@
-import { describe, it } from 'node:test'
+import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { InvalidTimeError } from '../lwm2m/InvalidTimeError.js'
 import { instanceMeasuresToRecord } from './instanceMeasuresToRecord.js'
 import { NoHistoryMeasuresError } from './NoHistoryMeasuresError.js'
-import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { InvalidTimeError } from '../lwm2m/InvalidTimeError.js'
 
 void describe('instanceMeasuresToRecord()', () => {
 	void it('should return an error if no measures are found', () => {

@@ -2,8 +2,10 @@ import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	getAllAccountsSettings,
 	type Settings as NrfCloudSettings,
@@ -14,8 +16,6 @@ import {
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { lwm2mToSenML } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
 import mqtt from 'mqtt'
 import assert from 'node:assert'
 import { registerDevice } from '../devices/registerDevice.js'

@@ -1,12 +1,12 @@
-import { describe, it, mock, before, after } from 'node:test'
 import assert from 'node:assert/strict'
+import * as net from 'node:net'
+import { after, before, describe, it, mock } from 'node:test'
+import { setTimeout } from 'node:timers/promises'
+import { WebSocketServer, type AddressInfo } from 'ws'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
 } from './checkMessageFromWebsocket.js'
-import { WebSocketServer, type AddressInfo } from 'ws'
-import * as net from 'node:net'
-import { setTimeout } from 'node:timers/promises'
 import { DeferTimeoutError } from './defer.js'
 
 const getRandomPort = async (): Promise<number> => {

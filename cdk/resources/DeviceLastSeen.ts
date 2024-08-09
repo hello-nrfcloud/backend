@@ -1,10 +1,10 @@
+import { IoTActionRole } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import {
 	aws_dynamodb as DynamoDB,
 	aws_iot as IoT,
 	RemovalPolicy,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { IoTActionRole } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 
 /**
  * Record the timestamp when the device was last seen

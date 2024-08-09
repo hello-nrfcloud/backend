@@ -1,11 +1,11 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
-import type { CommandDefinition } from './CommandDefinition.js'
 import {
 	deleteMapSettings as deleteSettings,
 	setMapSettings as putSetting,
 	type Settings,
 } from '../../settings/map.js'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const configureMapCommand = ({
 	ssm,

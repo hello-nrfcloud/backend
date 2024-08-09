@@ -1,8 +1,8 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { type logFn } from '../../../cli/log.js'
-import { readFilesFromMap } from './readFilesFromMap.js'
 import { put } from '@bifravst/aws-ssm-settings-helpers'
+import { type logFn } from '../../../cli/log.js'
 import { type ScopeContext } from '../../../settings/scope.js'
+import { readFilesFromMap } from './readFilesFromMap.js'
 
 export const storeCertificateInSSM =
 	({ ssm, stackName }: { ssm: SSMClient; stackName: string }) =>

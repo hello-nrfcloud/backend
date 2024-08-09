@@ -1,11 +1,11 @@
+import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { devices as devicesApi } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import type { CommandDefinition } from './CommandDefinition.js'
 import { table } from 'table'
 import { lastSeenRepo } from '../../lastSeen/lastSeenRepo.js'
-import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { isNullOrUndefined } from '../../util/isNullOrUndefined.js'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 const ago = (d: Date) =>
 	Math.floor((Date.now() - d.getTime()) / 1000 / 60 / 60 / 24)

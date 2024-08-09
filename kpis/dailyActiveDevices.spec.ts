@@ -1,7 +1,7 @@
-import { describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
-import { dailyActiveDevices } from './dailyActiveDevices.js'
+import { describe, it, mock } from 'node:test'
 import { assertCall } from '../util/test/assertCall.js'
+import { dailyActiveDevices } from './dailyActiveDevices.js'
 
 void describe('dailyActiveDevices()', () => {
 	void it('should query the device table index using the provided date', async () => {

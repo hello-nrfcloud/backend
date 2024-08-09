@@ -1,15 +1,15 @@
 import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import type { SSMClient } from '@aws-sdk/client-ssm'
+import {
+	devices,
+	getAccountInfo,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
 import { table } from 'table'
-import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import type { CommandDefinition } from './CommandDefinition.js'
-import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
-import {
-	getAccountInfo,
-	devices,
-} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.js'
+import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const showDeviceCommand = ({
 	ssm,

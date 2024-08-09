@@ -1,5 +1,5 @@
-import { defer } from './defer.js'
 import { WebSocket, type RawData } from 'ws'
+import { defer } from './defer.js'
 
 export enum ValidateResponse {
 	skip,

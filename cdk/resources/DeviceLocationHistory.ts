@@ -3,18 +3,18 @@ import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import {
 	Duration,
 	aws_dynamodb as DynamoDB,
-	aws_events_targets as EventTargets,
 	aws_events as Events,
 	aws_lambda_event_sources as EventSources,
-	RemovalPolicy,
+	aws_events_targets as EventTargets,
 	aws_iam as IAM,
+	RemovalPolicy,
 	aws_sqs as SQS,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
+import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import type { DeviceStorage } from './DeviceStorage.js'
 
 /**
  * Makes the device location history available to the frontend

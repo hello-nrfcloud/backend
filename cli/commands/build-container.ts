@@ -1,14 +1,14 @@
 import type { ECRClient } from '@aws-sdk/client-ecr'
-import { getOrCreateRepository } from '@bifravst/aws-cdk-ecr-helpers/repository'
-import type { CommandDefinition } from './CommandDefinition.js'
-import { debug as debugFn } from '../log.js'
-import { buildMQTTBridgeImage } from '../../cdk/resources/containers/buildMQTTBridgeImage.js'
 import {
 	buildAndPublishImage,
 	checkIfImageExists,
 } from '@bifravst/aws-cdk-ecr-helpers/image'
-import { STACK_NAME } from '../../cdk/stackConfig.js'
+import { getOrCreateRepository } from '@bifravst/aws-cdk-ecr-helpers/repository'
 import { ContainerRepositoryId } from '../../aws/ecr.js'
+import { buildMQTTBridgeImage } from '../../cdk/resources/containers/buildMQTTBridgeImage.js'
+import { STACK_NAME } from '../../cdk/stackConfig.js'
+import { debug as debugFn } from '../log.js'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const buildContainersCommand = ({
 	ecr,

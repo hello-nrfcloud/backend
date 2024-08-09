@@ -1,7 +1,7 @@
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { type Static } from '@sinclair/typebox'
-import { MemfaultReboots } from './MemfaultReboots.js'
 import { ValidationError } from '../util/ValidationError.js'
+import { MemfaultReboots } from './MemfaultReboots.js'
 
 export const v = validateWithTypeBox(MemfaultReboots)
 

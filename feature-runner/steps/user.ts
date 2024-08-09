@@ -1,6 +1,6 @@
 import { regExpMatchedStep, type StepRunner } from '@bifravst/bdd-markdown'
-import { Type } from '@sinclair/typebox'
 import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
+import { Type } from '@sinclair/typebox'
 
 export const user = regExpMatchedStep(
 	{

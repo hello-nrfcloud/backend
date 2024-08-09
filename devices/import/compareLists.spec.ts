@@ -1,6 +1,6 @@
-import { compareLists } from './compareLists.js'
-import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { compareLists } from './compareLists.js'
 
 void describe('compareLists', () => {
 	void it('should return true when both lists have the same entries', () => {

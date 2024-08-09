@@ -1,11 +1,11 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { EventBridge } from '@aws-sdk/client-eventbridge'
-import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { fromEnv } from '@bifravst/from-env'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { shadowToObjects } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { getActiveConnections } from '../websocket/notifyClients.js'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
-import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 
 const { connectionsTableName, EventBusName } = fromEnv({
 	connectionsTableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',

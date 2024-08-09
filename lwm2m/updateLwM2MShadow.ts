@@ -1,6 +1,6 @@
 import {
-	type IoTDataPlaneClient,
 	UpdateThingShadowCommand,
+	type IoTDataPlaneClient,
 } from '@aws-sdk/client-iot-data-plane'
 import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import {

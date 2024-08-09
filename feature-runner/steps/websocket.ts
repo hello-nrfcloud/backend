@@ -5,15 +5,15 @@ import {
 } from '@bifravst/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
-import {
-	createWebsocketClient,
-	type WebSocketClient,
-} from '../lib/websocket.js'
+import jsonata from 'jsonata'
 import pRetry from 'p-retry'
 import { setTimeout } from 'timers/promises'
 import { check } from 'tsmatchers'
 import { objectDeepMatching } from '../lib/objectDeepMatching.js'
-import jsonata from 'jsonata'
+import {
+	createWebsocketClient,
+	type WebSocketClient,
+} from '../lib/websocket.js'
 
 const wsClients: Record<string, WebSocketClient> = {}
 const wsConnect = ({ websocketUri }: { websocketUri: string }) =>

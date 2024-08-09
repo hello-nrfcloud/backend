@@ -1,18 +1,18 @@
-import { describe, it, mock } from 'node:test'
-import assert from 'node:assert/strict'
 import {
 	ParameterType,
 	type GetParametersByPathCommandOutput,
 } from '@aws-sdk/client-ssm'
-import { restoreCertificateFromSSM } from './restoreCertificateFromSSM.js'
-import { caLocation } from '../../../bridge/caLocation.js'
-import path from 'node:path'
-import os from 'node:os'
+import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
-import { readFilesFromMap } from './readFilesFromMap.js'
+import os from 'node:os'
+import path from 'node:path'
+import { describe, it, mock } from 'node:test'
 import { arrayContaining, check, objectMatching } from 'tsmatchers'
-import { assertCall } from '../../../util/test/assertCall.js'
+import { caLocation } from '../../../bridge/caLocation.js'
 import { ScopeContexts } from '../../../settings/scope.js'
+import { assertCall } from '../../../util/test/assertCall.js'
+import { readFilesFromMap } from './readFilesFromMap.js'
+import { restoreCertificateFromSSM } from './restoreCertificateFromSSM.js'
 
 void describe('restoreCertificateFromSSM()', () => {
 	void it('should query SSM for stored certificates, but not restored if value is not present', async () => {

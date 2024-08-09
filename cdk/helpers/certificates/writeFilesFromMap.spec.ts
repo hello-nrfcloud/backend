@@ -1,8 +1,8 @@
-import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import path from 'node:path'
-import os from 'node:os'
 import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { describe, it } from 'node:test'
 import { writeFilesFromMap } from './writeFilesFromMap.js'
 
 void describe('writeFilesFromMap()', () => {

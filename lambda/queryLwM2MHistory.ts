@@ -1,16 +1,24 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { SSMClient } from '@aws-sdk/client-ssm'
 import {
 	QueryCommand,
 	TimestreamQueryClient,
 	ValidationException,
 } from '@aws-sdk/client-timestream-query'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
+import { fromEnv } from '@bifravst/from-env'
+import { parseResult } from '@bifravst/timestream-helpers'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { problemResponse } from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import {
 	LwM2MObjectIDs,
 	definitions,
@@ -20,36 +28,27 @@ import {
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
-	HttpStatusCode,
 	deviceId,
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
-import { parseResult } from '@bifravst/timestream-helpers'
 import { Type, type Static } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { once } from 'lodash-es'
+import type { Device } from '../devices/device.js'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
 	type HistoricalDataTimeSpan,
 } from '../historicalData/HistoricalDataTimeSpans.js'
 import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
-import { isNumeric } from '../lwm2m/isNumeric.js'
-import {
-	validateInput,
-	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
-import { withDevice, type WithDevice } from './middleware/withDevice.js'
-import type { Device } from '../devices/device.js'
-import { SSMClient } from '@aws-sdk/client-ssm'
 import { validateDeviceJWT } from '../jwt/validateDeviceJWT.js'
+import { isNumeric } from '../lwm2m/isNumeric.js'
 import { fetchMapJWTPublicKeys } from './map/fetchMapJWTPublicKeys.js'
+import { withDevice, type WithDevice } from './middleware/withDevice.js'
 
 const { tableInfo, DevicesTableName, version, isTest, stackName } = fromEnv({
 	version: 'VERSION',
@@ -187,10 +186,7 @@ const h = async (
 				)
 			}
 		}
-		return aProblem({
-			title: 'Query failed',
-			status: HttpStatusCode.INTERNAL_SERVER_ERROR,
-		})
+		throw new Error('Query failed')
 	}
 }
 
@@ -295,4 +291,5 @@ export const handler = middy()
 				validateDeviceJWT(await mapJwtPublicKeys())(token),
 		}),
 	)
+	.use(problemResponse())
 	.handler(h)

@@ -9,10 +9,10 @@ import {
 } from '@hello.nrfcloud.com/proto/fingerprint'
 import chalk from 'chalk'
 import { readFile } from 'node:fs/promises'
+import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.js'
+import { isIMEI } from '../../devices/isIMEI.js'
 import { registerDevice } from '../../devices/registerDevice.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { isIMEI } from '../../devices/isIMEI.js'
-import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.js'
 
 export const importDeviceCommand = ({
 	ssm,

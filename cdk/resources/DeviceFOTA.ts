@@ -5,10 +5,10 @@ import {
 	aws_lambda_event_sources as EventSources,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
+	aws_iam as IAM,
 	aws_lambda as Lambda,
 	RemovalPolicy,
 	aws_sqs as SQS,
-	aws_iam as IAM,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'

@@ -5,6 +5,7 @@ import {
 } from '@aws-sdk/client-iot'
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import { GetParameterCommand } from '@aws-sdk/client-ssm'
+import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 import chalk from 'chalk'
 import { randomUUID } from 'node:crypto'
 import { STACK_NAME } from '../../cdk/stackConfig.js'
@@ -14,7 +15,6 @@ import {
 } from '../../settings/health-check/device.js'
 import { isString } from '../../util/isString.js'
 import type { CommandDefinition } from './CommandDefinition.js'
-import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 
 export const createFakeNrfCloudHealthCheckDevice = ({
 	iot,

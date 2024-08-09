@@ -1,10 +1,10 @@
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import { checkSumOfFiles } from '@bifravst/aws-cdk-lambda-helpers/util'
+import run from '@bifravst/run'
+import { createWriteStream } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import yazl from 'yazl'
-import { createWriteStream } from 'node:fs'
-import run from '@bifravst/run'
 
 const zipBinary = async (binary: Buffer, outfile: string): Promise<void> => {
 	const zipFile = new yazl.ZipFile()

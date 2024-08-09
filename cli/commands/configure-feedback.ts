@@ -1,11 +1,11 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
 import chalk from 'chalk'
-import type { CommandDefinition } from './CommandDefinition.js'
 import {
 	deleteFeedbackSettings as deleteSettings,
 	setFeedbackSettings as putSetting,
 	type Settings,
 } from '../../settings/feedback.js'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const configureFeedbackCommand = ({
 	ssm,

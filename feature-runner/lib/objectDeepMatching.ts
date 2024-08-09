@@ -1,4 +1,4 @@
-import { objectMatching, arrayContaining, is, anArray } from 'tsmatchers'
+import { anArray, arrayContaining, is, objectMatching } from 'tsmatchers'
 import type { Matcher } from 'tsmatchers/js/tsMatchers.js'
 
 export const objectDeepMatching = (expected: unknown): Matcher<unknown> => {

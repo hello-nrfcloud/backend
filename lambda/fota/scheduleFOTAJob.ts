@@ -3,12 +3,21 @@ import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { marshall } from '@aws-sdk/util-dynamodb'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
+import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import {
+	ProblemDetailError,
+	problemResponse,
+} from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { createFOTAJob } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	LwM2MObjectID,
@@ -22,22 +31,16 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { isObject } from 'lodash-es'
-import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
 import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.js'
 import { loggingFetch } from '../../util/loggingFetch.js'
-import {
-	validateInput,
-	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
+import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
 import type { Job } from './Job.js'
 import { toJobExecution } from './toJobExecution.js'
 
@@ -78,17 +81,13 @@ const h = async (
 	const maybeShadow = await getShadow(context.device)
 	if ('error' in maybeShadow) {
 		console.error(maybeShadow.error)
-		return aProblem({
-			title: `Unknown device state!`,
-			detail: maybeShadow.error.message,
-			status: HttpStatusCode.INTERNAL_SERVER_ERROR,
-		})
+		throw new Error(`Unknown device state: ${maybeShadow.error.message}!`)
 	}
 	const supportedFOTATypes =
 		maybeShadow.shadow.reported.find(isNRFCloudServiceInfo)?.Resources[0] ?? []
 
 	if (supportedFOTATypes.length === 0) {
-		return aProblem({
+		throw new ProblemDetailError({
 			title: `This device does not support FOTA!`,
 			status: HttpStatusCode.BAD_REQUEST,
 		})
@@ -99,7 +98,7 @@ const h = async (
 			context.validInput.bundleId.startsWith(type),
 		) === undefined
 	) {
-		return aProblem({
+		throw new ProblemDetailError({
 			title: `This device does not support the bundle type!`,
 			detail: `Supported FOTA types are: ${supportedFOTATypes.join(', ')}`,
 			status: HttpStatusCode.BAD_REQUEST,
@@ -158,7 +157,7 @@ const h = async (
 	} else {
 		console.error(`Scheduling FOTA update failed`, res.error)
 		track('error', MetricUnit.Count, 1)
-		return aProblem(
+		throw new ProblemDetailError(
 			InternalError({
 				title: `Scheduling FOTA update failed`,
 				detail: res.error.message,
@@ -172,6 +171,7 @@ export const handler = middy()
 	.use(requestLogger())
 	.use(validateInput(InputSchema))
 	.use(withDevice({ db, DevicesTableName }))
+	.use(problemResponse())
 	.handler(h)
 
 const isNRFCloudServiceInfo = (

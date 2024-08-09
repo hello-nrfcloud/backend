@@ -1,8 +1,8 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import type { CommandDefinition } from './CommandDefinition.js'
 import { bulkOpsRequests } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
+import type { CommandDefinition } from './CommandDefinition.js'
 
 export const getNRFCloudBulkOpsStatus = ({
 	ssm,

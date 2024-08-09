@@ -12,8 +12,8 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
-import type { WebsocketEventBus } from './WebsocketEventBus.js'
 import type { DeviceLastSeen } from './DeviceLastSeen.js'
+import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
  * Resources needed to convert LwM2M updates sent by devices via CoAP to nRF Cloud to the format that hello.nrfcloud.com expects

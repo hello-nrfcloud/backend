@@ -16,9 +16,9 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
+import type { DeviceStorage } from './DeviceStorage.js'
 import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
-import type { DeviceStorage } from './DeviceStorage.js'
 
 /**
  * Updates the LwM2M shadow for each device from nRF Cloud

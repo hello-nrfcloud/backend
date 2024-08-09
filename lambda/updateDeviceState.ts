@@ -1,13 +1,24 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
-import { aProblem } from '@hello.nrfcloud.com/lambda-helpers/aProblem'
+import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import {
+	ProblemDetailError,
+	problemResponse,
+} from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { devices } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	BadRequestError,
@@ -16,24 +27,16 @@ import {
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
 import { Type } from '@sinclair/typebox/type'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 	Context,
 } from 'aws-lambda'
-import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
-import { getAllNRFCloudAPIConfigs } from './nrfcloud/getAllNRFCloudAPIConfigs.js'
+import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
 import { loggingFetch } from '../util/loggingFetch.js'
 import { withDevice, type WithDevice } from './middleware/withDevice.js'
-import {
-	validateInput,
-	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
-import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
-import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
+import { getAllNRFCloudAPIConfigs } from './nrfcloud/getAllNRFCloudAPIConfigs.js'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -88,7 +91,7 @@ const h = async (
 		return aResponse(HttpStatusCode.ACCEPTED)
 	} else {
 		console.error(`Update failed`, JSON.stringify(res))
-		return aProblem(
+		throw new ProblemDetailError(
 			BadRequestError({
 				title: `Configuration update failed`,
 				detail: res.error.message,
@@ -112,4 +115,5 @@ export const handler = middy()
 		})),
 	)
 	.use(withDevice({ db, DevicesTableName }))
+	.use(problemResponse())
 	.handler(h)

@@ -1,6 +1,6 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
+import { get, put, remove } from '@bifravst/aws-ssm-settings-helpers'
 import { ScopeContexts } from './scope.js'
-import { remove, get, put } from '@bifravst/aws-ssm-settings-helpers'
 
 export type Settings = {
 	webhookURL: URL

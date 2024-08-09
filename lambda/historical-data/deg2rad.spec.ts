@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
 import { deg2rad } from './deg2rad.js'
 
 void describe('deg2rad()', () => {

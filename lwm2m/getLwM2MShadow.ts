@@ -2,11 +2,11 @@ import {
 	GetThingShadowCommand,
 	type IoTDataPlaneClient,
 } from '@aws-sdk/client-iot-data-plane'
-import { shadowToObjects } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import {
 	timestampResources,
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { shadowToObjects } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import type { Device } from '../devices/device.js'
 import { isUnixTimeInSeconds } from './isUnixTimeInSeconds.js'
 

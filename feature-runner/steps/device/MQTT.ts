@@ -1,9 +1,9 @@
-import type { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import {
 	codeBlockOrThrow,
 	regExpMatchedStep,
 	type StepRunner,
 } from '@bifravst/bdd-markdown'
+import type { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { Type } from '@sinclair/typebox'
 import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'

@@ -1,8 +1,22 @@
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { runFolder } from '@bifravst/bdd-markdown'
 import { stackOutput } from '@bifravst/cloudformation-helpers'
+import { fromEnv } from '@bifravst/from-env'
+import { randomWords } from '@bifravst/random-words'
+import { steps as httpApiMockSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/httpApiMock'
+import { steps as mocknRFCloudSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/mocknRFCloud'
+import {
+	email,
+	IMEI,
+	steps as randomSteps,
+	UUIDv4,
+} from '@hello.nrfcloud.com/bdd-markdown-steps/random'
+import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
+import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
+import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
 import path from 'node:path'
 import type { StackOutputs as BackendStackOutputs } from '../cdk/BackendStack.js'
@@ -10,23 +24,9 @@ import { STACK_NAME } from '../cdk/stackConfig.js'
 import { steps as CoAPDeviceSteps } from './steps/device/CoAP.js'
 import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
 import { steps as deviceRegistrySteps } from './steps/device/registry.js'
-import { steps as mocknRFCloudSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/mocknRFCloud'
 import { steps as jwtSteps } from './steps/jwt.js'
-import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/storage'
-import { steps as httpApiMockSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/httpApiMock'
-import {
-	steps as randomSteps,
-	UUIDv4,
-	email,
-	IMEI,
-} from '@hello.nrfcloud.com/bdd-markdown-steps/random'
-import { websocketStepRunners } from './steps/websocket.js'
 import { steps as userSteps } from './steps/user.js'
-import { steps as RESTSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/REST'
-import { fromEnv } from '@bifravst/from-env'
-import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
-import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
-import { randomWords } from '@bifravst/random-words'
+import { websocketStepRunners } from './steps/websocket.js'
 
 const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',

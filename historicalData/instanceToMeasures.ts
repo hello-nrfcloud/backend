@@ -7,8 +7,8 @@ import {
 	timestampResources,
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { isNumeric } from '../lwm2m/isNumeric.js'
 import { InvalidTimeError } from '../lwm2m/InvalidTimeError.js'
+import { isNumeric } from '../lwm2m/isNumeric.js'
 import { isUnixTimeInSeconds } from '../lwm2m/isUnixTimeInSeconds.js'
 
 export const instanceToMeasures = ({

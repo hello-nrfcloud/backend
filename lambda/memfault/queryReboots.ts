@@ -3,10 +3,17 @@ import {
 	QueryCommand,
 	type QueryCommandInput,
 } from '@aws-sdk/client-dynamodb'
+import { SSMClient } from '@aws-sdk/client-ssm'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import {
+	validateInput,
+	type ValidInput,
+} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { LwM2MObjectID, definitions } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
@@ -15,26 +22,19 @@ import {
 	type LwM2MObjectHistory,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
 import { Type, type Static } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
+import { once } from 'lodash-es'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
 } from '../../historicalData/HistoricalDataTimeSpans.js'
-import {
-	validateInput,
-	type ValidInput,
-} from '@hello.nrfcloud.com/lambda-helpers/validateInput'
-import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import { validateDeviceJWT } from '../../jwt/validateDeviceJWT.js'
-import { SSMClient } from '@aws-sdk/client-ssm'
 import { fetchMapJWTPublicKeys } from '../map/fetchMapJWTPublicKeys.js'
-import { once } from 'lodash-es'
+import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 
 const { tableName, DevicesTableName, version, stackName } = fromEnv({
 	version: 'VERSION',

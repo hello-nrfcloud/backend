@@ -3,8 +3,10 @@ import { logMetrics } from '@aws-lambda-powertools/metrics/middleware'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda'
 import { SSMClient } from '@aws-sdk/client-ssm'
+import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
+import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	getAllAccountsSettings,
 	type Settings as NrfCloudSettings,
@@ -18,8 +20,6 @@ import {
 	type SenMLType,
 } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
-import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
-import { fromEnv } from '@bifravst/from-env'
 import assert from 'node:assert/strict'
 import { registerDevice } from '../devices/registerDevice.js'
 import { encode } from '../feature-runner/steps/device/senmlCbor.js'

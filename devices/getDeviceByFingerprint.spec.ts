@@ -1,10 +1,10 @@
+import { marshall } from '@aws-sdk/util-dynamodb'
+import { IMEI } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
 import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
+import assert from 'node:assert/strict'
 import { describe, it, mock } from 'node:test'
 import { assertCall } from '../util/test/assertCall.js'
 import { getDeviceByFingerprint } from './getDeviceByFingerprint.js'
-import assert from 'node:assert/strict'
-import { marshall } from '@aws-sdk/util-dynamodb'
-import { IMEI } from '@hello.nrfcloud.com/bdd-markdown-steps/random'
 
 void describe('getDeviceByFingerprint()', () => {
 	void it('should return the device', async () => {
