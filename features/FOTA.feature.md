@@ -93,7 +93,7 @@ Content-Type: application/json
 {"jobId": "${jobId}"}
 ```
 
-<!-- Device fetches details about the job. -->
+<!-- Backend fetches details about the job. -->
 
 And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId}`
 request

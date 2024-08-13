@@ -60,6 +60,13 @@ export class DeviceFOTA extends Construct {
 			timeToLiveAttribute: 'ttl',
 		})
 
+		const scheduleDuration = Duration.seconds(60)
+		const workQueue = new SQS.Queue(this, 'workQueue', {
+			retentionPeriod: scheduleDuration,
+			removalPolicy: RemovalPolicy.DESTROY,
+			visibilityTimeout: scheduleDuration,
+		})
+
 		// Create a new FOTA job
 		this.scheduleFOTAJobFn = new PackedLambdaFn(
 			this,
@@ -70,6 +77,7 @@ export class DeviceFOTA extends Construct {
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 					JOB_STATUS_TABLE_NAME: jobStatusTable.tableName,
+					WORK_QUEUE_URL: workQueue.queueUrl,
 				},
 				layers,
 				initialPolicy: [
@@ -82,9 +90,9 @@ export class DeviceFOTA extends Construct {
 		)
 		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn.fn)
 		jobStatusTable.grantWriteData(this.scheduleFOTAJobFn.fn)
+		workQueue.grantSendMessages(this.scheduleFOTAJobFn.fn)
 
 		// The scheduleFetches puts location history fetch tasks in this queue
-		const scheduleDuration = Duration.seconds(60)
 		const statusIndex = 'statusIndex'
 		jobStatusTable.addGlobalSecondaryIndex({
 			indexName: statusIndex,
@@ -98,11 +106,6 @@ export class DeviceFOTA extends Construct {
 			},
 			projectionType: DynamoDB.ProjectionType.INCLUDE,
 			nonKeyAttributes: ['createdAt'],
-		})
-		const workQueue = new SQS.Queue(this, 'workQueue', {
-			retentionPeriod: scheduleDuration,
-			removalPolicy: RemovalPolicy.DESTROY,
-			visibilityTimeout: scheduleDuration,
 		})
 		this.scheduleFetches = new PackedLambdaFn(
 			this,

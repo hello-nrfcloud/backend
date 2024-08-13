@@ -1,6 +1,7 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
@@ -26,9 +27,9 @@ import {
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
+	deviceId,
 	HttpStatusCode,
 	InternalError,
-	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { Type } from '@sinclair/typebox'
@@ -44,16 +45,24 @@ import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.j
 import type { Job } from './Job.js'
 import { toJobExecution } from './toJobExecution.js'
 
-const { stackName, version, DevicesTableName, jobStatusTableName } = fromEnv({
+const {
+	stackName,
+	version,
+	DevicesTableName,
+	jobStatusTableName,
+	workQueueUrl,
+} = fromEnv({
 	stackName: 'STACK_NAME',
 	version: 'VERSION',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
+	workQueueUrl: 'WORK_QUEUE_URL',
 })(process.env)
 
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
 const iotData = new IoTDataPlaneClient({})
+const sqs = new SQSClient({})
 
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
@@ -140,6 +149,7 @@ const h = async (
 			statusDetail: null,
 			target: null,
 		}
+
 		await db.send(
 			new PutItemCommand({
 				TableName: jobStatusTableName,
@@ -147,6 +157,14 @@ const h = async (
 					...job,
 					ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
 				}),
+			}),
+		)
+
+		// Queue a job update right away
+		await sqs.send(
+			new SendMessageCommand({
+				QueueUrl: workQueueUrl,
+				MessageBody: JSON.stringify(job),
 			}),
 		)
 
