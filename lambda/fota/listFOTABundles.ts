@@ -27,6 +27,7 @@ import {
 	InternalError,
 	deviceId,
 	type FOTABundle,
+	type FOTABundles,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import { Type, type Static } from '@sinclair/typebox'
@@ -99,14 +100,19 @@ const h = async (
 		)
 	}
 
-	return aResponse(HttpStatusCode.OK, {
-		'@context': Context.fotaBundles,
-		deviceId,
+	const result: Static<typeof FOTABundles> = {
+		'@context': Context.fotaBundles.toString(),
+		deviceId: context.validInput.deviceId,
 		bundles: res.bundles
 			.sort((b1, b2) =>
 				(b2.lastModified ?? '').localeCompare(b1.lastModified ?? ''),
 			)
 			.map(toBundle),
+	}
+
+	return aResponse(HttpStatusCode.OK, {
+		...result,
+		'@context': Context.fotaBundles,
 	})
 }
 export const handler = middy()
