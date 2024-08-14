@@ -9,10 +9,17 @@ const diffShadows = (
 	const diff: LwM2MShadow = {}
 
 	for (const [ObjectIDAndVersion, Instances] of Object.entries(update)) {
+		// Determine the timestamp resource for the object
+		const [ObjectID] = ObjectIDAndVersion.split(':')
+		if (ObjectID === undefined) continue
+		const tsResource = timestampResources.get(parseInt(ObjectID, 10))
+		if (tsResource === undefined) continue
+
 		if (current[ObjectIDAndVersion] === undefined) {
 			diff[ObjectIDAndVersion] = Instances
 			continue
 		}
+
 		for (const [InstanceId, Instance] of Object.entries(Instances)) {
 			const InstanceIdN = parseInt(InstanceId, 10)
 			if (current[ObjectIDAndVersion]?.[InstanceIdN] === undefined) {
@@ -22,11 +29,17 @@ const diffShadows = (
 				diff[ObjectIDAndVersion][InstanceIdN] = Instance
 				continue
 			}
+
 			for (const [ResourceID, Value] of Object.entries(Instance)) {
 				const ResourceIDN = parseInt(ResourceID, 10)
 				const currentValue =
 					current[ObjectIDAndVersion][InstanceIdN][ResourceIDN]
-				if (!isEqual(currentValue, Value)) {
+				if (
+					// the values are different
+					!isEqual(currentValue, Value) ||
+					// or its the timestamp resource
+					ResourceIDN === tsResource
+				) {
 					if (diff[ObjectIDAndVersion] === undefined) {
 						diff[ObjectIDAndVersion] = {}
 					}
@@ -38,11 +51,6 @@ const diffShadows = (
 			}
 
 			// Do not return diff if only timestamp has changed
-			const [ObjectID] = ObjectIDAndVersion.split(':')
-			if (ObjectID === undefined) continue
-			const tsResource = timestampResources.get(parseInt(ObjectID, 10))
-			if (tsResource === undefined) continue
-
 			if (
 				diff[ObjectIDAndVersion]?.[InstanceIdN] !== undefined &&
 				Object.values(diff[ObjectIDAndVersion][InstanceIdN]).length === 1 &&
@@ -56,14 +64,17 @@ const diffShadows = (
 			}
 
 			// Do not lower the resource timestamp
-			const currentTs = current[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource]
-			const diffTs = diff[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource]
-			if (
-				currentTs !== undefined &&
-				diffTs !== undefined &&
-				diffTs < currentTs
-			) {
-				delete diff[ObjectIDAndVersion]![InstanceIdN]![tsResource]
+			const currentTs = current[ObjectIDAndVersion]?.[InstanceIdN]?.[
+				tsResource
+			] as number | undefined
+			const diffTs = diff[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource] as
+				| number
+				| undefined
+			if (currentTs !== undefined && diffTs !== undefined) {
+				diff[ObjectIDAndVersion]![InstanceIdN]![tsResource] = Math.max(
+					currentTs,
+					diffTs,
+				)
 			}
 		}
 	}

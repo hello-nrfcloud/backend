@@ -98,6 +98,7 @@ void describe('shadowDiff()', () => {
 				'14203:1.0': {
 					'0': {
 						'0': 'LTE-M',
+						'99': 1718009833,
 					},
 				},
 			},
@@ -164,5 +165,53 @@ void describe('shadowDiff()', () => {
 		}
 
 		assert.deepEqual(shadowDiff(state, update), {})
+	})
+
+	void it('should always return the timestamps, even if they are not changed', () => {
+		const update = {
+			reported: {
+				'14203:1.0': {
+					'0': {
+						'0': 'LTE-M GPS',
+						'1': 3,
+						'3': 2801,
+						'4': 31066123,
+						'5': 24202,
+						'6': '10.82.117.168',
+						'99': 1723628998,
+					},
+				},
+			},
+		}
+
+		const state = {
+			reported: {
+				'14203:1.0': {
+					'0': {
+						'0': 'LTE-M GPS',
+						'1': 3,
+						'2': -93,
+						'3': 2801,
+						'4': 31343883,
+						'5': 24202,
+						'6': '10.82.119.155',
+						'11': 7,
+						'99': 1723640430,
+					},
+				},
+			},
+		}
+
+		assert.deepEqual(shadowDiff(state, update), {
+			reported: {
+				'14203:1.0': {
+					'0': {
+						'4': 31066123,
+						'6': '10.82.117.168',
+						'99': 1723640430,
+					},
+				},
+			},
+		})
 	})
 })
