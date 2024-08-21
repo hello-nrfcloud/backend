@@ -14,11 +14,24 @@ exampleContext:
 
 > A user can schedule a firmware update for a device.
 >
-> The `bundleId` is provided by the web application, which provides the user
-> with a list of suitable bundles for their device.
->
 > In order for device to be able to receive updates from nRF Cloud, they have to
 > report the supported FOTA types.
+>
+> Firmware update over the air (FOTA) is implemented using the nRF Cloud
+> [FOTA Service](https://docs.nordicsemi.com/bundle/nrf-cloud/page/Devices/FirmwareUpdate/FOTAOverview.html).
+>
+> From a user perspective this is abstracted away behind two actions:
+>
+> 1. update the application firmware version to the latest version
+> 2. update the modem firmware version to the the latest version
+>
+> However in practice this means that the web application issues a request with
+> "upgrade" path, which is a per-model recipe defined in the
+> [web application project](https://github.com/hello-nrfcloud/web/tree/saga/content/models)
+> that describes the update routine.
+>
+> An update routine consists of one or more update jobs to execute to upgrade
+> the device from one (modem) firmware version to another.
 
 ## Background
 
@@ -50,6 +63,9 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
       "state": {
         "reported": {
           "device": {
+            "deviceInfo": {
+              "appVersion": "2.0.0"
+            },
             "serviceInfo": {
               "fota_v2": ["BOOT", "MODEM", "APP"]
             }
@@ -58,6 +74,9 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
         "metadata": {
           "reported": {
             "device": {
+              "deviceInfo": {
+                "appVersion": { "timestamp": 1716801888 }
+              },
               "serviceInfo": {
                 "fota_v2": [
                   {
@@ -105,14 +124,14 @@ Content-Type: application/json
 {
     "createdAt": "${tsISO}",
     "firmware": {
-        "bundleId": "APP*1e29dfa3*v2.0.0",
+        "bundleId": "APP*1e29dfa3*v2.0.1",
         "fileSize": 425860,
         "firmwareType": "APP",
         "host": "firmware.nrfcloud.com",
         "uris": [
-            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*1e29dfa3*v2.0.0/hello-nrfcloud-thingy91x-v2.0.0-fwupd.bin"
+            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*1e29dfa3*v2.0.1/hello-nrfcloud-thingy91x-v2.0.1-fwupd.bin"
         ],
-        "version": "v2.0.0"
+        "version": "v2.0.1"
     },
     "jobId": "${jobId}",
     "lastUpdatedAt": "${tsISO}",
@@ -151,12 +170,16 @@ Soon I should receive a message on the websocket that matches after 20 retries
 
 ## Schedule the FOTA job
 
+> This is the most simple example, it defines an upgrade path from version 2.0.0
+> (the key of the object) to 2.0.1 (the bundle ID).
+
 When I `POST`
-`${APIURL}/device/${fingerprint_deviceId}/fota?fingerprint=${fingerprint}` with
+`${APIURL}/device/${fingerprint_deviceId}/fota/app?fingerprint=${fingerprint}`
+with
 
 ```json
 {
-  "bundleId": "APP*1e29dfa3*v2.0.0"
+  "2.0.0": "APP*1e29dfa3*v2.0.1"
 }
 ```
 
@@ -171,7 +194,7 @@ Soon the nRF Cloud API should have been called with
 POST /v1/fota-jobs HTTP/1.1
 Content-Type: application/json
 
-{"bundleId":"APP*1e29dfa3*v2.0.0","autoApply":true,"deviceIdentifiers":["${fingerprint_deviceId}"]}
+{"bundleId":"APP*1e29dfa3*v2.0.1","autoApply":true,"deviceIdentifiers":["${fingerprint_deviceId}"]}
 ```
 
 ## Check the status
@@ -192,7 +215,7 @@ And `$.jobs[0]` of the last response should match
   "status": "IN_PROGRESS",
   "statusDetail": "Job auto applied",
   "lastUpdatedAt": "${tsISO}",
-  "version": "v2.0.0"
+  "version": "v2.0.1"
 }
 ```
 
@@ -210,14 +233,14 @@ Content-Type: application/json
 {
     "createdAt": "${tsISO}",
     "firmware": {
-        "bundleId": "APP*1e29dfa3*v2.0.0",
+        "bundleId": "APP*1e29dfa3*v2.0.1",
         "fileSize": 425860,
         "firmwareType": "APP",
         "host": "firmware.nrfcloud.com",
         "uris": [
-            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*1e29dfa3*v2.0.0/hello-nrfcloud-thingy91x-v2.0.0-fwupd.bin"
+            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*1e29dfa3*v2.0.1/hello-nrfcloud-thingy91x-v2.0.1-fwupd.bin"
         ],
-        "version": "v2.0.0"
+        "version": "v2.0.1"
     },
     "jobId": "${jobId}",
     "lastUpdatedAt": "${ts2ISO}",
@@ -251,7 +274,7 @@ And `$.jobs[0]` of the last response should match
   "status": "COMPLETED",
   "statusDetail": "All executions in terminal status",
   "lastUpdatedAt": "${ts2ISO}",
-  "version": "v2.0.0"
+  "version": "v2.0.1"
 }
 ```
 
@@ -267,6 +290,6 @@ Soon I should receive a message on the websocket that matches
   "status": "COMPLETED",
   "statusDetail": "All executions in terminal status",
   "lastUpdatedAt": "${ts2ISO}",
-  "version": "v2.0.0"
+  "version": "v2.0.1"
 }
 ```

@@ -82,6 +82,7 @@
     "globstar": "1.0.0",
     "husky": "9.1.6",
     "jsonata": "2.0.5",
+    "lint-staged": "15.2.9",
     "nock": "14.0.0-beta.14",
     "semver": "7.6.3",
     "tsmatchers": "5.0.2",

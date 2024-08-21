@@ -313,7 +313,7 @@ export class BackendStack extends Stack {
 			websocketEventBus,
 		})
 		api.addRoute(
-			'POST /device/{deviceId}/fota',
+			'POST /device/{deviceId}/fota/{target}',
 			deviceFOTA.scheduleFOTAJobFn.fn,
 		)
 		api.addRoute(

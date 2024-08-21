@@ -49,7 +49,7 @@ export class DeviceFOTA extends Construct {
 	) {
 		super(parent, 'DeviceFOTA')
 
-		const jobStatusTable = new DynamoDB.Table(this, 'jobStatusTable', {
+		const jobTable = new DynamoDB.Table(this, 'jobTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
 				name: 'jobId',
@@ -59,6 +59,21 @@ export class DeviceFOTA extends Construct {
 			stream: DynamoDB.StreamViewType.NEW_IMAGE,
 			timeToLiveAttribute: 'ttl',
 		})
+
+		const nrfCloudJobStatusTable = new DynamoDB.Table(
+			this,
+			'nrfCloudJobStatusTable',
+			{
+				billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+				partitionKey: {
+					name: 'jobId',
+					type: DynamoDB.AttributeType.STRING,
+				},
+				removalPolicy: RemovalPolicy.DESTROY,
+				stream: DynamoDB.StreamViewType.NEW_IMAGE,
+				timeToLiveAttribute: 'ttl',
+			},
+		)
 
 		const scheduleDuration = Duration.seconds(60)
 		const workQueue = new SQS.Queue(this, 'workQueue', {
@@ -76,8 +91,7 @@ export class DeviceFOTA extends Construct {
 				description: 'Schedule device FOTA jobs',
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-					JOB_STATUS_TABLE_NAME: jobStatusTable.tableName,
-					WORK_QUEUE_URL: workQueue.queueUrl,
+					JOB_STATUS_TABLE_NAME: jobTable.tableName,
 				},
 				layers,
 				initialPolicy: [
@@ -89,12 +103,11 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn.fn)
-		jobStatusTable.grantWriteData(this.scheduleFOTAJobFn.fn)
-		workQueue.grantSendMessages(this.scheduleFOTAJobFn.fn)
+		jobTable.grantWriteData(this.scheduleFOTAJobFn.fn)
 
-		// The scheduleFetches puts location history fetch tasks in this queue
+		// The scheduleFetches puts job status fetch tasks in this queue
 		const statusIndex = 'statusIndex'
-		jobStatusTable.addGlobalSecondaryIndex({
+		nrfCloudJobStatusTable.addGlobalSecondaryIndex({
 			indexName: statusIndex,
 			partitionKey: {
 				name: 'status',
@@ -115,7 +128,7 @@ export class DeviceFOTA extends Construct {
 				description: 'Schedule fetching of the FOTA job status',
 				environment: {
 					WORK_QUEUE_URL: workQueue.queueUrl,
-					JOB_STATUS_TABLE_NAME: jobStatusTable.tableName,
+					JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
 					JOB_STATUS_TABLE_STATUS_INDEX_NAME: statusIndex,
 					FRESH_INTERVAL_SECONDS:
 						this.node.getContext('isTest') === true ? '10' : '60',
@@ -124,7 +137,7 @@ export class DeviceFOTA extends Construct {
 				timeout: Duration.seconds(10),
 			},
 		)
-		jobStatusTable.grantReadWriteData(this.scheduleFetches.fn)
+		nrfCloudJobStatusTable.grantReadWriteData(this.scheduleFetches.fn)
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
 			schedule: Events.Schedule.rate(scheduleDuration),
@@ -143,13 +156,13 @@ export class DeviceFOTA extends Construct {
 				description:
 					'Fetch the FOTA job status and write to the dynamoDB table',
 				environment: {
-					JOB_STATUS_TABLE_NAME: jobStatusTable.tableName,
+					JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
 				},
 				layers,
 				timeout: Duration.minutes(1),
 			},
 		)
-		jobStatusTable.grantWriteData(this.updater.fn)
+		nrfCloudJobStatusTable.grantWriteData(this.updater.fn)
 		this.updater.fn.addEventSource(
 			new EventSources.SqsEventSource(workQueue, {
 				batchSize: 10,
@@ -174,7 +187,7 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		this.notifier.fn.addEventSource(
-			new EventSources.DynamoEventSource(jobStatusTable, {
+			new EventSources.DynamoEventSource(nrfCloudJobStatusTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
 				filters: [
 					Lambda.FilterCriteria.filter({
@@ -200,7 +213,7 @@ export class DeviceFOTA extends Construct {
 
 		// Return FOTA jobs per device
 		const deviceIdIndex = 'deviceIdIndex'
-		jobStatusTable.addGlobalSecondaryIndex({
+		nrfCloudJobStatusTable.addGlobalSecondaryIndex({
 			indexName: deviceIdIndex,
 			partitionKey: {
 				name: 'deviceId',
@@ -220,7 +233,7 @@ export class DeviceFOTA extends Construct {
 				description: 'Return FOTA jobs per device',
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-					JOB_STATUS_TABLE_NAME: jobStatusTable.tableName,
+					JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
 					JOB_STATUS_TABLE_DEVICE_INDEX_NAME: deviceIdIndex,
 					RESPONSE_CACHE_MAX_AGE:
 						this.node.getContext('isTest') === true ? '0' : '60',
@@ -229,7 +242,7 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.getFOTAJobStatusFn.fn)
-		jobStatusTable.grantReadData(this.getFOTAJobStatusFn.fn)
+		nrfCloudJobStatusTable.grantReadData(this.getFOTAJobStatusFn.fn)
 
 		// List FOTA bundles
 		this.listFOTABundles = new PackedLambdaFn(

@@ -1,14 +1,11 @@
-import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
-import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs'
 import { SSMClient } from '@aws-sdk/client-ssm'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
-import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import {
 	ProblemDetailError,
@@ -19,69 +16,63 @@ import {
 	validateInput,
 	type ValidInput,
 } from '@hello.nrfcloud.com/lambda-helpers/validateInput'
-import { createFOTAJob } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import {
 	LwM2MObjectID,
+	type DeviceInformation_14204,
 	type NRFCloudServiceInfo_14401,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
 	deviceId,
+	FOTAJob,
 	HttpStatusCode,
-	InternalError,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { Type } from '@sinclair/typebox'
+import { Type, type Static } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { isObject } from 'lodash-es'
 import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.js'
-import { loggingFetch } from '../../util/loggingFetch.js'
+import { ulid } from '../../util/ulid.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
-import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
-import type { Job } from './Job.js'
-import { toJobExecution } from './toJobExecution.js'
 
-const {
-	stackName,
-	version,
-	DevicesTableName,
-	jobStatusTableName,
-	workQueueUrl,
-} = fromEnv({
-	stackName: 'STACK_NAME',
+const { version, DevicesTableName, jobStatusTableName } = fromEnv({
 	version: 'VERSION',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
-	workQueueUrl: 'WORK_QUEUE_URL',
 })(process.env)
 
 const db = new DynamoDBClient({})
 const ssm = new SSMClient({})
 const iotData = new IoTDataPlaneClient({})
-const sqs = new SQSClient({})
-
-const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
 const getShadow = getLwM2MShadow(iotData)
 
 const { track } = metricsForComponent('deviceFOTA')
-const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
-const InputSchema = Type.Object({
-	deviceId,
-	bundleId: Type.RegExp(
-		/^(APP|MODEM|BOOT|SOFTDEVICE|BOOTLOADER|MDM_FULL)\*[0-9a-zA-Z]{8}\*.*$/,
-		{
-			title: 'Bundle ID',
-			description: 'The nRF Cloud firmware bundle ID',
-		},
+const InputSchema = Type.Intersect([
+	Type.Object({
+		deviceId,
+		fingerprint: Type.RegExp(fingerprintRegExp),
+		target: Type.Intersect([Type.Literal('app'), Type.Literal('modem')]),
+	}),
+	Type.Record(
+		Type.RegExp(/[0-9]+\.[0-9]+\.[0-9]+/, {
+			title: 'Version',
+			description: 'The version the bundle is targeting',
+		}),
+		Type.RegExp(
+			/^(APP|MODEM|BOOT|SOFTDEVICE|BOOTLOADER|MDM_FULL)\*[0-9a-zA-Z]{8}\*.*$/,
+			{
+				title: 'Bundle ID',
+				description: 'The nRF Cloud firmware bundle ID',
+			},
+		),
 	),
-	fingerprint: Type.RegExp(fingerprintRegExp),
-})
+])
 
 const h = async (
 	event: APIGatewayProxyEventV2,
@@ -94,6 +85,10 @@ const h = async (
 	}
 	const supportedFOTATypes =
 		maybeShadow.shadow.reported.find(isNRFCloudServiceInfo)?.Resources[0] ?? []
+	const appVersion =
+		maybeShadow.shadow.reported.find(isDeviceInfo)?.Resources[3]
+	const mfwVersion =
+		maybeShadow.shadow.reported.find(isDeviceInfo)?.Resources[2]
 
 	if (supportedFOTATypes.length === 0) {
 		throw new ProblemDetailError({
@@ -102,89 +97,56 @@ const h = async (
 		})
 	}
 
-	if (
-		supportedFOTATypes.find((type) =>
-			context.validInput.bundleId.startsWith(type),
-		) === undefined
-	) {
+	const { fingerprint, deviceId, target, ...upgradePath } = context.validInput
+	void fingerprint
+	void deviceId
+
+	if (target === 'app' && appVersion === undefined) {
 		throw new ProblemDetailError({
-			title: `This device does not support the bundle type!`,
-			detail: `Supported FOTA types are: ${supportedFOTATypes.join(', ')}`,
+			title: `This device has not yet reported an application firmware version!`,
 			status: HttpStatusCode.BAD_REQUEST,
 		})
 	}
 
-	const account = context.device.account
-	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
-	if (apiKey === undefined || apiEndpoint === undefined)
-		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
+	if (target === 'modem' && mfwVersion === undefined) {
+		throw new ProblemDetailError({
+			title: `This device has not yet reported a modem firmware version!`,
+			status: HttpStatusCode.BAD_REQUEST,
+		})
+	}
 
-	const createJob = createFOTAJob(
-		{
-			endpoint: apiEndpoint,
-			apiKey,
-		},
-		trackFetch,
+	const reportedVersion = (target === 'app' ? appVersion : mfwVersion) as string
+	console.debug(JSON.stringify({ reportedVersion }))
+
+	const jobId = ulid()
+	await db.send(
+		new PutItemCommand({
+			TableName: jobStatusTableName,
+			Item: marshall({
+				jobId,
+				target,
+				reportedVersion,
+				upgradePath,
+				ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
+			}),
+		}),
 	)
 
-	const res = await createJob({
+	const job: Static<typeof FOTAJob> = {
+		'@context': Context.fotaJob.toString(),
+		id: jobId,
 		deviceId: context.device.id,
-		bundleId: context.validInput.bundleId,
-	})
-
-	if ('result' in res) {
-		console.debug(`Accepted`)
-		track('success', MetricUnit.Count, 1)
-
-		const now = new Date().toISOString()
-		const job: Job = {
-			deviceId: context.device.id,
-			jobId: res.result.jobId,
-			status: 'QUEUED',
-			createdAt: now,
-			lastUpdatedAt: now,
-			nextUpdateAt: now,
-			account,
-			firmware: null,
-			statusDetail: null,
-			target: null,
-		}
-
-		await db.send(
-			new PutItemCommand({
-				TableName: jobStatusTableName,
-				Item: marshall({
-					...job,
-					ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
-				}),
-			}),
-		)
-
-		// Queue a job update right away
-		await sqs.send(
-			new SendMessageCommand({
-				QueueUrl: workQueueUrl,
-				MessageBody: JSON.stringify(job),
-			}),
-		)
-
-		return aResponse(HttpStatusCode.CREATED, {
-			...toJobExecution(job),
-			'@context': Context.fotaJobExecution,
-		})
-	} else {
-		console.error(`Scheduling FOTA update failed`, res.error)
-		track('error', MetricUnit.Count, 1)
-		throw new ProblemDetailError(
-			InternalError({
-				title: `Scheduling FOTA update failed`,
-				detail: res.error.message,
-			}),
-		)
+		timestamp: new Date().toISOString(),
+		status: 'NEW',
 	}
+
+	return aResponse(HttpStatusCode.CREATED, {
+		...job,
+		'@context': Context.fotaJob,
+	})
 }
 export const handler = middy()
-	.use(corsOPTIONS('PATCH'))
+	.use(corsOPTIONS('POST'))
 	.use(addVersionHeader(version))
 	.use(requestLogger())
 	.use(validateInput(InputSchema))
@@ -198,3 +160,8 @@ const isNRFCloudServiceInfo = (
 	isObject(instance) &&
 	'ObjectID' in instance &&
 	instance.ObjectID === LwM2MObjectID.NRFCloudServiceInfo_14401
+
+const isDeviceInfo = (instance: unknown): instance is DeviceInformation_14204 =>
+	isObject(instance) &&
+	'ObjectID' in instance &&
+	instance.ObjectID === LwM2MObjectID.DeviceInformation_14204
