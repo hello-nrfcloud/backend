@@ -35,6 +35,7 @@ export type BackendLambdas = {
 	updateFOTAJobStatus: PackedLambda
 	notifyFOTAJobStatus: PackedLambda
 	listFOTABundles: PackedLambda
+	processFOTAJob: PackedLambda
 	scheduleFetchMemfaultReboots: PackedLambda
 	fetchMemfaultReboots: PackedLambda
 	queryMemfaultReboots: PackedLambda
@@ -106,6 +107,10 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 	listFOTABundles: await packLambdaFromPath(
 		'listFOTABundles',
 		`lambda/fota/listFOTABundles.ts`,
+	),
+	processFOTAJob: await packLambdaFromPath(
+		'processFOTAJob',
+		`lambda/fota/processFOTAJob.ts`,
 	),
 	scheduleFetchMemfaultReboots: await packLambdaFromPath(
 		'scheduleFetchMemfaultReboots',

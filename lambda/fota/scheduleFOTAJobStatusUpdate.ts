@@ -18,8 +18,8 @@ const {
 	workQueueUrl,
 	freshIntervalSeconds,
 } = fromEnv({
-	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
-	jobStatusTableStatusIndexName: 'JOB_STATUS_TABLE_STATUS_INDEX_NAME',
+	jobStatusTableName: 'NRF_CLOUD_JOB_STATUS_TABLE_NAME',
+	jobStatusTableStatusIndexName: 'NRF_CLOUD_JOB_STATUS_TABLE_STATUS_INDEX_NAME',
 	version: 'VERSION',
 	workQueueUrl: 'WORK_QUEUE_URL',
 	freshIntervalSeconds: 'FRESH_INTERVAL_SECONDS',

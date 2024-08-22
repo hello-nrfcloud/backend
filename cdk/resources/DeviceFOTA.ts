@@ -25,6 +25,7 @@ export class DeviceFOTA extends Construct {
 	public readonly notifier: PackedLambdaFn
 	public readonly getFOTAJobStatusFn: PackedLambdaFn
 	public readonly listFOTABundles: PackedLambdaFn
+	public readonly processFOTAJob: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -41,6 +42,7 @@ export class DeviceFOTA extends Construct {
 				| 'updateFOTAJobStatus'
 				| 'notifyFOTAJobStatus'
 				| 'listFOTABundles'
+				| 'processFOTAJob'
 			>
 			layers: Lambda.ILayerVersion[]
 			deviceStorage: DeviceStorage
@@ -52,7 +54,7 @@ export class DeviceFOTA extends Construct {
 		const jobTable = new DynamoDB.Table(this, 'jobTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
-				name: 'jobId',
+				name: 'pk',
 				type: DynamoDB.AttributeType.STRING,
 			},
 			removalPolicy: RemovalPolicy.DESTROY,
@@ -91,9 +93,26 @@ export class DeviceFOTA extends Construct {
 				description: 'Schedule device FOTA jobs',
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-					JOB_STATUS_TABLE_NAME: jobTable.tableName,
+					JOB_TABLE_NAME: jobTable.tableName,
 				},
 				layers,
+			},
+		)
+		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn.fn)
+		jobTable.grantWriteData(this.scheduleFOTAJobFn.fn)
+
+		// Process FOTA jobs
+		this.processFOTAJob = new PackedLambdaFn(
+			this,
+			'processFOTAJob',
+			lambdaSources.processFOTAJob,
+			{
+				description: 'Process FOTA jobs according to their update path',
+				layers,
+				timeout: Duration.minutes(1),
+				environment: {
+					JOB_TABLE_NAME: jobTable.tableName,
+				},
 				initialPolicy: [
 					new IAM.PolicyStatement({
 						actions: ['iot:GetThingShadow'],
@@ -102,8 +121,12 @@ export class DeviceFOTA extends Construct {
 				],
 			},
 		)
-		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn.fn)
-		jobTable.grantWriteData(this.scheduleFOTAJobFn.fn)
+		jobTable.grantWriteData(this.processFOTAJob.fn)
+		this.processFOTAJob.fn.addEventSource(
+			new EventSources.DynamoEventSource(jobTable, {
+				startingPosition: Lambda.StartingPosition.LATEST,
+			}),
+		)
 
 		// The scheduleFetches puts job status fetch tasks in this queue
 		const statusIndex = 'statusIndex'
@@ -128,8 +151,8 @@ export class DeviceFOTA extends Construct {
 				description: 'Schedule fetching of the FOTA job status',
 				environment: {
 					WORK_QUEUE_URL: workQueue.queueUrl,
-					JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
-					JOB_STATUS_TABLE_STATUS_INDEX_NAME: statusIndex,
+					NRF_CLOUD_JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
+					NRF_CLOUD_JOB_STATUS_TABLE_STATUS_INDEX_NAME: statusIndex,
 					FRESH_INTERVAL_SECONDS:
 						this.node.getContext('isTest') === true ? '10' : '60',
 				},
@@ -156,7 +179,7 @@ export class DeviceFOTA extends Construct {
 				description:
 					'Fetch the FOTA job status and write to the dynamoDB table',
 				environment: {
-					JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
+					NRF_CLOUD_JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
 				},
 				layers,
 				timeout: Duration.minutes(1),
@@ -233,8 +256,8 @@ export class DeviceFOTA extends Construct {
 				description: 'Return FOTA jobs per device',
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-					JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
-					JOB_STATUS_TABLE_DEVICE_INDEX_NAME: deviceIdIndex,
+					NRF_CLOUD_JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
+					NRF_CLOUD_JOB_STATUS_TABLE_DEVICE_INDEX_NAME: deviceIdIndex,
 					RESPONSE_CACHE_MAX_AGE:
 						this.node.getContext('isTest') === true ? '0' : '60',
 				},

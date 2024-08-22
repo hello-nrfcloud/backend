@@ -19,7 +19,7 @@ import type { Job } from './Job.js'
 
 const { stackName, jobStatusTableName } = fromEnv({
 	stackName: 'STACK_NAME',
-	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
+	jobStatusTableName: 'NRF_CLOUD_JOB_STATUS_TABLE_NAME',
 })(process.env)
 
 const { track, metrics } = metricsForComponent('updateFOTAJob')

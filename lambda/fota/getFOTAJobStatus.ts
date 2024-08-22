@@ -37,8 +37,8 @@ const {
 	responseCacheMaxAge,
 } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',
-	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
-	jobStatusTableDeviceIndexName: 'JOB_STATUS_TABLE_DEVICE_INDEX_NAME',
+	jobStatusTableName: 'NRF_CLOUD_JOB_STATUS_TABLE_NAME',
+	jobStatusTableDeviceIndexName: 'NRF_CLOUD_JOB_STATUS_TABLE_DEVICE_INDEX_NAME',
 	version: 'VERSION',
 	responseCacheMaxAge: 'RESPONSE_CACHE_MAX_AGE',
 })(process.env)
