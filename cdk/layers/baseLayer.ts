@@ -21,6 +21,7 @@ const dependencies: Array<keyof (typeof pJson)['dependencies']> = [
 	'cbor-x',
 	'id128',
 	'p-retry',
+	'semver',
 ]
 
 export const pack = async (): Promise<PackedLayer> =>
