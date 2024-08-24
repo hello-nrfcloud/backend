@@ -1,139 +1,217 @@
-import { DynamoDBClient, type AttributeValue } from '@aws-sdk/client-dynamodb'
+import { MetricUnit } from '@aws-lambda-powertools/metrics'
+import {
+	DynamoDBClient,
+	PutItemCommand,
+	type AttributeValue,
+} from '@aws-sdk/client-dynamodb'
 import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs'
+import { SSMClient } from '@aws-sdk/client-ssm'
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
+import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
+import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
-	LwM2MObjectID,
-	type DeviceInformation_14204,
-	type NRFCloudServiceInfo_14401,
-} from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { FOTAJobStatus, FOTAJobTarget } from '@hello.nrfcloud.com/proto/hello'
+	createFOTAJob,
+	FOTAJobStatus as NrfCloudFOTAJobStatus,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { FOTAJobStatus } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import type { DynamoDBStreamEvent } from 'aws-lambda'
-import { isObject } from 'lodash-es'
-import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.js'
-import { update, type PersistedJob } from './jobRepo.js'
+import { loggingFetch } from '../../util/loggingFetch.js'
+import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
+import { getDeviceFirmwareDetails } from './getDeviceFirmwareDetails.js'
+import { getNextUpgrade } from './getNextUpgrade.js'
+import { getByPK, update, type PersistedJob } from './jobRepo.js'
+import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.js'
 
-const { TableName } = fromEnv({
-	TableName: 'JOB_TABLE_NAME',
-})(process.env)
+const { JobTableName, NrfCloudJobTableName, stackName, workQueueUrl } = fromEnv(
+	{
+		JobTableName: 'JOB_TABLE_NAME',
+		NrfCloudJobTableName: 'NRF_CLOUD_JOB_TABLE_NAME',
+		stackName: 'STACK_NAME',
+		workQueueUrl: 'WORK_QUEUE_URL',
+	},
+)(process.env)
 
 const db = new DynamoDBClient({})
 const iotData = new IoTDataPlaneClient({})
+const ssm = new SSMClient({})
+const sqs = new SQSClient({})
 
-const u = update(db, TableName)
+const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
-const getShadow = getLwM2MShadow(iotData)
+const { track } = metricsForComponent('deviceFOTA')
+const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
+
+const u = update(db, JobTableName)
+const g = getByPK(db, JobTableName)
+const d = getDeviceFirmwareDetails(iotData)
 
 /**
  * Invoked when an entry in the FOTA Job table is updated.
  */
 const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 	for (const record of event.Records) {
-		const update = record.dynamodb?.NewImage
-		if (update === undefined) {
+		const tableName = record.eventSourceARN?.split('/')[0] // arn:aws:dynamodb:eu-west-1:812555912232:table/hello-nrfcloud-backend-DeviceFOTAjobStatusTableC7E766BD-GC29G18CMQ8N/stream/2024-06-07T11:25:46.701
+		const isJobUpdate = tableName === JobTableName
+		const isNRFCloudUpdate = tableName === NrfCloudJobTableName
+
+		if (!isJobUpdate && !isNRFCloudUpdate) {
+			console.error(`Unknown table: ${tableName}`)
 			continue
 		}
-		const job = unmarshall(
-			update as {
+
+		const newImage = unmarshall(
+			record.dynamodb?.NewImage as {
 				[key: string]: AttributeValue
 			},
-		) as PersistedJob
-		console.log(JSON.stringify({ job }))
+		)
 
-		try {
-			switch (job.status) {
-				case FOTAJobStatus.NEW:
-				case FOTAJobStatus.IN_PROGRESS:
-					// Start the next job
-					const maybeShadow = await getShadow({
-						id: job.deviceId,
-					})
-					if ('error' in maybeShadow) {
-						console.error(maybeShadow.error)
-						throw new Error(
-							`Unknown device state: ${maybeShadow.error.message}!`,
-						)
-					}
+		if (isJobUpdate) {
+			return processJobUpdate(newImage as PersistedJob)
+		}
+		return processNRFCloudJobUpdate(newImage as NrfCloudFOTAJob)
+	}
+}
 
-					const supportedFOTATypes =
-						maybeShadow.shadow.reported.find(isNRFCloudServiceInfo)
-							?.Resources[0] ?? []
-					const appVersion =
-						maybeShadow.shadow.reported.find(isDeviceInfo)?.Resources[3]
-					const mfwVersion =
-						maybeShadow.shadow.reported.find(isDeviceInfo)?.Resources[2]
+const processNRFCloudJobUpdate = async (nRfCloudJob: NrfCloudFOTAJob) => {
+	try {
+		switch (nRfCloudJob.status) {
+			case NrfCloudFOTAJobStatus.FAILED:
+				break
+			case NrfCloudFOTAJobStatus.SUCCEEDED:
+				break
+			case NrfCloudFOTAJobStatus.TIMED_OUT:
+				break
+			case NrfCloudFOTAJobStatus.CANCELLED:
+				break
+			case NrfCloudFOTAJobStatus.REJECTED:
+				break
+			case NrfCloudFOTAJobStatus.COMPLETED:
+				break
+			default:
+				throw new Error(`Unknown job status: ${nRfCloudJob.status}`)
+		}
+	} catch (error) {
+		console.error(error)
+		const parent = await g(nRfCloudJob.parentJobId)
+		if (parent === null) {
+			console.error(`Parent job not found: ${nRfCloudJob.parentJobId}`)
+			return
+		}
+		await u(
+			{
+				status: FOTAJobStatus.FAILED,
+				statusDetail: (error as Error).message,
+			},
+			parent,
+		)
+	}
+}
 
-					if (supportedFOTATypes.length === 0) {
-						throw new Error(`This device does not support FOTA!`)
-					}
+const processJobUpdate = async (job: PersistedJob) => {
+	try {
+		const maybeFirmwareDetails = await d(job.deviceId)
+		if ('error' in maybeFirmwareDetails) throw maybeFirmwareDetails.error
+		const maybeBundleId = getNextUpgrade(
+			job.upgradePath,
+			maybeFirmwareDetails.details,
+		)
+		if ('error' in maybeBundleId) {
+			throw maybeBundleId.error
+		}
 
-					if (
-						job.target === FOTAJobTarget.application &&
-						appVersion === undefined
-					) {
-						throw new Error(
-							`This device has not yet reported an application firmware version!`,
-						)
-					}
-
-					if (job.target === FOTAJobTarget.modem && mfwVersion === undefined) {
-						throw new Error(
-							`This device has not yet reported a modem firmware version!`,
-						)
-					}
-
-					const reportedVersion = (
-						job.target === FOTAJobTarget.application ? appVersion : mfwVersion
-					) as string
-					console.debug(JSON.stringify({ reportedVersion }))
-
-					const bundleId = job.upgradePath[reportedVersion]
-					if (bundleId === undefined) {
-						await u(
-							{
-								status: FOTAJobStatus.SUCCEEDED,
-								statusDetail: `No upgrade path defined for version ${reportedVersion}.`,
-							},
-							job,
-						)
-						return
-					}
-
-					await u(
-						{
-							status: FOTAJobStatus.IN_PROGRESS,
-							statusDetail: `Starting job for version ${reportedVersion} with bundle ${bundleId}: ${jobId}.`,
-						},
-						job,
-					)
-					break
-				default:
-					throw new Error(`Unknown job status: ${job.status}!`)
-			}
-		} catch (error) {
+		const { bundleId, reportedVersion } = maybeBundleId.upgrade
+		if (bundleId === null) {
 			await u(
 				{
-					status: FOTAJobStatus.FAILED,
-					statusDetail: 'Unknown job status',
+					status: FOTAJobStatus.SUCCEEDED,
+					statusDetail: `No further update defined.`,
+					reportedVersion,
 				},
 				job,
 			)
+			return
 		}
+
+		const { apiKey, apiEndpoint } =
+			(await allNRFCloudAPIConfigs)[job.account] ?? {}
+		if (apiKey === undefined || apiEndpoint === undefined)
+			throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
+
+		const createJob = createFOTAJob(
+			{
+				endpoint: apiEndpoint,
+				apiKey,
+			},
+			trackFetch,
+		)
+
+		const res = await createJob({
+			deviceId: job.deviceId,
+			bundleId,
+		})
+
+		if (!('result' in res)) {
+			throw new Error(`Failed to create job: ${res.error.message}.`)
+		}
+
+		console.debug(`Accepted`)
+		track('success', MetricUnit.Count, 1)
+
+		const now = new Date().toISOString()
+		const nRFCloudJob: NrfCloudFOTAJob = {
+			parentJobId: job.id,
+			deviceId: job.deviceId,
+			jobId: res.result.jobId,
+			status: 'QUEUED',
+			createdAt: now,
+			lastUpdatedAt: now,
+			nextUpdateAt: now,
+			account: job.account,
+			firmware: null,
+			statusDetail: null,
+			target: null,
+		}
+
+		await db.send(
+			new PutItemCommand({
+				TableName: NrfCloudJobTableName,
+				Item: marshall({
+					...nRFCloudJob,
+					ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
+				}),
+			}),
+		)
+
+		// Queue a job update right away
+		await sqs.send(
+			new SendMessageCommand({
+				QueueUrl: workQueueUrl,
+				MessageBody: JSON.stringify(job),
+			}),
+		)
+
+		await u(
+			{
+				status: FOTAJobStatus.IN_PROGRESS,
+				statusDetail: `Starting job for version ${reportedVersion} with bundle ${bundleId}: ${res.result.jobId}.`,
+				reportedVersion,
+			},
+			job,
+		)
+	} catch (error) {
+		console.error(error)
+		await u(
+			{
+				status: FOTAJobStatus.FAILED,
+				statusDetail: (error as Error).message,
+			},
+			job,
+		)
 	}
 }
 
 export const handler = middy().use(requestLogger()).handler(h)
-
-const isNRFCloudServiceInfo = (
-	instance: unknown,
-): instance is NRFCloudServiceInfo_14401 =>
-	isObject(instance) &&
-	'ObjectID' in instance &&
-	instance.ObjectID === LwM2MObjectID.NRFCloudServiceInfo_14401
-
-const isDeviceInfo = (instance: unknown): instance is DeviceInformation_14204 =>
-	isObject(instance) &&
-	'ObjectID' in instance &&
-	instance.ObjectID === LwM2MObjectID.DeviceInformation_14204

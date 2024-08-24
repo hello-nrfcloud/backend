@@ -7,8 +7,8 @@ import { Context } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import type { DynamoDBStreamEvent } from 'aws-lambda'
 import type { WebsocketPayload } from '../publishToWebsocketClients.js'
-import type { Job } from './Job.js'
-import { toJobExecution } from './toJobExecution.js'
+import type { PersistedJob } from './jobRepo.js'
+import { toJob } from './toJobExecution.js'
 
 const { EventBusName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',
@@ -24,9 +24,11 @@ const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 		if (newImage === undefined) {
 			continue
 		}
-		const job = unmarshall(newImage as Record<string, AttributeValue>) as Job
+		const job = unmarshall(
+			newImage as Record<string, AttributeValue>,
+		) as PersistedJob
 
-		const message = toJobExecution(job)
+		const message = toJob(job)
 
 		console.debug('websocket message', JSON.stringify({ payload: message }))
 

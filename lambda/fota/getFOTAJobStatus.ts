@@ -14,20 +14,21 @@ import {
 	type ValidInput,
 } from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
+import type { FOTAJobs } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Context,
 	HttpStatusCode,
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { Type } from '@sinclair/typebox'
+import { Type, type Static } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
-import type { Job } from './Job.js'
-import { toJobExecution } from './toJobExecution.js'
+import type { PersistedJob } from './jobRepo.js'
+import { toJob } from './toJobExecution.js'
 
 const {
 	DevicesTableName,
@@ -75,7 +76,7 @@ const h = async (
 
 	console.debug(JSON.stringify({ deviceJobs }))
 
-	const jobs: Array<Job> = []
+	const jobs: Array<PersistedJob> = []
 
 	if ((deviceJobs.Items ?? []).length > 0) {
 		const jobDetails = await db.send(
@@ -89,26 +90,31 @@ const h = async (
 		)
 		jobs.push(
 			...(jobDetails.Responses?.[jobStatusTableName]?.map(
-				(item) => unmarshall(item) as Job,
+				(item) => unmarshall(item) as PersistedJob,
 			) ?? []),
 		)
 		console.debug(JSON.stringify({ jobs }))
 	}
 
+	const res: Static<typeof FOTAJobs> = {
+		'@context': Context.fotaJobs.toString(),
+		deviceId: context.device.id,
+		jobs: jobs
+			.map((job) => toJob(job))
+			.filter((job) => {
+				if (context.device.hideDataBefore === undefined) return true
+				return (
+					new Date(job.timestamp).getTime() >=
+					context.device.hideDataBefore.getTime()
+				)
+			}),
+	}
+
 	return aResponse(
 		HttpStatusCode.OK,
 		{
-			'@context': Context.fotaJobExecutions,
-			deviceId: context.device.id,
-			jobs: jobs
-				.map((job) => toJobExecution(job))
-				.filter((job) => {
-					if (context.device.hideDataBefore === undefined) return true
-					return (
-						new Date(job.lastUpdatedAt).getTime() >=
-						context.device.hideDataBefore.getTime()
-					)
-				}),
+			...res,
+			'@context': Context.fotaJobs,
 		},
 		parseInt(responseCacheMaxAge, 10),
 	)

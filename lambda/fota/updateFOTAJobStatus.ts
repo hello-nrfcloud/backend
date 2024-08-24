@@ -15,7 +15,7 @@ import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.
 import middy from '@middy/core'
 import type { SQSEvent } from 'aws-lambda'
 import { loggingFetch } from '../../util/loggingFetch.js'
-import type { Job } from './Job.js'
+import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.js'
 
 const { stackName, jobStatusTableName } = fromEnv({
 	stackName: 'STACK_NAME',
@@ -51,7 +51,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 			account,
 			lastUpdatedAt: currentLastUpdatedAt,
 			createdAt,
-		} = JSON.parse(record.body) as Job
+		} = JSON.parse(record.body) as NrfCloudFOTAJob
 
 		if (jobId === undefined || account === undefined) {
 			log.error('Missing required attributes')

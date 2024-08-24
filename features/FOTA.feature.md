@@ -179,7 +179,9 @@ with
 
 ```json
 {
-  "2.0.0": "APP*1e29dfa3*v2.0.1"
+  "upgradePath": {
+    "2.0.0": "APP*1e29dfa3*v2.0.1"
+  }
 }
 ```
 

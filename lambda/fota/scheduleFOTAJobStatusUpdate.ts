@@ -10,7 +10,7 @@ import { fromEnv } from '@bifravst/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import middy from '@middy/core'
-import type { Job } from './Job.js'
+import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.js'
 
 const {
 	jobStatusTableName,
@@ -64,7 +64,7 @@ const h = async (): Promise<void> => {
 	).flat()
 
 	const jobs = pendingJobs.map((item) => unmarshall(item)) as Array<
-		Pick<Job, 'jobId' | 'nextUpdateAt' | 'createdAt'>
+		Pick<NrfCloudFOTAJob, 'jobId' | 'nextUpdateAt' | 'createdAt'>
 	>
 
 	console.log(JSON.stringify(jobs))

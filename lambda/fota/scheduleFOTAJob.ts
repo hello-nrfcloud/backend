@@ -1,4 +1,8 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import {
+	ConditionalCheckFailedException,
+	DynamoDBClient,
+} from '@aws-sdk/client-dynamodb'
+import { IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane'
 import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
@@ -12,17 +16,11 @@ import {
 	validateInput,
 	type ValidInput,
 } from '@hello.nrfcloud.com/lambda-helpers/validateInput'
-import { createFOTAJob } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
-import {
-	LwM2MObjectID,
-	type DeviceInformation_14204,
-	type NRFCloudServiceInfo_14401,
-} from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
+import type { FOTAJob } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Context,
 	deviceId,
-	FOTAJob,
 	FOTAJobStatus,
 	HttpStatusCode,
 } from '@hello.nrfcloud.com/proto/hello'
@@ -32,26 +30,26 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { isObject } from 'lodash-es'
 import { ulid } from '../../util/ulid.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
-import { create, type PersistedJob } from './jobRepo.js'
+import { getDeviceFirmwareDetails } from './getDeviceFirmwareDetails.js'
+import { getNextUpgrade } from './getNextUpgrade.js'
+import { create, pkFromTarget, type PersistedJob } from './jobRepo.js'
 
 const { version, DevicesTableName, jobTableName } = fromEnv({
 	version: 'VERSION',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
 	jobTableName: 'JOB_TABLE_NAME',
+	stackName: 'STACK_NAME',
 })(process.env)
 
 const db = new DynamoDBClient({})
+const iotData = new IoTDataPlaneClient({})
 
-const InputSchema = Type.Intersect([
-	Type.Object({
-		deviceId,
-		fingerprint: Type.RegExp(fingerprintRegExp),
-		target: Type.Intersect([Type.Literal('app'), Type.Literal('modem')]),
-	}),
-	Type.Record(
+const InputSchema = Type.Object({
+	deviceId,
+	fingerprint: Type.RegExp(fingerprintRegExp),
+	upgradePath: Type.Record(
 		Type.RegExp(/[0-9]+\.[0-9]+\.[0-9]+/, {
 			title: 'Version',
 			description: 'The version the bundle is targeting',
@@ -64,62 +62,72 @@ const InputSchema = Type.Intersect([
 			},
 		),
 	),
-])
+})
 
 const c = create(db, jobTableName)
+const checkDevice = getDeviceFirmwareDetails(iotData)
 
 const h = async (
 	event: APIGatewayProxyEventV2,
 	context: ValidInput<typeof InputSchema> & WithDevice,
 ): Promise<APIGatewayProxyResultV2> => {
-
-	const { fingerprint, deviceId, target, ...upgradePath } = context.validInput
+	const { fingerprint, deviceId, upgradePath } = context.validInput
 	void fingerprint
-	void deviceId
 
+	const maybeFirmwareDetails = await checkDevice(deviceId)
+	if ('error' in maybeFirmwareDetails) {
+		throw new ProblemDetailError({
+			title: 'Device is not eligible for FOTA',
+			status: HttpStatusCode.BAD_REQUEST,
+			detail: maybeFirmwareDetails.error.message,
+		})
+	}
 
+	const maybeUpgrade = getNextUpgrade(upgradePath, maybeFirmwareDetails.details)
+	if ('error' in maybeUpgrade) {
+		throw new ProblemDetailError({
+			title: 'Invalid upgrade path defined',
+			status: HttpStatusCode.BAD_REQUEST,
+			detail: maybeUpgrade.error.message,
+		})
+	}
 
-	
-
-	const account = context.device.account
-	const { apiKey, apiEndpoint } = (await allNRFCloudAPIConfigs)[account] ?? {}
-	if (apiKey === undefined || apiEndpoint === undefined)
-		throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
-
-	const createJob = createFOTAJob(
-		{
-			endpoint: apiEndpoint,
-			apiKey,
-		},
-		trackFetch,
-	)
-
-	const res = await createJob({
-		deviceId: context.device.id,
-		bundleId,
-	})
+	const { reportedVersion, target } = maybeUpgrade.upgrade
 
 	const jobId = ulid()
 	const persistedJob: PersistedJob = {
 		id: jobId,
+		pk: pkFromTarget({ deviceId, target }),
 		deviceId: context.device.id,
 		timestamp: new Date().toISOString(),
 		status: FOTAJobStatus.NEW,
-		target,
 		upgradePath,
 		statusDetail: 'The job has been created',
+		account: context.device.account,
+		reportedVersion,
+		target,
 	}
 
 	const job: Static<typeof FOTAJob> = {
 		'@context': Context.fotaJob.toString(),
 		...persistedJob,
 	}
-	await c(persistedJob)
+	try {
+		await c(persistedJob)
 
-	return aResponse(HttpStatusCode.CREATED, {
-		...job,
-		'@context': Context.fotaJob,
-	})
+		return aResponse(HttpStatusCode.CREATED, {
+			...job,
+			'@context': Context.fotaJob,
+		})
+	} catch (error) {
+		if (error instanceof ConditionalCheckFailedException) {
+			throw new ProblemDetailError({
+				title: 'A FOTA job for this device already exists',
+				status: HttpStatusCode.CONFLICT,
+			})
+		}
+		throw error
+	}
 }
 export const handler = middy()
 	.use(corsOPTIONS('POST'))
@@ -129,15 +137,3 @@ export const handler = middy()
 	.use(withDevice({ db, DevicesTableName }))
 	.use(problemResponse())
 	.handler(h)
-
-const isNRFCloudServiceInfo = (
-	instance: unknown,
-): instance is NRFCloudServiceInfo_14401 =>
-	isObject(instance) &&
-	'ObjectID' in instance &&
-	instance.ObjectID === LwM2MObjectID.NRFCloudServiceInfo_14401
-
-const isDeviceInfo = (instance: unknown): instance is DeviceInformation_14204 =>
-	isObject(instance) &&
-	'ObjectID' in instance &&
-	instance.ObjectID === LwM2MObjectID.DeviceInformation_14204

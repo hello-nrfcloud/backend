@@ -1,4 +1,6 @@
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import { FOTAJobStatus as NrfCloudFOTAJobStatus } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { FOTAJobStatus } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
 	aws_dynamodb as DynamoDB,
@@ -112,6 +114,7 @@ export class DeviceFOTA extends Construct {
 				timeout: Duration.minutes(1),
 				environment: {
 					JOB_TABLE_NAME: jobTable.tableName,
+					NRF_CLOUD_JOB_TABLE_NAME: nrfCloudJobStatusTable.tableName,
 				},
 				initialPolicy: [
 					new IAM.PolicyStatement({
@@ -125,6 +128,40 @@ export class DeviceFOTA extends Construct {
 		this.processFOTAJob.fn.addEventSource(
 			new EventSources.DynamoEventSource(jobTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
+				filters: [
+					Lambda.FilterCriteria.filter({
+						dynamodb: {
+							NewImage: {
+								status: {
+									S: [FOTAJobStatus.NEW],
+								},
+							},
+						},
+					}),
+				],
+			}),
+		)
+		this.processFOTAJob.fn.addEventSource(
+			new EventSources.DynamoEventSource(nrfCloudJobStatusTable, {
+				startingPosition: Lambda.StartingPosition.LATEST,
+				filters: [
+					Lambda.FilterCriteria.filter({
+						dynamodb: {
+							NewImage: {
+								status: {
+									S: [
+										NrfCloudFOTAJobStatus.FAILED,
+										NrfCloudFOTAJobStatus.SUCCEEDED,
+										NrfCloudFOTAJobStatus.TIMED_OUT,
+										NrfCloudFOTAJobStatus.CANCELLED,
+										NrfCloudFOTAJobStatus.REJECTED,
+										NrfCloudFOTAJobStatus.COMPLETED,
+									],
+								},
+							},
+						},
+					}),
+				],
 			}),
 		)
 
@@ -210,7 +247,7 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		this.notifier.fn.addEventSource(
-			new EventSources.DynamoEventSource(nrfCloudJobStatusTable, {
+			new EventSources.DynamoEventSource(jobTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
 				filters: [
 					Lambda.FilterCriteria.filter({
@@ -218,12 +255,9 @@ export class DeviceFOTA extends Construct {
 							NewImage: {
 								status: {
 									S: [
-										'FAILED',
-										'SUCCEEDED',
-										'TIMED_OUT',
-										'CANCELLED',
-										'REJECTED',
-										'COMPLETED',
+										FOTAJobStatus.FAILED,
+										FOTAJobStatus.SUCCEEDED,
+										FOTAJobStatus.IN_PROGRESS,
 									],
 								},
 							},
@@ -253,7 +287,7 @@ export class DeviceFOTA extends Construct {
 			'getFOTAJobStatus',
 			lambdaSources.getFOTAJobStatus,
 			{
-				description: 'Return FOTA jobs per device',
+				description: 'Return FOTA jobs per denrfCloudJobStatusTablevice',
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 					NRF_CLOUD_JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
