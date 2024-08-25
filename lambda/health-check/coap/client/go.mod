@@ -6,7 +6,6 @@ require (
 	github.com/aws/aws-lambda-go v1.47.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/pion/dtls/v3 v3.0.2
-	github.com/pion/dtls/v3 v3.0.2
 	github.com/plgd-dev/go-coap/v3 v3.3.4
 )
 
