@@ -54,7 +54,7 @@ const d = getDeviceFirmwareDetails(iotData)
  */
 const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 	for (const record of event.Records) {
-		const tableName = record.eventSourceARN?.split('/')[0] // arn:aws:dynamodb:eu-west-1:812555912232:table/hello-nrfcloud-backend-DeviceFOTAjobStatusTableC7E766BD-GC29G18CMQ8N/stream/2024-06-07T11:25:46.701
+		const tableName = record.eventSourceARN?.split('/')[1] // arn:aws:dynamodb:eu-west-1:812555912232:table/hello-nrfcloud-backend-DeviceFOTAjobStatusTableC7E766BD-GC29G18CMQ8N/stream/2024-06-07T11:25:46.701
 		const isJobUpdate = tableName === JobTableName
 		const isNRFCloudUpdate = tableName === NrfCloudJobTableName
 
@@ -77,43 +77,55 @@ const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 }
 
 const processNRFCloudJobUpdate = async (nRfCloudJob: NrfCloudFOTAJob) => {
-	try {
-		switch (nRfCloudJob.status) {
-			case NrfCloudFOTAJobStatus.FAILED:
-				break
-			case NrfCloudFOTAJobStatus.SUCCEEDED:
-				break
-			case NrfCloudFOTAJobStatus.TIMED_OUT:
-				break
-			case NrfCloudFOTAJobStatus.CANCELLED:
-				break
-			case NrfCloudFOTAJobStatus.REJECTED:
-				break
-			case NrfCloudFOTAJobStatus.COMPLETED:
-				break
-			default:
-				throw new Error(`Unknown job status: ${nRfCloudJob.status}`)
-		}
-	} catch (error) {
-		console.error(error)
-		const parent = await g(nRfCloudJob.parentJobId)
-		if (parent === null) {
-			console.error(`Parent job not found: ${nRfCloudJob.parentJobId}`)
+	const parent = await g(nRfCloudJob.parentJobId)
+	if (parent === null) {
+		console.error(`Parent job not found: ${nRfCloudJob.parentJobId}`)
+		return
+	}
+
+	switch (nRfCloudJob.status) {
+		case NrfCloudFOTAJobStatus.SUCCEEDED:
+		case NrfCloudFOTAJobStatus.COMPLETED:
+			await u(
+				{
+					status: FOTAJobStatus.IN_PROGRESS,
+					statusDetail: `Upgrade job succeeded: ${nRfCloudJob.statusDetail} (${nRfCloudJob.jobId})`,
+				},
+				parent,
+			)
 			return
-		}
-		await u(
-			{
-				status: FOTAJobStatus.FAILED,
-				statusDetail: (error as Error).message,
-			},
-			parent,
-		)
+		case NrfCloudFOTAJobStatus.FAILED:
+		case NrfCloudFOTAJobStatus.TIMED_OUT:
+		case NrfCloudFOTAJobStatus.CANCELLED:
+		case NrfCloudFOTAJobStatus.REJECTED:
+			await u(
+				{
+					status: FOTAJobStatus.FAILED,
+					statusDetail: `Job failed: ${nRfCloudJob.statusDetail} (${nRfCloudJob.jobId})`,
+				},
+				parent,
+			)
+			return
+		default:
+			await u(
+				{
+					status: FOTAJobStatus.FAILED,
+					statusDetail: `Job failed: Unknown job status: ${nRfCloudJob.status} (${nRfCloudJob.jobId})`,
+				},
+				parent,
+			)
+			return
 	}
 }
 
 const processJobUpdate = async (job: PersistedJob) => {
 	try {
-		const maybeFirmwareDetails = await d(job.deviceId)
+		const maybeFirmwareDetails = await d(job.deviceId, (...args) =>
+			console.debug(
+				`[FOTA:${job.deviceId}]`,
+				...args.map((a) => JSON.stringify(a)),
+			),
+		)
 		if ('error' in maybeFirmwareDetails) throw maybeFirmwareDetails.error
 		const maybeBundleId = getNextUpgrade(
 			job.upgradePath,
@@ -124,7 +136,7 @@ const processJobUpdate = async (job: PersistedJob) => {
 		}
 
 		const { bundleId, reportedVersion } = maybeBundleId.upgrade
-		if (bundleId === null) {
+		if (bundleId === null || job.usedVersions.has(reportedVersion)) {
 			await u(
 				{
 					status: FOTAJobStatus.SUCCEEDED,
@@ -197,8 +209,9 @@ const processJobUpdate = async (job: PersistedJob) => {
 		await u(
 			{
 				status: FOTAJobStatus.IN_PROGRESS,
-				statusDetail: `Starting job for version ${reportedVersion} with bundle ${bundleId}: ${res.result.jobId}.`,
+				statusDetail: `Started job for version ${reportedVersion} with bundle ${bundleId}.`,
 				reportedVersion,
+				usedVersions: job.usedVersions.add(reportedVersion),
 			},
 			job,
 		)

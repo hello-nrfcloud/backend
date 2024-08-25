@@ -8,6 +8,7 @@ exampleContext:
   ts2: 1694503339523
   ts2ISO: 2023-09-12T00:00:00.000Z
   jobId: bc631093-7f7c-4c1b-aa63-a68c759bcd5c
+run: only
 ---
 
 # Device FOTA
@@ -32,6 +33,9 @@ exampleContext:
 >
 > An update routine consists of one or more update jobs to execute to upgrade
 > the device from one (modem) firmware version to another.
+>
+> TODO: multi-path FOTA needs to wait for the device to report the updated
+> version before progressing to the next update
 
 ## Background
 
@@ -64,7 +68,11 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
         "reported": {
           "device": {
             "deviceInfo": {
-              "appVersion": "2.0.0"
+              "appVersion": "2.0.0",
+              "modemFirmware": "mfw_nrf91x1_2.0.1",
+              "imei": "355025930003908",
+              "board": "thingy91x",
+              "hwVer": "nRF9151 LACA ADA"
             },
             "serviceInfo": {
               "fota_v2": ["BOOT", "MODEM", "APP"]
@@ -75,7 +83,11 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
           "reported": {
             "device": {
               "deviceInfo": {
-                "appVersion": { "timestamp": 1716801888 }
+                "appVersion": { "timestamp": 1716801888 },
+                "modemFirmware": { "timestamp": 1716801888 },
+                "imei": { "timestamp": 1716801888 },
+                "board": { "timestamp": 1716801888 },
+                "hwVer": { "timestamp": 1716801888 }
               },
               "serviceInfo": {
                 "fota_v2": [
@@ -187,8 +199,8 @@ with
 
 Then the status code of the last response should be `201`
 
-And I should receive a
-`https://github.com/hello-nrfcloud/proto/fota/job-execution` response
+And I should receive a `https://github.com/hello-nrfcloud/proto/fota/job`
+response
 
 Soon the nRF Cloud API should have been called with
 
@@ -205,19 +217,17 @@ When I `GET`
 `${APIURL}/device/${fingerprint_deviceId}/fota/jobs?fingerprint=${fingerprint}`
 retrying 10 times
 
-Soon I should receive a
-`https://github.com/hello-nrfcloud/proto/fota/job-executions` response
+Soon I should receive a `https://github.com/hello-nrfcloud/proto/fota/jobs`
+response
 
 And `$.jobs[0]` of the last response should match
 
 ```json
 {
-  "id": "${jobId}",
   "deviceId": "${fingerprint_deviceId}",
   "status": "IN_PROGRESS",
-  "statusDetail": "Job auto applied",
-  "lastUpdatedAt": "${tsISO}",
-  "version": "v2.0.1"
+  "statusDetail": "Started job for version 2.0.0 with bundle APP*1e29dfa3*v2.0.1.",
+  "reportedVersion": "2.0.0"
 }
 ```
 
@@ -258,25 +268,89 @@ Content-Type: application/json
 }
 ```
 
+<!-- Devices reports updated version. -->
+
+And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
+
+```json
+{
+  "items": [
+    {
+      "id": "${fingerprint_deviceId}",
+      "$meta": {
+        "createdAt": "${$fromMillis($millis())}",
+        "updatedAt": "${$fromMillis($millis())}"
+      },
+      "state": {
+        "reported": {
+          "device": {
+            "deviceInfo": {
+              "appVersion": "2.0.1",
+              "modemFirmware": "mfw_nrf91x1_2.0.1",
+              "imei": "355025930003908",
+              "board": "thingy91x",
+              "hwVer": "nRF9151 LACA ADA"
+            },
+            "serviceInfo": {
+              "fota_v2": ["BOOT", "MODEM", "APP"]
+            }
+          }
+        },
+        "metadata": {
+          "reported": {
+            "device": {
+              "deviceInfo": {
+                "appVersion": {
+                  "timestamp": "$number{$floor($millis()/1000)}"
+                },
+                "modemFirmware": {
+                  "timestamp": "$number{$floor($millis()/1000)}"
+                },
+                "imei": { "timestamp": "$number{$floor($millis()/1000)}" },
+                "board": { "timestamp": "$number{$floor($millis()/1000)}" },
+                "hwVer": { "timestamp": "$number{$floor($millis()/1000)}" }
+              },
+              "serviceInfo": {
+                "fota_v2": [
+                  {
+                    "timestamp": "$number{$floor($millis()/1000)}"
+                  },
+                  {
+                    "timestamp": "$number{$floor($millis()/1000)}"
+                  },
+                  {
+                    "timestamp": "$number{$floor($millis()/1000)}"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "version": 8836
+      }
+    }
+  ],
+  "total": 1
+}
+```
+
 ## Check the status
 
 When I `GET`
 `${APIURL}/device/${fingerprint_deviceId}/fota/jobs?fingerprint=${fingerprint}`
 retrying 10 times
 
-Soon I should receive a
-`https://github.com/hello-nrfcloud/proto/fota/job-executions` response
+Soon I should receive a `https://github.com/hello-nrfcloud/proto/fota/jobs`
+response
 
 And `$.jobs[0]` of the last response should match
 
 ```json
 {
-  "id": "${jobId}",
   "deviceId": "${fingerprint_deviceId}",
-  "status": "COMPLETED",
-  "statusDetail": "All executions in terminal status",
-  "lastUpdatedAt": "${ts2ISO}",
-  "version": "v2.0.1"
+  "status": "SUCCEEDED",
+  "statusDetail": "No further update defined.",
+  "reportedVersion": "2.0.0"
 }
 ```
 
@@ -286,12 +360,10 @@ Soon I should receive a message on the websocket that matches
 
 ```json
 {
-  "@context": "https://github.com/hello-nrfcloud/proto/fota/job-execution",
-  "id": "${jobId}",
+  "@context": "https://github.com/hello-nrfcloud/proto/fota/job",
   "deviceId": "${fingerprint_deviceId}",
-  "status": "COMPLETED",
-  "statusDetail": "All executions in terminal status",
-  "lastUpdatedAt": "${ts2ISO}",
-  "version": "v2.0.1"
+  "status": "SUCCEEDED",
+  "statusDetail": "No further update defined.",
+  "reportedVersion": "2.0.0"
 }
 ```

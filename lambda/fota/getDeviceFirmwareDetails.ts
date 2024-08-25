@@ -9,22 +9,37 @@ import { isObject } from 'lodash-es'
 import semver from 'semver'
 import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.js'
 
+type VersionInfo =
+	| {
+			appVersion: string
+	  }
+	| {
+			mfwVersion: string
+	  }
+	| {
+			appVersion: string
+			mfwVersion: string
+	  }
+
 export type DeviceFirmwareDetails = {
 	appVersion: string | undefined
 	mfwVersion: string | undefined
 	supportedFOTATypes: Array<FOTAJobTarget>
-}
+} & VersionInfo
 
 export const getDeviceFirmwareDetails = (
 	iotData: IoTDataPlaneClient,
-): ((deviceId: string) => Promise<
+): ((
+	deviceId: string,
+	debug?: (...args: Array<unknown>) => void,
+) => Promise<
 	| { error: Error }
 	| {
 			details: DeviceFirmwareDetails
 	  }
 >) => {
 	const getShadow = getLwM2MShadow(iotData)
-	return async (deviceId: string) => {
+	return async (deviceId: string, debug) => {
 		const maybeShadow = await getShadow({
 			id: deviceId,
 		})
@@ -33,6 +48,8 @@ export const getDeviceFirmwareDetails = (
 				error: new Error(`Unknown device state: ${maybeShadow.error.message}!`),
 			}
 		}
+
+		debug?.({ shadow: maybeShadow.shadow.reported })
 
 		const supportedFOTATypes = (
 			maybeShadow.shadow.reported.find(isNRFCloudServiceInfo)?.Resources[0] ??
@@ -46,14 +63,12 @@ export const getDeviceFirmwareDetails = (
 					case 'MDM_FULL':
 						return FOTAJobTarget.modem
 					default:
-						return
+						return null
 				}
 			})
 			.filter((s): s is FOTAJobTarget => s !== null)
-		const appVersion =
-			maybeShadow.shadow.reported.find(isDeviceInfo)?.Resources[3]
-		const mfwVersion =
-			maybeShadow.shadow.reported.find(isDeviceInfo)?.Resources[2]
+
+		debug?.({ supportedFOTATypes })
 
 		if (supportedFOTATypes.length === 0) {
 			return {
@@ -61,21 +76,47 @@ export const getDeviceFirmwareDetails = (
 			}
 		}
 
+		const appVersion =
+			maybeShadow.shadow.reported.find(isDeviceInfo)?.Resources[3]
+		const mfwVersion =
+			maybeShadow.shadow.reported.find(isDeviceInfo)?.Resources[2]
+
+		debug?.({ appVersion, mfwVersion })
+
+		const versions = {
+			appVersion: toVersion(appVersion),
+			mfwVersion: toVersion(mfwVersion?.split('_')?.pop()),
+		}
+
+		debug?.({ versions })
+
+		if (!isVersionInfo(versions)) {
+			return {
+				error: new Error(`This device has not reported any firmware versions!`),
+			}
+		}
+
 		return {
 			details: {
-				appVersion:
-					appVersion !== undefined ? toVersion(appVersion) : undefined,
-				mfwVersion:
-					mfwVersion !== undefined ? toVersion(mfwVersion) : undefined,
+				...versions,
 				supportedFOTATypes,
 			},
 		}
 	}
 }
 
-const toVersion = (version: string): string => {
+const isVersionInfo = (v: unknown): v is VersionInfo =>
+	v !== null &&
+	typeof v === 'object' &&
+	(('appVersion' in v && typeof v.appVersion === 'string') ||
+		('mfwVersion' in v && typeof v.mfwVersion === 'string'))
+
+const toVersion = (version?: string): string | undefined => {
+	if (version === undefined) return undefined
 	const { major, minor, patch } = semver.parse(version) ?? {}
-	return `${major ?? 0}.${minor ?? 0}.${patch ?? 0}`
+	if (major === undefined || minor === undefined || patch === undefined)
+		return undefined
+	return `${major}.${minor}.${patch}`
 }
 
 export const isNRFCloudServiceInfo = (

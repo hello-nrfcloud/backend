@@ -131,7 +131,8 @@ export class DeviceFOTA extends Construct {
 				],
 			},
 		)
-		jobTable.grantWriteData(this.processFOTAJob.fn)
+		jobTable.grantReadWriteData(this.processFOTAJob.fn)
+		nrfCloudJobStatusTable.grantWriteData(this.processFOTAJob.fn)
 		this.processFOTAJob.fn.addEventSource(
 			new EventSources.DynamoEventSource(jobTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
@@ -278,14 +279,14 @@ export class DeviceFOTA extends Construct {
 
 		// Return FOTA jobs per device
 		const deviceIdIndex = 'deviceIdIndex'
-		nrfCloudJobStatusTable.addGlobalSecondaryIndex({
+		jobTable.addGlobalSecondaryIndex({
 			indexName: deviceIdIndex,
 			partitionKey: {
 				name: 'deviceId',
 				type: DynamoDB.AttributeType.STRING,
 			},
 			sortKey: {
-				name: 'lastUpdatedAt',
+				name: 'timestamp',
 				type: DynamoDB.AttributeType.STRING,
 			},
 			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
@@ -295,11 +296,11 @@ export class DeviceFOTA extends Construct {
 			'getFOTAJobStatus',
 			lambdaSources.getFOTAJobStatus,
 			{
-				description: 'Return FOTA jobs per denrfCloudJobStatusTablevice',
+				description: 'Return FOTA jobs per device',
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-					NRF_CLOUD_JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
-					NRF_CLOUD_JOB_STATUS_TABLE_DEVICE_INDEX_NAME: deviceIdIndex,
+					JOB_TABLE_NAME: jobTable.tableName,
+					JOB_TABLE_DEVICE_ID_INDEX_NAME: deviceIdIndex,
 					RESPONSE_CACHE_MAX_AGE:
 						this.node.getContext('isTest') === true ? '0' : '60',
 				},
@@ -307,7 +308,7 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.getFOTAJobStatusFn.fn)
-		nrfCloudJobStatusTable.grantReadData(this.getFOTAJobStatusFn.fn)
+		jobTable.grantReadData(this.getFOTAJobStatusFn.fn)
 
 		// List FOTA bundles
 		this.listFOTABundles = new PackedLambdaFn(

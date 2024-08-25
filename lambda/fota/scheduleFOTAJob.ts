@@ -34,7 +34,7 @@ import { ulid } from '../../util/ulid.js'
 import { withDevice, type WithDevice } from '../middleware/withDevice.js'
 import { getDeviceFirmwareDetails } from './getDeviceFirmwareDetails.js'
 import { getNextUpgrade } from './getNextUpgrade.js'
-import { create, pkFromTarget, type PersistedJob } from './jobRepo.js'
+import { create } from './jobRepo.js'
 
 const { version, DevicesTableName, jobTableName } = fromEnv({
 	version: 'VERSION',
@@ -74,7 +74,9 @@ const h = async (
 	const { fingerprint, deviceId, upgradePath } = context.validInput
 	void fingerprint
 
-	const maybeFirmwareDetails = await checkDevice(deviceId)
+	const maybeFirmwareDetails = await checkDevice(deviceId, (...args) =>
+		console.debug(`[FOTA:${deviceId}]`, ...args.map((a) => JSON.stringify(a))),
+	)
 	if ('error' in maybeFirmwareDetails) {
 		throw new ProblemDetailError({
 			title: 'Device is not eligible for FOTA',
@@ -95,25 +97,26 @@ const h = async (
 	const { reportedVersion, target } = maybeUpgrade.upgrade
 
 	const jobId = ulid()
-	const persistedJob: PersistedJob = {
+
+	const job: Static<typeof FOTAJob> = {
+		'@context': Context.fotaJob.toString(),
 		id: jobId,
-		pk: pkFromTarget({ deviceId, target }),
 		deviceId: context.device.id,
 		timestamp: new Date().toISOString(),
 		status: FOTAJobStatus.NEW,
 		upgradePath,
 		statusDetail: 'The job has been created',
-		account: context.device.account,
 		reportedVersion,
-		target,
 	}
 
-	const job: Static<typeof FOTAJob> = {
-		'@context': Context.fotaJob.toString(),
-		...persistedJob,
-	}
 	try {
-		await c(persistedJob)
+		const { '@context': ctx, ...jobDetails } = job
+		void ctx
+		await c({
+			account: context.device.account,
+			target,
+			...jobDetails,
+		})
 
 		return aResponse(HttpStatusCode.CREATED, {
 			...job,
@@ -122,7 +125,7 @@ const h = async (
 	} catch (error) {
 		if (error instanceof ConditionalCheckFailedException) {
 			throw new ProblemDetailError({
-				title: 'A FOTA job for this device already exists',
+				title: `A ${target} FOTA job for this device already exists`,
 				status: HttpStatusCode.CONFLICT,
 			})
 		}

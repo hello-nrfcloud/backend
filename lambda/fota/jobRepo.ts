@@ -5,7 +5,7 @@ import {
 	UpdateItemCommand,
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
-import { marshall } from '@aws-sdk/util-dynamodb'
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import type { FOTAJobTarget } from '@hello.nrfcloud.com/proto/hello'
 import { FOTAJobStatus, type FOTAJob } from '@hello.nrfcloud.com/proto/hello'
 import type { Static } from '@sinclair/typebox'
@@ -32,6 +32,10 @@ export type PersistedJob = Omit<Static<typeof FOTAJob>, '@context'> & {
 	 * The target of the job
 	 */
 	target: FOTAJobTarget
+	/**
+	 * The firmware versions for which a JOB was created.
+	 */
+	usedVersions: Set<string>
 }
 
 export const pkFromTarget = ({
@@ -42,7 +46,7 @@ export const pkFromTarget = ({
 
 export const create =
 	(db: DynamoDBClient, TableName: string) =>
-	async (job: Omit<PersistedJob, 'pk'>): Promise<void> => {
+	async (job: Omit<PersistedJob, 'pk' | 'usedVersions'>): Promise<void> => {
 		await db.send(
 			new PutItemCommand({
 				TableName,
@@ -50,7 +54,9 @@ export const create =
 					...job,
 					pk: pkFromTarget(job),
 					ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
+					usedVersions: new Set<string>(),
 				}),
+				ConditionExpression: 'attribute_not_exists(pk)',
 			}),
 		)
 	}
@@ -65,7 +71,7 @@ export const getByPK =
 			}),
 		)
 		if (res.Item === undefined) return null
-		return marshall(res.Item) as unknown as PersistedJob
+		return unmarshall(res.Item) as unknown as PersistedJob
 	}
 
 export const update =
@@ -73,10 +79,17 @@ export const update =
 	async (
 		update: Pick<PersistedJob, 'status' | 'statusDetail'> & {
 			reportedVersion?: PersistedJob['reportedVersion']
+			usedVersions?: PersistedJob['usedVersions']
 		},
 		current: Pick<
 			PersistedJob,
-			'pk' | 'deviceId' | 'timestamp' | 'upgradePath' | 'reportedVersion'
+			| 'id'
+			| 'pk'
+			| 'deviceId'
+			| 'timestamp'
+			| 'upgradePath'
+			| 'reportedVersion'
+			| 'usedVersions'
 		>,
 	): Promise<void> => {
 		const now = new Date().toISOString()
@@ -92,14 +105,15 @@ export const update =
 					TableName,
 					Item: marshall({
 						...currentJob,
-						pk: `${current.deviceId}#${update.status}#${now}`,
+						pk: current.id,
 					}),
+					ConditionExpression: 'attribute_not_exists(pk)',
 				}),
 			)
 			await db.send(
 				new DeleteItemCommand({
 					TableName,
-					Key: { pk: { S: current.deviceId } },
+					Key: { pk: { S: current.pk } },
 				}),
 			)
 			return
@@ -109,7 +123,7 @@ export const update =
 				TableName,
 				Key: {
 					pk: {
-						S: current.deviceId,
+						S: current.pk,
 					},
 				},
 				UpdateExpression:
@@ -127,6 +141,12 @@ export const update =
 					':timestamp': { S: current.timestamp },
 					':reportedVersion': {
 						S: update.reportedVersion ?? current.reportedVersion,
+					},
+					':usedVersions': {
+						SS: [
+							...(current.usedVersions ?? []),
+							...(update.usedVersions ?? []),
+						],
 					},
 				},
 				ConditionExpression: '#timestamp = :timestamp',
