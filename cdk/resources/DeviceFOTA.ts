@@ -98,6 +98,12 @@ export class DeviceFOTA extends Construct {
 					JOB_TABLE_NAME: jobTable.tableName,
 				},
 				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['iot:GetThingShadow'],
+						resources: ['*'],
+					}),
+				],
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn.fn)
@@ -115,6 +121,7 @@ export class DeviceFOTA extends Construct {
 				environment: {
 					JOB_TABLE_NAME: jobTable.tableName,
 					NRF_CLOUD_JOB_TABLE_NAME: nrfCloudJobStatusTable.tableName,
+					WORK_QUEUE_URL: workQueue.queueUrl,
 				},
 				initialPolicy: [
 					new IAM.PolicyStatement({
@@ -164,6 +171,7 @@ export class DeviceFOTA extends Construct {
 				],
 			}),
 		)
+		workQueue.grantSendMessages(this.processFOTAJob.fn)
 
 		// The scheduleFetches puts job status fetch tasks in this queue
 		const statusIndex = 'statusIndex'
