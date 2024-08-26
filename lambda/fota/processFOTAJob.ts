@@ -136,7 +136,10 @@ const processJobUpdate = async (job: PersistedJob) => {
 		}
 
 		const { bundleId, reportedVersion } = maybeBundleId.upgrade
-		if (bundleId === null || job.usedVersions.has(reportedVersion)) {
+		if (
+			bundleId === null ||
+			(job.usedVersions?.has(reportedVersion) ?? false)
+		) {
 			await u(
 				{
 					status: FOTAJobStatus.SUCCEEDED,
@@ -211,7 +214,7 @@ const processJobUpdate = async (job: PersistedJob) => {
 				status: FOTAJobStatus.IN_PROGRESS,
 				statusDetail: `Started job for version ${reportedVersion} with bundle ${bundleId}.`,
 				reportedVersion,
-				usedVersions: job.usedVersions.add(reportedVersion),
+				usedVersions: (job.usedVersions ?? new Set()).add(reportedVersion),
 			},
 			job,
 		)

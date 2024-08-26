@@ -35,7 +35,7 @@ export type PersistedJob = Omit<Static<typeof FOTAJob>, '@context'> & {
 	/**
 	 * The firmware versions for which a JOB was created.
 	 */
-	usedVersions: Set<string>
+	usedVersions?: Set<string>
 }
 
 export const pkFromTarget = ({
@@ -54,7 +54,6 @@ export const create =
 					...job,
 					pk: pkFromTarget(job),
 					ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
-					usedVersions: new Set<string>(),
 				}),
 				ConditionExpression: 'attribute_not_exists(pk)',
 			}),
