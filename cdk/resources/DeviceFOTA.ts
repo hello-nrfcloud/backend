@@ -110,6 +110,15 @@ export class DeviceFOTA extends Construct {
 		jobTable.grantWriteData(this.scheduleFOTAJobFn.fn)
 
 		// Process FOTA jobs
+		const jobIdIndex = 'jobIdIndex'
+		jobTable.addGlobalSecondaryIndex({
+			indexName: jobIdIndex,
+			partitionKey: {
+				name: 'id	',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
+		})
 		this.processFOTAJob = new PackedLambdaFn(
 			this,
 			'processFOTAJob',
@@ -120,6 +129,7 @@ export class DeviceFOTA extends Construct {
 				timeout: Duration.minutes(1),
 				environment: {
 					JOB_TABLE_NAME: jobTable.tableName,
+					JOB_TABLE_ID_INDEX_NAME: jobIdIndex,
 					NRF_CLOUD_JOB_TABLE_NAME: nrfCloudJobStatusTable.tableName,
 					WORK_QUEUE_URL: workQueue.queueUrl,
 				},

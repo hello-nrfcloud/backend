@@ -23,17 +23,22 @@ import { loggingFetch } from '../../util/loggingFetch.js'
 import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
 import { getDeviceFirmwareDetails } from './getDeviceFirmwareDetails.js'
 import { getNextUpgrade } from './getNextUpgrade.js'
-import { getByPK, update, type PersistedJob } from './jobRepo.js'
+import { getById, update, type PersistedJob } from './jobRepo.js'
 import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.js'
 
-const { JobTableName, NrfCloudJobTableName, stackName, workQueueUrl } = fromEnv(
-	{
-		JobTableName: 'JOB_TABLE_NAME',
-		NrfCloudJobTableName: 'NRF_CLOUD_JOB_TABLE_NAME',
-		stackName: 'STACK_NAME',
-		workQueueUrl: 'WORK_QUEUE_URL',
-	},
-)(process.env)
+const {
+	JobTableName,
+	JobTableIdIndexName,
+	NrfCloudJobTableName,
+	stackName,
+	workQueueUrl,
+} = fromEnv({
+	JobTableName: 'JOB_TABLE_NAME',
+	JobTableIdIndexName: 'JOB_TABLE_ID_INDEX_NAME',
+	NrfCloudJobTableName: 'NRF_CLOUD_JOB_TABLE_NAME',
+	stackName: 'STACK_NAME',
+	workQueueUrl: 'WORK_QUEUE_URL',
+})(process.env)
 
 const db = new DynamoDBClient({})
 const iotData = new IoTDataPlaneClient({})
@@ -46,7 +51,7 @@ const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
 const u = update(db, JobTableName)
-const g = getByPK(db, JobTableName)
+const g = getById(db, JobTableName, JobTableIdIndexName)
 const d = getDeviceFirmwareDetails(iotData)
 
 /**
@@ -155,6 +160,11 @@ const processJobUpdate = async (job: PersistedJob) => {
 			(await allNRFCloudAPIConfigs)[job.account] ?? {}
 		if (apiKey === undefined || apiEndpoint === undefined)
 			throw new Error(`nRF Cloud API key for ${stackName} is not configured.`)
+
+		console.debug(
+			`[${job.deviceId}]`,
+			`Creating job for version ${reportedVersion} with bundle ${bundleId}.`,
+		)
 
 		const createJob = createFOTAJob(
 			{

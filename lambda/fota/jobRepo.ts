@@ -2,6 +2,7 @@ import {
 	DeleteItemCommand,
 	GetItemCommand,
 	PutItemCommand,
+	QueryCommand,
 	UpdateItemCommand,
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
@@ -73,6 +74,27 @@ export const getByPK =
 		return unmarshall(res.Item) as unknown as PersistedJob
 	}
 
+export const getById =
+	(db: DynamoDBClient, TableName: string, IndexName: string) =>
+	async (id: string): Promise<PersistedJob | null> => {
+		const res = await db.send(
+			new QueryCommand({
+				TableName,
+				IndexName,
+				KeyConditionExpression: '#id = :id',
+				ExpressionAttributeNames: {
+					'#id': 'id',
+				},
+				ExpressionAttributeValues: {
+					':id': { S: id },
+				},
+			}),
+		)
+		const pk = res.Items?.[0]?.pk?.S
+		if (pk === undefined) throw new Error(`Job ${id} not found!`)
+		return getByPK(db, TableName)(pk)
+	}
+
 export const update =
 	(db: DynamoDBClient, TableName: string) =>
 	async (
@@ -126,12 +148,13 @@ export const update =
 					},
 				},
 				UpdateExpression:
-					'SET #status = :status, #statusDetail = :statusDetail, #timestamp = :now, #reportedVersion = :reportedVersion',
+					'SET #status = :status, #statusDetail = :statusDetail, #timestamp = :now, #reportedVersion = :reportedVersion, #usedVersions = :usedVersions',
 				ExpressionAttributeNames: {
 					'#status': 'status',
 					'#statusDetail': 'statusDetail',
 					'#timestamp': 'timestamp',
 					'#reportedVersion': 'reportedVersion',
+					'#usedVersions': 'usedVersions',
 				},
 				ExpressionAttributeValues: {
 					':now': { S: now },
@@ -148,7 +171,7 @@ export const update =
 						],
 					},
 				},
-				ConditionExpression: '#timestamp = :timestamp',
+				ConditionExpression: '#timestamp = :timestamp AND attribute_exists(pk)',
 				ReturnValues: 'NONE',
 			}),
 		)
