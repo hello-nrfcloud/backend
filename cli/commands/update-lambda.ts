@@ -129,22 +129,23 @@ export const updateLambda = ({
 
 		await pRetry(
 			async () => {
+				const updateStatus = (
+					await lambda.send(
+						new GetFunctionCommand({
+							FunctionName: functionToUpdate.PhysicalResourceId,
+						}),
+					)
+				).Configuration?.LastUpdateStatus
 				assert.equal(
-					(
-						await lambda.send(
-							new GetFunctionCommand({
-								FunctionName: functionToUpdate.PhysicalResourceId,
-							}),
-						)
-					).Configuration?.LastUpdateStatus,
+					updateStatus,
 					LastUpdateStatus.Successful,
-					'Lambda update should have succeeded.',
+					`Lambda update should have succeeded, got ${updateStatus}`,
 				)
 			},
 			{
 				minTimeout: 1000,
 				maxTimeout: 1000,
-				retries: 5,
+				retries: 10,
 			},
 		)
 
