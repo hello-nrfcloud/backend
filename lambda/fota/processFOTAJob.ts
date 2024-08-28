@@ -50,7 +50,9 @@ const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
-const u = update(db, JobTableName)
+const u = update(db, JobTableName, (...args) =>
+	console.debug(`[FOTA Repo]`, ...args),
+)
 const g = getById(db, JobTableName, JobTableIdIndexName)
 const d = getDeviceFirmwareDetails(iotData)
 
@@ -75,8 +77,10 @@ const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 		)
 
 		if (isJobUpdate) {
+			console.debug(`Processing job update ...`)
 			return processJobUpdate(newImage as PersistedJob)
 		}
+		console.debug(`Processing nRF Cloud job update ...`)
 		return processNRFCloudJobUpdate(newImage as NrfCloudFOTAJob)
 	}
 }
@@ -91,6 +95,7 @@ const processNRFCloudJobUpdate = async (nRfCloudJob: NrfCloudFOTAJob) => {
 	switch (nRfCloudJob.status) {
 		case NrfCloudFOTAJobStatus.SUCCEEDED:
 		case NrfCloudFOTAJobStatus.COMPLETED:
+			console.log(`[FOTA:${parent.deviceId}]`, `Upgrade job succeeded.`)
 			await u(
 				{
 					status: FOTAJobStatus.IN_PROGRESS,
@@ -103,6 +108,10 @@ const processNRFCloudJobUpdate = async (nRfCloudJob: NrfCloudFOTAJob) => {
 		case NrfCloudFOTAJobStatus.TIMED_OUT:
 		case NrfCloudFOTAJobStatus.CANCELLED:
 		case NrfCloudFOTAJobStatus.REJECTED:
+			console.log(
+				`[FOTA:${parent.deviceId}]`,
+				`Upgrade job failed "${nRfCloudJob.status}"!`,
+			)
 			await u(
 				{
 					status: FOTAJobStatus.FAILED,
@@ -112,6 +121,10 @@ const processNRFCloudJobUpdate = async (nRfCloudJob: NrfCloudFOTAJob) => {
 			)
 			return
 		default:
+			console.log(
+				`[FOTA:${parent.deviceId}]`,
+				`Upgrade job failed with unknown status "${nRfCloudJob.status}"!`,
+			)
 			await u(
 				{
 					status: FOTAJobStatus.FAILED,
@@ -183,7 +196,6 @@ const processJobUpdate = async (job: PersistedJob) => {
 			throw new Error(`Failed to create job: ${res.error.message}.`)
 		}
 
-		console.debug(`Accepted`)
 		track('success', MetricUnit.Count, 1)
 
 		const now = new Date().toISOString()

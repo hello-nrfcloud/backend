@@ -96,7 +96,11 @@ export const getById =
 	}
 
 export const update =
-	(db: DynamoDBClient, TableName: string) =>
+	(
+		db: DynamoDBClient,
+		TableName: string,
+		debug?: (...args: Array<unknown>) => void,
+	) =>
 	async (
 		update: Pick<PersistedJob, 'status' | 'statusDetail'> & {
 			reportedVersion?: PersistedJob['reportedVersion']
@@ -121,6 +125,10 @@ export const update =
 			if (currentJob === null) {
 				throw new Error(`Job not found!`)
 			}
+			debug?.('copying job', {
+				...currentJob,
+				pk: current.id,
+			})
 			await db.send(
 				new PutItemCommand({
 					TableName,
@@ -131,6 +139,7 @@ export const update =
 					ConditionExpression: 'attribute_not_exists(pk)',
 				}),
 			)
+			debug?.('deleting job', { pk: current.pk })
 			await db.send(
 				new DeleteItemCommand({
 					TableName,
