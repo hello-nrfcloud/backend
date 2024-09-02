@@ -1,5 +1,4 @@
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
-import { FOTAJobStatus as NrfCloudFOTAJobStatus } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { FOTAJobStatus } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
@@ -15,19 +14,19 @@ import {
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
+import { MultiBundleFOTAFlow } from './FOTA/MultiBundleFlow.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
  * Schedules FOTA jobs for devices
  */
 export class DeviceFOTA extends Construct {
-	public readonly scheduleFOTAJobFn: PackedLambdaFn
 	public readonly scheduleFetches: PackedLambdaFn
 	public readonly updater: PackedLambdaFn
 	public readonly notifier: PackedLambdaFn
 	public readonly getFOTAJobStatusFn: PackedLambdaFn
 	public readonly listFOTABundles: PackedLambdaFn
-	public readonly processFOTAJob: PackedLambdaFn
+	public readonly startMultiBundleFOTAFlow: PackedLambdaFn
 	public constructor(
 		parent: Construct,
 		{
@@ -38,13 +37,12 @@ export class DeviceFOTA extends Construct {
 		}: {
 			lambdaSources: Pick<
 				BackendLambdas,
-				| 'scheduleFOTAJob'
 				| 'getFOTAJobStatus'
 				| 'scheduleFOTAJobStatusUpdate'
 				| 'updateFOTAJobStatus'
 				| 'notifyFOTAJobStatus'
 				| 'listFOTABundles'
-				| 'processFOTAJob'
+				| 'multiBundleFOTAFlow'
 			>
 			layers: Lambda.ILayerVersion[]
 			deviceStorage: DeviceStorage
@@ -85,104 +83,6 @@ export class DeviceFOTA extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 			visibilityTimeout: scheduleDuration,
 		})
-
-		// Create a new FOTA job
-		this.scheduleFOTAJobFn = new PackedLambdaFn(
-			this,
-			'scheduleFOTAJob',
-			lambdaSources.scheduleFOTAJob,
-			{
-				description: 'Schedule device FOTA jobs',
-				environment: {
-					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-					JOB_TABLE_NAME: jobTable.tableName,
-				},
-				layers,
-				initialPolicy: [
-					new IAM.PolicyStatement({
-						actions: ['iot:GetThingShadow'],
-						resources: ['*'],
-					}),
-				],
-			},
-		)
-		deviceStorage.devicesTable.grantReadData(this.scheduleFOTAJobFn.fn)
-		jobTable.grantWriteData(this.scheduleFOTAJobFn.fn)
-
-		// Process FOTA jobs
-		const idIndexName = 'idIndex'
-		jobTable.addGlobalSecondaryIndex({
-			indexName: idIndexName,
-			partitionKey: {
-				name: 'id',
-				type: DynamoDB.AttributeType.STRING,
-			},
-			projectionType: DynamoDB.ProjectionType.KEYS_ONLY,
-		})
-		this.processFOTAJob = new PackedLambdaFn(
-			this,
-			'processFOTAJob',
-			lambdaSources.processFOTAJob,
-			{
-				description: 'Process FOTA jobs according to their update path',
-				layers,
-				timeout: Duration.minutes(1),
-				environment: {
-					JOB_TABLE_NAME: jobTable.tableName,
-					JOB_TABLE_ID_INDEX_NAME: idIndexName,
-					NRF_CLOUD_JOB_TABLE_NAME: nrfCloudJobStatusTable.tableName,
-					WORK_QUEUE_URL: workQueue.queueUrl,
-				},
-				initialPolicy: [
-					new IAM.PolicyStatement({
-						actions: ['iot:GetThingShadow'],
-						resources: ['*'],
-					}),
-				],
-			},
-		)
-		jobTable.grantReadWriteData(this.processFOTAJob.fn)
-		nrfCloudJobStatusTable.grantWriteData(this.processFOTAJob.fn)
-		this.processFOTAJob.fn.addEventSource(
-			new EventSources.DynamoEventSource(jobTable, {
-				startingPosition: Lambda.StartingPosition.LATEST,
-				filters: [
-					Lambda.FilterCriteria.filter({
-						dynamodb: {
-							NewImage: {
-								status: {
-									S: [FOTAJobStatus.NEW],
-								},
-							},
-						},
-					}),
-				],
-			}),
-		)
-		this.processFOTAJob.fn.addEventSource(
-			new EventSources.DynamoEventSource(nrfCloudJobStatusTable, {
-				startingPosition: Lambda.StartingPosition.LATEST,
-				filters: [
-					Lambda.FilterCriteria.filter({
-						dynamodb: {
-							NewImage: {
-								status: {
-									S: [
-										NrfCloudFOTAJobStatus.FAILED,
-										NrfCloudFOTAJobStatus.SUCCEEDED,
-										NrfCloudFOTAJobStatus.TIMED_OUT,
-										NrfCloudFOTAJobStatus.CANCELLED,
-										NrfCloudFOTAJobStatus.REJECTED,
-										NrfCloudFOTAJobStatus.COMPLETED,
-									],
-								},
-							},
-						},
-					}),
-				],
-			}),
-		)
-		workQueue.grantSendMessages(this.processFOTAJob.fn)
 
 		// The scheduleFetches puts job status fetch tasks in this queue
 		const statusIndex = 'statusIndex'
@@ -335,5 +235,36 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.listFOTABundles.fn)
+
+		// State machine to drive the multi-bundle flow
+		const mbff = new MultiBundleFOTAFlow(this, {
+			lambdas: lambdaSources.multiBundleFOTAFlow,
+			layers,
+			nrfCloudJobStatusTable: nrfCloudJobStatusTable,
+		})
+		this.startMultiBundleFOTAFlow = new PackedLambdaFn(
+			this,
+			'startMultiBundleFOTAFlow',
+			lambdaSources.multiBundleFOTAFlow.start,
+			{
+				description: 'REST entry point that starts the multi-bundle FOTA flow',
+				environment: {
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+					STATE_MACHINE_ARN: mbff.stateMachine.stateMachineArn,
+					JOB_TABLE_NAME: jobTable.tableName,
+					JOB_TABLE_DEVICE_ID_INDEX_NAME: deviceIdIndex,
+				},
+				layers,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['iot:GetThingShadow'],
+						resources: ['*'],
+					}),
+				],
+			},
+		)
+		mbff.stateMachine.grantStartExecution(this.startMultiBundleFOTAFlow.fn)
+		deviceStorage.devicesTable.grantReadData(this.startMultiBundleFOTAFlow.fn)
+		jobTable.grantWriteData(this.startMultiBundleFOTAFlow.fn)
 	}
 }

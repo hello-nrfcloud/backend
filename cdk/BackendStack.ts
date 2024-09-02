@@ -314,7 +314,7 @@ export class BackendStack extends Stack {
 		})
 		api.addRoute(
 			'POST /device/{deviceId}/fota/{target}',
-			deviceFOTA.scheduleFOTAJobFn.fn,
+			deviceFOTA.startMultiBundleFOTAFlow.fn,
 		)
 		api.addRoute(
 			'GET /device/{deviceId}/fota/jobs',
@@ -340,7 +340,7 @@ export class BackendStack extends Stack {
 				apiHealth.fn.logGroup,
 				updateDeviceState.fn.logGroup,
 				convertNrfCloudDeviceMessages.onNrfCloudDeviceMessage.logGroup,
-				deviceFOTA.scheduleFOTAJobFn.logGroup,
+				deviceFOTA.startMultiBundleFOTAFlow.logGroup,
 				deviceFOTA.scheduleFetches.logGroup,
 				deviceFOTA.updater.logGroup,
 				deviceFOTA.notifier.logGroup,
