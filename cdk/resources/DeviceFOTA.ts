@@ -240,7 +240,7 @@ export class DeviceFOTA extends Construct {
 		const mbff = new MultiBundleFOTAFlow(this, {
 			lambdas: lambdaSources.multiBundleFOTAFlow,
 			layers,
-			nrfCloudJobStatusTable: nrfCloudJobStatusTable,
+			nrfCloudJobStatusTable,
 		})
 		this.startMultiBundleFOTAFlow = new PackedLambdaFn(
 			this,

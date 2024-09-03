@@ -22,8 +22,9 @@ const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 const h = async (event: {
 	account: string
 	deviceId: string
-	bundleId: string
-	reportedVersion: string
+	nextBundle: {
+		bundleId: string
+	}
 }): Promise<{
 	jobId: string
 }> => {
@@ -42,7 +43,7 @@ const h = async (event: {
 
 	const res = await createJob({
 		deviceId: event.deviceId,
-		bundleId: event.bundleId,
+		bundleId: event.nextBundle.bundleId,
 	})
 
 	if (!('result' in res)) {

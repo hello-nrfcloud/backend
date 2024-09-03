@@ -20,10 +20,10 @@ import {
 	type ValidInput,
 } from '@hello.nrfcloud.com/lambda-helpers/validateInput'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
+import type { FOTAJob } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Context,
 	deviceId,
-	FOTAJob,
 	FOTAJobStatus,
 	HttpStatusCode,
 	UpgradePath,

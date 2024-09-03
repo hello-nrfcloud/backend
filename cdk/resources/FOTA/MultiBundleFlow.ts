@@ -2,9 +2,9 @@ import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
 import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import {
 	Duration,
-	aws_dynamodb as DynamoDB,
+	type aws_dynamodb as DynamoDB,
 	aws_iam as IAM,
-	aws_lambda as Lambda,
+	type aws_lambda as Lambda,
 	Stack,
 	aws_stepfunctions as StepFunctions,
 	aws_stepfunctions_tasks as StepFunctionsTasks,
@@ -16,8 +16,6 @@ import {
 } from 'aws-cdk-lib/aws-stepfunctions-tasks'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../../packBackendLambdas.js'
-
-const { DefinitionBody } = StepFunctions
 
 /**
  * This implements a state machine to drive a the multi-bundle flow where
@@ -64,7 +62,7 @@ export class MultiBundleFOTAFlow extends Construct {
 			resultPath: '$.nextBundle',
 		})
 
-		let bundleLoop = GetNextBundle.task // Figure out the next bundle
+		const bundleLoop = GetNextBundle.task // Figure out the next bundle
 		bundleLoop.next(
 			new StepFunctions.Choice(this, 'Found next bundle?')
 				.when(
@@ -86,7 +84,6 @@ export class MultiBundleFOTAFlow extends Construct {
 							layers,
 							description: 'Create the FOTA job on nRF Cloud',
 							resultPath: '$.fotaJob',
-							inputPath: '$.nextBundle',
 						}).task.next(
 							// Persist the job details so the job fetcher can poll the API
 							new StepFunctionsTasks.DynamoPutItem(this, 'PersistJobDetails', {
@@ -150,7 +147,7 @@ export class MultiBundleFOTAFlow extends Construct {
 			stateMachineName: `${Stack.of(this).stackName}-multi-bundle-fota-flow`,
 			// We need standard state machine type because express state machines only run for 5 minutes
 			stateMachineType: StepFunctions.StateMachineType.STANDARD,
-			definitionBody: DefinitionBody.fromChainable(
+			definitionBody: StepFunctions.DefinitionBody.fromChainable(
 				// we start with valid input from the REST request: deviceId + upgradePath + account
 				// get the reported version of the device
 				GetDeviceFirmwareDetails.task.next(
