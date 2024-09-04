@@ -59,8 +59,6 @@ const h = async (event: {
 	deviceId: string
 	reported: LwM2MShadow
 }): Promise<void> => {
-	console.debug(JSON.stringify({ event }))
-
 	const Records: _Record[] = []
 	for (const [ObjectIDAndVersion, Instances] of Object.entries(
 		event.reported,

@@ -47,18 +47,24 @@ export const pkFromTarget = ({
 
 export const create =
 	(db: DynamoDBClient, TableName: string) =>
-	async (job: Omit<PersistedJob, 'pk' | 'usedVersions'>): Promise<void> => {
+	async (
+		job: Omit<PersistedJob, 'pk' | 'usedVersions'>,
+	): Promise<{
+		pk: string
+	}> => {
+		const pk = pkFromTarget(job)
 		await db.send(
 			new PutItemCommand({
 				TableName,
 				Item: marshall({
 					...job,
-					pk: pkFromTarget(job),
+					pk,
 					ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
 				}),
 				ConditionExpression: 'attribute_not_exists(pk)',
 			}),
 		)
+		return { pk }
 	}
 
 export const getByPK =

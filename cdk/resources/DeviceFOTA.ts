@@ -6,7 +6,6 @@ import {
 	aws_lambda_event_sources as EventSources,
 	aws_events_targets as EventTargets,
 	aws_events as Events,
-	aws_iam as IAM,
 	aws_lambda as Lambda,
 	RemovalPolicy,
 	aws_sqs as SQS,
@@ -14,7 +13,6 @@ import {
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
 import type { DeviceStorage } from './DeviceStorage.js'
-import { MultiBundleFOTAFlow } from './FOTA/MultiBundleFlow.js'
 import type { WebsocketEventBus } from './WebsocketEventBus.js'
 
 /**
@@ -26,7 +24,9 @@ export class DeviceFOTA extends Construct {
 	public readonly notifier: PackedLambdaFn
 	public readonly getFOTAJobStatusFn: PackedLambdaFn
 	public readonly listFOTABundles: PackedLambdaFn
-	public readonly startMultiBundleFOTAFlow: PackedLambdaFn
+	public readonly jobTable: DynamoDB.Table
+	public readonly jobTableDeviceIdIndex: string
+	public readonly nrfCloudJobStatusTable: DynamoDB.Table
 	public constructor(
 		parent: Construct,
 		{
@@ -51,7 +51,7 @@ export class DeviceFOTA extends Construct {
 	) {
 		super(parent, 'DeviceFOTA')
 
-		const jobTable = new DynamoDB.Table(this, 'jobTable', {
+		this.jobTable = new DynamoDB.Table(this, 'jobTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {
 				name: 'pk',
@@ -62,7 +62,7 @@ export class DeviceFOTA extends Construct {
 			timeToLiveAttribute: 'ttl',
 		})
 
-		const nrfCloudJobStatusTable = new DynamoDB.Table(
+		this.nrfCloudJobStatusTable = new DynamoDB.Table(
 			this,
 			'nrfCloudJobStatusTable',
 			{
@@ -86,7 +86,7 @@ export class DeviceFOTA extends Construct {
 
 		// The scheduleFetches puts job status fetch tasks in this queue
 		const statusIndex = 'statusIndex'
-		nrfCloudJobStatusTable.addGlobalSecondaryIndex({
+		this.nrfCloudJobStatusTable.addGlobalSecondaryIndex({
 			indexName: statusIndex,
 			partitionKey: {
 				name: 'status',
@@ -107,7 +107,8 @@ export class DeviceFOTA extends Construct {
 				description: 'Schedule fetching of the FOTA job status',
 				environment: {
 					WORK_QUEUE_URL: workQueue.queueUrl,
-					NRF_CLOUD_JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
+					NRF_CLOUD_JOB_STATUS_TABLE_NAME:
+						this.nrfCloudJobStatusTable.tableName,
 					NRF_CLOUD_JOB_STATUS_TABLE_STATUS_INDEX_NAME: statusIndex,
 					FRESH_INTERVAL_SECONDS:
 						this.node.getContext('isTest') === true ? '10' : '60',
@@ -116,7 +117,7 @@ export class DeviceFOTA extends Construct {
 				timeout: Duration.seconds(10),
 			},
 		)
-		nrfCloudJobStatusTable.grantReadWriteData(this.scheduleFetches.fn)
+		this.nrfCloudJobStatusTable.grantReadWriteData(this.scheduleFetches.fn)
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
 			schedule: Events.Schedule.rate(scheduleDuration),
@@ -135,13 +136,14 @@ export class DeviceFOTA extends Construct {
 				description:
 					'Fetch the FOTA job status and write to the dynamoDB table',
 				environment: {
-					NRF_CLOUD_JOB_STATUS_TABLE_NAME: nrfCloudJobStatusTable.tableName,
+					NRF_CLOUD_JOB_STATUS_TABLE_NAME:
+						this.nrfCloudJobStatusTable.tableName,
 				},
 				layers,
 				timeout: Duration.minutes(1),
 			},
 		)
-		nrfCloudJobStatusTable.grantWriteData(this.updater.fn)
+		this.nrfCloudJobStatusTable.grantWriteData(this.updater.fn)
 		this.updater.fn.addEventSource(
 			new EventSources.SqsEventSource(workQueue, {
 				batchSize: 10,
@@ -166,7 +168,7 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		this.notifier.fn.addEventSource(
-			new EventSources.DynamoEventSource(jobTable, {
+			new EventSources.DynamoEventSource(this.jobTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
 				filters: [
 					Lambda.FilterCriteria.filter({
@@ -188,9 +190,9 @@ export class DeviceFOTA extends Construct {
 		websocketEventBus.eventBus.grantPutEventsTo(this.notifier.fn)
 
 		// Return FOTA jobs per device
-		const deviceIdIndex = 'deviceIdIndex'
-		jobTable.addGlobalSecondaryIndex({
-			indexName: deviceIdIndex,
+		this.jobTableDeviceIdIndex = 'deviceIdIndex'
+		this.jobTable.addGlobalSecondaryIndex({
+			indexName: this.jobTableDeviceIdIndex,
 			partitionKey: {
 				name: 'deviceId',
 				type: DynamoDB.AttributeType.STRING,
@@ -209,8 +211,8 @@ export class DeviceFOTA extends Construct {
 				description: 'Return FOTA jobs per device',
 				environment: {
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-					JOB_TABLE_NAME: jobTable.tableName,
-					JOB_TABLE_DEVICE_ID_INDEX_NAME: deviceIdIndex,
+					JOB_TABLE_NAME: this.jobTable.tableName,
+					JOB_TABLE_DEVICE_ID_INDEX_NAME: this.jobTableDeviceIdIndex,
 					RESPONSE_CACHE_MAX_AGE:
 						this.node.getContext('isTest') === true ? '0' : '60',
 				},
@@ -218,7 +220,7 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.getFOTAJobStatusFn.fn)
-		jobTable.grantReadData(this.getFOTAJobStatusFn.fn)
+		this.jobTable.grantReadData(this.getFOTAJobStatusFn.fn)
 
 		// List FOTA bundles
 		this.listFOTABundles = new PackedLambdaFn(
@@ -235,36 +237,5 @@ export class DeviceFOTA extends Construct {
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.listFOTABundles.fn)
-
-		// State machine to drive the multi-bundle flow
-		const mbff = new MultiBundleFOTAFlow(this, {
-			lambdas: lambdaSources.multiBundleFOTAFlow,
-			layers,
-			nrfCloudJobStatusTable,
-		})
-		this.startMultiBundleFOTAFlow = new PackedLambdaFn(
-			this,
-			'startMultiBundleFOTAFlow',
-			lambdaSources.multiBundleFOTAFlow.start,
-			{
-				description: 'REST entry point that starts the multi-bundle FOTA flow',
-				environment: {
-					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
-					STATE_MACHINE_ARN: mbff.stateMachine.stateMachineArn,
-					JOB_TABLE_NAME: jobTable.tableName,
-					JOB_TABLE_DEVICE_ID_INDEX_NAME: deviceIdIndex,
-				},
-				layers,
-				initialPolicy: [
-					new IAM.PolicyStatement({
-						actions: ['iot:GetThingShadow'],
-						resources: ['*'],
-					}),
-				],
-			},
-		)
-		mbff.stateMachine.grantStartExecution(this.startMultiBundleFOTAFlow.fn)
-		deviceStorage.devicesTable.grantReadData(this.startMultiBundleFOTAFlow.fn)
-		jobTable.grantWriteData(this.startMultiBundleFOTAFlow.fn)
 	}
 }

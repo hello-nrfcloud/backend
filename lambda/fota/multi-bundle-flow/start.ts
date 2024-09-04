@@ -108,7 +108,7 @@ const h = async (
 	try {
 		const { '@context': ctx, ...jobDetails } = job
 		void ctx
-		await c({
+		const { pk } = await c({
 			account: context.device.account,
 			target,
 			...jobDetails,
@@ -123,6 +123,9 @@ const h = async (
 					upgradePath,
 					reportedVersion,
 					account: context.device.account,
+					job: {
+						pk,
+					},
 				}),
 			}),
 		)

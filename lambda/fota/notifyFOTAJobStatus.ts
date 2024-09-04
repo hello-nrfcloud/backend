@@ -17,8 +17,6 @@ const { EventBusName } = fromEnv({
 const eventBus = new EventBridge({})
 
 const h = async (event: DynamoDBStreamEvent): Promise<void> => {
-	console.debug(JSON.stringify({ event }))
-
 	for (const record of event.Records) {
 		const newImage = record.dynamodb?.NewImage
 		if (newImage === undefined) {

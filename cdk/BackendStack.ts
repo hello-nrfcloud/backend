@@ -29,6 +29,7 @@ import { DeviceLastSeen } from './resources/DeviceLastSeen.js'
 import { DeviceLocationHistory } from './resources/DeviceLocationHistory.js'
 import { DeviceShadow } from './resources/DeviceShadow.js'
 import { DeviceStorage } from './resources/DeviceStorage.js'
+import { MultiBundleFOTAFlow } from './resources/FOTA/MultiBundleFlow.js'
 import { Feedback } from './resources/Feedback.js'
 import { HealthCheckCoAP } from './resources/HealthCheckCoAP.js'
 import { HealthCheckMqtt } from './resources/HealthCheckMqtt.js'
@@ -313,16 +314,25 @@ export class BackendStack extends Stack {
 			websocketEventBus,
 		})
 		api.addRoute(
-			'POST /device/{deviceId}/fota/{target}',
-			deviceFOTA.startMultiBundleFOTAFlow.fn,
-		)
-		api.addRoute(
 			'GET /device/{deviceId}/fota/jobs',
 			deviceFOTA.getFOTAJobStatusFn.fn,
 		)
 		api.addRoute(
 			'GET /device/{deviceId}/fota/bundles',
 			deviceFOTA.listFOTABundles.fn,
+		)
+
+		// State machine to drive the multi-bundle flow
+		const mbff = new MultiBundleFOTAFlow(this, {
+			lambdas: lambdaSources.multiBundleFOTAFlow,
+			layers: [baseLayerVersion],
+			deviceFOTA,
+			deviceStorage,
+		})
+
+		api.addRoute(
+			'POST /device/{deviceId}/fota/{target}',
+			mbff.startMultiBundleFOTAFlow.fn,
 		)
 
 		const updateDevice = new UpdateDevice(this, {
@@ -340,7 +350,14 @@ export class BackendStack extends Stack {
 				apiHealth.fn.logGroup,
 				updateDeviceState.fn.logGroup,
 				convertNrfCloudDeviceMessages.onNrfCloudDeviceMessage.logGroup,
-				deviceFOTA.startMultiBundleFOTAFlow.logGroup,
+				mbff.startMultiBundleFOTAFlow.logGroup,
+				mbff.GetDeviceFirmwareDetails.logGroup,
+				mbff.GetNextBundle.logGroup,
+				mbff.CreateFOTAJob.logGroup,
+				mbff.WaitForFOTAJobCompletionCallback.logGroup,
+				mbff.WaitForFOTAJobCompletion.logGroup,
+				mbff.WaitForUpdateAppliedCallback.logGroup,
+				mbff.startMultiBundleFOTAFlow.logGroup,
 				deviceFOTA.scheduleFetches.logGroup,
 				deviceFOTA.updater.logGroup,
 				deviceFOTA.notifier.logGroup,
