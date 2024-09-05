@@ -29,6 +29,7 @@ const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 		}
 
 		switch (job.status) {
+			case FOTAJobStatus.COMPLETED:
 			case FOTAJobStatus.SUCCEEDED:
 				await sfn.send(
 					new SendTaskSuccessCommand({
@@ -39,7 +40,6 @@ const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 				break
 			case FOTAJobStatus.FAILED:
 			case FOTAJobStatus.CANCELLED:
-			case FOTAJobStatus.COMPLETED:
 			case FOTAJobStatus.TIMED_OUT:
 			case FOTAJobStatus.REJECTED:
 				await sfn.send(

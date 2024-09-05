@@ -123,7 +123,7 @@ export class MultiBundleFOTAFlow extends Construct {
 			this,
 			'WaitForUpdateAppliedCallback',
 			{
-				source: lambdas.WaitForFOTAJobCompletionCallback,
+				source: lambdas.waitForUpdateAppliedCallback,
 				layers,
 				description:
 					'Records the callback token for the task waiting for the device to report the update version',
@@ -222,6 +222,7 @@ export class MultiBundleFOTAFlow extends Construct {
 											),
 										),
 									},
+									resultPath: '$.DynamoDB',
 								}).next(
 									WaitForFOTAJobCompletionCallback.task.next(
 										WaitForUpdateAppliedCallback.task.next(
@@ -309,9 +310,10 @@ export class MultiBundleFOTAFlow extends Construct {
 				timeout: Duration.minutes(1),
 			},
 		)
+		this.stateMachine.grantTaskResponse(this.WaitForFOTAJobCompletion.fn)
 
 		this.WaitForFOTAJobCompletion.fn.addEventSource(
-			new EventSources.DynamoEventSource(deviceFOTA.jobTable, {
+			new EventSources.DynamoEventSource(deviceFOTA.nrfCloudJobStatusTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
 				filters: [
 					Lambda.FilterCriteria.filter({
