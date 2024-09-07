@@ -1,11 +1,16 @@
 import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
-import { PackedLambdaFn } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import {
+	IoTActionRole,
+	PackedLambdaFn,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { FOTAJobStatus as nRFCloudFOTAJobStatus } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { FOTAJobStatus } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
 	aws_lambda_event_sources as EventSources,
 	aws_iam as IAM,
+	aws_iot as IoT,
 	aws_lambda as Lambda,
 	aws_stepfunctions_tasks as StepFunctionsTasks,
 } from 'aws-cdk-lib'
@@ -45,6 +50,7 @@ export class MultiBundleFOTAFlow extends Construct {
 	public readonly WaitForFOTAJobCompletionCallback: PackedLambdaFn
 	public readonly WaitForFOTAJobCompletion: PackedLambdaFn
 	public readonly WaitForUpdateAppliedCallback: PackedLambdaFn
+	public readonly WaitForUpdateApplied: PackedLambdaFn
 	public readonly startMultiBundleFOTAFlow: PackedLambdaFn
 
 	public constructor(
@@ -115,7 +121,7 @@ export class MultiBundleFOTAFlow extends Construct {
 			},
 		)
 		this.WaitForFOTAJobCompletionCallback = WaitForFOTAJobCompletionCallback.fn
-		deviceFOTA.nrfCloudJobStatusTable.grantReadWriteData(
+		deviceFOTA.nrfCloudJobStatusTable.grantWriteData(
 			this.WaitForFOTAJobCompletionCallback.fn,
 		)
 
@@ -130,15 +136,12 @@ export class MultiBundleFOTAFlow extends Construct {
 				resultPath: '$.updatedDeviceFirmwareDetails',
 				waitForJobCompletion: true,
 				environment: {
-					NRF_CLOUD_JOB_STATUS_TABLE_NAME:
-						deviceFOTA.nrfCloudJobStatusTable.tableName,
+					JOB_TABLE_NAME: deviceFOTA.jobTable.tableName,
 				},
 			},
 		)
 		this.WaitForUpdateAppliedCallback = WaitForUpdateAppliedCallback.fn
-		deviceFOTA.nrfCloudJobStatusTable.grantReadWriteData(
-			this.WaitForUpdateAppliedCallback.fn,
-		)
+		deviceFOTA.jobTable.grantWriteData(this.WaitForUpdateAppliedCallback.fn)
 
 		const bundleLoop = GetNextBundle.task // Figure out the next bundle
 		bundleLoop.next(
@@ -335,6 +338,56 @@ export class MultiBundleFOTAFlow extends Construct {
 				],
 			}),
 		)
+
+		this.WaitForUpdateApplied = new PackedLambdaFn(
+			this,
+			'WaitForUpdateApplied',
+			lambdas.WaitForUpdateApplied,
+			{
+				layers,
+				description:
+					'Checks wether the device has reported a new firmware version',
+			},
+		)
+
+		const waitForFirmwareVersionReportRuleRole = new IoTActionRole(this).role
+
+		const waitForFirmwareVersionReportRule = new IoT.CfnTopicRule(
+			this,
+			'waitForFirmwareVersionReportRule',
+			{
+				topicRulePayload: {
+					description: 'Observe the device shadow for firmware version updates',
+					ruleDisabled: false,
+					awsIotSqlVersion: '2016-03-23',
+					sql: [
+						`SELECT`,
+						`state.reported as reported,`,
+						`topic(3) as deviceId`,
+						`FROM '$aws/things/+/shadow/name/lwm2m/update/accepted'`,
+						`WHERE isUndefined(get(state.reported, "${LwM2MObjectID.DeviceInformation_14204}:1.0")) = false`,
+					].join(' '),
+					actions: [
+						{
+							lambda: {
+								functionArn: this.WaitForUpdateApplied.fn.functionArn,
+							},
+						},
+					],
+					errorAction: {
+						republish: {
+							roleArn: waitForFirmwareVersionReportRuleRole.roleArn,
+							topic: 'errors',
+						},
+					},
+				},
+			},
+		)
+
+		this.WaitForUpdateApplied.fn.addPermission('topicRule', {
+			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
+			sourceArn: waitForFirmwareVersionReportRule.attrArn,
+		})
 	}
 }
 

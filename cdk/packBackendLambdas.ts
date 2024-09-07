@@ -47,6 +47,7 @@ export type BackendLambdas = {
 		WaitForFOTAJobCompletionCallback: PackedLambda
 		waitForFOTAJobCompletion: PackedLambda
 		waitForUpdateAppliedCallback: PackedLambda
+		WaitForUpdateApplied: PackedLambda
 	}
 }
 
@@ -156,6 +157,10 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		waitForUpdateAppliedCallback: await packLambdaFromPath(
 			'multiBundleFOTAFlowWaitForUpdateAppliedCallback',
 			'lambda/fota/multi-bundle-flow/waitForUpdateAppliedCallback.ts',
+		),
+		WaitForUpdateApplied: await packLambdaFromPath(
+			'multiBundleFOTAFlowWaitForUpdateApplied',
+			'lambda/fota/multi-bundle-flow/waitForUpdateApplied.ts',
 		),
 	},
 })
