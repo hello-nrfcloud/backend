@@ -4,7 +4,7 @@ import {
 	PackedLambdaFn,
 } from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import { FOTAJobStatus as nRFCloudFOTAJobStatus } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
-import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { definitions, LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { FOTAJobStatus } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
@@ -346,7 +346,7 @@ export class MultiBundleFOTAFlow extends Construct {
 			{
 				layers,
 				description:
-					'Checks wether the device has reported a new firmware version',
+					'Receives the reported firmware version from the device and updates the job status',
 			},
 		)
 
@@ -365,7 +365,7 @@ export class MultiBundleFOTAFlow extends Construct {
 						`state.reported as reported,`,
 						`topic(3) as deviceId`,
 						`FROM '$aws/things/+/shadow/name/lwm2m/update/accepted'`,
-						`WHERE isUndefined(get(state.reported, "${LwM2MObjectID.DeviceInformation_14204}:1.0")) = false`,
+						`WHERE isUndefined(get(state.reported, "${LwM2MObjectID.DeviceInformation_14204}:${definitions[LwM2MObjectID.DeviceInformation_14204].ObjectVersion}")) = false`,
 					].join(' '),
 					actions: [
 						{
