@@ -39,4 +39,7 @@ export const writeTaskToken =
 				},
 			}),
 		)
+		console.debug(
+			`Wrote task token in table ${TableName} for ${JSON.stringify(Key)} in field ${tokenName}: ${taskToken}`,
+		)
 	}

@@ -347,8 +347,13 @@ export class MultiBundleFOTAFlow extends Construct {
 				layers,
 				description:
 					'Receives the reported firmware version from the device and updates the job status',
+				environment: {
+					JOB_TABLE_NAME: deviceFOTA.jobTable.tableName,
+				},
 			},
 		)
+		deviceFOTA.jobTable.grantReadData(this.WaitForUpdateApplied.fn)
+		this.stateMachine.grantTaskResponse(this.WaitForUpdateApplied.fn)
 
 		const waitForFirmwareVersionReportRuleRole = new IoTActionRole(this).role
 
