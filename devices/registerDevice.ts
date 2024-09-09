@@ -14,11 +14,13 @@ export const registerDevice =
 		model,
 		fingerprint,
 		account,
+		hwVersion,
 	}: {
 		id: string
 		model: string
 		fingerprint: string
 		account: string
+		hwVersion: string
 	}): Promise<{ success: true } | { error: Error }> => {
 		try {
 			await db.send(
@@ -29,6 +31,7 @@ export const registerDevice =
 						fingerprint,
 						model,
 						account,
+						hwVersion,
 					}),
 					ConditionExpression:
 						'attribute_not_exists(deviceId) and attribute_not_exists(fingerprint)',

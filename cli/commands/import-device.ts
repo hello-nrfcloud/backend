@@ -27,7 +27,7 @@ export const importDeviceCommand = ({
 	devicesTableFingerprintIndexName: string
 	stackName: string
 }): CommandDefinition => ({
-	command: 'import-device <account> <model> <imei> <certPEMFile>',
+	command: 'import-device <account> <model> <hwVersion> <imei> <certPEMFile>',
 	options: [
 		{
 			flags: '-f, --fingerprint <fingerprint>',
@@ -42,6 +42,7 @@ export const importDeviceCommand = ({
 	action: async (
 		account,
 		model,
+		hwVersion,
 		imei,
 		certPEMFile,
 		{ fingerprint, reRegister },
@@ -133,6 +134,7 @@ export const importDeviceCommand = ({
 			model,
 			fingerprint,
 			account,
+			hwVersion,
 		})
 		if ('error' in res) {
 			console.error(

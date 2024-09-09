@@ -65,6 +65,7 @@ await Promise.all(
 				model: settings.healthCheckModel,
 				fingerprint: settings.healthCheckFingerPrint,
 				account,
+				hwVersion: '0.0.0-development',
 			})
 		},
 	),

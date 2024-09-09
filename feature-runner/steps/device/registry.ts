@@ -47,6 +47,7 @@ export const createDeviceForModel = ({
 				model,
 				fingerprint,
 				account,
+				hwVersion: '0.0.0-development',
 			})
 
 			await waitForDeviceToBeAvailable({

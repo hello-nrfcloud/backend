@@ -82,6 +82,7 @@ await Promise.all(
 					model: settings.healthCheckModel,
 					fingerprint: settings.healthCheckFingerPrint,
 					account,
+					hwVersion: '0.0.0-development',
 				})
 			} else {
 				log.warn(`${account} does not have health check settings`)

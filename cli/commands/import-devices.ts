@@ -25,8 +25,8 @@ export const importDevicesCommand = ({
 		'import-devices <account> <model> <devicesListFile> <certificatesZipFile>',
 	options: [
 		{
-			flags: '-l, --linux',
-			description: `Use Linux line ends`,
+			flags: '-w, --windows',
+			description: `Use Windows line ends`,
 		},
 	],
 	action: async (
@@ -34,12 +34,12 @@ export const importDevicesCommand = ({
 		model,
 		devicesListFile,
 		certificatesZipFile,
-		{ linux },
+		{ windows },
 	) => {
 		const devices = await readDevicesList(
 			devicesListFile,
 			model,
-			linux === true ? '\n' : '\r\n',
+			windows === true ? '\r\n' : '\n',
 		)
 
 		console.log(chalk.blue(`Found ${devices.size} devices in the list.`))
@@ -68,11 +68,15 @@ export const importDevicesCommand = ({
 
 		console.log(
 			table([
-				['Fingerprint', 'Device ID'],
-				...Array.from(devices.entries()).map(([imei, { fingerprint }]) => [
-					chalk.green(fingerprint),
-					chalk.blue(imei),
-				]),
+				['Fingerprint', 'Device ID', 'Model', 'HW version'],
+				...Array.from(devices.entries()).map(
+					([imei, { fingerprint, hwVersion }]) => [
+						chalk.green(fingerprint),
+						chalk.blue(imei),
+						chalk.blue(model),
+						chalk.blue(hwVersion),
+					],
+				),
 			]),
 		)
 
@@ -112,17 +116,19 @@ export const importDevicesCommand = ({
 			chalk.yellow(registration.bulkOpsRequestId),
 		)
 
-		for (const [imei, { fingerprint }] of devices.entries()) {
+		const r = registerDevice({
+			db,
+			devicesTableName,
+		})
+		for (const [imei, { fingerprint, hwVersion }] of devices.entries()) {
 			const deviceId = `oob-${imei}`
 
-			const res = await registerDevice({
-				db,
-				devicesTableName,
-			})({
+			const res = await r({
 				id: deviceId,
 				model,
 				fingerprint,
 				account,
+				hwVersion,
 			})
 			if ('error' in res) {
 				console.error(

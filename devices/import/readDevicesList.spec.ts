@@ -17,18 +17,21 @@ void describe('readDevicesList()', () => {
 					'355066600000001',
 					{
 						fingerprint: '974.test42',
+						hwVersion: '0.7.0',
 					},
 				],
 				[
 					'355066600000002',
 					{
 						fingerprint: '971.test43',
+						hwVersion: '0.7.0',
 					},
 				],
 				[
 					'355066600000003',
 					{
 						fingerprint: '971.test44',
+						hwVersion: '0.7.0',
 					},
 				],
 			]),
