@@ -20,6 +20,7 @@ import {
 	DefinitionBody,
 	IntegrationPattern,
 	JsonPath,
+	Parallel,
 	Pass,
 	StateMachine,
 	StateMachineType,
@@ -106,7 +107,7 @@ export class MultiBundleFOTAFlow extends Construct {
 
 		const WaitForFOTAJobCompletionCallback = new LambdaStep(
 			this,
-			'WaitForFOTAJobCompletionCallback',
+			'WaitForFOTAJobCompletion',
 			{
 				source: lambdas.WaitForFOTAJobCompletionCallback,
 				layers,
@@ -127,7 +128,7 @@ export class MultiBundleFOTAFlow extends Construct {
 
 		const WaitForUpdateAppliedCallback = new LambdaStep(
 			this,
-			'WaitForUpdateAppliedCallback',
+			'WaitForUpdateApplied',
 			{
 				source: lambdas.waitForUpdateAppliedCallback,
 				layers,
@@ -227,8 +228,13 @@ export class MultiBundleFOTAFlow extends Construct {
 									},
 									resultPath: '$.DynamoDB',
 								}).next(
-									WaitForFOTAJobCompletionCallback.task.next(
-										WaitForUpdateAppliedCallback.task.next(
+									new Parallel(this, 'WaitForUpdateSuccess', {})
+										.branch(
+											WaitForUpdateAppliedCallback.task,
+											WaitForFOTAJobCompletionCallback.task,
+										)
+										// FIXME: merge results from array
+										.next(
 											new Pass(this, 'updateReportedVersion', {
 												parameters: {
 													appVersion: JsonPath.stringAt(
@@ -242,10 +248,9 @@ export class MultiBundleFOTAFlow extends Construct {
 													),
 												},
 												comment: 'Update the version reported by the device.',
-												resultPath: '$.	deviceFirmwareDetails',
+												resultPath: '$.deviceFirmwareDetails',
 											}).next(bundleLoop),
 										),
-									),
 								),
 							),
 						),
@@ -305,7 +310,7 @@ export class MultiBundleFOTAFlow extends Construct {
 
 		this.WaitForFOTAJobCompletion = new PackedLambdaFn(
 			this,
-			'WaitForFOTAJobCompletion',
+			'WaitForFOTAJobCompletionFn',
 			lambdas.waitForFOTAJobCompletion,
 			{
 				description: 'Wait for the nRF Cloud FOTA job to complete',
@@ -341,7 +346,7 @@ export class MultiBundleFOTAFlow extends Construct {
 
 		this.WaitForUpdateApplied = new PackedLambdaFn(
 			this,
-			'WaitForUpdateApplied',
+			'WaitForUpdateAppliedFn',
 			lambdas.WaitForUpdateApplied,
 			{
 				layers,

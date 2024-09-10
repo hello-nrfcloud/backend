@@ -33,6 +33,7 @@ const h = async (event: {
 	let maybeJob: PersistedJob | null = null
 	let newVersion: string | undefined
 	// Find a pending job for the device
+	let type: 'app' | 'mfw' | undefined
 	if ('3' in event.reported[objectKey as `14204:1.0`][0]) {
 		// New Application firmware version reported
 		maybeJob = await get(
@@ -42,6 +43,7 @@ const h = async (event: {
 			}),
 		)
 		newVersion = event.reported[objectKey as `14204:1.0`][0]['3']
+		type = 'app'
 	}
 	if ('2' in event.reported[objectKey as `14204:1.0`][0]) {
 		// New modem firmware version reported
@@ -52,6 +54,7 @@ const h = async (event: {
 			}),
 		)
 		newVersion = event.reported[objectKey as `14204:1.0`][0]['2']
+		type = 'mfw'
 	}
 	if (maybeJob === null) {
 		console.debug('No job found for device', event.deviceId)
@@ -73,12 +76,12 @@ const h = async (event: {
 			new SendTaskSuccessCommand({
 				taskToken: maybeJob.waitForUpdateAppliedTaskToken,
 				output: JSON.stringify({
-					reportedVersion: newVersion,
+					[type === 'app' ? 'appVersion' : 'mfwVersion']: newVersion,
 				}),
 			}),
 		)
 		return
 	}
-	console.debug('Application version already reported', newVersion)
+	console.debug('version already reported', newVersion)
 }
 export const handler = middy().use(requestLogger()).handler(h)
