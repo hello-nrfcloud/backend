@@ -233,23 +233,71 @@ export class MultiBundleFOTAFlow extends Construct {
 											WaitForUpdateAppliedCallback.task,
 											WaitForFOTAJobCompletionCallback.task,
 										)
-										// FIXME: merge results from array
 										.next(
-											new Pass(this, 'updateReportedVersion', {
+											new Pass(this, 'mergeResults', {
+												comment: 'Merge results from parallel branches.',
 												parameters: {
-													appVersion: JsonPath.stringAt(
-														'$.updatedDeviceFirmwareDetails.appVersion',
+													usedVersions: JsonPath.objectAt('$[0].usedVersions'),
+													reportedVersion: JsonPath.stringAt(
+														'$[0].reportedVersion',
 													),
-													mfwVersion: JsonPath.stringAt(
-														'$.updatedDeviceFirmwareDetails.mfwVersion',
+													nextBundle: JsonPath.objectAt('$[0].nextBundle'),
+													job: JsonPath.objectAt('$[0].job'),
+													deviceFirmwareDetails: JsonPath.objectAt(
+														'$[0].deviceFirmwareDetails',
 													),
-													supportedFOTATypes: JsonPath.listAt(
-														'$.updatedDeviceFirmwareDetails.supportedFOTATypes',
+													upgradePath: JsonPath.objectAt('$[0].upgradePath'),
+													deviceId: JsonPath.stringAt('$[0].deviceId'),
+													account: JsonPath.stringAt('$[0].account'),
+													fotaJob: JsonPath.objectAt('$[0].fotaJob'),
+													updatedDeviceFirmwareDetails: JsonPath.objectAt(
+														'$[0].updatedDeviceFirmwareDetails',
 													),
+													fotaJobStatus:
+														JsonPath.objectAt('$[1].fotaJobStatus'),
 												},
-												comment: 'Update the version reported by the device.',
-												resultPath: '$.deviceFirmwareDetails',
-											}).next(bundleLoop),
+											}).next(
+												new Choice(this, 'Application or MFM updated?')
+													.when(
+														Condition.isNotNull(
+															`$.updatedDeviceFirmwareDetails.appVersion`,
+														),
+														new Pass(this, 'updateReportedAppVersion', {
+															parameters: {
+																appVersion: JsonPath.stringAt(
+																	'$.updatedDeviceFirmwareDetails.appVersion',
+																),
+																mfwVersion: JsonPath.stringAt(
+																	'$.deviceFirmwareDetails.mfwVersion',
+																),
+																supportedFOTATypes: JsonPath.listAt(
+																	'$.deviceFirmwareDetails.supportedFOTATypes',
+																),
+															},
+															comment:
+																'Update the application version reported by the device.',
+															resultPath: '$.deviceFirmwareDetails',
+														}).next(bundleLoop),
+													)
+													.otherwise(
+														new Pass(this, 'updateReportedMFWVersion', {
+															parameters: {
+																mfwVersion: JsonPath.stringAt(
+																	'$.updatedDeviceFirmwareDetails.mfwVersion',
+																),
+																appVersion: JsonPath.stringAt(
+																	'$.deviceFirmwareDetails.appVersion',
+																),
+																supportedFOTATypes: JsonPath.listAt(
+																	'$.deviceFirmwareDetails.supportedFOTATypes',
+																),
+															},
+															comment:
+																'Update the modem firmware version reported by the device.',
+															resultPath: '$.deviceFirmwareDetails',
+														}).next(bundleLoop),
+													),
+											),
 										),
 								),
 							),
@@ -257,9 +305,37 @@ export class MultiBundleFOTAFlow extends Construct {
 					),
 				)
 				.otherwise(
-					new Succeed(this, 'noMoreUpdates', {
-						comment: 'No further update defined.',
-					}),
+					// FIXME: delete and copy the job under pk = id
+					new StepFunctionsTasks.DynamoUpdateItem(this, 'FinishJob', {
+						comment: 'Update the job status to SUCCEEDED',
+						table: deviceFOTA.jobTable,
+						key: {
+							pk: DynamoAttributeValue.fromString(
+								JsonPath.stringAt('$.job.pk'),
+							),
+						},
+						// Update the PK to the id so further jobs can be created for this device
+						updateExpression:
+							'SET #status = :status, #statusDetail = :statusDetail, #pk = #id',
+						expressionAttributeNames: {
+							'#status': 'status',
+							'#statusDetail': 'statusDetail',
+							'#id': 'id',
+							'#pk': 'pk',
+						},
+						expressionAttributeValues: {
+							':status': DynamoAttributeValue.fromString(
+								FOTAJobStatus.SUCCEEDED,
+							),
+							':statusDetail':
+								DynamoAttributeValue.fromString(`Completed job.`),
+						},
+						resultPath: '$.DynamoDB',
+					}).next(
+						new Succeed(this, 'noMoreUpdates', {
+							comment: 'No further update defined.',
+						}),
+					),
 				),
 		)
 
