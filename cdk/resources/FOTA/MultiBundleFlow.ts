@@ -172,9 +172,12 @@ export class MultiBundleFOTAFlow extends Construct {
 								),
 							),
 						},
-					}).next(
-						// Create the FOTA job on nRF Cloud for the bundle
-						CreateFOTAJob.task.next(
+					})
+						.next(
+							// Create the FOTA job on nRF Cloud for the bundle
+							CreateFOTAJob.task,
+						)
+						.next(
 							// Persist the job details so the job fetcher can poll the API
 							new StepFunctionsTasks.DynamoPutItem(this, 'PersistJobDetails', {
 								table: deviceFOTA.nrfCloudJobStatusTable,
@@ -199,143 +202,210 @@ export class MultiBundleFOTAFlow extends Construct {
 									),
 								},
 								resultPath: '$.DynamoDB',
-							}).next(
-								new StepFunctionsTasks.DynamoUpdateItem(this, 'UpdateJob', {
-									comment: 'Update the job status to IN_PROGRESS',
-									table: deviceFOTA.jobTable,
-									key: {
-										pk: DynamoAttributeValue.fromString(
-											JsonPath.stringAt('$.job.pk'),
+							}),
+						)
+						.next(
+							new StepFunctionsTasks.DynamoUpdateItem(this, 'UpdateJob', {
+								comment: 'Update the job status to IN_PROGRESS',
+								table: deviceFOTA.jobTable,
+								key: {
+									pk: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.job.pk'),
+									),
+								},
+								updateExpression:
+									'SET #status = :status, #statusDetail = :statusDetail',
+								expressionAttributeNames: {
+									'#status': 'status',
+									'#statusDetail': 'statusDetail',
+								},
+								expressionAttributeValues: {
+									':status': DynamoAttributeValue.fromString(
+										FOTAJobStatus.IN_PROGRESS,
+									),
+									':statusDetail': DynamoAttributeValue.fromString(
+										JsonPath.format(
+											`Started job for version {} with bundle {}.`,
+											JsonPath.stringAt('$.reportedVersion'),
+											JsonPath.stringAt('$.nextBundle.bundleId'),
 										),
-									},
-									updateExpression:
-										'SET #status = :status, #statusDetail = :statusDetail',
-									expressionAttributeNames: {
-										'#status': 'status',
-										'#statusDetail': 'statusDetail',
-									},
-									expressionAttributeValues: {
-										':status': DynamoAttributeValue.fromString(
-											FOTAJobStatus.IN_PROGRESS,
-										),
-										':statusDetail': DynamoAttributeValue.fromString(
-											JsonPath.format(
-												`Started job for version {} with bundle {}.`,
-												JsonPath.stringAt('$.reportedVersion'),
-												JsonPath.stringAt('$.nextBundle.bundleId'),
-											),
-										),
-									},
-									resultPath: '$.DynamoDB',
-								}).next(
-									new Parallel(this, 'WaitForUpdateSuccess', {})
-										.branch(
-											WaitForUpdateAppliedCallback.task,
-											WaitForFOTAJobCompletionCallback.task,
-										)
-										.next(
-											new Pass(this, 'mergeResults', {
-												comment: 'Merge results from parallel branches.',
-												parameters: {
-													usedVersions: JsonPath.objectAt('$[0].usedVersions'),
-													reportedVersion: JsonPath.stringAt(
-														'$[0].reportedVersion',
-													),
-													nextBundle: JsonPath.objectAt('$[0].nextBundle'),
-													job: JsonPath.objectAt('$[0].job'),
-													deviceFirmwareDetails: JsonPath.objectAt(
-														'$[0].deviceFirmwareDetails',
-													),
-													upgradePath: JsonPath.objectAt('$[0].upgradePath'),
-													deviceId: JsonPath.stringAt('$[0].deviceId'),
-													account: JsonPath.stringAt('$[0].account'),
-													fotaJob: JsonPath.objectAt('$[0].fotaJob'),
-													updatedDeviceFirmwareDetails: JsonPath.objectAt(
-														'$[0].updatedDeviceFirmwareDetails',
-													),
-													fotaJobStatus:
-														JsonPath.objectAt('$[1].fotaJobStatus'),
-												},
-											}).next(
-												new Choice(this, 'Application or MFM updated?')
-													.when(
-														Condition.isNotNull(
-															`$.updatedDeviceFirmwareDetails.appVersion`,
-														),
-														new Pass(this, 'updateReportedAppVersion', {
-															parameters: {
-																appVersion: JsonPath.stringAt(
-																	'$.updatedDeviceFirmwareDetails.appVersion',
-																),
-																mfwVersion: JsonPath.stringAt(
-																	'$.deviceFirmwareDetails.mfwVersion',
-																),
-																supportedFOTATypes: JsonPath.listAt(
-																	'$.deviceFirmwareDetails.supportedFOTATypes',
-																),
-															},
-															comment:
-																'Update the application version reported by the device.',
-															resultPath: '$.deviceFirmwareDetails',
-														}).next(bundleLoop),
-													)
-													.otherwise(
-														new Pass(this, 'updateReportedMFWVersion', {
-															parameters: {
-																mfwVersion: JsonPath.stringAt(
-																	'$.updatedDeviceFirmwareDetails.mfwVersion',
-																),
-																appVersion: JsonPath.stringAt(
-																	'$.deviceFirmwareDetails.appVersion',
-																),
-																supportedFOTATypes: JsonPath.listAt(
-																	'$.deviceFirmwareDetails.supportedFOTATypes',
-																),
-															},
-															comment:
-																'Update the modem firmware version reported by the device.',
-															resultPath: '$.deviceFirmwareDetails',
-														}).next(bundleLoop),
-													),
-											),
-										),
-								),
+									),
+								},
+								resultPath: '$.DynamoDB',
+							}),
+						)
+						.next(
+							new Parallel(this, 'WaitForUpdateSuccess', {}).branch(
+								WaitForUpdateAppliedCallback.task,
+								WaitForFOTAJobCompletionCallback.task,
 							),
+						)
+						.next(
+							new Pass(this, 'mergeResults', {
+								comment: 'Merge results from parallel branches.',
+								parameters: {
+									usedVersions: JsonPath.objectAt('$[0].usedVersions'),
+									reportedVersion: JsonPath.stringAt('$[0].reportedVersion'),
+									nextBundle: JsonPath.objectAt('$[0].nextBundle'),
+									job: JsonPath.objectAt('$[0].job'),
+									deviceFirmwareDetails: JsonPath.objectAt(
+										'$[0].deviceFirmwareDetails',
+									),
+									upgradePath: JsonPath.objectAt('$[0].upgradePath'),
+									deviceId: JsonPath.stringAt('$[0].deviceId'),
+									account: JsonPath.stringAt('$[0].account'),
+									fotaJob: JsonPath.objectAt('$[0].fotaJob'),
+									updatedDeviceFirmwareDetails: JsonPath.objectAt(
+										'$[0].updatedDeviceFirmwareDetails',
+									),
+									fotaJobStatus: JsonPath.objectAt('$[1].fotaJobStatus'),
+								},
+							}),
+						)
+						.next(
+							new Choice(this, 'Application or MFM updated?')
+								.when(
+									Condition.isNotNull(
+										`$.updatedDeviceFirmwareDetails.appVersion`,
+									),
+									new Pass(this, 'updateReportedAppVersion', {
+										parameters: {
+											appVersion: JsonPath.stringAt(
+												'$.updatedDeviceFirmwareDetails.appVersion',
+											),
+											mfwVersion: JsonPath.stringAt(
+												'$.deviceFirmwareDetails.mfwVersion',
+											),
+											supportedFOTATypes: JsonPath.listAt(
+												'$.deviceFirmwareDetails.supportedFOTATypes',
+											),
+										},
+										comment:
+											'Update the application version reported by the device.',
+										resultPath: '$.deviceFirmwareDetails',
+									})
+										.next(
+											new Pass(this, 'updateReportedVersionFromAppVersion', {
+												inputPath: '$.updatedDeviceFirmwareDetails.appVersion',
+												resultPath: '$.reportedVersion',
+											}),
+										)
+										.next(bundleLoop),
+								)
+								.otherwise(
+									new Pass(this, 'updateReportedMFWVersion', {
+										parameters: {
+											mfwVersion: JsonPath.stringAt(
+												'$.updatedDeviceFirmwareDetails.mfwVersion',
+											),
+											appVersion: JsonPath.stringAt(
+												'$.deviceFirmwareDetails.appVersion',
+											),
+											supportedFOTATypes: JsonPath.listAt(
+												'$.deviceFirmwareDetails.supportedFOTATypes',
+											),
+										},
+										comment:
+											'Update the modem firmware version reported by the device.',
+										resultPath: '$.deviceFirmwareDetails',
+									})
+										.next(
+											new Pass(this, 'updateReportedVersionFromMfwVersion', {
+												inputPath: '$.updatedDeviceFirmwareDetails.mfwVersion',
+												resultPath: '$.reportedVersion',
+											}),
+										)
+										.next(bundleLoop),
+								),
 						),
-					),
 				)
 				.otherwise(
-					// FIXME: delete and copy the job under pk = id
-					new StepFunctionsTasks.DynamoUpdateItem(this, 'FinishJob', {
-						comment: 'Update the job status to SUCCEEDED',
+					new StepFunctionsTasks.DynamoGetItem(this, 'GetJob', {
+						comment: 'Get the current job',
 						table: deviceFOTA.jobTable,
 						key: {
 							pk: DynamoAttributeValue.fromString(
 								JsonPath.stringAt('$.job.pk'),
 							),
 						},
-						// Update the PK to the id so further jobs can be created for this device
-						updateExpression:
-							'SET #status = :status, #statusDetail = :statusDetail, #pk = #id',
-						expressionAttributeNames: {
-							'#status': 'status',
-							'#statusDetail': 'statusDetail',
-							'#id': 'id',
-							'#pk': 'pk',
-						},
-						expressionAttributeValues: {
-							':status': DynamoAttributeValue.fromString(
-								FOTAJobStatus.SUCCEEDED,
-							),
-							':statusDetail':
-								DynamoAttributeValue.fromString(`Completed job.`),
-						},
 						resultPath: '$.DynamoDB',
-					}).next(
-						new Succeed(this, 'noMoreUpdates', {
-							comment: 'No further update defined.',
-						}),
-					),
+					})
+						.next(
+							new Pass(this, 'extractItem', {
+								comment: 'Set the PK to be the ID.',
+								inputPath: '$.DynamoDB.Item',
+								resultPath: '$.jobItem',
+							}),
+						)
+						.next(
+							new StepFunctionsTasks.DynamoDeleteItem(this, 'DeleteJob', {
+								comment: 'Delete the job (it will be saved as a copy)',
+								table: deviceFOTA.jobTable,
+								key: {
+									pk: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.job.pk'),
+									),
+								},
+								resultPath: '$.DynamoDB',
+							}),
+						)
+						.next(
+							new Pass(this, 'updatePk', {
+								comment: 'Set the PK to be the ID.',
+								inputPath: '$.jobItem.id',
+								resultPath: '$.jobItem.pk',
+							}),
+						)
+						.next(
+							new StepFunctionsTasks.DynamoPutItem(this, 'CopyJob', {
+								comment: 'Copy the job to a new ID',
+								table: deviceFOTA.jobTable,
+								item: {
+									pk: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.jobItem.id.S'),
+									), // "01J71XVDKV9YY7H4CDCKQXJB3Q",
+									account: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.jobItem.account.S'),
+									), // "nordic",
+									deviceId: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.jobItem.deviceId.S'),
+									), // "oob-350006668224459",
+									id: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.jobItem.id.S'),
+									), // "01J71XVDKV9YY7H4CDCKQXJB3Q",
+									reportedVersion: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.reportedVersion'),
+									), // "2.0.0",
+									status: DynamoAttributeValue.fromString(
+										FOTAJobStatus.SUCCEEDED,
+									),
+									statusDetail: DynamoAttributeValue.fromString(
+										JsonPath.format(
+											'No more bundles to apply for {}. Job completed.',
+											JsonPath.stringAt('$.reportedVersion'),
+										),
+									),
+									target: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.jobItem.target.S'),
+									), // "app",
+									timestamp: DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$$.State.EnteredTime'),
+									), // "2024-09-05T20:26:12.987Z",
+									ttl: DynamoAttributeValue.fromNumber(
+										JsonPath.numberAt('$.jobItem.ttl.N'),
+									), // 1728159973,
+									upgradePath: DynamoAttributeValue.mapFromJsonPath(
+										'$.jobItem.upgradePath.M',
+									), // { "2.0.0": "APP*1e29dfa3*v2.0.1" }
+								},
+								resultPath: '$.DynamoDB',
+							}),
+						)
+						.next(
+							new Succeed(this, 'noMoreBundles', {
+								comment: 'No more bundles to apply.',
+							}),
+						),
 				),
 		)
 

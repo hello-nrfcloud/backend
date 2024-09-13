@@ -349,8 +349,8 @@ And `$.jobs[0]` of the last response should match
 {
   "deviceId": "${fingerprint_deviceId}",
   "status": "SUCCEEDED",
-  "statusDetail": "No further update defined.",
-  "reportedVersion": "2.0.0"
+  "statusDetail": "No more bundles to apply for 2.0.1. Job completed.",
+  "reportedVersion": "2.0.1"
 }
 ```
 
@@ -363,7 +363,7 @@ Soon I should receive a message on the websocket that matches
   "@context": "https://github.com/hello-nrfcloud/proto/fota/job",
   "deviceId": "${fingerprint_deviceId}",
   "status": "SUCCEEDED",
-  "statusDetail": "No further update defined.",
-  "reportedVersion": "2.0.0"
+  "statusDetail": "No more bundles to apply for 2.0.1. Job completed.",
+  "reportedVersion": "2.0.1"
 }
 ```
