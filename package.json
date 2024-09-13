@@ -80,7 +80,7 @@
     "constructs": "10.3.0",
     "glob": "11.0.0",
     "globstar": "1.0.0",
-    "husky": "9.1.5",
+    "husky": "9.1.6",
     "jsonata": "2.0.5",
     "nock": "14.0.0-beta.12",
     "semver": "7.6.3",
