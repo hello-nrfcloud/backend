@@ -82,7 +82,7 @@
     "globstar": "1.0.0",
     "husky": "9.1.6",
     "jsonata": "2.0.5",
-    "nock": "14.0.0-beta.12",
+    "nock": "14.0.0-beta.13",
     "semver": "7.6.3",
     "tsmatchers": "5.0.2",
     "tsx": "4.19.0",
