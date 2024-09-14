@@ -3,11 +3,12 @@ exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: oob-352656108602296
   APIURL: https://api.hello.nordicsemi.cloud
-  ts: 1694503339523
   tsISO: 2023-09-12T00:00:00.000Z
-  ts2: 1694503339523
   ts2ISO: 2023-09-12T00:00:00.000Z
+  ts3ISO: 2023-09-12T00:00:00.000Z
+  ts4ISO: 2023-09-12T00:00:00.000Z
   jobId: bc631093-7f7c-4c1b-aa63-a68c759bcd5c
+  jobId2: bc631093-7f7c-4c1b-aa63-a68c759bcd5c
 run: only
 ---
 
@@ -43,13 +44,15 @@ Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
 And I have a random UUIDv4 in `jobId`
 
-And I store `$millis()` into `ts`
+And I have a random UUIDv4 in `jobId2`
 
-And I store `$fromMillis(${ts})` into `tsISO`
+And I store `$fromMillis($millis())` into `tsISO`
 
-And I store `$millis() + 30 * 1000` into `ts2`
+And I store `$fromMillis($millis() + 30 * 1000)` into `ts2ISO`
 
-And I store `$fromMillis(${ts2})` into `ts2ISO`
+And I store `$fromMillis($millis() + 60 * 1000)` into `ts3ISO`
+
+And I store `$fromMillis($millis() + 90 * 1000)` into `ts4ISO`
 
 <!-- Devices have to report that they support FOTA. -->
 
@@ -113,7 +116,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 }
 ```
 
-<!-- This is the response nRF Cloud returns on job creation. -->
+<!-- This is the response nRF Cloud returns on the first job creation. -->
 
 And this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
 
@@ -159,6 +162,52 @@ Content-Type: application/json
 }
 ```
 
+<!-- This is the response nRF Cloud returns on the second job creation. -->
+
+And this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"jobId": "${jobId2}"}
+```
+
+<!-- Backend fetches details about the job. -->
+
+And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId2}`
+request
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+    "createdAt": "${ts2ISO}",
+    "firmware": {
+        "bundleId": "APP*cd5412d9*v2.0.2",
+        "fileSize": 425860,
+        "firmwareType": "APP",
+        "host": "firmware.nrfcloud.com",
+        "uris": [
+            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*cd5412d9*v2.0.2/hello-nrfcloud-thingy91x-v2.0.2-fwupd.bin"
+        ],
+        "version": "v2.0.2"
+    },
+    "jobId": "${jobId2}",
+    "lastUpdatedAt": "${ts3ISO}",
+    "name": "${jobId2}",
+    "status": "IN_PROGRESS",
+    "statusDetail": "Job auto applied",
+    "target": {
+        "deviceIds": [
+            "${fingerprint_deviceId}"
+        ],
+        "tags": []
+    }
+}
+```
+
 ## The device reports that it is eligible for FOTA
 
 Given I connect to the websocket using fingerprint `${fingerprint}`
@@ -182,8 +231,8 @@ Soon I should receive a message on the websocket that matches after 20 retries
 
 ## Schedule the FOTA job
 
-> This is the most simple example, it defines an upgrade path from version 2.0.0
-> (the key of the object) to 2.0.1 (the bundle ID).
+> This example defines an upgrade path from version 2.0.0 to 2.0.2 using two
+> delta updates.
 
 When I `POST`
 `${APIURL}/device/${fingerprint_deviceId}/fota/app?fingerprint=${fingerprint}`
@@ -192,7 +241,8 @@ with
 ```json
 {
   "upgradePath": {
-    "2.0.0": "APP*1e29dfa3*v2.0.1"
+    "2.0.0": "APP*1e29dfa3*v2.0.1",
+    "2.0.1": "APP*cd5412d9*v2.0.2"
   }
 }
 ```
@@ -211,7 +261,7 @@ Content-Type: application/json
 {"bundleId":"APP*1e29dfa3*v2.0.1","autoApply":true,"deviceIdentifiers":["${fingerprint_deviceId}"]}
 ```
 
-## Check the status
+## Check the status for the upgrade to 2.0.1
 
 When I `GET`
 `${APIURL}/device/${fingerprint_deviceId}/fota/jobs?fingerprint=${fingerprint}`
@@ -231,7 +281,7 @@ And `$.jobs[0]` of the last response should match
 }
 ```
 
-## Job completes
+## Job for 2.0.1 completes
 
 > The job is marked as completed by nRF Cloud
 
@@ -243,7 +293,7 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-    "createdAt": "${tsISO}",
+    "createdAt": "${ts3ISO}",
     "firmware": {
         "bundleId": "APP*1e29dfa3*v2.0.1",
         "fileSize": 425860,
@@ -255,7 +305,7 @@ Content-Type: application/json
         "version": "v2.0.1"
     },
     "jobId": "${jobId}",
-    "lastUpdatedAt": "${ts2ISO}",
+    "lastUpdatedAt": "${ts3ISO}",
     "name": "${jobId}",
     "status": "COMPLETED",
     "statusDetail": "All executions in terminal status",
@@ -334,6 +384,140 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 }
 ```
 
+## Upgrade from 2.0.1 to 2.0.2
+
+Soon the nRF Cloud API should have been called with
+
+```
+POST /v1/fota-jobs HTTP/1.1
+Content-Type: application/json
+
+{"bundleId":"APP*cd5412d9*v2.0.2","autoApply":true,"deviceIdentifiers":["${fingerprint_deviceId}"]}
+```
+
+## Check the status for the upgrade to 2.0.2
+
+When I `GET`
+`${APIURL}/device/${fingerprint_deviceId}/fota/jobs?fingerprint=${fingerprint}`
+retrying 10 times
+
+Soon I should receive a `https://github.com/hello-nrfcloud/proto/fota/jobs`
+response
+
+And `$.jobs[0]` of the last response should match
+
+```json
+{
+  "deviceId": "${fingerprint_deviceId}",
+  "status": "IN_PROGRESS",
+  "statusDetail": "Started job for version 2.0.1 with bundle APP*cd5412d9*v2.0.2.",
+  "reportedVersion": "2.0.1"
+}
+```
+
+## Job for 2.0.2 completes
+
+> The job is marked as completed by nRF Cloud
+
+Given this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId2}`
+request
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+    "createdAt": "${ts4ISO}",
+    "firmware": {
+        "bundleId": "APP*cd5412d9*v2.0.2",
+        "fileSize": 425860,
+        "firmwareType": "APP",
+        "host": "firmware.nrfcloud.com",
+        "uris": [
+            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*cd5412d9*v2.0.2/hello-nrfcloud-thingy91x-v2.0.2-fwupd.bin"
+        ],
+        "version": "v2.0.2"
+    },
+    "jobId": "${jobId2}",
+    "lastUpdatedAt": "${ts4ISO}",
+    "name": "${jobId2}",
+    "status": "COMPLETED",
+    "statusDetail": "All executions in terminal status",
+    "target": {
+        "deviceIds": [
+            "${fingerprint_deviceId}"
+        ],
+        "tags": []
+    }
+}
+```
+
+<!-- Devices reports updated version. -->
+
+And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
+
+```json
+{
+  "items": [
+    {
+      "id": "${fingerprint_deviceId}",
+      "$meta": {
+        "createdAt": "${$fromMillis($millis())}",
+        "updatedAt": "${$fromMillis($millis())}"
+      },
+      "state": {
+        "reported": {
+          "device": {
+            "deviceInfo": {
+              "appVersion": "2.0.2",
+              "modemFirmware": "mfw_nrf91x1_2.0.1",
+              "imei": "355025930003908",
+              "board": "thingy91x",
+              "hwVer": "nRF9151 LACA ADA"
+            },
+            "serviceInfo": {
+              "fota_v2": ["BOOT", "MODEM", "APP"]
+            }
+          }
+        },
+        "metadata": {
+          "reported": {
+            "device": {
+              "deviceInfo": {
+                "appVersion": {
+                  "timestamp": "$number{$floor($millis()/1000)}"
+                },
+                "modemFirmware": {
+                  "timestamp": "$number{$floor($millis()/1000)}"
+                },
+                "imei": { "timestamp": "$number{$floor($millis()/1000)}" },
+                "board": { "timestamp": "$number{$floor($millis()/1000)}" },
+                "hwVer": { "timestamp": "$number{$floor($millis()/1000)}" }
+              },
+              "serviceInfo": {
+                "fota_v2": [
+                  {
+                    "timestamp": "$number{$floor($millis()/1000)}"
+                  },
+                  {
+                    "timestamp": "$number{$floor($millis()/1000)}"
+                  },
+                  {
+                    "timestamp": "$number{$floor($millis()/1000)}"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "version": 8836
+      }
+    }
+  ],
+  "total": 1
+}
+```
+
 ## Check the status
 
 When I `GET`
@@ -349,8 +533,8 @@ And `$.jobs[0]` of the last response should match
 {
   "deviceId": "${fingerprint_deviceId}",
   "status": "SUCCEEDED",
-  "statusDetail": "No more bundles to apply for 2.0.1. Job completed.",
-  "reportedVersion": "2.0.1"
+  "statusDetail": "No more bundles to apply for 2.0.2. Job completed.",
+  "reportedVersion": "2.0.2"
 }
 ```
 
@@ -363,7 +547,7 @@ Soon I should receive a message on the websocket that matches
   "@context": "https://github.com/hello-nrfcloud/proto/fota/job",
   "deviceId": "${fingerprint_deviceId}",
   "status": "SUCCEEDED",
-  "statusDetail": "No more bundles to apply for 2.0.1. Job completed.",
-  "reportedVersion": "2.0.1"
+  "statusDetail": "No more bundles to apply for 2.0.2. Job completed.",
+  "reportedVersion": "2.0.2"
 }
 ```
