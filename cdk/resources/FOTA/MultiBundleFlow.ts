@@ -12,6 +12,8 @@ import {
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
+	aws_logs as Logs,
+	RemovalPolicy,
 	aws_stepfunctions_tasks as StepFunctionsTasks,
 } from 'aws-cdk-lib'
 import {
@@ -53,6 +55,7 @@ export class MultiBundleFOTAFlow extends Construct {
 	public readonly WaitForUpdateAppliedCallback: PackedLambdaFn
 	public readonly WaitForUpdateApplied: PackedLambdaFn
 	public readonly startMultiBundleFOTAFlow: PackedLambdaFn
+	public readonly logGroup: Logs.ILogGroup
 
 	public constructor(
 		parent: Construct,
@@ -70,6 +73,16 @@ export class MultiBundleFOTAFlow extends Construct {
 	) {
 		super(parent, 'MultiBundleFOTAFlow')
 
+		this.logGroup = new Logs.LogGroup(this, 'logGroup', {
+			removalPolicy:
+				this.node.getContext('isTest') === true
+					? RemovalPolicy.DESTROY
+					: RemovalPolicy.RETAIN,
+			logGroupName: `/${this.node.path}/`, // e.g. /<stack name>/MultiBundleFOTAFlow/
+			retention: Logs.RetentionDays.ONE_MONTH,
+			logGroupClass: Logs.LogGroupClass.STANDARD, // INFREQUENT_ACCESS does not support custom metrics
+		})
+
 		const GetDeviceFirmwareDetails = new LambdaStep(
 			this,
 			'GetDeviceFirmwareDetails',
@@ -84,6 +97,7 @@ export class MultiBundleFOTAFlow extends Construct {
 						resources: ['*'],
 					}),
 				],
+				logGroup: this.logGroup,
 			},
 		)
 		this.GetDeviceFirmwareDetails = GetDeviceFirmwareDetails.fn
@@ -93,6 +107,7 @@ export class MultiBundleFOTAFlow extends Construct {
 			layers,
 			description: 'Get the next bundle to apply',
 			resultPath: '$.nextBundle',
+			logGroup: this.logGroup,
 		})
 		this.GetNextBundle = GetNextBundle.fn
 
@@ -102,6 +117,7 @@ export class MultiBundleFOTAFlow extends Construct {
 			description: 'Create the FOTA job on nRF Cloud',
 			resultPath: '$.fotaJob',
 			retry: true,
+			logGroup: this.logGroup,
 		})
 		this.CreateFOTAJob = CreateFOTAJob.fn
 
@@ -119,6 +135,7 @@ export class MultiBundleFOTAFlow extends Construct {
 					NRF_CLOUD_JOB_STATUS_TABLE_NAME:
 						deviceFOTA.nrfCloudJobStatusTable.tableName,
 				},
+				logGroup: this.logGroup,
 			},
 		)
 		this.WaitForFOTAJobCompletionCallback = WaitForFOTAJobCompletionCallback.fn
@@ -139,6 +156,7 @@ export class MultiBundleFOTAFlow extends Construct {
 				environment: {
 					JOB_TABLE_NAME: deviceFOTA.jobTable.tableName,
 				},
+				logGroup: this.logGroup,
 			},
 		)
 		this.WaitForUpdateAppliedCallback = WaitForUpdateAppliedCallback.fn
@@ -447,6 +465,7 @@ export class MultiBundleFOTAFlow extends Construct {
 						resources: ['*'],
 					}),
 				],
+				logGroup: this.logGroup,
 			},
 		)
 		this.startMultiBundleFOTAFlow = startMultiBundleFOTAFlow
@@ -462,6 +481,7 @@ export class MultiBundleFOTAFlow extends Construct {
 				description: 'Wait for the nRF Cloud FOTA job to complete',
 				layers,
 				timeout: Duration.minutes(1),
+				logGroup: this.logGroup,
 			},
 		)
 		this.stateMachine.grantTaskResponse(this.WaitForFOTAJobCompletion.fn)
@@ -501,6 +521,7 @@ export class MultiBundleFOTAFlow extends Construct {
 				environment: {
 					JOB_TABLE_NAME: deviceFOTA.jobTable.tableName,
 				},
+				logGroup: this.logGroup,
 			},
 		)
 		deviceFOTA.jobTable.grantReadData(this.WaitForUpdateApplied.fn)
@@ -564,6 +585,7 @@ class LambdaStep extends Construct {
 			inputPath,
 			environment,
 			retry,
+			logGroup,
 		}: {
 			source: PackedLambda
 			layers: Lambda.ILayerVersion[]
@@ -574,6 +596,7 @@ class LambdaStep extends Construct {
 			inputPath?: string
 			environment?: Record<string, string>
 			retry?: boolean
+			logGroup: Logs.ILogGroup
 		},
 	) {
 		super(parent, id)
@@ -583,6 +606,7 @@ class LambdaStep extends Construct {
 			layers,
 			initialPolicy,
 			environment,
+			logGroup,
 		})
 
 		this.task = new StepFunctionsTasks.LambdaInvoke(this, `${id}`, {
