@@ -71,7 +71,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 				maybeJob.error instanceof FetchError &&
 				maybeJob.error.statusCode === 404
 			) {
-				console.debug(`FOTA job ${jobId} not found!`, maybeJob.error)
+				console.error(`FOTA job ${jobId} not found!`, maybeJob.error)
 				// Mark the job as failed
 				if (Date.now() - new Date(createdAt).getTime() > 24 * 60 * 60 * 1000) {
 					await db.send(
