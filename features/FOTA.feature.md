@@ -3,12 +3,12 @@ exampleContext:
   fingerprint: 92b.y7i24q
   fingerprint_deviceId: oob-352656108602296
   APIURL: https://api.hello.nordicsemi.cloud
-  tsISO: 2023-09-12T00:00:00.000Z
-  ts2ISO: 2023-09-12T00:00:00.000Z
-  ts3ISO: 2023-09-12T00:00:00.000Z
-  ts4ISO: 2023-09-12T00:00:00.000Z
-  jobId: bc631093-7f7c-4c1b-aa63-a68c759bcd5c
-  jobId2: bc631093-7f7c-4c1b-aa63-a68c759bcd5c
+  tsJob1CreatedISO: 2023-09-12T00:01:00.000Z
+  tsJob2CreatedISO: 2023-09-12T00:02:00.000Z
+  tsJob1CompletedISO: 2023-09-12T00:03:00.000Z
+  tsJob2CompletedISO: 2023-09-12T00:04:00.000Z
+  job1Id: bc631093-7f7c-4c1b-aa63-a68c759bcd5c
+  job2Id: 17880ed2-8f56-47c1-ba76-0fda1d4adba9
 run: only
 ---
 
@@ -42,17 +42,17 @@ run: only
 
 Given I have the fingerprint for a `PCA20065` device in `fingerprint`
 
-And I have a random UUIDv4 in `jobId`
+And I have a random UUIDv4 in `job1Id`
 
-And I have a random UUIDv4 in `jobId2`
+And I have a random UUIDv4 in `job2Id`
 
-And I store `$fromMillis($millis())` into `tsISO`
+And I store `$fromMillis($millis())` into `tsJob1CreatedISO`
 
-And I store `$fromMillis($millis() + 30 * 1000)` into `ts2ISO`
+And I store `$fromMillis($millis() + 30 * 1000)` into `tsJob2CreatedISO`
 
-And I store `$fromMillis($millis() + 60 * 1000)` into `ts3ISO`
+And I store `$fromMillis($millis() + 60 * 1000)` into `tsJob1CompletedISO`
 
-And I store `$fromMillis($millis() + 90 * 1000)` into `ts4ISO`
+And I store `$fromMillis($millis() + 90 * 1000)` into `tsJob2CompletedISO`
 
 <!-- Devices have to report that they support FOTA. -->
 
@@ -124,12 +124,12 @@ And this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{"jobId": "${jobId}"}
+{"jobId": "${job1Id}"}
 ```
 
-<!-- Backend fetches details about the job. -->
+<!-- Backend fetches details about the first job. -->
 
-And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId}`
+And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${job1Id}`
 request
 
 ```
@@ -137,7 +137,7 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-    "createdAt": "${tsISO}",
+    "createdAt": "${tsJob1CreatedISO}",
     "firmware": {
         "bundleId": "APP*1e29dfa3*v2.0.1",
         "fileSize": 425860,
@@ -148,9 +148,9 @@ Content-Type: application/json
         ],
         "version": "v2.0.1"
     },
-    "jobId": "${jobId}",
-    "lastUpdatedAt": "${tsISO}",
-    "name": "${jobId}",
+    "jobId": "${job1Id}",
+    "lastUpdatedAt": "${tsJob1CreatedISO}",
+    "name": "${job1Id}",
     "status": "IN_PROGRESS",
     "statusDetail": "Job auto applied",
     "target": {
@@ -170,12 +170,12 @@ And this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{"jobId": "${jobId2}"}
+{"jobId": "${job2Id}"}
 ```
 
-<!-- Backend fetches details about the job. -->
+<!-- Backend fetches details about the second job. -->
 
-And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId2}`
+And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${job2Id}`
 request
 
 ```
@@ -183,7 +183,7 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-    "createdAt": "${ts2ISO}",
+    "createdAt": "${tsJob2CreatedISO}",
     "firmware": {
         "bundleId": "APP*cd5412d9*v2.0.2",
         "fileSize": 425860,
@@ -194,9 +194,9 @@ Content-Type: application/json
         ],
         "version": "v2.0.2"
     },
-    "jobId": "${jobId2}",
-    "lastUpdatedAt": "${ts3ISO}",
-    "name": "${jobId2}",
+    "jobId": "${job2Id}",
+    "lastUpdatedAt": "${tsJob2CreatedISO}",
+    "name": "${job2Id}",
     "status": "IN_PROGRESS",
     "statusDetail": "Job auto applied",
     "target": {
@@ -285,7 +285,7 @@ And `$.jobs[0]` of the last response should match
 
 > The job is marked as completed by nRF Cloud
 
-Given this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId}`
+Given this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${job1Id}`
 request
 
 ```
@@ -293,7 +293,7 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-    "createdAt": "${ts3ISO}",
+    "createdAt": "${tsJob1CompletedISO}",
     "firmware": {
         "bundleId": "APP*1e29dfa3*v2.0.1",
         "fileSize": 425860,
@@ -304,9 +304,9 @@ Content-Type: application/json
         ],
         "version": "v2.0.1"
     },
-    "jobId": "${jobId}",
-    "lastUpdatedAt": "${ts3ISO}",
-    "name": "${jobId}",
+    "jobId": "${job1Id}",
+    "lastUpdatedAt": "${tsJob1CompletedISO}",
+    "name": "${job1Id}",
     "status": "COMPLETED",
     "statusDetail": "All executions in terminal status",
     "target": {
@@ -419,7 +419,7 @@ And `$.jobs[0]` of the last response should match
 
 > The job is marked as completed by nRF Cloud
 
-Given this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${jobId2}`
+Given this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${job2Id}`
 request
 
 ```
@@ -427,7 +427,7 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-    "createdAt": "${ts4ISO}",
+    "createdAt": "${tsJob2CompletedISO}",
     "firmware": {
         "bundleId": "APP*cd5412d9*v2.0.2",
         "fileSize": 425860,
@@ -438,9 +438,9 @@ Content-Type: application/json
         ],
         "version": "v2.0.2"
     },
-    "jobId": "${jobId2}",
-    "lastUpdatedAt": "${ts4ISO}",
-    "name": "${jobId2}",
+    "jobId": "${job2Id}",
+    "lastUpdatedAt": "${tsJob2CompletedISO}",
+    "name": "${job2Id}",
     "status": "COMPLETED",
     "statusDetail": "All executions in terminal status",
     "target": {
@@ -510,7 +510,7 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
             }
           }
         },
-        "version": 8836
+        "version": 8837
       }
     }
   ],
