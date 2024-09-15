@@ -1,8 +1,7 @@
-import type { AttributeValue } from '@aws-sdk/client-dynamodb'
 import {
 	ConditionalCheckFailedException,
+	paginateScan,
 	PutItemCommand,
-	ScanCommand,
 	UpdateItemCommand,
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
@@ -68,49 +67,39 @@ export const connectionsRepository: (
 		)
 	},
 	getAll: async () => {
-		const connections: WebsocketDeviceConnectionShadowInfo[] = []
-		let lastKey: Record<string, AttributeValue> | undefined = undefined
-
-		do {
-			const {
-				Items,
-				LastEvaluatedKey,
-			}: {
-				Items?: Record<string, AttributeValue>[]
-				LastEvaluatedKey?: Record<string, AttributeValue>
-			} = await db.send(
-				new ScanCommand({
-					TableName: tableName,
-					ExclusiveStartKey: lastKey,
-					FilterExpression: '#ttl > :now',
-					ExpressionAttributeNames: {
-						'#ttl': 'ttl',
-						'#deviceId': 'deviceId',
-						'#connectionId': 'connectionId',
-						'#model': 'model',
-						'#account': 'account',
-						'#version': 'version',
-						'#count': 'count',
-						'#updatedAt': 'updatedAt',
+		const connections: Array<WebsocketDeviceConnectionShadowInfo> = []
+		const results = paginateScan(
+			{ client: db },
+			{
+				TableName: tableName,
+				FilterExpression: '#ttl > :now',
+				ExpressionAttributeNames: {
+					'#ttl': 'ttl',
+					'#deviceId': 'deviceId',
+					'#connectionId': 'connectionId',
+					'#model': 'model',
+					'#account': 'account',
+					'#version': 'version',
+					'#count': 'count',
+					'#updatedAt': 'updatedAt',
+				},
+				ExpressionAttributeValues: {
+					':now': {
+						N: Math.floor(Date.now() / 1000).toString(),
 					},
-					ExpressionAttributeValues: {
-						':now': {
-							N: Math.floor(Date.now() / 1000).toString(),
-						},
-					},
-					ProjectionExpression:
-						'#ttl, #deviceId, #connectionId, #model, #account, #version, #count, #updatedAt',
-				}),
-			)
+				},
+				ProjectionExpression:
+					'#ttl, #deviceId, #connectionId, #model, #account, #version, #count, #updatedAt',
+			},
+		)
 
+		for await (const { Items } of results) {
 			connections.push(
-				...((Items ?? []).map((item) =>
-					unmarshall(item),
-				) as WebsocketDeviceConnectionShadowInfo[]),
+				...(Items ?? []).map(
+					(item) => unmarshall(item) as WebsocketDeviceConnectionShadowInfo,
+				),
 			)
-
-			lastKey = LastEvaluatedKey
-		} while (lastKey !== undefined)
+		}
 
 		return connections
 	},

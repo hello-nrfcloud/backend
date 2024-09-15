@@ -1,7 +1,6 @@
 import {
 	DynamoDBClient,
-	QueryCommand,
-	type AttributeValue,
+	paginateQuery,
 	type QueryCommandInput,
 } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
@@ -136,7 +135,11 @@ const h = async (
 	}
 	console.log('Query', JSON.stringify(Query))
 
-	const items = await paginateQuery(db, Query)
+	const results = paginateQuery({ client: db }, Query)
+	const items = []
+	for await (const { Items } of results) {
+		items.push(...(Items ?? []))
+	}
 
 	console.log('Items', JSON.stringify(items))
 
@@ -202,22 +205,3 @@ export const handler = middy()
 		}),
 	)
 	.handler(h)
-
-const paginateQuery = async (
-	db: DynamoDBClient,
-	Query: QueryCommandInput,
-	items: Record<string, AttributeValue>[] = [],
-) => {
-	const res = await db.send(new QueryCommand(Query))
-	if (res.Items) {
-		items.push(...res.Items)
-	}
-	if (res.LastEvaluatedKey !== undefined) {
-		return paginateQuery(
-			db,
-			{ ...Query, ExclusiveStartKey: res.LastEvaluatedKey },
-			items,
-		)
-	}
-	return items
-}
