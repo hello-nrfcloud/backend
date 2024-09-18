@@ -384,18 +384,9 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 }
 ```
 
-## Upgrade from 2.0.1 to 2.0.2
-
-Soon the nRF Cloud API should have been called with
-
-```
-POST /v1/fota-jobs HTTP/1.1
-Content-Type: application/json
-
-{"bundleId":"APP*cd5412d9*v2.0.2","autoApply":true,"deviceIdentifiers":["${fingerprint_deviceId}"]}
-```
-
 ## Check the status for the upgrade to 2.0.2
+
+> The FOTA job for the next bundle should be created automatically.
 
 When I `GET`
 `${APIURL}/device/${fingerprint_deviceId}/fota/jobs?fingerprint=${fingerprint}`

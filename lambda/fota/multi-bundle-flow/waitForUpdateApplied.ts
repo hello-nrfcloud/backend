@@ -72,15 +72,23 @@ const h = async (event: {
 		return
 	}
 	if (newVersion !== maybeJob.reportedVersion) {
-		await sfn.send(
-			new SendTaskSuccessCommand({
-				taskToken: maybeJob.waitForUpdateAppliedTaskToken,
-				output: JSON.stringify({
-					[type === 'app' ? 'appVersion' : 'mfwVersion']: newVersion,
+		try {
+			await sfn.send(
+				new SendTaskSuccessCommand({
+					taskToken: maybeJob.waitForUpdateAppliedTaskToken,
+					output: JSON.stringify({
+						[type === 'app' ? 'appVersion' : 'mfwVersion']: newVersion,
+					}),
 				}),
-			}),
-		)
-		return
+			)
+			return
+		} catch (e) {
+			if (!(e instanceof Error)) throw e
+			if (e.name === 'TaskDoesNotExist' || e.name === 'TaskTimedOut') {
+				console.debug(`Could not update task: ${e.message}!`)
+			}
+			return
+		}
 	}
 	console.debug('version already reported', newVersion)
 }

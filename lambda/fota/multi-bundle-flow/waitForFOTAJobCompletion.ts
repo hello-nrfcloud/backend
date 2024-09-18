@@ -28,30 +28,37 @@ const h = async (event: DynamoDBStreamEvent): Promise<void> => {
 			waitForFOTAJobCompletionTaskToken: string
 		}
 
-		switch (job.status) {
-			case FOTAJobStatus.COMPLETED:
-			case FOTAJobStatus.SUCCEEDED:
-				await sfn.send(
-					new SendTaskSuccessCommand({
-						taskToken: job.waitForFOTAJobCompletionTaskToken,
-						output: JSON.stringify(job),
-					}),
-				)
-				break
-			case FOTAJobStatus.FAILED:
-			case FOTAJobStatus.CANCELLED:
-			case FOTAJobStatus.TIMED_OUT:
-			case FOTAJobStatus.REJECTED:
-				await sfn.send(
-					new SendTaskFailureCommand({
-						taskToken: job.waitForFOTAJobCompletionTaskToken,
-						error: 'JobFailed',
-						cause: `Job ${job.jobId} failed with status ${job.status}`,
-					}),
-				)
-				break
-			default:
-				console.debug(`Job ${job.jobId} is still in progress: ${job.status}`)
+		try {
+			switch (job.status) {
+				case FOTAJobStatus.COMPLETED:
+				case FOTAJobStatus.SUCCEEDED:
+					await sfn.send(
+						new SendTaskSuccessCommand({
+							taskToken: job.waitForFOTAJobCompletionTaskToken,
+							output: JSON.stringify(job),
+						}),
+					)
+					break
+				case FOTAJobStatus.FAILED:
+				case FOTAJobStatus.CANCELLED:
+				case FOTAJobStatus.TIMED_OUT:
+				case FOTAJobStatus.REJECTED:
+					await sfn.send(
+						new SendTaskFailureCommand({
+							taskToken: job.waitForFOTAJobCompletionTaskToken,
+							error: 'JobFailed',
+							cause: `Job ${job.jobId} failed with status ${job.status}`,
+						}),
+					)
+					break
+				default:
+					console.debug(`Job ${job.jobId} is still in progress: ${job.status}`)
+			}
+		} catch (e) {
+			if (!(e instanceof Error)) throw e
+			if (e.name === 'TaskDoesNotExist' || e.name === 'TaskTimedOut') {
+				console.debug(`Could not update task: ${e.message}!`)
+			}
 		}
 	}
 }

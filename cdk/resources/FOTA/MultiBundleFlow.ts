@@ -28,7 +28,6 @@ import {
 	StateMachineType,
 	Succeed,
 	TaskInput,
-	Timeout,
 	type IStateMachine,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import {
@@ -621,7 +620,6 @@ class LambdaStep extends Construct {
 							'state.$': '$',
 							taskToken: JsonPath.taskToken,
 						}),
-						heartbeatTimeout: Timeout.duration(Duration.minutes(5)),
 					}
 				: {
 						payloadResponseOnly: true,
