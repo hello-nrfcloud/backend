@@ -7,8 +7,10 @@ import {
 	aws_events_targets as EventTargets,
 	aws_events as Events,
 	aws_lambda as Lambda,
+	aws_logs as Logs,
 	RemovalPolicy,
 	aws_sqs as SQS,
+	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
@@ -19,14 +21,13 @@ import type { WebsocketEventBus } from './WebsocketEventBus.js'
  * Schedules FOTA jobs for devices
  */
 export class DeviceFOTA extends Construct {
-	public readonly scheduleFetches: PackedLambdaFn
-	public readonly updater: PackedLambdaFn
-	public readonly notifier: PackedLambdaFn
-	public readonly getFOTAJobStatusFn: PackedLambdaFn
 	public readonly listFOTABundles: PackedLambdaFn
+	public readonly getFOTAJobStatusFn: PackedLambdaFn
 	public readonly jobTable: DynamoDB.Table
 	public readonly jobTableDeviceIdIndex: string
 	public readonly nrfCloudJobStatusTable: DynamoDB.Table
+	public readonly logGroup: Logs.ILogGroup
+
 	public constructor(
 		parent: Construct,
 		{
@@ -50,6 +51,16 @@ export class DeviceFOTA extends Construct {
 		},
 	) {
 		super(parent, 'DeviceFOTA')
+
+		this.logGroup = new Logs.LogGroup(this, 'logGroup', {
+			removalPolicy:
+				this.node.getContext('isTest') === true
+					? RemovalPolicy.DESTROY
+					: RemovalPolicy.RETAIN,
+			logGroupName: `/${Stack.of(this).stackName}/FOTA/`, // e.g. /<stack name>/MultiBundleFOTAFlow/
+			retention: Logs.RetentionDays.ONE_MONTH,
+			logGroupClass: Logs.LogGroupClass.STANDARD, // INFREQUENT_ACCESS does not support custom metrics
+		})
 
 		this.jobTable = new DynamoDB.Table(this, 'jobTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
@@ -99,7 +110,7 @@ export class DeviceFOTA extends Construct {
 			projectionType: DynamoDB.ProjectionType.INCLUDE,
 			nonKeyAttributes: ['createdAt'],
 		})
-		this.scheduleFetches = new PackedLambdaFn(
+		const scheduleFetches = new PackedLambdaFn(
 			this,
 			'scheduleFOTAJobStatusUpdate',
 			lambdaSources.scheduleFOTAJobStatusUpdate,
@@ -115,20 +126,19 @@ export class DeviceFOTA extends Construct {
 				},
 				layers,
 				timeout: Duration.seconds(10),
+				logGroup: this.logGroup,
 			},
 		)
-		this.nrfCloudJobStatusTable.grantReadWriteData(this.scheduleFetches.fn)
+		this.nrfCloudJobStatusTable.grantReadWriteData(scheduleFetches.fn)
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
 			schedule: Events.Schedule.rate(scheduleDuration),
 		})
-		scheduler.addTarget(
-			new EventTargets.LambdaFunction(this.scheduleFetches.fn),
-		)
-		workQueue.grantSendMessages(this.scheduleFetches.fn)
+		scheduler.addTarget(new EventTargets.LambdaFunction(scheduleFetches.fn))
+		workQueue.grantSendMessages(scheduleFetches.fn)
 
 		// The updater reads tasks from the work queue and updates the FOTA job status
-		this.updater = new PackedLambdaFn(
+		const updater = new PackedLambdaFn(
 			this,
 			'updateFOTAJobStatus',
 			lambdaSources.updateFOTAJobStatus,
@@ -141,19 +151,20 @@ export class DeviceFOTA extends Construct {
 				},
 				layers,
 				timeout: Duration.minutes(1),
+				logGroup: this.logGroup,
 			},
 		)
-		this.nrfCloudJobStatusTable.grantWriteData(this.updater.fn)
-		this.updater.fn.addEventSource(
+		this.nrfCloudJobStatusTable.grantWriteData(updater.fn)
+		updater.fn.addEventSource(
 			new EventSources.SqsEventSource(workQueue, {
 				batchSize: 10,
 				maxConcurrency: 10,
 			}),
 		)
-		websocketEventBus.eventBus.grantPutEventsTo(this.updater.fn)
+		websocketEventBus.eventBus.grantPutEventsTo(updater.fn)
 
 		// Publish notifications about completed FOTA jobs to the websocket
-		this.notifier = new PackedLambdaFn(
+		const notifier = new PackedLambdaFn(
 			this,
 			'notifyFOTAJobStatus',
 			lambdaSources.notifyFOTAJobStatus,
@@ -165,9 +176,10 @@ export class DeviceFOTA extends Construct {
 				},
 				layers,
 				timeout: Duration.minutes(1),
+				logGroup: this.logGroup,
 			},
 		)
-		this.notifier.fn.addEventSource(
+		notifier.fn.addEventSource(
 			new EventSources.DynamoEventSource(this.jobTable, {
 				startingPosition: Lambda.StartingPosition.LATEST,
 				filters: [
@@ -187,7 +199,7 @@ export class DeviceFOTA extends Construct {
 				],
 			}),
 		)
-		websocketEventBus.eventBus.grantPutEventsTo(this.notifier.fn)
+		websocketEventBus.eventBus.grantPutEventsTo(notifier.fn)
 
 		// Return FOTA jobs per device
 		this.jobTableDeviceIdIndex = 'deviceIdIndex'
@@ -217,6 +229,7 @@ export class DeviceFOTA extends Construct {
 						this.node.getContext('isTest') === true ? '0' : '60',
 				},
 				layers,
+				logGroup: this.logGroup,
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.getFOTAJobStatusFn.fn)
@@ -234,6 +247,7 @@ export class DeviceFOTA extends Construct {
 				},
 				layers,
 				timeout: Duration.seconds(10),
+				logGroup: this.logGroup,
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.listFOTABundles.fn)
