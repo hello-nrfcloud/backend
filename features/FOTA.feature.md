@@ -9,7 +9,6 @@ exampleContext:
   tsJob2CompletedISO: 2023-09-12T00:04:00.000Z
   job1Id: bc631093-7f7c-4c1b-aa63-a68c759bcd5c
   job2Id: 17880ed2-8f56-47c1-ba76-0fda1d4adba9
-run: only
 ---
 
 # Device FOTA
