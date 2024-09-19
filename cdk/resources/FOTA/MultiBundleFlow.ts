@@ -219,10 +219,11 @@ export class MultiBundleFOTAFlow extends Construct {
 									),
 								},
 								updateExpression:
-									'SET #status = :status, #statusDetail = :statusDetail',
+									'SET #status = :status, #statusDetail = :statusDetail, #reportedVersion = :reportedVersion',
 								expressionAttributeNames: {
 									'#status': 'status',
 									'#statusDetail': 'statusDetail',
+									'#reportedVersion': 'reportedVersion',
 								},
 								expressionAttributeValues: {
 									':status': DynamoAttributeValue.fromString(
@@ -234,6 +235,9 @@ export class MultiBundleFOTAFlow extends Construct {
 											JsonPath.stringAt('$.reportedVersion'),
 											JsonPath.stringAt('$.nextBundle.bundleId'),
 										),
+									),
+									':reportedVersion': DynamoAttributeValue.fromString(
+										JsonPath.stringAt('$.reportedVersion'),
 									),
 								},
 								resultPath: '$.DynamoDB',
