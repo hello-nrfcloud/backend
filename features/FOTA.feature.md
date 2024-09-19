@@ -54,9 +54,12 @@ And I store `$fromMillis($millis() + 60 * 1000)` into `tsJob1CompletedISO`
 
 And I store `$fromMillis($millis() + 90 * 1000)` into `tsJob2CompletedISO`
 
+## The device reports that it is eligible for FOTA
+
 <!-- Devices have to report that they support FOTA. -->
 
-And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
+Given there is this device shadow data for `${fingerprint_deviceId}` in nRF
+Cloud
 
 ```json
 {
@@ -116,9 +119,33 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 }
 ```
 
+And I connect to the websocket using fingerprint `${fingerprint}`
+
+Soon I should receive a message on the websocket that matches after 20 retries
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/shadow",
+  "reported": [
+    {
+      "ObjectID": 14401,
+      "Resources": {
+        "0": ["BOOT", "MODEM", "APP"],
+        "99": 1717409966
+      }
+    }
+  ]
+}
+```
+
+## Schedule the FOTA job
+
+> This example defines an upgrade path from version 2.0.0 to 2.0.2 using two
+> delta updates.
+
 <!-- This is the response nRF Cloud returns on the first job creation. -->
 
-And this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
+Given this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
 
 ```
 HTTP/1.1 200 OK
@@ -161,78 +188,6 @@ Content-Type: application/json
     }
 }
 ```
-
-<!-- This is the response nRF Cloud returns on the second job creation. -->
-
-And this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{"jobId": "${job2Id}"}
-```
-
-<!-- Backend fetches details about the second job. -->
-
-And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${job2Id}`
-request
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-    "createdAt": "${tsJob2CreatedISO}",
-    "firmware": {
-        "bundleId": "APP*cd5412d9*v2.0.2",
-        "fileSize": 425860,
-        "firmwareType": "APP",
-        "host": "firmware.nrfcloud.com",
-        "uris": [
-            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*cd5412d9*v2.0.2/hello-nrfcloud-thingy91x-v2.0.2-fwupd.bin"
-        ],
-        "version": "v2.0.2"
-    },
-    "jobId": "${job2Id}",
-    "lastUpdatedAt": "${tsJob2CreatedISO}",
-    "name": "${job2Id}",
-    "status": "IN_PROGRESS",
-    "statusDetail": "Job auto applied",
-    "target": {
-        "deviceIds": [
-            "${fingerprint_deviceId}"
-        ],
-        "tags": []
-    }
-}
-```
-
-## The device reports that it is eligible for FOTA
-
-Given I connect to the websocket using fingerprint `${fingerprint}`
-
-Soon I should receive a message on the websocket that matches after 20 retries
-
-```json
-{
-  "@context": "https://github.com/hello-nrfcloud/proto/shadow",
-  "reported": [
-    {
-      "ObjectID": 14401,
-      "Resources": {
-        "0": ["BOOT", "MODEM", "APP"],
-        "99": 1717409966
-      }
-    }
-  ]
-}
-```
-
-## Schedule the FOTA job
-
-> This example defines an upgrade path from version 2.0.0 to 2.0.2 using two
-> delta updates.
 
 When I `POST`
 `${APIURL}/device/${fingerprint_deviceId}/fota/app?fingerprint=${fingerprint}`
@@ -318,7 +273,7 @@ Content-Type: application/json
 }
 ```
 
-<!-- Devices reports updated version. -->
+<!-- Devices reports updated version to v2.0.1 -->
 
 And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 
@@ -384,9 +339,55 @@ And there is this device shadow data for `${fingerprint_deviceId}` in nRF Cloud
 }
 ```
 
-## Check the status for the upgrade to 2.0.2
+<!-- This is the response nRF Cloud returns on the second job creation. -->
 
-> The FOTA job for the next bundle should be created automatically.
+And this nRF Cloud API request is queued for a `POST /v1/fota-jobs` request
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"jobId": "${job2Id}"}
+```
+
+<!-- Backend fetches details about the second job. -->
+
+And this nRF Cloud API request is queued for a `GET /v1/fota-jobs/${job2Id}`
+request
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+    "createdAt": "${tsJob2CreatedISO}",
+    "firmware": {
+        "bundleId": "APP*cd5412d9*v2.0.2",
+        "fileSize": 425860,
+        "firmwareType": "APP",
+        "host": "firmware.nrfcloud.com",
+        "uris": [
+            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*cd5412d9*v2.0.2/hello-nrfcloud-thingy91x-v2.0.2-fwupd.bin"
+        ],
+        "version": "v2.0.2"
+    },
+    "jobId": "${job2Id}",
+    "lastUpdatedAt": "${tsJob2CreatedISO}",
+    "name": "${job2Id}",
+    "status": "IN_PROGRESS",
+    "statusDetail": "Job auto applied",
+    "target": {
+        "deviceIds": [
+            "${fingerprint_deviceId}"
+        ],
+        "tags": []
+    }
+}
+```
+
+## The FOTA job for the next bundle should be created automatically.
+
+<!-- Check the status for the upgrade to 2.0.2 -->
 
 When I `GET`
 `${APIURL}/device/${fingerprint_deviceId}/fota/jobs?fingerprint=${fingerprint}`
