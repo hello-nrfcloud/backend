@@ -57,7 +57,7 @@ export class DeviceFOTA extends Construct {
 				this.node.getContext('isTest') === true
 					? RemovalPolicy.DESTROY
 					: RemovalPolicy.RETAIN,
-			logGroupName: `/${Stack.of(this).stackName}/FOTA/`, // e.g. /<stack name>/MultiBundleFOTAFlow/
+			logGroupName: `/${Stack.of(this).stackName}/FOTA/`,
 			retention: Logs.RetentionDays.ONE_MONTH,
 			logGroupClass: Logs.LogGroupClass.STANDARD, // INFREQUENT_ACCESS does not support custom metrics
 		})
