@@ -13,6 +13,7 @@ github.com/hashicorp/go-multierror v1.1.1 h1:H5DkEtf6CXdFp0N0Em5UCwQpXMWke8IA0+l
 github.com/hashicorp/go-multierror v1.1.1/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9/fmwbPZ6JB6eMoM=
 github.com/pion/dtls/v2 v2.2.8-0.20240501061905-2c36d63320a0 h1:050ahk2K4HqwxPi2YM6Yc4lIttwNSY2+n9xPVsS3zoQ=
 github.com/pion/dtls/v2 v2.2.8-0.20240501061905-2c36d63320a0/go.mod h1:tjBBbkwKGSQQZl36HQa2va5HqR9rWhujhlJMrgE2b/o=
+github.com/pion/dtls/v3 v3.0.2/go.mod h1:dfIXcFkKoujDQ+jtd8M6RgqKK3DuaUilm3YatAbGp5k=
 github.com/pion/logging v0.2.2 h1:M9+AIj/+pxNsDfAT64+MAVgJO0rsyLnoJKCqf//DoeY=
 github.com/pion/logging v0.2.2/go.mod h1:k0/tDVsRCX2Mb2ZEmTqNa7CWsQPc+YYCB7Q+5pahoms=
 github.com/pion/transport/v3 v3.0.7 h1:iRbMH05BzSNwhILHoBoAPxoB9xQgOaJk+591KC9P1o0=
