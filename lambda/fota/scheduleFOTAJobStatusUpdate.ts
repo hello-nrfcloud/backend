@@ -1,16 +1,16 @@
 import { MetricUnit } from '@aws-lambda-powertools/metrics'
 import {
 	DynamoDBClient,
-	QueryCommand,
+	paginateQuery,
 	UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb'
-import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import middy from '@middy/core'
-import type { Job } from './Job.js'
+import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.js'
 
 const {
 	jobStatusTableName,
@@ -18,8 +18,8 @@ const {
 	workQueueUrl,
 	freshIntervalSeconds,
 } = fromEnv({
-	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
-	jobStatusTableStatusIndexName: 'JOB_STATUS_TABLE_STATUS_INDEX_NAME',
+	jobStatusTableName: 'NRF_CLOUD_JOB_STATUS_TABLE_NAME',
+	jobStatusTableStatusIndexName: 'NRF_CLOUD_JOB_STATUS_TABLE_STATUS_INDEX_NAME',
 	version: 'VERSION',
 	workQueueUrl: 'WORK_QUEUE_URL',
 	freshIntervalSeconds: 'FRESH_INTERVAL_SECONDS',
@@ -33,38 +33,44 @@ const { track } = metricsForComponent('fotaStatusUpdate')
 const h = async (): Promise<void> => {
 	const pendingJobs = (
 		await Promise.all(
-			['QUEUED', 'IN_PROGRESS', 'DOWNLOADING'].map(async (status) =>
-				db
-					.send(
-						new QueryCommand({
-							TableName: jobStatusTableName,
-							IndexName: jobStatusTableStatusIndexName,
-							KeyConditionExpression:
-								'#status = :status AND #nextUpdateAt < :now',
-							ExpressionAttributeNames: {
-								'#status': 'status',
-								'#jobId': 'jobId',
-								'#nextUpdateAt': 'nextUpdateAt',
-								'#createdAt': 'createdAt',
+			['QUEUED', 'IN_PROGRESS', 'DOWNLOADING'].map(async (status) => {
+				const results = paginateQuery(
+					{
+						client: db,
+					},
+					{
+						TableName: jobStatusTableName,
+						IndexName: jobStatusTableStatusIndexName,
+						KeyConditionExpression:
+							'#status = :status AND #nextUpdateAt < :now',
+						ExpressionAttributeNames: {
+							'#status': 'status',
+							'#jobId': 'jobId',
+							'#nextUpdateAt': 'nextUpdateAt',
+							'#createdAt': 'createdAt',
+						},
+						ExpressionAttributeValues: {
+							':status': {
+								S: status,
 							},
-							ExpressionAttributeValues: {
-								':status': {
-									S: status,
-								},
-								':now': {
-									S: new Date().toISOString(),
-								},
+							':now': {
+								S: new Date().toISOString(),
 							},
-							ProjectionExpression: '#jobId, #nextUpdateAt, #createdAt',
-						}),
-					)
-					.then(({ Items }) => Items ?? []),
-			),
+						},
+						ProjectionExpression: '#jobId, #nextUpdateAt, #createdAt',
+					},
+				)
+				const items = []
+				for await (const { Items } of results) {
+					items.push(...(Items ?? []))
+				}
+				return items
+			}),
 		)
 	).flat()
 
 	const jobs = pendingJobs.map((item) => unmarshall(item)) as Array<
-		Pick<Job, 'jobId' | 'nextUpdateAt' | 'createdAt'>
+		Pick<NrfCloudFOTAJob, 'jobId' | 'nextUpdateAt' | 'createdAt'>
 	>
 
 	console.log(JSON.stringify(jobs))

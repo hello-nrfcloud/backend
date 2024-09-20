@@ -29,7 +29,6 @@ export type BackendLambdas = {
 	scheduleFetchLocationHistory: PackedLambda
 	fetchLocationHistory: PackedLambda
 	queryLocationHistory: PackedLambda
-	scheduleFOTAJob: PackedLambda
 	getFOTAJobStatus: PackedLambda
 	scheduleFOTAJobStatusUpdate: PackedLambda
 	updateFOTAJobStatus: PackedLambda
@@ -40,6 +39,16 @@ export type BackendLambdas = {
 	queryMemfaultReboots: PackedLambda
 	hideDataBefore: PackedLambda
 	createCNAMERecord: PackedLambda
+	multiBundleFOTAFlow: {
+		start: PackedLambda
+		getDeviceFirmwareDetails: PackedLambda
+		getNextBundle: PackedLambda
+		createFOTAJob: PackedLambda
+		WaitForFOTAJobCompletionCallback: PackedLambda
+		waitForFOTAJobCompletion: PackedLambda
+		waitForUpdateAppliedCallback: PackedLambda
+		WaitForUpdateApplied: PackedLambda
+	}
 }
 
 const pack = async (id: string) => packLambdaFromPath(id, `lambda/${id}.ts`)
@@ -83,10 +92,6 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'queryLocationHistory',
 		'lambda/location-history/queryLocationHistory.ts',
 	),
-	scheduleFOTAJob: await packLambdaFromPath(
-		'scheduleFOTAJob',
-		`lambda/fota/scheduleFOTAJob.ts`,
-	),
 	scheduleFOTAJobStatusUpdate: await packLambdaFromPath(
 		'scheduleFOTAJobStatusUpdate',
 		`lambda/fota/scheduleFOTAJobStatusUpdate.ts`,
@@ -124,4 +129,38 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'createCNAMERecord',
 		'cdk/resources/api/createCNAMERecord.ts',
 	),
+	multiBundleFOTAFlow: {
+		start: await packLambdaFromPath(
+			'multiBundleFOTAFlowStart',
+			'lambda/fota/multi-bundle-flow/start.ts',
+		),
+		getDeviceFirmwareDetails: await packLambdaFromPath(
+			'multiBundleFOTAFlowGetDeviceFirmareDetails',
+			'lambda/fota/multi-bundle-flow/getDeviceFirmwareDetails.ts',
+		),
+		getNextBundle: await packLambdaFromPath(
+			'multiBundleFOTAFlowGetNextBundle',
+			'lambda/fota/multi-bundle-flow/getNextBundle.ts',
+		),
+		createFOTAJob: await packLambdaFromPath(
+			'multiBundleFOTAFlowCreateFOTAJob',
+			'lambda/fota/multi-bundle-flow/createFOTAJob.ts',
+		),
+		WaitForFOTAJobCompletionCallback: await packLambdaFromPath(
+			'multiBundleFOTAFlowWaitForFOTAJobCompletionCallback',
+			'lambda/fota/multi-bundle-flow/waitForFOTAJobCompletionCallback.ts',
+		),
+		waitForFOTAJobCompletion: await packLambdaFromPath(
+			'multiBundleFOTAFlowWaitForFOTAJobCompletion',
+			'lambda/fota/multi-bundle-flow/waitForFOTAJobCompletion.ts',
+		),
+		waitForUpdateAppliedCallback: await packLambdaFromPath(
+			'multiBundleFOTAFlowWaitForUpdateAppliedCallback',
+			'lambda/fota/multi-bundle-flow/waitForUpdateAppliedCallback.ts',
+		),
+		WaitForUpdateApplied: await packLambdaFromPath(
+			'multiBundleFOTAFlowWaitForUpdateApplied',
+			'lambda/fota/multi-bundle-flow/waitForUpdateApplied.ts',
+		),
+	},
 })

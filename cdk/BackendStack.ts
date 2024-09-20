@@ -29,6 +29,7 @@ import { DeviceLastSeen } from './resources/DeviceLastSeen.js'
 import { DeviceLocationHistory } from './resources/DeviceLocationHistory.js'
 import { DeviceShadow } from './resources/DeviceShadow.js'
 import { DeviceStorage } from './resources/DeviceStorage.js'
+import { MultiBundleFOTAFlow } from './resources/FOTA/MultiBundleFlow.js'
 import { Feedback } from './resources/Feedback.js'
 import { HealthCheckCoAP } from './resources/HealthCheckCoAP.js'
 import { HealthCheckMqtt } from './resources/HealthCheckMqtt.js'
@@ -313,16 +314,25 @@ export class BackendStack extends Stack {
 			websocketEventBus,
 		})
 		api.addRoute(
-			'POST /device/{deviceId}/fota',
-			deviceFOTA.scheduleFOTAJobFn.fn,
-		)
-		api.addRoute(
 			'GET /device/{deviceId}/fota/jobs',
 			deviceFOTA.getFOTAJobStatusFn.fn,
 		)
 		api.addRoute(
 			'GET /device/{deviceId}/fota/bundles',
 			deviceFOTA.listFOTABundles.fn,
+		)
+
+		// State machine to drive the multi-bundle flow
+		const mbff = new MultiBundleFOTAFlow(this, {
+			lambdas: lambdaSources.multiBundleFOTAFlow,
+			layers: [baseLayerVersion],
+			deviceFOTA,
+			deviceStorage,
+		})
+
+		api.addRoute(
+			'POST /device/{deviceId}/fota/{target}',
+			mbff.startMultiBundleFOTAFlow.fn,
 		)
 
 		const updateDevice = new UpdateDevice(this, {
@@ -340,19 +350,12 @@ export class BackendStack extends Stack {
 				apiHealth.fn.logGroup,
 				updateDeviceState.fn.logGroup,
 				convertNrfCloudDeviceMessages.onNrfCloudDeviceMessage.logGroup,
-				deviceFOTA.scheduleFOTAJobFn.logGroup,
-				deviceFOTA.scheduleFetches.logGroup,
-				deviceFOTA.updater.logGroup,
-				deviceFOTA.notifier.logGroup,
-				deviceFOTA.getFOTAJobStatusFn.logGroup,
-				deviceFOTA.listFOTABundles.logGroup,
+				deviceFOTA.logGroup,
 				deviceInfo.fn.logGroup,
 				deviceLocationHistory.scheduleFetches.logGroup,
 				deviceLocationHistory.fetcher.logGroup,
 				deviceLocationHistory.queryFn.logGroup,
-				memfaultReboots.scheduleFetches.logGroup,
-				memfaultReboots.fetcher.logGroup,
-				memfaultReboots.queryFn.logGroup,
+				memfaultReboots.logGroup,
 				deviceShadow.prepareDeviceShadow.logGroup,
 				deviceShadow.fetchDeviceShadow.logGroup,
 				deviceShadow.publishShadowUpdatesToWebsocket.logGroup,

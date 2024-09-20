@@ -7,8 +7,10 @@ import {
 	aws_events as Events,
 	aws_iam as IAM,
 	type aws_lambda as Lambda,
+	aws_logs as Logs,
 	RemovalPolicy,
 	aws_sqs as SQS,
+	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import type { BackendLambdas } from '../packBackendLambdas.js'
@@ -20,9 +22,8 @@ import type { WebsocketEventBus } from './WebsocketEventBus.js'
  * Makes the Memfault reboots available to the frontend
  */
 export class MemfaultReboots extends Construct {
-	public scheduleFetches: PackedLambdaFn
-	public fetcher: PackedLambdaFn
 	public queryFn: PackedLambdaFn
+	public logGroup: Logs.ILogGroup
 	public constructor(
 		parent: Construct,
 		{
@@ -45,6 +46,16 @@ export class MemfaultReboots extends Construct {
 		},
 	) {
 		super(parent, 'MemfaultReboots')
+
+		this.logGroup = new Logs.LogGroup(this, 'logGroup', {
+			removalPolicy:
+				this.node.getContext('isTest') === true
+					? RemovalPolicy.DESTROY
+					: RemovalPolicy.RETAIN,
+			logGroupName: `/${Stack.of(this).stackName}/MemfaultReboots/`,
+			retention: Logs.RetentionDays.ONE_MONTH,
+			logGroupClass: Logs.LogGroupClass.STANDARD, // INFREQUENT_ACCESS does not support custom metrics
+		})
 
 		const syncTable = new DynamoDB.Table(this, 'syncTable', {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
@@ -80,7 +91,7 @@ export class MemfaultReboots extends Construct {
 			removalPolicy: RemovalPolicy.DESTROY,
 			visibilityTimeout: scheduleDuration,
 		})
-		this.scheduleFetches = new PackedLambdaFn(
+		const scheduleFetches = new PackedLambdaFn(
 			this,
 			'scheduleFetchMemfaultReboots',
 			lambdaSources.scheduleFetchMemfaultReboots,
@@ -95,21 +106,20 @@ export class MemfaultReboots extends Construct {
 				},
 				layers,
 				timeout: Duration.seconds(10),
+				logGroup: this.logGroup,
 			},
 		)
-		syncTable.grantReadWriteData(this.scheduleFetches.fn)
-		connectionsTable.table.grantReadWriteData(this.scheduleFetches.fn)
+		syncTable.grantReadWriteData(scheduleFetches.fn)
+		connectionsTable.table.grantReadWriteData(scheduleFetches.fn)
 
 		const scheduler = new Events.Rule(this, 'scheduler', {
 			schedule: Events.Schedule.rate(scheduleDuration),
 		})
-		scheduler.addTarget(
-			new EventTargets.LambdaFunction(this.scheduleFetches.fn),
-		)
-		workQueue.grantSendMessages(this.scheduleFetches.fn)
+		scheduler.addTarget(new EventTargets.LambdaFunction(scheduleFetches.fn))
+		workQueue.grantSendMessages(scheduleFetches.fn)
 
 		// The fetcher reads tasks from the work queue and fetches the device reboots
-		this.fetcher = new PackedLambdaFn(
+		const fetcher = new PackedLambdaFn(
 			this,
 			'fetchMemfaultReboots',
 			lambdaSources.fetchMemfaultReboots,
@@ -128,16 +138,17 @@ export class MemfaultReboots extends Construct {
 						resources: ['*'],
 					}),
 				],
+				logGroup: this.logGroup,
 			},
 		)
-		this.fetcher.fn.addEventSource(
+		fetcher.fn.addEventSource(
 			new EventSources.SqsEventSource(workQueue, {
 				batchSize: 1,
 				maxConcurrency: 10,
 			}),
 		)
-		websocketEventBus.eventBus.grantPutEventsTo(this.fetcher.fn)
-		rebootsTable.grantWriteData(this.fetcher.fn)
+		websocketEventBus.eventBus.grantPutEventsTo(fetcher.fn)
+		rebootsTable.grantWriteData(fetcher.fn)
 
 		this.queryFn = new PackedLambdaFn(
 			this,
@@ -151,6 +162,7 @@ export class MemfaultReboots extends Construct {
 					TABLE_NAME: rebootsTable.tableName,
 					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
 				},
+				logGroup: this.logGroup,
 			},
 		)
 		deviceStorage.devicesTable.grantReadData(this.queryFn.fn)

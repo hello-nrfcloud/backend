@@ -1,13 +1,14 @@
-import { Context, type FOTAJobExecution } from '@hello.nrfcloud.com/proto/hello'
+import { Context, type FOTAJob } from '@hello.nrfcloud.com/proto/hello'
 import type { Static } from '@sinclair/typebox'
-import type { Job } from './Job.js'
+import type { PersistedJob } from './jobRepo.js'
 
-export const toJobExecution = (job: Job): Static<typeof FOTAJobExecution> => ({
-	'@context': Context.fotaJobExecution.toString(),
-	id: job.jobId,
+export const toJob = (job: PersistedJob): Static<typeof FOTAJob> => ({
+	'@context': Context.fotaJob.toString(),
+	id: job.id,
 	deviceId: job.deviceId,
-	lastUpdatedAt: job.lastUpdatedAt,
+	timestamp: job.timestamp,
 	status: job.status,
 	statusDetail: job.statusDetail ?? undefined,
-	version: job.firmware?.version ?? 'unknown',
+	reportedVersion: job.reportedVersion,
+	upgradePath: job.upgradePath,
 })

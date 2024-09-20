@@ -15,11 +15,11 @@ import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.
 import middy from '@middy/core'
 import type { SQSEvent } from 'aws-lambda'
 import { loggingFetch } from '../../util/loggingFetch.js'
-import type { Job } from './Job.js'
+import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.js'
 
 const { stackName, jobStatusTableName } = fromEnv({
 	stackName: 'STACK_NAME',
-	jobStatusTableName: 'JOB_STATUS_TABLE_NAME',
+	jobStatusTableName: 'NRF_CLOUD_JOB_STATUS_TABLE_NAME',
 })(process.env)
 
 const { track, metrics } = metricsForComponent('updateFOTAJob')
@@ -51,7 +51,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 			account,
 			lastUpdatedAt: currentLastUpdatedAt,
 			createdAt,
-		} = JSON.parse(record.body) as Job
+		} = JSON.parse(record.body) as NrfCloudFOTAJob
 
 		if (jobId === undefined || account === undefined) {
 			log.error('Missing required attributes')
@@ -71,7 +71,7 @@ const h = async (event: SQSEvent): Promise<void> => {
 				maybeJob.error instanceof FetchError &&
 				maybeJob.error.statusCode === 404
 			) {
-				console.debug(`FOTA job ${jobId} not found!`, maybeJob.error)
+				console.error(`FOTA job ${jobId} not found!`, maybeJob.error)
 				// Mark the job as failed
 				if (Date.now() - new Date(createdAt).getTime() > 24 * 60 * 60 * 1000) {
 					await db.send(
