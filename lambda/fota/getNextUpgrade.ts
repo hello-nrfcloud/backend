@@ -1,4 +1,5 @@
 import { bundleIdToType, FOTAJobTarget } from '@hello.nrfcloud.com/proto/hello'
+import semver from 'semver'
 import { type DeviceFirmwareDetails } from './getDeviceFirmwareDetails.js'
 import { type PersistedJob } from './jobRepo.js'
 
@@ -75,7 +76,10 @@ export const getNextUpgrade = (
 		upgrade: {
 			reportedVersion,
 			// There may no further upgrades defined
-			bundleId: upgradePath[reportedVersion] ?? null,
+			bundleId:
+				Object.entries(upgradePath).find(([targetVersion]) =>
+					semver.satisfies(reportedVersion, targetVersion),
+				)?.[1] ?? null,
 			target,
 		},
 	}
