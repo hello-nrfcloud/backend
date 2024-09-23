@@ -33,9 +33,6 @@ exampleContext:
 >
 > An update routine consists of one or more update jobs to execute to upgrade
 > the device from one (modem) firmware version to another.
->
-> TODO: multi-path FOTA needs to wait for the device to report the updated
-> version before progressing to the next update
 
 ## Background
 

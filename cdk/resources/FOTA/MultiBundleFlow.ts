@@ -8,10 +8,13 @@ import { definitions, LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { FOTAJobStatus } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
+	aws_events as Events,
 	aws_lambda_event_sources as EventSources,
+	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
+	Stack,
 	aws_stepfunctions_tasks as StepFunctionsTasks,
 	type aws_logs as Logs,
 } from 'aws-cdk-lib'
@@ -27,7 +30,6 @@ import {
 	StateMachineType,
 	Succeed,
 	TaskInput,
-	type IStateMachine,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import {
 	DynamoAttributeValue,
@@ -44,7 +46,7 @@ import type { DeviceStorage } from '../DeviceStorage.js'
  * save the amount of data that needs to be transferred.
  */
 export class MultiBundleFOTAFlow extends Construct {
-	public readonly stateMachine: IStateMachine
+	public readonly stateMachine: StateMachine
 	public readonly GetDeviceFirmwareDetails: PackedLambdaFn
 	public readonly GetNextBundle: PackedLambdaFn
 	public readonly CreateFOTAJob: PackedLambdaFn
@@ -53,6 +55,7 @@ export class MultiBundleFOTAFlow extends Construct {
 	public readonly WaitForUpdateAppliedCallback: PackedLambdaFn
 	public readonly WaitForUpdateApplied: PackedLambdaFn
 	public readonly startMultiBundleFOTAFlow: PackedLambdaFn
+	public readonly abortMultiBundleFOTAFlow: PackedLambdaFn
 
 	public constructor(
 		parent: Construct,
@@ -437,7 +440,7 @@ export class MultiBundleFOTAFlow extends Construct {
 		})
 		deviceFOTA.nrfCloudJobStatusTable.grantReadWriteData(this.stateMachine)
 
-		const startMultiBundleFOTAFlow = new PackedLambdaFn(
+		this.startMultiBundleFOTAFlow = new PackedLambdaFn(
 			this,
 			'startMultiBundleFOTAFlow',
 			lambdas.start,
@@ -459,10 +462,62 @@ export class MultiBundleFOTAFlow extends Construct {
 				logGroup: deviceFOTA.logGroup,
 			},
 		)
-		this.startMultiBundleFOTAFlow = startMultiBundleFOTAFlow
-		this.stateMachine.grantStartExecution(startMultiBundleFOTAFlow.fn)
-		deviceStorage.devicesTable.grantReadData(startMultiBundleFOTAFlow.fn)
-		deviceFOTA.jobTable.grantWriteData(startMultiBundleFOTAFlow.fn)
+		this.stateMachine.grantStartExecution(this.startMultiBundleFOTAFlow.fn)
+		deviceStorage.devicesTable.grantReadData(this.startMultiBundleFOTAFlow.fn)
+		deviceFOTA.jobTable.grantWriteData(this.startMultiBundleFOTAFlow.fn)
+
+		this.abortMultiBundleFOTAFlow = new PackedLambdaFn(
+			this,
+			'abortMultiBundleFOTAFlow',
+			lambdas.abort,
+			{
+				description: 'REST entry point for aborting running FOTA flows',
+				environment: {
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+					STATE_MACHINE_ARN: this.stateMachine.stateMachineArn,
+				},
+				layers,
+				logGroup: deviceFOTA.logGroup,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['states:DescribeExecution', 'states:StopExecution'],
+						resources: [
+							`arn:aws:states:${Stack.of(this).region}:${Stack.of(this).account}:execution:${this.stateMachine.stateMachineName}:*`,
+						],
+					}),
+				],
+			},
+		)
+		deviceStorage.devicesTable.grantReadData(this.abortMultiBundleFOTAFlow.fn)
+
+		const onStepFunctionFail = new PackedLambdaFn(
+			this,
+			'onFail',
+			lambdas.onFail,
+			{
+				description: 'Handles failed or cancelled step function executions',
+				environment: {
+					STATE_MACHINE_ARN: this.stateMachine.stateMachineArn,
+					JOB_TABLE_NAME: deviceFOTA.jobTable.tableName,
+				},
+				layers,
+				logGroup: deviceFOTA.logGroup,
+			},
+		)
+		deviceFOTA.jobTable.grantWriteData(onStepFunctionFail.fn)
+		// FIXME: connect to state machine
+		const eventBus = new Events.EventBus(this, 'eventBus', {})
+		new Events.Rule(this, 'onStepFunctionFailRule', {
+			eventPattern: {
+				source: ['aws.states'],
+				detail: {
+					status: ['FAILED', 'TIMED_OUT', 'ABORTED'],
+					stateMachineArn: [this.stateMachine.stateMachineArn],
+				},
+			},
+			targets: [new EventsTargets.LambdaFunction(onStepFunctionFail.fn)],
+			eventBus,
+		})
 
 		this.WaitForFOTAJobCompletion = new PackedLambdaFn(
 			this,
