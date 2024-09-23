@@ -274,7 +274,7 @@ export class MultiBundleFOTAFlow extends Construct {
 						.next(
 							new Choice(this, 'Application or MFM updated?')
 								.when(
-									Condition.isNotNull(
+									Condition.isPresent(
 										`$.updatedDeviceFirmwareDetails.appVersion`,
 									),
 									new Pass(this, 'updateReportedAppVersion', {
