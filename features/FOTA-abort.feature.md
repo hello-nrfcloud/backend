@@ -9,7 +9,6 @@ exampleContext:
   jobId: 01J861VKYH5QVD6QQ5YXXF20EF
 needs:
   - Device FOTA
-run: only
 ---
 
 # Abort Device FOTA jobs
@@ -131,12 +130,12 @@ Content-Type: application/json
 {
     "createdAt": "${tsJob1CreatedISO}",
     "firmware": {
-        "bundleId": "APP*1e29dfa3*v2.0.1",
+        "bundleId": "APP*2c3cf63b*v2.0.1",
         "fileSize": 425860,
         "firmwareType": "APP",
         "host": "firmware.nrfcloud.com",
         "uris": [
-            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*1e29dfa3*v2.0.1/hello-nrfcloud-thingy91x-v2.0.1-fwupd.bin"
+            "bbfe6b73-a46a-43ad-94bd-8e4b4a7847ce/APP*2c3cf63b*v2.0.1/hello-nrfcloud-thingy91x-v2.0.1-fwupd.bin"
         ],
         "version": "v2.0.1"
     },
@@ -161,7 +160,7 @@ with
 ```json
 {
   "upgradePath": {
-    ">=0.0.0": "APP*1e29dfa3*v2.0.1"
+    ">=0.0.0": "APP*2c3cf63b*v2.0.1"
   }
 }
 ```
@@ -173,7 +172,25 @@ response
 
 And I store `id` of the last response into `jobId`
 
+## Wait for the job to be created on nRF Cloud
+
+Soon the nRF Cloud API should have been called with
+
+```
+POST /v1/fota-jobs HTTP/1.1
+Content-Type: application/json
+
+{"bundleId":"APP*2c3cf63b*v2.0.1","autoApply":true,"deviceIdentifiers":["${fingerprint_deviceId}"]}
+```
+
 ## Cancel the job
+
+Given this nRF Cloud API request is queued for a
+`PUT /v1/fota-jobs/${nrfCloudJobId}/cancel` request
+
+```
+HTTP/1.1 202 OK
+```
 
 When I `DELETE`
 `${APIURL}/device/${fingerprint_deviceId}/fota/job/${jobId}?fingerprint=${fingerprint}`
@@ -210,4 +227,14 @@ Soon I should receive a message on the websocket that matches
   "status": "FAILED",
   "statusDetail": "The job was cancelled."
 }
+```
+
+## The job on nRF Cloud should be cancelled
+
+Soon the nRF Cloud API should have been called with
+
+```
+PUT /v1/fota-jobs/${nrfCloudJobId}/cancel HTTP/1.1
+
+{}
 ```

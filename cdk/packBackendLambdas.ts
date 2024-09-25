@@ -46,6 +46,7 @@ export type BackendLambdas = {
 		getDeviceFirmwareDetails: PackedLambda
 		getNextBundle: PackedLambda
 		createFOTAJob: PackedLambda
+		cancelFOTAJob: PackedLambda
 		WaitForFOTAJobCompletionCallback: PackedLambda
 		waitForFOTAJobCompletion: PackedLambda
 		waitForUpdateAppliedCallback: PackedLambda
@@ -155,6 +156,10 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		createFOTAJob: await packLambdaFromPath(
 			'multiBundleFOTAFlowCreateFOTAJob',
 			'lambda/fota/multi-bundle-flow/createFOTAJob.ts',
+		),
+		cancelFOTAJob: await packLambdaFromPath(
+			'multiBundleFOTAFlowCancelFOTAJob',
+			'lambda/fota/multi-bundle-flow/cancelFOTAJob.ts',
 		),
 		WaitForFOTAJobCompletionCallback: await packLambdaFromPath(
 			'multiBundleFOTAFlowWaitForFOTAJobCompletionCallback',
