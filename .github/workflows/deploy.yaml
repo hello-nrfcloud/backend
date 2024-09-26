@@ -26,7 +26,7 @@ env:
 jobs:
   print-inputs:
     name: Print inputs
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Print inputs
         run: |
@@ -36,7 +36,7 @@ jobs:
   docker:
     name: Push Docker images to ECR
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     environment: production
 
@@ -104,7 +104,7 @@ jobs:
           docker push ${{ steps.repositoryUri.outputs.repositoryUri }}:${{ matrix.tag }}
 
   deploy:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     environment: production
 
