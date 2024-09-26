@@ -3,7 +3,6 @@ import {
 	GetItemCommand,
 	PutItemCommand,
 	QueryCommand,
-	UpdateItemCommand,
 	type DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
@@ -67,6 +66,40 @@ export const create =
 		return { pk }
 	}
 
+/**
+ * Mark a job as failed
+ */
+export const fail =
+	(db: DynamoDBClient, TableName: string) =>
+	async (pk: string, id: string, reason: string, date: Date): Promise<void> => {
+		const job = await getByPK(db, TableName)(pk)
+		if (job === null) throw new Error(`Job ${pk} not found!`)
+		if (job.id !== id) throw new Error(`Job ID mismatch!`)
+		await db.send(
+			new PutItemCommand({
+				TableName,
+				Item: marshall(
+					{
+						...job,
+						pk: job.id,
+						status: FOTAJobStatus.FAILED,
+						statusDetail: reason,
+						timestamp: date.toISOString(),
+					},
+					{ removeUndefinedValues: true },
+				),
+			}),
+		)
+		await db.send(
+			new DeleteItemCommand({
+				TableName,
+				Key: marshall({
+					pk,
+				}),
+			}),
+		)
+	}
+
 export const getByPK =
 	(db: DynamoDBClient, TableName: string) =>
 	async (pk: string): Promise<PersistedJob | null> => {
@@ -99,95 +132,4 @@ export const getById =
 		const pk = res.Items?.[0]?.pk?.S
 		if (pk === undefined) throw new Error(`Job ${id} not found!`)
 		return getByPK(db, TableName)(pk)
-	}
-
-export const update =
-	(
-		db: DynamoDBClient,
-		TableName: string,
-		debug?: (...args: Array<unknown>) => void,
-	) =>
-	async (
-		update: Pick<PersistedJob, 'status' | 'statusDetail'> & {
-			reportedVersion?: PersistedJob['reportedVersion']
-			usedVersions?: PersistedJob['usedVersions']
-		},
-		current: Pick<
-			PersistedJob,
-			| 'id'
-			| 'pk'
-			| 'deviceId'
-			| 'timestamp'
-			| 'upgradePath'
-			| 'reportedVersion'
-			| 'usedVersions'
-		>,
-	): Promise<void> => {
-		const now = new Date().toISOString()
-		if (update.status === FOTAJobStatus.NEW)
-			throw new Error(`Cannot set status to NEW!`)
-		if (update.status !== FOTAJobStatus.IN_PROGRESS) {
-			const currentJob = await getByPK(db, TableName)(current.pk)
-			if (currentJob === null) {
-				throw new Error(`Job not found!`)
-			}
-			debug?.('copying job', {
-				...currentJob,
-				pk: current.id,
-			})
-			await db.send(
-				new PutItemCommand({
-					TableName,
-					Item: marshall({
-						...currentJob,
-						pk: current.id,
-					}),
-					ConditionExpression: 'attribute_not_exists(pk)',
-				}),
-			)
-			debug?.('deleting job', { pk: current.pk })
-			await db.send(
-				new DeleteItemCommand({
-					TableName,
-					Key: { pk: { S: current.pk } },
-				}),
-			)
-			return
-		}
-		await db.send(
-			new UpdateItemCommand({
-				TableName,
-				Key: {
-					pk: {
-						S: current.pk,
-					},
-				},
-				UpdateExpression:
-					'SET #status = :status, #statusDetail = :statusDetail, #timestamp = :now, #reportedVersion = :reportedVersion, #usedVersions = :usedVersions',
-				ExpressionAttributeNames: {
-					'#status': 'status',
-					'#statusDetail': 'statusDetail',
-					'#timestamp': 'timestamp',
-					'#reportedVersion': 'reportedVersion',
-					'#usedVersions': 'usedVersions',
-				},
-				ExpressionAttributeValues: {
-					':now': { S: now },
-					':status': { S: update.status },
-					':statusDetail': { S: update.statusDetail },
-					':timestamp': { S: current.timestamp },
-					':reportedVersion': {
-						S: update.reportedVersion ?? current.reportedVersion,
-					},
-					':usedVersions': {
-						SS: [
-							...(current.usedVersions ?? []),
-							...(update.usedVersions ?? []),
-						],
-					},
-				},
-				ConditionExpression: '#timestamp = :timestamp AND attribute_exists(pk)',
-				ReturnValues: 'NONE',
-			}),
-		)
 	}

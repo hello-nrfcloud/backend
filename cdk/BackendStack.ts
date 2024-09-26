@@ -335,6 +335,11 @@ export class BackendStack extends Stack {
 			mbff.startMultiBundleFOTAFlow.fn,
 		)
 
+		api.addRoute(
+			'DELETE /device/{deviceId}/fota/job/{jobId}',
+			mbff.abortMultiBundleFOTAFlow.fn,
+		)
+
 		const updateDevice = new UpdateDevice(this, {
 			lambdaSources,
 			layers: [baseLayerVersion],

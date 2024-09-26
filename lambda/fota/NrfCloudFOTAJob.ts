@@ -1,11 +1,14 @@
-import type { FOTAJobType } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
+import type {
+	FOTAJobStatus,
+	FOTAJobType,
+} from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import type { Static } from '@sinclair/typebox'
 
 export type NrfCloudFOTAJob = {
 	parentJobId: string
 	deviceId: string
 	jobId: string
-	status: string
+	status: FOTAJobStatus
 	createdAt: string
 	nextUpdateAt: string
 	account: string

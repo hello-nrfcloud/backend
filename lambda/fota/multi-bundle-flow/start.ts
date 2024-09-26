@@ -40,10 +40,10 @@ import { getDeviceFirmwareDetails } from '../getDeviceFirmwareDetails.js'
 import { getNextUpgrade } from '../getNextUpgrade.js'
 import { create } from '../jobRepo.js'
 
-const { version, DevicesTableName, JobTableName, StateMachineArn } = fromEnv({
+const { version, DevicesTableName, jobTableName, StateMachineArn } = fromEnv({
 	version: 'VERSION',
 	DevicesTableName: 'DEVICES_TABLE_NAME',
-	JobTableName: 'JOB_TABLE_NAME',
+	jobTableName: 'JOB_TABLE_NAME',
 	stackName: 'STACK_NAME',
 	StateMachineArn: 'STATE_MACHINE_ARN',
 })(process.env)
@@ -58,7 +58,7 @@ const InputSchema = Type.Object({
 	upgradePath: UpgradePath,
 })
 
-const c = create(db, JobTableName)
+const c = create(db, jobTableName)
 const checkDevice = getDeviceFirmwareDetails(iotData)
 
 const { track } = metricsForComponent('deviceFOTA')

@@ -41,9 +41,12 @@ export type BackendLambdas = {
 	createCNAMERecord: PackedLambda
 	multiBundleFOTAFlow: {
 		start: PackedLambda
+		abort: PackedLambda
+		onFail: PackedLambda
 		getDeviceFirmwareDetails: PackedLambda
 		getNextBundle: PackedLambda
 		createFOTAJob: PackedLambda
+		cancelFOTAJob: PackedLambda
 		WaitForFOTAJobCompletionCallback: PackedLambda
 		waitForFOTAJobCompletion: PackedLambda
 		waitForUpdateAppliedCallback: PackedLambda
@@ -134,6 +137,14 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 			'multiBundleFOTAFlowStart',
 			'lambda/fota/multi-bundle-flow/start.ts',
 		),
+		abort: await packLambdaFromPath(
+			'multiBundleFOTAFlowAbort',
+			'lambda/fota/multi-bundle-flow/abort.ts',
+		),
+		onFail: await packLambdaFromPath(
+			'multiBundleFOTAFlowOnFail',
+			'lambda/fota/multi-bundle-flow/onFail.ts',
+		),
 		getDeviceFirmwareDetails: await packLambdaFromPath(
 			'multiBundleFOTAFlowGetDeviceFirmareDetails',
 			'lambda/fota/multi-bundle-flow/getDeviceFirmwareDetails.ts',
@@ -145,6 +156,10 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		createFOTAJob: await packLambdaFromPath(
 			'multiBundleFOTAFlowCreateFOTAJob',
 			'lambda/fota/multi-bundle-flow/createFOTAJob.ts',
+		),
+		cancelFOTAJob: await packLambdaFromPath(
+			'multiBundleFOTAFlowCancelFOTAJob',
+			'lambda/fota/multi-bundle-flow/cancelFOTAJob.ts',
 		),
 		WaitForFOTAJobCompletionCallback: await packLambdaFromPath(
 			'multiBundleFOTAFlowWaitForFOTAJobCompletionCallback',

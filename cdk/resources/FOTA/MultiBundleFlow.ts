@@ -8,10 +8,14 @@ import { definitions, LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { FOTAJobStatus } from '@hello.nrfcloud.com/proto/hello'
 import {
 	Duration,
+	aws_dynamodb as DynamoDB,
+	aws_events as Events,
 	aws_lambda_event_sources as EventSources,
+	aws_events_targets as EventsTargets,
 	aws_iam as IAM,
 	aws_iot as IoT,
 	aws_lambda as Lambda,
+	Stack,
 	aws_stepfunctions_tasks as StepFunctionsTasks,
 	type aws_logs as Logs,
 } from 'aws-cdk-lib'
@@ -27,7 +31,6 @@ import {
 	StateMachineType,
 	Succeed,
 	TaskInput,
-	type IStateMachine,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import {
 	DynamoAttributeValue,
@@ -44,7 +47,7 @@ import type { DeviceStorage } from '../DeviceStorage.js'
  * save the amount of data that needs to be transferred.
  */
 export class MultiBundleFOTAFlow extends Construct {
-	public readonly stateMachine: IStateMachine
+	public readonly stateMachine: StateMachine
 	public readonly GetDeviceFirmwareDetails: PackedLambdaFn
 	public readonly GetNextBundle: PackedLambdaFn
 	public readonly CreateFOTAJob: PackedLambdaFn
@@ -53,6 +56,7 @@ export class MultiBundleFOTAFlow extends Construct {
 	public readonly WaitForUpdateAppliedCallback: PackedLambdaFn
 	public readonly WaitForUpdateApplied: PackedLambdaFn
 	public readonly startMultiBundleFOTAFlow: PackedLambdaFn
+	public readonly abortMultiBundleFOTAFlow: PackedLambdaFn
 
 	public constructor(
 		parent: Construct,
@@ -204,6 +208,9 @@ export class MultiBundleFOTAFlow extends Construct {
 									),
 									nextUpdateAt: DynamoAttributeValue.fromString(
 										JsonPath.stateEnteredTime,
+									),
+									parentJobId: DynamoAttributeValue.fromString(
+										JsonPath.executionName,
 									),
 								},
 								resultPath: '$.DynamoDB',
@@ -437,7 +444,7 @@ export class MultiBundleFOTAFlow extends Construct {
 		})
 		deviceFOTA.nrfCloudJobStatusTable.grantReadWriteData(this.stateMachine)
 
-		const startMultiBundleFOTAFlow = new PackedLambdaFn(
+		this.startMultiBundleFOTAFlow = new PackedLambdaFn(
 			this,
 			'startMultiBundleFOTAFlow',
 			lambdas.start,
@@ -459,10 +466,9 @@ export class MultiBundleFOTAFlow extends Construct {
 				logGroup: deviceFOTA.logGroup,
 			},
 		)
-		this.startMultiBundleFOTAFlow = startMultiBundleFOTAFlow
-		this.stateMachine.grantStartExecution(startMultiBundleFOTAFlow.fn)
-		deviceStorage.devicesTable.grantReadData(startMultiBundleFOTAFlow.fn)
-		deviceFOTA.jobTable.grantWriteData(startMultiBundleFOTAFlow.fn)
+		this.stateMachine.grantStartExecution(this.startMultiBundleFOTAFlow.fn)
+		deviceStorage.devicesTable.grantReadData(this.startMultiBundleFOTAFlow.fn)
+		deviceFOTA.jobTable.grantWriteData(this.startMultiBundleFOTAFlow.fn)
 
 		this.WaitForFOTAJobCompletion = new PackedLambdaFn(
 			this,
@@ -556,6 +562,109 @@ export class MultiBundleFOTAFlow extends Construct {
 			principal: new IAM.ServicePrincipal('iot.amazonaws.com'),
 			sourceArn: waitForFirmwareVersionReportRule.attrArn,
 		})
+
+		// Users can abort the FOTA flow
+		this.abortMultiBundleFOTAFlow = new PackedLambdaFn(
+			this,
+			'abortMultiBundleFOTAFlow',
+			lambdas.abort,
+			{
+				description: 'REST entry point for aborting running FOTA flows',
+				environment: {
+					DEVICES_TABLE_NAME: deviceStorage.devicesTable.tableName,
+					STATE_MACHINE_ARN: this.stateMachine.stateMachineArn,
+				},
+				layers,
+				logGroup: deviceFOTA.logGroup,
+				initialPolicy: [
+					new IAM.PolicyStatement({
+						actions: ['states:DescribeExecution', 'states:StopExecution'],
+						resources: [
+							`arn:aws:states:${Stack.of(this).region}:${Stack.of(this).account}:execution:${this.stateMachine.stateMachineName}:*`,
+						],
+					}),
+				],
+			},
+		)
+		deviceStorage.devicesTable.grantReadData(this.abortMultiBundleFOTAFlow.fn)
+
+		// Handles failed or cancelled step function executions
+		const onStepFunctionFail = new PackedLambdaFn(
+			this,
+			'onFail',
+			lambdas.onFail,
+			{
+				description: 'Handles failed or cancelled step function executions',
+				environment: {
+					STATE_MACHINE_ARN: this.stateMachine.stateMachineArn,
+					JOB_TABLE_NAME: deviceFOTA.jobTable.tableName,
+				},
+				layers,
+				logGroup: deviceFOTA.logGroup,
+			},
+		)
+		deviceFOTA.jobTable.grantReadWriteData(onStepFunctionFail.fn)
+		new Events.Rule(this, 'onStepFunctionFailRule', {
+			eventPattern: {
+				source: ['aws.states'],
+				detail: {
+					status: ['FAILED', 'TIMED_OUT', 'ABORTED'],
+					stateMachineArn: [this.stateMachine.stateMachineArn],
+				},
+			},
+			targets: [new EventsTargets.LambdaFunction(onStepFunctionFail.fn)],
+		})
+
+		// Cancel the FOTA job on nRF Cloud if the step function is cancelled
+		const parentJobIdIndexName = 'parentJobIdIndex'
+		deviceFOTA.nrfCloudJobStatusTable.addGlobalSecondaryIndex({
+			indexName: parentJobIdIndexName,
+			partitionKey: {
+				name: 'parentJobId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			sortKey: {
+				name: 'jobId',
+				type: DynamoDB.AttributeType.STRING,
+			},
+			projectionType: DynamoDB.ProjectionType.INCLUDE,
+			nonKeyAttributes: ['status'],
+		})
+		const cancelFOTAJob = new PackedLambdaFn(
+			this,
+			'cancelFOTAJob',
+			lambdas.cancelFOTAJob,
+			{
+				description:
+					'Cancel the FOTA job on nRF Cloud if the step function is cancelled',
+				layers,
+				timeout: Duration.minutes(1),
+				logGroup: deviceFOTA.logGroup,
+				environment: {
+					NRF_CLOUD_JOB_STATUS_TABLE_NAME:
+						deviceFOTA.nrfCloudJobStatusTable.tableName,
+					NRF_CLOUD_JOB_STATUS_TABLE_PARENT_JOB_ID_INDEX_NAME:
+						parentJobIdIndexName,
+				},
+			},
+		)
+		deviceFOTA.nrfCloudJobStatusTable.grantReadData(cancelFOTAJob.fn)
+		cancelFOTAJob.fn.addEventSource(
+			new EventSources.DynamoEventSource(deviceFOTA.jobTable, {
+				startingPosition: Lambda.StartingPosition.LATEST,
+				filters: [
+					Lambda.FilterCriteria.filter({
+						dynamodb: {
+							NewImage: {
+								status: {
+									S: [FOTAJobStatus.FAILED],
+								},
+							},
+						},
+					}),
+				],
+			}),
+		)
 	}
 }
 
