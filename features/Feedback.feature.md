@@ -26,7 +26,8 @@ When I `POST` to `${APIURL}/feedback` with
 {
   "email": "${email}",
   "stars": 4,
-  "suggestion": "None, everything worked well!"
+  "suggestion": "None, everything worked well!",
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
 }
 ```
 
@@ -48,12 +49,16 @@ content-type: application/json; charset=utf-8
     {
       "facts": [
         {
-          "name": "Rating:",
+          "name": "Rating",
           "value": "★★★★☆"
         },
         {
-          "name": "Email:",
+          "name": "Email",
           "value": "${email}"
+        },
+        {
+          "name": "Browser",
+          "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
         }
       ],
       "text": "None, everything worked well!"

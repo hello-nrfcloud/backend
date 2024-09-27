@@ -31,13 +31,14 @@ const InputSchema = Type.Object({
 	stars: Type.Integer({ minimum: 1, maximum: 5, title: 'Star rating' }),
 	suggestion: Type.String({ minLength: 1, title: 'Suggestion' }),
 	email: Type.RegExp(/.+@.+/, { title: 'Email' }),
+	browser: Type.String({ minLength: 1, title: 'Non-empty string' }),
 })
 
 const h = async (
 	event: APIGatewayProxyEventV2,
 	context: ValidInput<typeof InputSchema> & Context,
 ): Promise<APIGatewayProxyResultV2> => {
-	const { stars, email, suggestion } = context.validInput
+	const { stars, email, suggestion, browser } = context.validInput
 
 	const res = await fetch(settings.webhookURL, {
 		method: 'POST',
@@ -54,12 +55,16 @@ const h = async (
 				{
 					facts: [
 						{
-							name: 'Rating:',
+							name: 'Rating',
 							value: '★'.repeat(stars) + '☆'.repeat(5 - stars),
 						},
 						{
-							name: 'Email:',
+							name: 'Email',
 							value: email,
+						},
+						{
+							name: 'Browser',
+							value: browser,
 						},
 					],
 					text: suggestion,
