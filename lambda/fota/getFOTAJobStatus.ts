@@ -70,6 +70,7 @@ const h = async (
 				},
 			},
 			ProjectionExpression: '#pk',
+			ScanIndexForward: false,
 			// TODO: Implement pagination
 			Limit: 10,
 		}),
@@ -108,7 +109,8 @@ const h = async (
 					new Date(job.timestamp).getTime() >=
 					context.device.hideDataBefore.getTime()
 				)
-			}),
+			})
+			.sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
 	}
 
 	return aResponse(
