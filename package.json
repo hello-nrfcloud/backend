@@ -84,7 +84,7 @@
     "husky": "9.1.6",
     "jsonata": "2.0.5",
     "lint-staged": "15.2.10",
-    "nock": "14.0.0-beta.14",
+    "nock": "14.0.0-beta.15",
     "semver": "7.6.3",
     "tsmatchers": "5.0.2",
     "tsx": "4.19.1",
