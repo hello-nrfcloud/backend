@@ -164,7 +164,7 @@ const h = async (
 			'0': lat,
 			'1': lng,
 			'3': radiusKm * 1000,
-			'6': sources.size === 1 ? sources.values().next().value : 'mixed',
+			'6': sources.size === 1 ? sources.values().next().value! : 'mixed',
 			'99': ts,
 		}))
 	} else {

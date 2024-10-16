@@ -120,7 +120,7 @@ export const updateLambda = ({
 		const updateResult = await lambda.send(
 			new UpdateFunctionCodeCommand({
 				FunctionName: functionToUpdate.PhysicalResourceId,
-				ZipFile: await readFile(res.zipFile),
+				ZipFile: new Uint8Array(await readFile(res.zipFile)),
 			}),
 		)
 

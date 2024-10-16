@@ -20,7 +20,7 @@ const targetFromUpgradePath = (
 			error: new Error(`A job must have a single target!`),
 		}
 	return {
-		target: target.values().next().value,
+		target: target.values().next().value!,
 	}
 }
 
