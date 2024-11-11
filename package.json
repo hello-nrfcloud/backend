@@ -57,7 +57,7 @@
     "@bifravst/prettier-config": "1.1.1",
     "@bifravst/random-words": "8.0.2",
     "@commitlint/config-conventional": "19.5.0",
-    "@hello.nrfcloud.com/bdd-markdown-steps": "2.8.223",
+    "@hello.nrfcloud.com/bdd-markdown-steps": "2.8.224",
     "@swc/cli": "0.5.0",
     "@swc/core": "1.9.1",
     "@types/aws-lambda": "8.10.145",
