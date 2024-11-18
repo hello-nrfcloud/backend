@@ -28,11 +28,11 @@
   "devDependencies": {
     "@aws-sdk/client-acm": "3.693.0",
     "@aws-sdk/client-apigatewaymanagementapi": "3.693.0",
-    "@aws-sdk/client-cloudformation": "3.693.0",
+    "@aws-sdk/client-cloudformation": "3.695.0",
     "@aws-sdk/client-cloudwatch-logs": "3.693.0",
     "@aws-sdk/client-dynamodb": "3.693.0",
     "@aws-sdk/client-ecr": "3.693.0",
-    "@aws-sdk/client-ecs": "3.693.0",
+    "@aws-sdk/client-ecs": "3.695.0",
     "@aws-sdk/client-eventbridge": "3.693.0",
     "@aws-sdk/client-iam": "3.693.0",
     "@aws-sdk/client-iot": "3.694.0",
