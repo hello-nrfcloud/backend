@@ -89,7 +89,7 @@
     "tsmatchers": "5.0.2",
     "tsx": "4.19.2",
     "yauzl": "3.2.0",
-    "yazl": "2.5.1"
+    "yazl": "3.3.1"
   },
   "lint-staged": {
     "*.{md,json,yaml,yml}": [
