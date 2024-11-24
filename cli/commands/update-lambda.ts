@@ -106,7 +106,11 @@ export const updateLambda = ({
 
 		switch (fnInfo.Configuration?.Runtime) {
 			case 'nodejs20.x':
-				res = await packLambdaFromPath(id, `lambda/${sourceFile ?? id}.ts`)
+			case 'nodejs22.x':
+				res = await packLambdaFromPath({
+					id,
+					sourceFilePath: `lambda/${sourceFile ?? id}.ts`,
+				})
 				break
 			case 'provided.al2023':
 				if (id !== 'healthCheckForCoAPClient')
@@ -120,7 +124,7 @@ export const updateLambda = ({
 		const updateResult = await lambda.send(
 			new UpdateFunctionCodeCommand({
 				FunctionName: functionToUpdate.PhysicalResourceId,
-				ZipFile: new Uint8Array(await readFile(res.zipFile)),
+				ZipFile: new Uint8Array(await readFile(res.zipFilePath)),
 			}),
 		)
 

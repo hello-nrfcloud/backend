@@ -2,7 +2,7 @@ import {
 	packLayer,
 	type PackedLayer,
 } from '@bifravst/aws-cdk-lambda-helpers/layer'
-import type pJson from '../../package.json'
+import pJson from '../../package.json' assert { type: 'json' }
 
 const dependencies: Array<keyof (typeof pJson)['dependencies']> = [
 	'mqtt',

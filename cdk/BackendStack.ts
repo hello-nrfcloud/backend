@@ -94,22 +94,22 @@ export class BackendStack extends Stack {
 			layerVersionName: `${Stack.of(this).stackName}-baseLayer`,
 			code: new LambdaSource(this, {
 				id: 'baseLayer',
-				zipFile: baseLayer.layerZipFile,
+				zipFilePath: baseLayer.layerZipFilePath,
 				hash: baseLayer.hash,
 			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
-			compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
+			compatibleRuntimes: [Lambda.Runtime.NODEJS_22_X],
 		})
 
 		const jwtLayerVersion = new Lambda.LayerVersion(this, 'jwtLayer', {
 			layerVersionName: `${Stack.of(this).stackName}-jwtLayer`,
 			code: new LambdaSource(this, {
 				id: 'jwtLayer',
-				zipFile: jwtLayer.layerZipFile,
+				zipFilePath: jwtLayer.layerZipFilePath,
 				hash: jwtLayer.hash,
 			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
-			compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
+			compatibleRuntimes: [Lambda.Runtime.NODEJS_22_X],
 		})
 
 		const healthCheckLayerVersion = new Lambda.LayerVersion(
@@ -118,11 +118,11 @@ export class BackendStack extends Stack {
 			{
 				code: new LambdaSource(this, {
 					id: 'healthcheckLayer',
-					zipFile: healthCheckLayer.layerZipFile,
+					zipFilePath: healthCheckLayer.layerZipFilePath,
 					hash: healthCheckLayer.hash,
 				}).code,
 				compatibleArchitectures: [Lambda.Architecture.ARM_64],
-				compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
+				compatibleRuntimes: [Lambda.Runtime.NODEJS_22_X],
 			},
 		)
 
@@ -175,11 +175,11 @@ export class BackendStack extends Stack {
 			const cdkLayerVersion = new Lambda.LayerVersion(this, 'cdkLayer', {
 				code: new LambdaSource(this, {
 					id: 'cdkLayer',
-					zipFile: cdkLayer.layerZipFile,
+					zipFilePath: cdkLayer.layerZipFilePath,
 					hash: cdkLayer.hash,
 				}).code,
 				compatibleArchitectures: [Lambda.Architecture.ARM_64],
-				compatibleRuntimes: [Lambda.Runtime.NODEJS_20_X],
+				compatibleRuntimes: [Lambda.Runtime.NODEJS_22_X],
 			})
 			const domain = new APICustomDomain(this, {
 				api,

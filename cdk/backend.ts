@@ -16,7 +16,7 @@ import { ensureCA } from '../bridge/ensureCA.js'
 import { ensureMQTTBridgeCredentials } from '../bridge/ensureMQTTBridgeCredentials.js'
 import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.js'
 import { debug, type logFn } from '../cli/log.js'
-import pJSON from '../package.json'
+import pJSON from '../package.json' assert { type: 'json' }
 import { ScopeContexts, type ScopeContext } from '../settings/scope.js'
 import { BackendApp } from './BackendApp.js'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.js'

@@ -23,7 +23,7 @@ export const packGo = async (
 	lambdaFolder: string,
 	distFolder: string = join(process.cwd(), 'dist/lambda'),
 ): Promise<PackedLambda> => {
-	const zipFile = join(distFolder, `${id}.zip`)
+	const zipFilePath = join(distFolder, `${id}.zip`)
 	const absLambdaFolder = join(process.cwd(), lambdaFolder)
 	await run({
 		command: 'go',
@@ -49,14 +49,17 @@ export const packGo = async (
 			GOCACHE: join(distFolder, 'gocache'),
 		},
 	})
-	await zipBinary(await readFile(join(absLambdaFolder, 'bootstrap')), zipFile)
+	await zipBinary(
+		await readFile(join(absLambdaFolder, 'bootstrap')),
+		zipFilePath,
+	)
 
 	return {
 		handler: 'bootstrap',
 		hash: await checkSumOfFiles(
 			(await readdir(absLambdaFolder)).map((f) => join(absLambdaFolder, f)),
 		),
-		zipFile,
+		zipFilePath,
 		id,
 	}
 }
