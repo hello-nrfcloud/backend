@@ -28,13 +28,17 @@ export const importDevicesCommand = ({
 			flags: '-w, --windows',
 			description: `Use Windows line ends`,
 		},
+		{
+			flags: '-d, --dry-run',
+			description: `Only verify the device list and certificates`,
+		},
 	],
 	action: async (
 		account,
 		model,
 		devicesListFile,
 		certificatesZipFile,
-		{ windows },
+		{ windows, dryRun },
 	) => {
 		const devices = await readDevicesList(
 			devicesListFile,
@@ -54,7 +58,15 @@ export const importDevicesCommand = ({
 			!compareLists(deviceCertificates, devices) ||
 			!compareLists(devices, deviceCertificates)
 		) {
+			const l1 = new Set(Array.from(devices.keys()))
+			const l2 = new Set(Array.from(deviceCertificates.keys()))
 			console.error(chalk.red(`Device lists do not match!`))
+			console.error(chalk.red(`Mismatched devices:`))
+			for (const d of [
+				...new Set([...l1.difference(l2), ...l2.difference(l1)]),
+			]) {
+				console.error(chalk.red('-'), chalk.redBright(d))
+			}
 			process.exit(1)
 		}
 
@@ -79,6 +91,11 @@ export const importDevicesCommand = ({
 				),
 			]),
 		)
+
+		if (dryRun === true) {
+			console.log(chalk.gray(`Dry run, not registering devices.`))
+			process.exit(2)
+		}
 
 		const { apiKey, apiEndpoint } = await getAPISettings({
 			ssm,

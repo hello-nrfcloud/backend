@@ -12,7 +12,7 @@ export const readDevicesList = async (
 		.split(lineEnds)
 		.map((s) => s.split(','))
 		.slice(1)
-		.map(([, deviceModel, hwVersion, IMEI, , fingerprint, ,], n) => {
+		.map(([, deviceModel, hwVersion, IMEI, fingerprint], n) => {
 			if (!isFingerprint(fingerprint))
 				throw new Error(`Invalid fingerprint: ${fingerprint} in line ${n}!`)
 			if (!isIMEI(IMEI)) throw new Error(`Invalid IMEI: ${IMEI} in line ${n}!`)
