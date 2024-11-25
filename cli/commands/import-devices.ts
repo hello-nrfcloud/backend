@@ -3,6 +3,7 @@ import type { SSMClient } from '@aws-sdk/client-ssm'
 import { devices as devicesApi } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
+import { chunk } from 'lodash-es'
 import { table } from 'table'
 import { compareLists } from '../../devices/import/compareLists.js'
 import { readDeviceCertificates } from '../../devices/import/readDeviceCertificates.js'
@@ -108,9 +109,10 @@ export const importDevicesCommand = ({
 			apiKey,
 		})
 
-		const registration = await client.register(
-			Array.from(deviceCertificates.entries()).map(
-				([imei, { certificate: certPem }]) => {
+		for (const page of chunk([...deviceCertificates.entries()], 1000)) {
+			// Bulk-ops API allows max 1,000 devices per request
+			const registration = await client.register(
+				Array.from(page).map(([imei, { certificate: certPem }]) => {
 					const deviceId = `oob-${imei}`
 					return {
 						deviceId,
@@ -118,25 +120,26 @@ export const importDevicesCommand = ({
 						tags: [model.replace(/[^0-9a-z-]/gi, ':')],
 						certPem,
 					}
-				},
-			),
-		)
+				}),
+			)
 
-		if ('error' in registration) {
-			console.error(registration.error.message)
-			process.exit(1)
+			if ('error' in registration) {
+				console.error(registration.error.message)
+				process.exit(1)
+			}
+
+			console.log(chalk.green(`Registered devices with nRF Cloud`))
+			console.log(
+				chalk.yellow.dim(`Bulk ops ID:`),
+				chalk.yellow(registration.bulkOpsRequestId),
+			)
 		}
-
-		console.log(chalk.green(`Registered devices with nRF Cloud`))
-		console.log(
-			chalk.yellow.dim(`Bulk ops ID:`),
-			chalk.yellow(registration.bulkOpsRequestId),
-		)
 
 		const r = registerDevice({
 			db,
 			devicesTableName,
 		})
+
 		for (const [imei, { fingerprint, hwVersion }] of devices.entries()) {
 			const deviceId = `oob-${imei}`
 
