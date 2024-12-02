@@ -18,6 +18,7 @@ export class DeviceStorage extends Construct {
 					? RemovalPolicy.DESTROY
 					: RemovalPolicy.RETAIN,
 			pointInTimeRecovery: true,
+			stream: DynamoDB.StreamViewType.NEW_IMAGE,
 		})
 		this.devicesTable.addGlobalSecondaryIndex({
 			indexName: this.devicesTableFingerprintIndexName,
