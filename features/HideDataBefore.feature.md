@@ -113,14 +113,14 @@ Soon I should receive a message on the websocket that matches
 }
 ```
 
-And `{"len": $count(desired)}` of the last response should match
+And `$count(desired)"` of the last matched websocket message equals
 
 ```json
-{ "len": 0 }
+0
 ```
 
-And `{"len": $count(reported)}` of the last response should match
+And `$count(reported)"` of the last matched websocket message equals
 
 ```json
-{ "len": 0 }
+0
 ```
