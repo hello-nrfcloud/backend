@@ -105,6 +105,18 @@ const h = async (
 			deviceId,
 			error: maybeShadow.error.message,
 		})
+		// Send empty shadow in case it was hidden
+		if ('hideDataBefore' in context) {
+			await sendShadow({
+				deviceId,
+				model,
+				shadow: {
+					desired: [],
+					reported: [],
+				},
+				connectionId,
+			})
+		}
 	} else {
 		log.debug('sending shadow', {
 			deviceId,
