@@ -39,6 +39,7 @@ export type BackendLambdas = {
 	fetchMemfaultReboots: PackedLambda
 	queryMemfaultReboots: PackedLambda
 	hideDataBefore: PackedLambda
+	onHideData: PackedLambda
 	createCNAMERecord: PackedLambda
 	multiBundleFOTAFlow: {
 		start: PackedLambda
@@ -121,6 +122,7 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		'queryReboots',
 	),
 	hideDataBefore: await pack('hideDataBefore'),
+	onHideData: await pack('onHideData'),
 	createCNAMERecord: await packLambdaFromPath({
 		id: 'createCNAMERecord',
 		sourceFilePath: 'cdk/resources/api/createCNAMERecord.ts',

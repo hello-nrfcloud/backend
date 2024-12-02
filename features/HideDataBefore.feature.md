@@ -96,3 +96,31 @@ And `{"len": $count(partialInstances)}` of the last response should match
 ```json
 { "len": 0 }
 ```
+
+## The shadow should have been deleted
+
+> The LwM2M shadow of the device should have been deleted.
+
+Given I reconnect to the websocket using fingerprint `${fingerprint}`
+
+Soon I should receive a message on the websocket that matches
+
+```json
+{
+  "@context": "https://github.com/hello-nrfcloud/proto/shadow",
+  "desired": [],
+  "reported": []
+}
+```
+
+And `{"len": $count(desired)}` of the last response should match
+
+```json
+{ "len": 0 }
+```
+
+And `{"len": $count(reported)}` of the last response should match
+
+```json
+{ "len": 0 }
+```
