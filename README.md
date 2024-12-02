@@ -165,14 +165,13 @@ production account to update the CNAME for the API domain with these permissions
 Then, for continuous deployment:
 
 - create the variable `API_DOMAIN_NAME` with the name of the api domain, e.g.
-  `api.hello.nordicsemi.cloud` 53 zone that hosts the api domain records, e.g.
-  `eu-north-1`
+  `api.hello.nordicsemi.cloud`
 - create the secret `API_DOMAIN_ROUTE_53_ROLE_ARN` with the role ARN of the role
   that allows the production account to update the CNAME for the API domain.
 
 ```bash
 gh variable set API_DOMAIN_NAME --env production --body api.sim-details.nordicsemi.cloud
-gh variable set API_DOMAIN_ROUTE_53_ROLE_ARN --env production --body arn:aws:iam::<account ID>:role/<role name>
+gh secret set API_DOMAIN_ROUTE_53_ROLE_ARN --env production --body arn:aws:iam::<account ID>:role/<role name>
 ```
 
 ## Websocket Protocol
