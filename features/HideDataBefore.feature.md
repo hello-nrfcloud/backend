@@ -113,13 +113,13 @@ Soon I should receive a message on the websocket that matches
 }
 ```
 
-And `$count(desired)"` of the last matched websocket message equals
+And `$count(desired)` of the last matched websocket message equals
 
 ```json
 0
 ```
 
-And `$count(reported)"` of the last matched websocket message equals
+And `$count(reported)` of the last matched websocket message equals
 
 ```json
 0
