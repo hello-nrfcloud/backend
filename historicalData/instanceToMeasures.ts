@@ -7,6 +7,8 @@ import {
 	timestampResources,
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { isNumber } from 'lodash-es'
+import { correctOffset } from '../lwm2m/correctOffset.js'
 import { InvalidTimeError } from '../lwm2m/InvalidTimeError.js'
 import { isNumeric } from '../lwm2m/isNumeric.js'
 import { isUnixTimeInSeconds } from '../lwm2m/isUnixTimeInSeconds.js'
@@ -30,7 +32,16 @@ export const instanceToMeasures = ({
 		}
 	}
 
-	if (!isUnixTimeInSeconds(ts)) {
+	if (!isNumber(ts)) {
+		return {
+			error: new InvalidTimeError(
+				`Not a timestamp resource defined for ${ObjectID}: ${ts.toString()}!`,
+			),
+		}
+	}
+	const correctedTs = correctOffset(ts)
+
+	if (!isUnixTimeInSeconds(correctedTs)) {
 		return {
 			error: new InvalidTimeError(
 				`Timestamp ${JSON.stringify(ts)} for ${ObjectID} is not a valid unix time in seconds!`,
