@@ -30,24 +30,8 @@ export const getDeviceById =
 					error: new DeviceNotFoundError(deviceId),
 				}
 
-			const {
-				deviceId: id,
-				model,
-				account,
-				fingerprint,
-				hideDataBefore,
-			} = unmarshall(res.Item)
-			const device: Device = {
-				id,
-				fingerprint,
-				model,
-				account,
-			}
-			if (hideDataBefore !== undefined) {
-				device.hideDataBefore = new Date(hideDataBefore)
-			}
 			return {
-				device,
+				device: toDevice(res.Item),
 			}
 		} catch (error) {
 			return {
@@ -55,6 +39,26 @@ export const getDeviceById =
 			}
 		}
 	}
+
+export const toDevice = (item: Record<string, any>): Device => {
+	const {
+		deviceId: id,
+		model,
+		account,
+		fingerprint,
+		hideDataBefore,
+	} = unmarshall(item)
+	const device: Device = {
+		id,
+		fingerprint,
+		model,
+		account,
+	}
+	if (hideDataBefore !== undefined) {
+		device.hideDataBefore = new Date(hideDataBefore)
+	}
+	return device
+}
 
 export class DeviceNotFoundError extends Error {
 	public readonly id: string

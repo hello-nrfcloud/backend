@@ -5,6 +5,7 @@ import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/setting
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
 import { table } from 'table'
+import { getByDeviceIds } from '../../devices/getByDeviceIds.js'
 import { compareLists } from '../../devices/import/compareLists.js'
 import { readDeviceCertificates } from '../../devices/import/readDeviceCertificates.js'
 import { readDevicesList } from '../../devices/import/readDevicesList.js'
@@ -79,19 +80,36 @@ export const importDevicesCommand = ({
 			process.exit(1)
 		}
 
+		const byIds = getByDeviceIds({ db, DevicesTableName: devicesTableName })
+		const existing = await byIds(
+			Array.from(devices.keys()).map((imei) => `oob-${imei}`),
+		)
+		const existingDevices = Object.keys(existing)
+
 		console.log(
 			table([
 				['Fingerprint', 'Device ID', 'Model', 'HW version'],
-				...Array.from(devices.entries()).map(
-					([imei, { fingerprint, hwVersion }]) => [
+				...Array.from(devices.entries())
+					.filter(([imei]) => !existingDevices.includes(`oob-${imei}`))
+					.map(([imei, { fingerprint, hwVersion }]) => [
 						chalk.green(fingerprint),
 						chalk.blue(imei),
 						chalk.blue(model),
 						chalk.blue(hwVersion),
-					],
-				),
+					]),
 			]),
 		)
+
+		if (existingDevices.length > 0) {
+			console.warn(
+				chalk.yellow(
+					`Skipping`,
+					existingDevices.length,
+					`devices which are already registered.`,
+				),
+			)
+			console.warn('')
+		}
 
 		if (dryRun === true) {
 			console.log(chalk.gray(`Dry run, not registering devices.`))
@@ -112,15 +130,17 @@ export const importDevicesCommand = ({
 		for (const page of chunk([...deviceCertificates.entries()], 1000)) {
 			// Bulk-ops API allows max 1,000 devices per request
 			const registration = await client.register(
-				Array.from(page).map(([imei, { certificate: certPem }]) => {
-					const deviceId = `oob-${imei}`
-					return {
-						deviceId,
-						subType: model.replace(/[^0-9a-z-]/gi, '-'),
-						tags: [model.replace(/[^0-9a-z-]/gi, ':')],
-						certPem,
-					}
-				}),
+				Array.from(page)
+					.filter(([imei]) => !existingDevices.includes(`oob-${imei}`))
+					.map(([imei, { certificate: certPem }]) => {
+						const deviceId = `oob-${imei}`
+						return {
+							deviceId,
+							subType: model.replace(/[^0-9a-z-]/gi, '-'),
+							tags: [model.replace(/[^0-9a-z-]/gi, ':')],
+							certPem,
+						}
+					}),
 			)
 
 			if ('error' in registration) {
@@ -140,7 +160,9 @@ export const importDevicesCommand = ({
 			devicesTableName,
 		})
 
-		for (const [imei, { fingerprint, hwVersion }] of devices.entries()) {
+		for (const [imei, { fingerprint, hwVersion }] of devices
+			.entries()
+			.filter(([imei]) => !existingDevices.includes(`oob-${imei}`))) {
 			const deviceId = `oob-${imei}`
 
 			const res = await r({
