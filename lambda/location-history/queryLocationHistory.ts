@@ -1,6 +1,6 @@
 import {
 	DynamoDBClient,
-	paginateQuery,
+	QueryCommand,
 	type QueryCommandInput,
 } from '@aws-sdk/client-dynamodb'
 import { SSMClient } from '@aws-sdk/client-ssm'
@@ -14,7 +14,7 @@ import {
 	validateInput,
 	type ValidInput,
 } from '@hello.nrfcloud.com/lambda-helpers/validateInput'
-import { LwM2MObjectID, definitions } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import { definitions, LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	Context,
@@ -132,16 +132,13 @@ const h = async (
 			},
 		},
 		ProjectionExpression: '#source, #lat, #lon, #uncertainty, #timestamp',
+		Limit: 500,
+		ScanIndexForward: false,
 	}
 	console.log('Query', JSON.stringify(Query))
 
-	const results = paginateQuery({ client: db }, Query)
-	const items = []
-	for await (const { Items } of results) {
-		items.push(...(Items ?? []))
-	}
-
-	console.log('Items', JSON.stringify(items))
+	const { Items } = await db.send(new QueryCommand(Query))
+	const items = Items ?? []
 
 	const history = (items.map((item) => unmarshall(item)) ?? []).map((item) => ({
 		'0': item.lat as number,

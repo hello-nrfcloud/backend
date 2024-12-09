@@ -109,6 +109,8 @@ const h = async (
 			},
 		},
 		ProjectionExpression: '#reason, #timestamp',
+		Limit: 250,
+		ScanIndexForward: false,
 	}
 	console.log('Query', JSON.stringify(Query))
 
