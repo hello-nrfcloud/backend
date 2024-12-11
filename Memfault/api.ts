@@ -1,5 +1,6 @@
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import { type Static } from '@sinclair/typebox'
+import { NotFoundError } from '../util/NotFoundError.js'
 import { ValidationError } from '../util/ValidationError.js'
 import { MemfaultReboots } from './MemfaultReboots.js'
 
@@ -42,12 +43,20 @@ export const getDeviceReboots =
 				}),
 			},
 		)
-		if (!res.ok)
+		if (!res.ok) {
+			if (res.status === 404) {
+				return {
+					error: new NotFoundError(
+						`Failed to fetch reboots: ${res.status}. ${await res.text()}`,
+					),
+				}
+			}
 			return {
 				error: new Error(
 					`Failed to fetch reboots: ${res.status}. ${await res.text()}`,
 				),
 			}
+		}
 
 		const maybeValid = v(await res.json())
 		if ('errors' in maybeValid)

@@ -9,6 +9,7 @@ import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
+import { NotFoundError } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import type { SQSEvent } from 'aws-lambda'
 import { getDeviceReboots } from '../../Memfault/api.js'
@@ -61,13 +62,16 @@ const h = async (event: SQSEvent): Promise<void> => {
 
 		if (deviceId === undefined || since === undefined) {
 			log.error('Missing required attributes')
-			track('error', MetricUnit.Count, 1)
 			continue
 		}
 		const maybeReboots = await fetchReboots(deviceId, since)
 		if ('error' in maybeReboots) {
-			log.error(maybeReboots.error.message)
-			track('error', MetricUnit.Count, 1)
+			if (maybeReboots.error instanceof NotFoundError) {
+				log.debug(maybeReboots.error.message)
+			} else {
+				log.error(maybeReboots.error.message)
+				track('error', MetricUnit.Count, 1)
+			}
 			continue
 		}
 		const reboots = maybeReboots.value.data
