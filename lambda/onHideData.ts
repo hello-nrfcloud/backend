@@ -15,14 +15,25 @@ export const handler = middy()
 	.handler(async (event: DynamoDBStreamEvent): Promise<void> => {
 		for (const record of event.Records) {
 			const newImage = record.dynamodb?.NewImage
-			if (newImage === undefined) {
+			const oldImage = record.dynamodb?.OldImage
+			if (newImage === undefined || oldImage === undefined) {
 				continue
 			}
+			const { hideDataBefore: oldHideDataBefore } = unmarshall(
+				oldImage as Record<string, AttributeValue>,
+			) as { hideDataBefore: string }
 			const { deviceId, hideDataBefore } = unmarshall(
 				newImage as Record<string, AttributeValue>,
 			) as {
 				deviceId: string
 				hideDataBefore: string
+			}
+
+			if (hideDataBefore === oldHideDataBefore) {
+				console.log(
+					`No change in hideDataBefore for device ${deviceId}, skipping...`,
+				)
+				continue
 			}
 			console.log(
 				`Hiding data before ${hideDataBefore} for device ${deviceId}...`,

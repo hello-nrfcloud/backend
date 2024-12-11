@@ -72,6 +72,7 @@ export class UpdateDevice extends Construct {
 									S: [{ exists: true }],
 								},
 							},
+							OldImage: [{ exists: true }],
 						},
 					}),
 				],
