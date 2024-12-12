@@ -87,17 +87,22 @@ export const importDevicesCommand = ({
 		const existingDevices = Object.keys(existing)
 
 		console.log(
-			table([
-				['Fingerprint', 'Device ID', 'Model', 'HW version'],
-				...Array.from(devices.entries())
-					.filter(([imei]) => !existingDevices.includes(`oob-${imei}`))
-					.map(([imei, { fingerprint, hwVersion }]) => [
-						chalk.green(fingerprint),
-						chalk.blue(imei),
-						chalk.blue(model),
-						chalk.blue(hwVersion),
-					]),
-			]),
+			table(
+				[
+					['Fingerprint', 'Device ID', 'Model', 'HW version'],
+					...Array.from(devices.entries())
+						.filter(([imei]) => !existingDevices.includes(`oob-${imei}`))
+						.map(([imei, { fingerprint, hwVersion }]) => [
+							chalk.green(fingerprint),
+							chalk.blue(imei),
+							chalk.blue(model),
+							chalk.blue(hwVersion),
+						]),
+				],
+				{
+					singleLine: true,
+				},
+			),
 		)
 
 		if (existingDevices.length > 0) {
@@ -109,6 +114,17 @@ export const importDevicesCommand = ({
 				),
 			)
 			console.warn('')
+			console.warn(
+				table(
+					[
+						['Device ID'],
+						...existingDevices.map((imei) => [chalk.yellow(imei)]),
+					],
+					{
+						singleLine: true,
+					},
+				),
+			)
 		}
 
 		if (dryRun === true) {
