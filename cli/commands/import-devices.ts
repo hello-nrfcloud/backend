@@ -90,14 +90,14 @@ export const importDevicesCommand = ({
 			table(
 				[
 					['Fingerprint', 'Device ID', 'Model', 'HW version'],
-					...Array.from(devices.entries())
-						.filter(([imei]) => !existingDevices.includes(`oob-${imei}`))
-						.map(([imei, { fingerprint, hwVersion }]) => [
+					...Array.from(devices.entries()).map(
+						([imei, { fingerprint, hwVersion }]) => [
 							chalk.green(fingerprint),
 							chalk.blue(imei),
 							chalk.blue(model),
 							chalk.blue(hwVersion),
-						]),
+						],
+					),
 				],
 				{
 					singleLine: true,
@@ -108,7 +108,7 @@ export const importDevicesCommand = ({
 		if (existingDevices.length > 0) {
 			console.warn(
 				chalk.yellow(
-					`Skipping`,
+					`Re-importing certificates for`,
 					existingDevices.length,
 					`devices which are already registered.`,
 				),
@@ -146,17 +146,15 @@ export const importDevicesCommand = ({
 		for (const page of chunk([...deviceCertificates.entries()], 1000)) {
 			// Bulk-ops API allows max 1,000 devices per request
 			const registration = await client.register(
-				Array.from(page)
-					.filter(([imei]) => !existingDevices.includes(`oob-${imei}`))
-					.map(([imei, { certificate: certPem }]) => {
-						const deviceId = `oob-${imei}`
-						return {
-							deviceId,
-							subType: model.replace(/[^0-9a-z-]/gi, '-'),
-							tags: [model.replace(/[^0-9a-z-]/gi, ':')],
-							certPem,
-						}
-					}),
+				Array.from(page).map(([imei, { certificate: certPem }]) => {
+					const deviceId = `oob-${imei}`
+					return {
+						deviceId,
+						subType: model.replace(/[^0-9a-z-]/gi, '-'),
+						tags: [model.replace(/[^0-9a-z-]/gi, ':')],
+						certPem,
+					}
+				}),
 			)
 
 			if ('error' in registration) {
