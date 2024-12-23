@@ -141,7 +141,7 @@
     "jsonwebtoken": "9.0.2",
     "lodash-es": "4.17.21",
     "mqtt": "5.10.3",
-    "p-limit": "6.1.0",
+    "p-limit": "6.2.0",
     "p-retry": "6.2.1",
     "semver": "7.6.3",
     "table": "6.9.0",
