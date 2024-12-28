@@ -13,9 +13,9 @@ import {
 } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
 import { decode } from 'cbor-x'
-import { importLogs } from '../lwm2m/importLogs.js'
-import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
-import { deviceLwM2MObjectUpdate } from './eventbus/deviceLwM2MObjectUpdate.js'
+import { importLogs } from '../lwm2m/importLogs.ts'
+import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.ts'
+import { deviceLwM2MObjectUpdate } from './eventbus/deviceLwM2MObjectUpdate.ts'
 
 const { EventBusName, importLogsTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',

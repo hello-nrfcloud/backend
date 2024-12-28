@@ -25,7 +25,7 @@ import type {
 	APIGatewayProxyResultV2,
 	Context,
 } from 'aws-lambda'
-import { withDevice, type WithDevice } from './middleware/withDevice.js'
+import { withDevice, type WithDevice } from './middleware/withDevice.ts'
 
 const { version, tableName } = fromEnv({
 	version: 'VERSION',

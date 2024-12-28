@@ -1,6 +1,6 @@
 import { QueryCommand, type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
-import type { Device } from './device.js'
+import type { Device } from './device.ts'
 
 export const getDeviceByFingerprint =
 	({

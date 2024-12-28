@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { isIMEI } from './isIMEI.js'
+import { isIMEI } from './isIMEI.ts'
 
 void describe('isIMEI()', () => {
 	void it('should return true for valid IMEI', () => {

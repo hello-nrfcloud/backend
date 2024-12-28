@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { deg2rad } from './deg2rad.js'
+import { deg2rad } from './deg2rad.ts'
 
 void describe('deg2rad()', () => {
 	void it('should convert degrees to radians', () =>

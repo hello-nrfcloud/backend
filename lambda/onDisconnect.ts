@@ -2,7 +2,7 @@ import { DeleteItemCommand, DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
-import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
+import type { AuthorizedEvent } from './ws/AuthorizedEvent.ts'
 
 const { TableName } = fromEnv({
 	TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { batchArray } from './batchArray.js'
+import { batchArray } from './batchArray.ts'
 
 void describe('batchArray()', () => {
 	void it('should batch an array', () =>

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import { check, not } from 'tsmatchers'
-import { objectDeepMatching } from './objectDeepMatching.js'
+import { objectDeepMatching } from './objectDeepMatching.ts'
 
 void describe('objectDeepMatching()', () => {
 	void it('should deep match an object', () => {

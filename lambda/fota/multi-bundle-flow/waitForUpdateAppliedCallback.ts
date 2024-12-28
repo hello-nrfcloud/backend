@@ -2,7 +2,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import middy from '@middy/core'
-import { writeTaskToken } from './writeTaskToken.js'
+import { writeTaskToken } from './writeTaskToken.ts'
 
 const { jobTableName } = fromEnv({
 	jobTableName: 'JOB_TABLE_NAME',

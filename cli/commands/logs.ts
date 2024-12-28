@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import { listStackResources } from '@bifravst/cloudformation-helpers'
 import chalk from 'chalk'
-import type { CommandDefinition } from './CommandDefinition.js'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const logsCommand = ({
 	stackName,

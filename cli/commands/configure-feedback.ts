@@ -4,8 +4,8 @@ import {
 	deleteFeedbackSettings as deleteSettings,
 	setFeedbackSettings as putSetting,
 	type Settings,
-} from '../../settings/feedback.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+} from '../../settings/feedback.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const configureFeedbackCommand = ({
 	ssm,

@@ -5,7 +5,7 @@ import {
 	put,
 	remove,
 } from '@bifravst/aws-ssm-settings-helpers'
-import { ScopeContexts } from './scope.js'
+import { ScopeContexts } from './scope.ts'
 
 export type Settings = {
 	apiEndpoint: URL

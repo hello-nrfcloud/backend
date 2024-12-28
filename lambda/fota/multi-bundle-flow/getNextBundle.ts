@@ -2,8 +2,8 @@ import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import type { FOTAJob } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import type { Static } from '@sinclair/typebox'
-import { type DeviceFirmwareDetails } from '../getDeviceFirmwareDetails.js'
-import { getNextUpgrade } from '../getNextUpgrade.js'
+import { type DeviceFirmwareDetails } from '../getDeviceFirmwareDetails.ts'
+import { getNextUpgrade } from '../getNextUpgrade.ts'
 
 const h = async (event: {
 	deviceFirmwareDetails: DeviceFirmwareDetails

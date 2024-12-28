@@ -9,7 +9,7 @@ import {
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { FOTAJobTarget } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
-import { getByPK, pkFromTarget, type PersistedJob } from '../jobRepo.js'
+import { getByPK, pkFromTarget, type PersistedJob } from '../jobRepo.ts'
 
 const { jobTableName } = fromEnv({
 	jobTableName: 'JOB_TABLE_NAME',

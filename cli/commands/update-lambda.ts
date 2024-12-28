@@ -17,8 +17,8 @@ import { listStackResources } from '@bifravst/cloudformation-helpers'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import pRetry from 'p-retry'
-import { packGo } from '../../cdk/helpers/lambda/packGo.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+import { packGo } from '../../cdk/helpers/lambda/packGo.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const updateLambda = ({
 	stackName,

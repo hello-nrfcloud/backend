@@ -4,8 +4,8 @@ import {
 	deleteMemfaultSettings as deleteSettings,
 	setMemfaultSettings as putSetting,
 	type Settings,
-} from '../../settings/memfault.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+} from '../../settings/memfault.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const configureMemfaultCommand = ({
 	ssm,

@@ -4,7 +4,7 @@ import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { tryAsJSON } from '@hello.nrfcloud.com/lambda-helpers/tryAsJSON'
 import middy from '@middy/core'
 import type { EventBridgeEvent } from 'aws-lambda'
-import { fail } from '../jobRepo.js'
+import { fail } from '../jobRepo.ts'
 
 // This lambda handles failures in the state machine but also the case that the execution is aborted
 

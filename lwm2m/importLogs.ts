@@ -7,7 +7,7 @@ import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import type { LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { ValueError } from '@sinclair/typebox/errors'
 import id128 from 'id128'
-import type { Device } from '../devices/device.js'
+import type { Device } from '../devices/device.ts'
 
 const sharedProps = (deviceId: string) => ({
 	deviceId,

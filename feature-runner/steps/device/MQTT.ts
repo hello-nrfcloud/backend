@@ -8,7 +8,7 @@ import { Type } from '@sinclair/typebox'
 import mqtt from 'mqtt'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { NRF_CLOUD_ACCOUNT } from '../../../settings/account.js'
+import { NRF_CLOUD_ACCOUNT } from '../../../settings/account.ts'
 
 const publishDeviceMessage = (
 	allAccountSettings: Awaited<ReturnType<typeof getAllAccountsSettings>>,

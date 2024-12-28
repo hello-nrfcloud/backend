@@ -8,11 +8,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { describe, it, mock } from 'node:test'
 import { arrayContaining, check, objectMatching } from 'tsmatchers'
-import { caLocation } from '../../../bridge/caLocation.js'
-import { ScopeContexts } from '../../../settings/scope.js'
-import { assertCall } from '../../../util/test/assertCall.js'
-import { readFilesFromMap } from './readFilesFromMap.js'
-import { restoreCertificateFromSSM } from './restoreCertificateFromSSM.js'
+import { caLocation } from '../../../bridge/caLocation.ts'
+import { ScopeContexts } from '../../../settings/scope.ts'
+import { assertCall } from '../../../util/test/assertCall.ts'
+import { readFilesFromMap } from './readFilesFromMap.ts'
+import { restoreCertificateFromSSM } from './restoreCertificateFromSSM.ts'
 
 void describe('restoreCertificateFromSSM()', () => {
 	void it('should query SSM for stored certificates, but not restored if value is not present', async () => {

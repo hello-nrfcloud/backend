@@ -16,7 +16,7 @@ import type {
 	APIGatewayProxyResultV2,
 	Context,
 } from 'aws-lambda'
-import { getFeedbackSettings } from '../settings/feedback.js'
+import { getFeedbackSettings } from '../settings/feedback.ts'
 
 const { stackName, version } = fromEnv({
 	version: 'VERSION',

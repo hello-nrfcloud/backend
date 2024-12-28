@@ -1,7 +1,7 @@
 import { FOTAJobTarget } from '@hello.nrfcloud.com/proto/hello'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { getNextUpgrade } from './getNextUpgrade.js'
+import { getNextUpgrade } from './getNextUpgrade.ts'
 
 void describe('getNextUpgrade()', () => {
 	void it('should return the next upgrade based on a static version', () =>

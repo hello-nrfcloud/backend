@@ -1,5 +1,5 @@
-import type { Coordinate } from './createTrailOfCoordinates.js'
-import { deg2rad } from './deg2rad.js'
+import type { Coordinate } from './createTrailOfCoordinates.ts'
+import { deg2rad } from './deg2rad.ts'
 
 export const getDistanceFromLatLngInKm = ({
 	pointA,

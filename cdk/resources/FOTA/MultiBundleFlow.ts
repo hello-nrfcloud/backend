@@ -37,9 +37,9 @@ import {
 	type LambdaInvoke,
 } from 'aws-cdk-lib/aws-stepfunctions-tasks'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../../packBackendLambdas.js'
-import type { DeviceFOTA } from '../DeviceFOTA.js'
-import type { DeviceStorage } from '../DeviceStorage.js'
+import type { BackendLambdas } from '../../packBackendLambdas.ts'
+import type { DeviceFOTA } from '../DeviceFOTA.ts'
+import type { DeviceStorage } from '../DeviceStorage.ts'
 
 /**
  * This implements a state machine to drive a the multi-bundle flow where

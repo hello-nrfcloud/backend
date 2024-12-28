@@ -3,7 +3,7 @@ import {
 	type PackedLambda,
 } from '@bifravst/aws-cdk-lambda-helpers'
 import path from 'node:path'
-import { packGo } from './helpers/lambda/packGo.js'
+import { packGo } from './helpers/lambda/packGo.ts'
 
 export type BackendLambdas = {
 	authorizer: PackedLambda
@@ -165,3 +165,5 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		),
 	},
 })
+
+await packBackendLambdas()

@@ -1,7 +1,7 @@
 import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import chalk from 'chalk'
-import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+import { getDeviceFingerprint } from '../../devices/getDeviceFingerprint.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const showFingerprintCommand = ({
 	db,

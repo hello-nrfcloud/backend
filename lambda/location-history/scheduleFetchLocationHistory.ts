@@ -1,8 +1,8 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
 import { fromEnv } from '@bifravst/from-env'
-import { locationHistorySyncRepository } from '../../devices/locationHistorySyncRepository.js'
-import { connectionsRepository } from '../../websocket/connectionsRepository.js'
+import { locationHistorySyncRepository } from '../../devices/locationHistorySyncRepository.ts'
+import { connectionsRepository } from '../../websocket/connectionsRepository.ts'
 
 const {
 	websocketDeviceConnectionsTableName,

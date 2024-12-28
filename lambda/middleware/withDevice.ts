@@ -7,12 +7,12 @@ import type {
 	APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda'
 import { type Context as LambdaContext } from 'aws-lambda'
-import type { Device } from '../../devices/device.js'
+import type { Device } from '../../devices/device.ts'
 import {
 	DeviceNotFoundError,
 	getDeviceById,
-} from '../../devices/getDeviceById.js'
-import { NRF_CLOUD_ACCOUNT } from '../../settings/account.js'
+} from '../../devices/getDeviceById.ts'
+import { NRF_CLOUD_ACCOUNT } from '../../settings/account.ts'
 
 type WithDeviceMiddlewareObject<AuthProps extends Record<string, string>> =
 	MiddlewareObj<

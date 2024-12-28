@@ -1,13 +1,13 @@
 import type { IoTClient } from '@aws-sdk/client-iot'
 import run from '@bifravst/run'
 import { mkdir, stat } from 'node:fs/promises'
-import type { logFn } from '../cli/log.js'
-import { ulid } from '../util/ulid.js'
-import { ensureCA } from './ensureCA.js'
+import type { logFn } from '../cli/log.ts'
+import { ulid } from '../util/ulid.ts'
+import { ensureCA } from './ensureCA.ts'
 import {
 	mqttBridgeCertificateLocation,
 	type CertificateFiles,
-} from './mqttBridgeCertificateLocation.js'
+} from './mqttBridgeCertificateLocation.ts'
 
 export const ensureMQTTBridgeCredentials =
 	({

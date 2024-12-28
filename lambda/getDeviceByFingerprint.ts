@@ -21,7 +21,7 @@ import type {
 	APIGatewayProxyResultV2,
 	Context as LambdaContext,
 } from 'aws-lambda'
-import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.js'
+import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.ts'
 
 const { DevicesTableName, DevicesIndexName, version } = fromEnv({
 	version: 'VERSION',

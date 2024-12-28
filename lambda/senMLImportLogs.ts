@@ -20,8 +20,8 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { importLogs } from '../lwm2m/importLogs.js'
-import { withDevice, type WithDevice } from './middleware/withDevice.js'
+import { importLogs } from '../lwm2m/importLogs.ts'
+import { withDevice, type WithDevice } from './middleware/withDevice.ts'
 
 const { importLogsTableName, DevicesTableName, version } = fromEnv({
 	importLogsTableName: 'IMPORT_LOGS_TABLE_NAME',

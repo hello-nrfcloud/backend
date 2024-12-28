@@ -1,7 +1,7 @@
 import { validateWithTypeBox } from '@hello.nrfcloud.com/proto'
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
-import { MemfaultReboots } from './MemfaultReboots.js'
+import { MemfaultReboots } from './MemfaultReboots.ts'
 import res from './reboots.json' assert { type: 'json' }
 
 void describe('MemfaultReboots()', () => {

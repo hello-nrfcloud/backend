@@ -12,12 +12,12 @@ import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { NotFoundError } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import type { SQSEvent } from 'aws-lambda'
-import { getDeviceReboots } from '../../Memfault/api.js'
-import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.js'
-import { getMemfaultSettings } from '../../settings/memfault.js'
-import { loggingFetch } from '../../util/loggingFetch.js'
-import { deviceLwM2MObjectUpdate } from '../eventbus/deviceLwM2MObjectUpdate.js'
-import { toReboot } from './toReboot.js'
+import { getDeviceReboots } from '../../Memfault/api.ts'
+import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.ts'
+import { getMemfaultSettings } from '../../settings/memfault.ts'
+import { loggingFetch } from '../../util/loggingFetch.ts'
+import { deviceLwM2MObjectUpdate } from '../eventbus/deviceLwM2MObjectUpdate.ts'
+import { toReboot } from './toReboot.ts'
 
 const { stackName, tableName, EventBusName } = fromEnv({
 	stackName: 'STACK_NAME',

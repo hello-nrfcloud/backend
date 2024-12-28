@@ -27,10 +27,10 @@ import {
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
 import { randomUUID } from 'node:crypto'
-import { getIoTEndpoint } from '../../aws/getIoTEndpoint.js'
-import { STACK_NAME } from '../../cdk/stackConfig.js'
-import { isString } from '../../util/isString.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+import { getIoTEndpoint } from '../../aws/getIoTEndpoint.ts'
+import { STACK_NAME } from '../../cdk/stackConfig.ts'
+import { isString } from '../../util/isString.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const createFakeNrfCloudAccountDeviceCredentials = ({
 	iot,

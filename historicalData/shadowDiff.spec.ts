@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { shadowDiff } from './shadowDiff.js'
+import { shadowDiff } from './shadowDiff.ts'
 
 void describe('shadowDiff()', () => {
 	void it('should not return an updated shadow, if it is already present in the shadow', () => {

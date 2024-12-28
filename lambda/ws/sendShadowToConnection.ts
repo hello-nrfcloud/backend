@@ -5,7 +5,7 @@ import {
 import type { Logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
-import type { WebsocketPayload } from '../publishToWebsocketClients.js'
+import type { WebsocketPayload } from '../publishToWebsocketClients.ts'
 
 export const sendShadowToConnection =
 	({

@@ -18,13 +18,13 @@ import { lwm2mToSenML } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
 import mqtt from 'mqtt'
 import assert from 'node:assert'
-import { registerDevice } from '../devices/registerDevice.js'
-import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.js'
+import { registerDevice } from '../devices/registerDevice.ts'
+import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.ts'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
-} from './health-check/checkMessageFromWebsocket.js'
-import { defer } from './health-check/defer.js'
+} from './health-check/checkMessageFromWebsocket.ts'
+import { defer } from './health-check/defer.ts'
 
 const { DevicesTableName, stackName, websocketUrl } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',

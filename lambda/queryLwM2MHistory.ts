@@ -38,17 +38,17 @@ import type {
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
 import { once } from 'lodash-es'
-import type { Device } from '../devices/device.js'
+import type { Device } from '../devices/device.ts'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
 	type HistoricalDataTimeSpan,
-} from '../historicalData/HistoricalDataTimeSpans.js'
-import { getAvailableColumns } from '../historicalData/getAvailableColumns.js'
-import { validateDeviceJWT } from '../jwt/validateDeviceJWT.js'
-import { isNumeric } from '../lwm2m/isNumeric.js'
-import { fetchMapJWTPublicKeys } from './map/fetchMapJWTPublicKeys.js'
-import { withDevice, type WithDevice } from './middleware/withDevice.js'
+} from '../historicalData/HistoricalDataTimeSpans.ts'
+import { getAvailableColumns } from '../historicalData/getAvailableColumns.ts'
+import { validateDeviceJWT } from '../jwt/validateDeviceJWT.ts'
+import { isNumeric } from '../lwm2m/isNumeric.ts'
+import { fetchMapJWTPublicKeys } from './map/fetchMapJWTPublicKeys.ts'
+import { withDevice, type WithDevice } from './middleware/withDevice.ts'
 
 const { tableInfo, DevicesTableName, version, isTest, stackName } = fromEnv({
 	version: 'VERSION',

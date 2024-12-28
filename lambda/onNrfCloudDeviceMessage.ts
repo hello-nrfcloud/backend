@@ -9,7 +9,7 @@ import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { objectsToShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import middy from '@middy/core'
-import { converter } from '../nrfCloud/converter.js'
+import { converter } from '../nrfCloud/converter.ts'
 
 const iot = new IoTDataPlaneClient()
 

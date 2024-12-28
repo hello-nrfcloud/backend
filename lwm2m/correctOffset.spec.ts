@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { correctOffset } from './correctOffset.js'
-import { isUnixTimeInSeconds } from './isUnixTimeInSeconds.js'
+import { correctOffset } from './correctOffset.ts'
+import { isUnixTimeInSeconds } from './isUnixTimeInSeconds.ts'
 
 void describe('correctOffset()', () => {
 	void it('should correct timestamps in the future of up to 60 seconds', () => {

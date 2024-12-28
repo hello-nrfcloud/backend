@@ -16,9 +16,9 @@ import {
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import middy from '@middy/core'
-import { getDeviceById } from '../devices/getDeviceById.js'
-import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.js'
-import { NoHistoryMeasuresError } from '../historicalData/NoHistoryMeasuresError.js'
+import { getDeviceById } from '../devices/getDeviceById.ts'
+import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.ts'
+import { NoHistoryMeasuresError } from '../historicalData/NoHistoryMeasuresError.ts'
 
 const { tableInfo, DevicesTableName } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',

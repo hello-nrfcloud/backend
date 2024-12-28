@@ -4,8 +4,8 @@ import run from '@bifravst/run'
 import { randomUUID } from 'crypto'
 import { unlink } from 'fs/promises'
 import path from 'path'
-import { type logFn } from '../cli/log.js'
-import { caLocation } from './caLocation.js'
+import { type logFn } from '../cli/log.ts'
+import { caLocation } from './caLocation.ts'
 
 export const createCAVerificationCert = async ({
 	iot,

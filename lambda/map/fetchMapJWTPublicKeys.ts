@@ -1,6 +1,6 @@
 import type { SSMClient } from '@aws-sdk/client-ssm'
-import { fetchJWTPublicKeys } from '../../jwt/fetchJWTPublicKeys.js'
-import { getMapSettings } from '../../settings/map.js'
+import { fetchJWTPublicKeys } from '../../jwt/fetchJWTPublicKeys.ts'
+import { getMapSettings } from '../../settings/map.ts'
 
 export const fetchMapJWTPublicKeys = async ({
 	ssm,

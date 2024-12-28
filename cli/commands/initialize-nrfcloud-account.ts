@@ -14,7 +14,7 @@ import {
 	type Settings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
-import type { CommandDefinition } from './CommandDefinition.js'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const initializeNRFCloudAccountCommand = ({
 	ssm,

@@ -1,7 +1,7 @@
 import { bundleIdToType, FOTAJobTarget } from '@hello.nrfcloud.com/proto/hello'
 import semver from 'semver'
-import { type DeviceFirmwareDetails } from './getDeviceFirmwareDetails.js'
-import { type PersistedJob } from './jobRepo.js'
+import { type DeviceFirmwareDetails } from './getDeviceFirmwareDetails.ts'
+import { type PersistedJob } from './jobRepo.ts'
 
 const targetFromUpgradePath = (
 	upgradePath: PersistedJob['upgradePath'],

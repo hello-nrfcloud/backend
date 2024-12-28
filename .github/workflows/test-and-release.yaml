@@ -237,8 +237,9 @@ jobs:
       - name: Print failed End-to-End tests
         if: failure()
         run:
-          cat e2e-test-result.json | npx tsx --no-warnings
-          ./feature-runner/console-reporter.ts  --only-failed --with-timestamps
+          cat e2e-test-result.json | node --experimental-transform-types
+          --no-warnings ./feature-runner/console-reporter.ts  --only-failed
+          --with-timestamps
 
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -253,8 +254,8 @@ jobs:
       - name: Get all logs
         if: failure()
         run: |
-          npx tsx ./aws/export-logs.ts ${{ env.STACK_NAME }}
-          npx tsx ./aws/export-logs.ts ${{ needs.http-api-mock.outputs.stackName }}
+          node --experimental-transform-types ./aws/export-logs.ts ${{ env.STACK_NAME }}
+          node --experimental-transform-types ./aws/export-logs.ts ${{ needs.http-api-mock.outputs.stackName }}
 
       - uses: actions/upload-artifact@v4
         if: failure()

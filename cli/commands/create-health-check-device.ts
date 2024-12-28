@@ -14,8 +14,8 @@ import path from 'node:path'
 import {
 	updateSettings,
 	type Settings,
-} from '../../settings/health-check/device.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+} from '../../settings/health-check/device.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const createHealthCheckDevice = ({
 	ssm,

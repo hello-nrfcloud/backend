@@ -1,4 +1,4 @@
-import { getDistanceFromLatLngInKm } from './getDistanceFromLatLngInKm.js'
+import { getDistanceFromLatLngInKm } from './getDistanceFromLatLngInKm.ts'
 
 export type Coordinate = {
 	lat: number

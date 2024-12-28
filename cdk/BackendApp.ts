@@ -1,5 +1,5 @@
 import { App } from 'aws-cdk-lib'
-import { BackendStack } from './BackendStack.js'
+import { BackendStack } from './BackendStack.ts'
 
 export class BackendApp extends App {
 	public constructor({

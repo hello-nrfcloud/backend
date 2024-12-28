@@ -13,8 +13,8 @@ import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import middy from '@middy/core'
-import { connectionsRepository } from '../websocket/connectionsRepository.js'
-import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
+import { connectionsRepository } from '../websocket/connectionsRepository.ts'
+import type { AuthorizedEvent } from './ws/AuthorizedEvent.ts'
 
 const { TableName } = fromEnv({
 	TableName: 'WEBSOCKET_CONNECTIONS_TABLE_NAME',

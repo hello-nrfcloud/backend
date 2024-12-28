@@ -13,9 +13,9 @@ import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import middy from '@middy/core'
 import { Type } from '@sinclair/typebox'
 import type { Context, PolicyDocument } from 'aws-lambda'
-import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.js'
-import { UNSUPPORTED_MODEL } from '../devices/registerUnsupportedDevice.js'
-import type { WebsocketConnectionContext } from './ws/AuthorizedEvent.js'
+import { getDeviceByFingerprint } from '../devices/getDeviceByFingerprint.ts'
+import { UNSUPPORTED_MODEL } from '../devices/registerUnsupportedDevice.ts'
+import type { WebsocketConnectionContext } from './ws/AuthorizedEvent.ts'
 
 const { DevicesTableName, DevicesIndexName } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',

@@ -4,8 +4,8 @@
   "description": "Cloud backend for hello.nrfcloud.com developed using AWS CDK in TypeScript",
   "type": "module",
   "scripts": {
-    "test": "npx globstar -- npx tsx --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
-    "test:e2e": "npx tsx --no-warnings ./feature-runner/run-features.ts > e2e-test-result.json && cat e2e-test-result.json | npx tsx --no-warnings ./feature-runner/console-reporter.ts --only-failed --with-timestamps",
+    "test": "npx globstar -- node --experimental-transform-types --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
+    "test:e2e": "node --experimental-transform-types --no-warnings ./feature-runner/run-features.ts > e2e-test-result.json && cat e2e-test-result.json | node --experimental-transform-types --no-warnings ./feature-runner/console-reporter.ts --only-failed --with-timestamps",
     "prepare": "husky && check-node-version --package"
   },
   "repository": {
@@ -87,7 +87,6 @@
     "nock": "14.0.0-beta.19",
     "semver": "7.6.3",
     "tsmatchers": "5.0.2",
-    "tsx": "4.19.2",
     "yauzl": "3.2.0",
     "yazl": "3.3.1"
   },
@@ -95,13 +94,13 @@
     "*.{md,json,yaml,yml}": [
       "prettier --write"
     ],
-    "*.{ts,tsx}": [
+    "*.ts": [
       "prettier --write",
       "eslint"
     ]
   },
   "engines": {
-    "node": ">=22",
+    "node": ">=22.7.0",
     "npm": ">=10"
   },
   "release": {

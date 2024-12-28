@@ -13,9 +13,9 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../packBackendLambdas.js'
-import type { DeviceStorage } from './DeviceStorage.js'
-import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import type { BackendLambdas } from '../packBackendLambdas.ts'
+import type { DeviceStorage } from './DeviceStorage.ts'
+import type { WebsocketEventBus } from './WebsocketEventBus.ts'
 
 /**
  * Schedules FOTA jobs for devices

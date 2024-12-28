@@ -21,14 +21,14 @@ import {
 } from '@hello.nrfcloud.com/proto-map/senml'
 import middy from '@middy/core'
 import assert from 'node:assert/strict'
-import { registerDevice } from '../devices/registerDevice.js'
-import { encode } from '../feature-runner/steps/device/senmlCbor.js'
-import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.js'
+import { registerDevice } from '../devices/registerDevice.ts'
+import { encode } from '../feature-runner/steps/device/senmlCbor.ts'
+import { getAllAccountsSettings as getAllAccountsHealthCheckSettings } from '../settings/health-check/device.ts'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
-} from './health-check/checkMessageFromWebsocket.js'
-import { parseDateTimeFromLog } from './health-check/parseDateTimeFromLog.js'
+} from './health-check/checkMessageFromWebsocket.ts'
+import { parseDateTimeFromLog } from './health-check/parseDateTimeFromLog.ts'
 
 const { DevicesTableName, stackName, websocketUrl, coapLambda } = fromEnv({
 	DevicesTableName: 'DEVICES_TABLE_NAME',

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { defer, DeferTimeoutError } from './defer.js'
+import { defer, DeferTimeoutError } from './defer.ts'
 
 void describe('defer', () => {
 	void it('should resolve the promise with the provided value', async () => {

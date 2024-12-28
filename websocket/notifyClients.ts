@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
-import type { WebsocketPayload } from '../lambda/publishToWebsocketClients.js'
+import type { WebsocketPayload } from '../lambda/publishToWebsocketClients.ts'
 
 const log = logger('notifyClients')
 

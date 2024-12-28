@@ -5,8 +5,8 @@ import type {
 } from 'aws-cdk-lib'
 import { Duration } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../packBackendLambdas.js'
-import type { DeviceStorage } from './DeviceStorage.js'
+import type { BackendLambdas } from '../packBackendLambdas.ts'
+import type { DeviceStorage } from './DeviceStorage.ts'
 
 /**
  * Provides the lambda function to access the import logs

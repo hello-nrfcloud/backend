@@ -31,10 +31,10 @@ import { once } from 'lodash-es'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
-} from '../../historicalData/HistoricalDataTimeSpans.js'
-import { validateDeviceJWT } from '../../jwt/validateDeviceJWT.js'
-import { fetchMapJWTPublicKeys } from '../map/fetchMapJWTPublicKeys.js'
-import { withDevice, type WithDevice } from '../middleware/withDevice.js'
+} from '../../historicalData/HistoricalDataTimeSpans.ts'
+import { validateDeviceJWT } from '../../jwt/validateDeviceJWT.ts'
+import { fetchMapJWTPublicKeys } from '../map/fetchMapJWTPublicKeys.ts'
+import { withDevice, type WithDevice } from '../middleware/withDevice.ts'
 
 const { tableName, DevicesTableName, version, stackName } = fromEnv({
 	version: 'VERSION',

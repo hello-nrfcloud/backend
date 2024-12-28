@@ -25,16 +25,16 @@ import {
 import middy from '@middy/core'
 import { chunk, groupBy, uniqBy } from 'lodash-es'
 import pLimit from 'p-limit'
-import { shadowDiff } from '../historicalData/shadowDiff.js'
-import { nrfCloudShadowToObjects } from '../nrfCloud/nrfCloudShadowToObjects.js'
-import { getAllAccountsSettings } from '../settings/health-check/device.js'
-import { loggingFetch } from '../util/loggingFetch.js'
+import { shadowDiff } from '../historicalData/shadowDiff.ts'
+import { nrfCloudShadowToObjects } from '../nrfCloud/nrfCloudShadowToObjects.ts'
+import { getAllAccountsSettings } from '../settings/health-check/device.ts'
+import { loggingFetch } from '../util/loggingFetch.ts'
 import {
 	connectionsRepository,
 	type WebsocketDeviceConnectionShadowInfo,
-} from '../websocket/connectionsRepository.js'
-import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.js'
-import { createLock } from '../websocket/lock.js'
+} from '../websocket/connectionsRepository.ts'
+import { createDeviceUpdateChecker } from '../websocket/deviceShadowUpdateChecker.ts'
+import { createLock } from '../websocket/lock.ts'
 
 const { track, metrics } = metricsForComponent('shadowFetcher')
 

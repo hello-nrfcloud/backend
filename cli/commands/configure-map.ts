@@ -4,8 +4,8 @@ import {
 	deleteMapSettings as deleteSettings,
 	setMapSettings as putSetting,
 	type Settings,
-} from '../../settings/map.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+} from '../../settings/map.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const configureMapCommand = ({
 	ssm,

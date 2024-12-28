@@ -5,7 +5,7 @@ import {
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { converter } from './converter.js'
+import { converter } from './converter.ts'
 import GNSS from './examples/GNSS.json' assert { type: 'json' }
 
 void describe('convert()', () => {

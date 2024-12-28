@@ -5,11 +5,11 @@ import { generateCode } from '@hello.nrfcloud.com/proto/fingerprint'
 import { Type } from '@sinclair/typebox'
 import { randomUUID } from 'node:crypto'
 import pRetry from 'p-retry'
-import { getAttributesForDevice } from '../../../devices/getAttributesForDevice.js'
-import { getDeviceByFingerprint } from '../../../devices/getDeviceByFingerprint.js'
-import { registerDevice } from '../../../devices/registerDevice.js'
-import { registerUnsupportedDevice } from '../../../devices/registerUnsupportedDevice.js'
-import { NRF_CLOUD_ACCOUNT } from '../../../settings/account.js'
+import { getAttributesForDevice } from '../../../devices/getAttributesForDevice.ts'
+import { getDeviceByFingerprint } from '../../../devices/getDeviceByFingerprint.ts'
+import { registerDevice } from '../../../devices/registerDevice.ts'
+import { registerUnsupportedDevice } from '../../../devices/registerUnsupportedDevice.ts'
+import { NRF_CLOUD_ACCOUNT } from '../../../settings/account.ts'
 
 export const createDeviceForModel = ({
 	db,
