@@ -1,5 +1,5 @@
 import WebSocket from 'ws'
-import { ulid } from '../../util/ulid.js'
+import { ulid } from '../../util/ulid.ts'
 
 export type WebSocketClient = {
 	id: string

@@ -1,7 +1,7 @@
 import type { aws_lambda as Lambda } from 'aws-cdk-lib'
 import { aws_apigatewayv2 as HttpApi, Stack } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { ApiRoute } from './ApiRoute.js'
+import { ApiRoute } from './ApiRoute.ts'
 
 export class API extends Construct {
 	public readonly api: HttpApi.CfnApi

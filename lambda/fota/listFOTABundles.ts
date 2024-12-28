@@ -35,9 +35,9 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { loggingFetch } from '../../util/loggingFetch.js'
-import { withDevice, type WithDevice } from '../middleware/withDevice.js'
-import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.js'
+import { loggingFetch } from '../../util/loggingFetch.ts'
+import { withDevice, type WithDevice } from '../middleware/withDevice.ts'
+import { getAllNRFCloudAPIConfigs } from '../nrfcloud/getAllNRFCloudAPIConfigs.ts'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',

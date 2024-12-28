@@ -31,11 +31,11 @@ import { once } from 'lodash-es'
 import {
 	HistoricalDataTimeSpans,
 	LastHour,
-} from '../../historicalData/HistoricalDataTimeSpans.js'
-import { validateDeviceJWT } from '../../jwt/validateDeviceJWT.js'
-import { createTrailOfCoordinates } from '../historical-data/createTrailOfCoordinates.js'
-import { fetchMapJWTPublicKeys } from '../map/fetchMapJWTPublicKeys.js'
-import { withDevice, type WithDevice } from '../middleware/withDevice.js'
+} from '../../historicalData/HistoricalDataTimeSpans.ts'
+import { validateDeviceJWT } from '../../jwt/validateDeviceJWT.ts'
+import { createTrailOfCoordinates } from '../historical-data/createTrailOfCoordinates.ts'
+import { fetchMapJWTPublicKeys } from '../map/fetchMapJWTPublicKeys.ts'
+import { withDevice, type WithDevice } from '../middleware/withDevice.ts'
 
 const {
 	tableName,

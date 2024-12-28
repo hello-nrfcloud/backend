@@ -9,11 +9,11 @@ import jsonata from 'jsonata'
 import pRetry from 'p-retry'
 import { setTimeout } from 'timers/promises'
 import { check } from 'tsmatchers'
-import { objectDeepMatching } from '../lib/objectDeepMatching.js'
+import { objectDeepMatching } from '../lib/objectDeepMatching.ts'
 import {
 	createWebsocketClient,
 	type WebSocketClient,
-} from '../lib/websocket.js'
+} from '../lib/websocket.ts'
 
 const wsClients: Record<string, WebSocketClient> = {}
 const wsConnect = ({ websocketUri }: { websocketUri: string }) =>

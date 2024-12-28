@@ -7,8 +7,8 @@ import {
 	type LwM2MObjectInstance,
 	instanceTsAsDate,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
-import { instanceToMeasures } from './instanceToMeasures.js'
-import { NoHistoryMeasuresError } from './NoHistoryMeasuresError.js'
+import { instanceToMeasures } from './instanceToMeasures.ts'
+import { NoHistoryMeasuresError } from './NoHistoryMeasuresError.ts'
 
 export const instanceMeasuresToRecord = ({
 	ObjectID,

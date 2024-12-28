@@ -27,8 +27,8 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { ulidRegEx } from '../../../util/ulid.js'
-import { withDevice, type WithDevice } from '../../middleware/withDevice.js'
+import { ulidRegEx } from '../../../util/ulid.ts'
+import { withDevice, type WithDevice } from '../../middleware/withDevice.ts'
 
 const { version, DevicesTableName, StateMachineArn } = fromEnv({
 	version: 'VERSION',

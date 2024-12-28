@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
-import { writeFilesFromMap } from './writeFilesFromMap.js'
+import { writeFilesFromMap } from './writeFilesFromMap.ts'
 
 void describe('writeFilesFromMap()', () => {
 	void it('should read files from a map', async () => {

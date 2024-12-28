@@ -17,9 +17,9 @@ import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 import { Construct } from 'constructs'
 import { readFileSync } from 'node:fs'
-import { type CAFiles } from '../../bridge/caLocation.js'
-import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.js'
-import { ScopeContexts } from '../../settings/scope.js'
+import { type CAFiles } from '../../bridge/caLocation.ts'
+import type { CertificateFiles } from '../../bridge/mqttBridgeCertificateLocation.ts'
+import { ScopeContexts } from '../../settings/scope.ts'
 
 export class Integration extends Construct {
 	public readonly bridgeCertificate: IoT.CfnCertificate

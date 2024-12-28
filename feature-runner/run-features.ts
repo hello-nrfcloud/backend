@@ -19,14 +19,14 @@ import { steps as storageSteps } from '@hello.nrfcloud.com/bdd-markdown-steps/st
 import { getAllAccountsSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
 import path from 'node:path'
-import type { StackOutputs as BackendStackOutputs } from '../cdk/BackendStack.js'
-import { STACK_NAME } from '../cdk/stackConfig.js'
-import { steps as CoAPDeviceSteps } from './steps/device/CoAP.js'
-import { steps as MQTTDeviceSteps } from './steps/device/MQTT.js'
-import { steps as deviceRegistrySteps } from './steps/device/registry.js'
-import { steps as jwtSteps } from './steps/jwt.js'
-import { steps as userSteps } from './steps/user.js'
-import { websocketStepRunners } from './steps/websocket.js'
+import type { StackOutputs as BackendStackOutputs } from '../cdk/BackendStack.ts'
+import { STACK_NAME } from '../cdk/stackConfig.ts'
+import { steps as CoAPDeviceSteps } from './steps/device/CoAP.ts'
+import { steps as MQTTDeviceSteps } from './steps/device/MQTT.ts'
+import { steps as deviceRegistrySteps } from './steps/device/registry.ts'
+import { steps as jwtSteps } from './steps/jwt.ts'
+import { steps as userSteps } from './steps/user.ts'
+import { websocketStepRunners } from './steps/websocket.ts'
 
 const { responsesTableName, requestsTableName, httpApiMockURL } = fromEnv({
 	responsesTableName: 'HTTP_API_MOCK_RESPONSES_TABLE_NAME',

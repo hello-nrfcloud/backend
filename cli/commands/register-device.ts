@@ -1,7 +1,7 @@
 import { type DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import chalk from 'chalk'
-import { registerDevice } from '../../devices/registerDevice.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+import { registerDevice } from '../../devices/registerDevice.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const registerDeviceCommand = ({
 	db,

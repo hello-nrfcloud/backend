@@ -1,7 +1,7 @@
 import nock from 'nock'
 import assert from 'node:assert/strict'
 import { describe, it, mock } from 'node:test'
-import { fetchJWTPublicKeys } from './fetchJWTPublicKeys.js'
+import { fetchJWTPublicKeys } from './fetchJWTPublicKeys.ts'
 
 void describe('fetchJWTPublicKeys()', () => {
 	void it('should fetch JWKS from URL', async () => {

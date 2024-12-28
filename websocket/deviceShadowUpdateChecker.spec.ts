@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { createDeviceUpdateChecker } from './deviceShadowUpdateChecker.js'
+import { createDeviceUpdateChecker } from './deviceShadowUpdateChecker.ts'
 
 void describe('deviceShadowUpdateChecker', () => {
 	void it('returns true if the device has not been updated in the given interval with no configuration', async () => {

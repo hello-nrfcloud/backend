@@ -1,7 +1,7 @@
 import type { EventBridge } from '@aws-sdk/client-eventbridge'
 import { type LwM2MObjectInstance } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
-import type { WebsocketPayload } from '../publishToWebsocketClients.js'
+import type { WebsocketPayload } from '../publishToWebsocketClients.ts'
 
 export const deviceLwM2MObjectUpdate =
 	(eventBus: EventBridge, EventBusName: string) =>

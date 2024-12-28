@@ -26,9 +26,9 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { withDevice, type WithDevice } from '../middleware/withDevice.js'
-import type { PersistedJob } from './jobRepo.js'
-import { toJob } from './toJobExecution.js'
+import { withDevice, type WithDevice } from '../middleware/withDevice.ts'
+import type { PersistedJob } from './jobRepo.ts'
+import { toJob } from './toJobExecution.ts'
 
 const {
 	DevicesTableName,

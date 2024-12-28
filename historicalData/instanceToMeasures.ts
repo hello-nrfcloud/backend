@@ -8,10 +8,10 @@ import {
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { isNumber } from 'lodash-es'
-import { correctOffset } from '../lwm2m/correctOffset.js'
-import { InvalidTimeError } from '../lwm2m/InvalidTimeError.js'
-import { isNumeric } from '../lwm2m/isNumeric.js'
-import { isUnixTimeInSeconds } from '../lwm2m/isUnixTimeInSeconds.js'
+import { correctOffset } from '../lwm2m/correctOffset.ts'
+import { InvalidTimeError } from '../lwm2m/InvalidTimeError.ts'
+import { isNumeric } from '../lwm2m/isNumeric.ts'
+import { isUnixTimeInSeconds } from '../lwm2m/isUnixTimeInSeconds.ts'
 
 export const instanceToMeasures = ({
 	Resources,

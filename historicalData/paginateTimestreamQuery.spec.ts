@@ -2,8 +2,8 @@ import { type QueryCommandOutput } from '@aws-sdk/client-timestream-query'
 import assert from 'node:assert/strict'
 import { describe, it, mock } from 'node:test'
 import { check, objectMatching } from 'tsmatchers'
-import { assertCall } from '../util/test/assertCall.js'
-import { paginateTimestreamQuery } from './paginateTimestreamQuery.js'
+import { assertCall } from '../util/test/assertCall.ts'
+import { paginateTimestreamQuery } from './paginateTimestreamQuery.ts'
 
 const result: QueryCommandOutput = {
 	$metadata: {

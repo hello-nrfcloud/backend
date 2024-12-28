@@ -1,6 +1,6 @@
 import { isFingerprint } from '@hello.nrfcloud.com/proto/fingerprint'
 import { readFile } from 'node:fs/promises'
-import { isIMEI } from '../isIMEI.js'
+import { isIMEI } from '../isIMEI.ts'
 
 export const readDevicesList = async (
 	devicesListPath: string,

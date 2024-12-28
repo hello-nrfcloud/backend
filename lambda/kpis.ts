@@ -12,8 +12,8 @@ import {
 	type Settings,
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
-import { dailyActiveDevices } from '../kpis/dailyActiveDevices.js'
-import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.js'
+import { dailyActiveDevices } from '../kpis/dailyActiveDevices.ts'
+import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.ts'
 
 const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',

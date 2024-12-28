@@ -5,8 +5,8 @@ import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { createFOTAJob } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import middy from '@middy/core'
-import { loggingFetch } from '../../../util/loggingFetch.js'
-import { getAllNRFCloudAPIConfigs } from '../../nrfcloud/getAllNRFCloudAPIConfigs.js'
+import { loggingFetch } from '../../../util/loggingFetch.ts'
+import { getAllNRFCloudAPIConfigs } from '../../nrfcloud/getAllNRFCloudAPIConfigs.ts'
 
 const { stackName } = fromEnv({
 	stackName: 'STACK_NAME',

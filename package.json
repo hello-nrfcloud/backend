@@ -4,8 +4,8 @@
   "description": "Cloud backend for hello.nrfcloud.com developed using AWS CDK in TypeScript",
   "type": "module",
   "scripts": {
-    "test": "npx globstar -- npx tsx --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
-    "test:e2e": "npx tsx --no-warnings ./feature-runner/run-features.ts > e2e-test-result.json && cat e2e-test-result.json | npx tsx --no-warnings ./feature-runner/console-reporter.ts --only-failed --with-timestamps",
+    "test": "npx globstar -- node --experimental-transform-types --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
+    "test:e2e": "node --experimental-transform-types --no-warnings ./feature-runner/run-features.ts > e2e-test-result.json && cat e2e-test-result.json | node --experimental-transform-types --no-warnings ./feature-runner/console-reporter.ts --only-failed --with-timestamps",
     "prepare": "husky && check-node-version --package"
   },
   "repository": {
@@ -31,7 +31,7 @@
     "@aws-sdk/client-cloudformation": "3.716.0",
     "@aws-sdk/client-cloudwatch-logs": "3.716.0",
     "@aws-sdk/client-dynamodb": "3.716.0",
-    "@aws-sdk/client-ecr": "3.719.0",
+    "@aws-sdk/client-ecr": "3.720.0",
     "@aws-sdk/client-ecs": "3.716.0",
     "@aws-sdk/client-eventbridge": "3.716.0",
     "@aws-sdk/client-iam": "3.716.0",
@@ -48,12 +48,12 @@
     "@aws-sdk/client-timestream-write": "3.716.0",
     "@aws-sdk/util-dynamodb": "3.716.0",
     "@bifravst/aws-cdk-ecr-helpers": "1.3.44",
-    "@bifravst/aws-cdk-lambda-helpers": "2.3.7",
+    "@bifravst/aws-cdk-lambda-helpers": "3.0.1",
     "@bifravst/bdd-markdown": "8.2.48",
     "@bifravst/ci": "2.1.0",
     "@bifravst/cloudformation-helpers": "9.1.1",
     "@bifravst/eslint-config-typescript": "6.1.19",
-    "@bifravst/http-api-mock": "2.1.121",
+    "@bifravst/http-api-mock": "2.1.124",
     "@bifravst/prettier-config": "1.1.4",
     "@bifravst/random-words": "8.0.2",
     "@commitlint/config-conventional": "19.6.0",
@@ -83,11 +83,10 @@
     "globstar": "1.0.0",
     "husky": "9.1.7",
     "jsonata": "2.0.6",
-    "lint-staged": "15.2.11",
+    "lint-staged": "15.3.0",
     "nock": "14.0.0-beta.19",
     "semver": "7.6.3",
     "tsmatchers": "5.0.2",
-    "tsx": "4.19.2",
     "yauzl": "3.2.0",
     "yazl": "3.3.1"
   },
@@ -95,13 +94,13 @@
     "*.{md,json,yaml,yml}": [
       "prettier --write"
     ],
-    "*.{ts,tsx}": [
+    "*.ts": [
       "prettier --write",
       "eslint"
     ]
   },
   "engines": {
-    "node": ">=22",
+    "node": ">=22.7.0",
     "npm": ">=10"
   },
   "release": {
@@ -124,13 +123,13 @@
   "prettier": "@bifravst/prettier-config",
   "dependencies": {
     "@aws-lambda-powertools/metrics": "2.12.0",
-    "@bifravst/aws-ssm-settings-helpers": "1.2.83",
+    "@bifravst/aws-ssm-settings-helpers": "1.2.84",
     "@bifravst/from-env": "3.0.2",
     "@bifravst/run": "1.2.0",
     "@bifravst/timestream-helpers": "6.0.3",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
     "@hello.nrfcloud.com/lambda-helpers": "2.0.63",
-    "@hello.nrfcloud.com/nrfcloud-api-helpers": "6.0.110",
+    "@hello.nrfcloud.com/nrfcloud-api-helpers": "6.0.111",
     "@hello.nrfcloud.com/proto": "15.3.34",
     "@hello.nrfcloud.com/proto-map": "16.1.33",
     "@middy/core": "6.0.0",

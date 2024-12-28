@@ -5,12 +5,12 @@ import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/setting
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
 import { table } from 'table'
-import { getByDeviceIds } from '../../devices/getByDeviceIds.js'
-import { compareLists } from '../../devices/import/compareLists.js'
-import { readDeviceCertificates } from '../../devices/import/readDeviceCertificates.js'
-import { readDevicesList } from '../../devices/import/readDevicesList.js'
-import { registerDevice } from '../../devices/registerDevice.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+import { getByDeviceIds } from '../../devices/getByDeviceIds.ts'
+import { compareLists } from '../../devices/import/compareLists.ts'
+import { readDeviceCertificates } from '../../devices/import/readDeviceCertificates.ts'
+import { readDevicesList } from '../../devices/import/readDevicesList.ts'
+import { registerDevice } from '../../devices/registerDevice.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const importDevicesCommand = ({
 	ssm,

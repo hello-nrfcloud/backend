@@ -5,9 +5,9 @@ import {
 } from '@bifravst/aws-cdk-ecr-helpers/image'
 import { checkSumOfStrings } from '@bifravst/aws-cdk-lambda-helpers/util'
 import path from 'node:path'
-import { ContainerRepositoryId } from '../../../aws/ecr.js'
-import { type logFn } from '../../../cli/log.js'
-import { getMosquittoLatestTag } from '../../../docker/getMosquittoLatestTag.js'
+import { ContainerRepositoryId } from '../../../aws/ecr.ts'
+import { type logFn } from '../../../cli/log.ts'
+import { getMosquittoLatestTag } from '../../../docker/getMosquittoLatestTag.ts'
 
 export const buildMQTTBridgeImage = async (
 	builder: ImageBuilder,

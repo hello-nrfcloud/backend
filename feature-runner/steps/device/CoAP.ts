@@ -9,7 +9,7 @@ import {
 	type StepRunner,
 } from '@bifravst/bdd-markdown'
 import { Type } from '@sinclair/typebox'
-import { encode } from './senmlCbor.js'
+import { encode } from './senmlCbor.ts'
 
 export const steps = ({
 	iotData,

@@ -10,7 +10,7 @@ import { fromEnv } from '@bifravst/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import middy from '@middy/core'
-import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.js'
+import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.ts'
 
 const {
 	jobStatusTableName,

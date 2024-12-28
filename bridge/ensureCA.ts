@@ -1,10 +1,10 @@
 import type { IoTClient } from '@aws-sdk/client-iot'
 import run from '@bifravst/run'
 import { mkdir, stat } from 'node:fs/promises'
-import type { logFn } from '../cli/log.js'
-import { ulid } from '../util/ulid.js'
-import { caLocation, type CAFiles } from './caLocation.js'
-import { createCAVerificationCert } from './createCAVerificationCert.js'
+import type { logFn } from '../cli/log.ts'
+import { ulid } from '../util/ulid.ts'
+import { caLocation, type CAFiles } from './caLocation.ts'
+import { createCAVerificationCert } from './createCAVerificationCert.ts'
 
 export const ensureCA =
 	({

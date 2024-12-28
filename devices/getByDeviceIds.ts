@@ -4,8 +4,8 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import { chunk } from 'lodash-es'
-import type { Device } from './device.js'
-import { toDevice } from './getDeviceById.js'
+import type { Device } from './device.ts'
+import { toDevice } from './getDeviceById.ts'
 
 export const getByDeviceIds =
 	({

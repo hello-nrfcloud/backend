@@ -3,9 +3,9 @@ import type { SSMClient } from '@aws-sdk/client-ssm'
 import { devices as devicesApi } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import { table } from 'table'
-import { lastSeenRepo } from '../../lastSeen/lastSeenRepo.js'
-import { isNullOrUndefined } from '../../util/isNullOrUndefined.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+import { lastSeenRepo } from '../../lastSeen/lastSeenRepo.ts'
+import { isNullOrUndefined } from '../../util/isNullOrUndefined.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 const ago = (d: Date) =>
 	Math.floor((Date.now() - d.getTime()) / 1000 / 60 / 60 / 24)

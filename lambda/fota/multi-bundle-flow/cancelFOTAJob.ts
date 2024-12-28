@@ -13,9 +13,9 @@ import {
 } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api'
 import middy from '@middy/core'
 import type { DynamoDBStreamEvent } from 'aws-lambda'
-import { getAllNRFCloudAPIConfigs } from '../../nrfcloud/getAllNRFCloudAPIConfigs.js'
-import type { PersistedJob } from '../jobRepo.js'
-import type { NrfCloudFOTAJob } from '../NrfCloudFOTAJob.js'
+import { getAllNRFCloudAPIConfigs } from '../../nrfcloud/getAllNRFCloudAPIConfigs.ts'
+import type { PersistedJob } from '../jobRepo.ts'
+import type { NrfCloudFOTAJob } from '../NrfCloudFOTAJob.ts'
 
 const { stackName, jobStatusTableName, parentJobIdIndexName } = fromEnv({
 	stackName: 'STACK_NAME',

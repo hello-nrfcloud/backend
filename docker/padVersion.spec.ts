@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { padVersion } from './padVersion.js'
+import { padVersion } from './padVersion.ts'
 
 void describe('padVersion()', () => {
 	for (const [unpadded, padded] of [

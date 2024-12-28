@@ -6,9 +6,9 @@ import {
 	aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../packBackendLambdas.js'
-import type { DeviceStorage } from './DeviceStorage.js'
-import type { WebsocketAPI } from './WebsocketAPI.js'
+import type { BackendLambdas } from '../packBackendLambdas.ts'
+import type { DeviceStorage } from './DeviceStorage.ts'
+import type { WebsocketAPI } from './WebsocketAPI.ts'
 
 export class HealthCheckCoAP extends Construct {
 	public readonly healthCheckCoAP: PackedLambdaFn

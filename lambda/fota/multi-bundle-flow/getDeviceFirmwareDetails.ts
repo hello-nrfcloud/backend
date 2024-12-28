@@ -4,7 +4,7 @@ import middy from '@middy/core'
 import {
 	getDeviceFirmwareDetails,
 	type DeviceFirmwareDetails,
-} from '../getDeviceFirmwareDetails.js'
+} from '../getDeviceFirmwareDetails.ts'
 
 const iotData = new IoTDataPlaneClient({})
 

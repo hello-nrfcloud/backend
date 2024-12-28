@@ -8,12 +8,12 @@ import { Context, type DeviceIdentity } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import type { Static } from '@sinclair/typebox'
 import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
-import { lastSeenRepo } from '../lastSeen/lastSeenRepo.js'
-import { getLwM2MShadow } from '../lwm2m/getLwM2MShadow.js'
-import { connectionsRepository } from '../websocket/connectionsRepository.js'
-import type { WebsocketPayload } from './publishToWebsocketClients.js'
-import type { AuthorizedEvent } from './ws/AuthorizedEvent.js'
-import { sendShadowToConnection } from './ws/sendShadowToConnection.js'
+import { lastSeenRepo } from '../lastSeen/lastSeenRepo.ts'
+import { getLwM2MShadow } from '../lwm2m/getLwM2MShadow.ts'
+import { connectionsRepository } from '../websocket/connectionsRepository.ts'
+import type { WebsocketPayload } from './publishToWebsocketClients.ts'
+import type { AuthorizedEvent } from './ws/AuthorizedEvent.ts'
+import { sendShadowToConnection } from './ws/sendShadowToConnection.ts'
 
 const { EventBusName, TableName, LastSeenTableName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',

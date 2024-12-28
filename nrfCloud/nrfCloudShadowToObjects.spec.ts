@@ -6,7 +6,7 @@ import {
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { nrfCloudShadowToObjects } from './nrfCloudShadowToObjects.js'
+import { nrfCloudShadowToObjects } from './nrfCloudShadowToObjects.ts'
 
 const deviceInfo: DeviceInformation_14204 = {
 	ObjectID: LwM2MObjectID.DeviceInformation_14204,

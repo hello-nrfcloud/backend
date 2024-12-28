@@ -34,11 +34,11 @@ import type {
 	APIGatewayProxyEventV2,
 	APIGatewayProxyResultV2,
 } from 'aws-lambda'
-import { ulid } from '../../../util/ulid.js'
-import { withDevice, type WithDevice } from '../../middleware/withDevice.js'
-import { getDeviceFirmwareDetails } from '../getDeviceFirmwareDetails.js'
-import { getNextUpgrade } from '../getNextUpgrade.js'
-import { create } from '../jobRepo.js'
+import { ulid } from '../../../util/ulid.ts'
+import { withDevice, type WithDevice } from '../../middleware/withDevice.ts'
+import { getDeviceFirmwareDetails } from '../getDeviceFirmwareDetails.ts'
+import { getNextUpgrade } from '../getNextUpgrade.ts'
+import { create } from '../jobRepo.ts'
 
 const { version, DevicesTableName, jobTableName, StateMachineArn } = fromEnv({
 	version: 'VERSION',

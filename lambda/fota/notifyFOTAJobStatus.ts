@@ -6,9 +6,9 @@ import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import type { DynamoDBStreamEvent } from 'aws-lambda'
-import type { WebsocketPayload } from '../publishToWebsocketClients.js'
-import type { PersistedJob } from './jobRepo.js'
-import { toJob } from './toJobExecution.js'
+import type { WebsocketPayload } from '../publishToWebsocketClients.ts'
+import type { PersistedJob } from './jobRepo.ts'
+import { toJob } from './toJobExecution.ts'
 
 const { EventBusName } = fromEnv({
 	EventBusName: 'EVENTBUS_NAME',

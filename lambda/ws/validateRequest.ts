@@ -1,7 +1,7 @@
 import type { ProblemDetail } from '@hello.nrfcloud.com/proto/hello'
 import { type Static, type TSchema } from '@sinclair/typebox'
 import type { ValueError } from '@sinclair/typebox/compiler'
-import { toBadRequest } from './toBadRequest.js'
+import { toBadRequest } from './toBadRequest.ts'
 
 /**
  * Validates a request using a validator

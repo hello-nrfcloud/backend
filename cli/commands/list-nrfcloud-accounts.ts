@@ -2,7 +2,7 @@ import type { SSMClient } from '@aws-sdk/client-ssm'
 import { getAllAccounts } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
 import { table } from 'table'
-import type { CommandDefinition } from './CommandDefinition.js'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const listnRFCloudAccountsCommand = ({
 	ssm,

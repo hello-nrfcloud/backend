@@ -14,8 +14,8 @@ import {
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
 import type { SQSEvent } from 'aws-lambda'
-import { loggingFetch } from '../../util/loggingFetch.js'
-import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.js'
+import { loggingFetch } from '../../util/loggingFetch.ts'
+import type { NrfCloudFOTAJob } from './NrfCloudFOTAJob.ts'
 
 const { stackName, jobStatusTableName } = fromEnv({
 	stackName: 'STACK_NAME',

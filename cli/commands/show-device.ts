@@ -7,9 +7,9 @@ import {
 import { getAPISettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import chalk from 'chalk'
 import { table } from 'table'
-import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.js'
-import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+import { getDeviceByFingerprint } from '../../devices/getDeviceByFingerprint.ts'
+import { UNSUPPORTED_MODEL } from '../../devices/registerUnsupportedDevice.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const showDeviceCommand = ({
 	ssm,

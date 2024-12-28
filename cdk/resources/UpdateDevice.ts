@@ -5,8 +5,8 @@ import {
 	aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../packBackendLambdas.js'
-import type { DeviceStorage } from './DeviceStorage.js'
+import type { BackendLambdas } from '../packBackendLambdas.ts'
+import type { DeviceStorage } from './DeviceStorage.ts'
 
 /**
  * Handles device updates

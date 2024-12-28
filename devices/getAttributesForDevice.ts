@@ -1,5 +1,5 @@
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { getDeviceById } from './getDeviceById.js'
+import { getDeviceById } from './getDeviceById.ts'
 
 export const getAttributesForDevice = ({
 	db,

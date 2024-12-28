@@ -6,8 +6,8 @@ import { WebSocketServer, type AddressInfo } from 'ws'
 import {
 	ValidateResponse,
 	checkMessageFromWebsocket,
-} from './checkMessageFromWebsocket.js'
-import { DeferTimeoutError } from './defer.js'
+} from './checkMessageFromWebsocket.ts'
+import { DeferTimeoutError } from './defer.ts'
 
 const getRandomPort = async (): Promise<number> => {
 	const server = net.createServer()

@@ -8,7 +8,7 @@ import {
 	type aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../packBackendLambdas.js'
+import type { BackendLambdas } from '../packBackendLambdas.ts'
 
 /**
  * Resources needed to convert messages sent by nRF Cloud to the format that hello.nrfcloud.com expects

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { ulid, ulidRegEx } from './ulid.js'
+import { ulid, ulidRegEx } from './ulid.ts'
 
 void describe('ulid()', () => {
 	void it('should return a Ulid', () => assert.match(ulid(), ulidRegEx))

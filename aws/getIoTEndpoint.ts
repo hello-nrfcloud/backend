@@ -1,6 +1,6 @@
 import type { IoTClient } from '@aws-sdk/client-iot'
 import { DescribeEndpointCommand } from '@aws-sdk/client-iot'
-import { isString } from '../util/isString.js'
+import { isString } from '../util/isString.ts'
 
 export const getIoTEndpoint = async ({
 	iot,

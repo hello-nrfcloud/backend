@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { createTrailOfCoordinates } from './createTrailOfCoordinates.js'
+import { createTrailOfCoordinates } from './createTrailOfCoordinates.ts'
 
 const coordinates = [
 	{

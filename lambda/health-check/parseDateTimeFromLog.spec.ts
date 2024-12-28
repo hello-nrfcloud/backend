@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { parseDateTimeFromLog } from './parseDateTimeFromLog.js'
+import { parseDateTimeFromLog } from './parseDateTimeFromLog.ts'
 
 void describe('parseDateTimeFromLogToTimestamp', () => {
 	void it('should return a timestamp when a valid log string is provided', () => {

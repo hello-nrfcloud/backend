@@ -1,5 +1,5 @@
-import { compareSemanticVersions } from './compareSemanticVersions.js'
-import { getAllImageTags } from './getAllImageTags.js'
+import { compareSemanticVersions } from './compareSemanticVersions.ts'
+import { getAllImageTags } from './getAllImageTags.ts'
 
 const mosquittoImageName = 'eclipse-mosquitto'
 const architecture = 'amd64'

@@ -13,11 +13,11 @@ import { getLocationHistory } from '@hello.nrfcloud.com/nrfcloud-api-helpers/api
 import { getAllAccountsSettings as getAllNRFCloudAccountSettings } from '@hello.nrfcloud.com/nrfcloud-api-helpers/settings'
 import middy from '@middy/core'
 import type { SQSEvent } from 'aws-lambda'
-import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.js'
-import { batchArray } from '../../util/batchArray.js'
-import { loggingFetch } from '../../util/loggingFetch.js'
-import { deviceLwM2MObjectUpdate } from '../eventbus/deviceLwM2MObjectUpdate.js'
-import { toGeoLocation, type LocationHistoryItem } from './toGeoLocation.js'
+import { updateLwM2MShadow } from '../../lwm2m/updateLwM2MShadow.ts'
+import { batchArray } from '../../util/batchArray.ts'
+import { loggingFetch } from '../../util/loggingFetch.ts'
+import { deviceLwM2MObjectUpdate } from '../eventbus/deviceLwM2MObjectUpdate.ts'
+import { toGeoLocation, type LocationHistoryItem } from './toGeoLocation.ts'
 
 const { stackName, tableName, EventBusName } = fromEnv({
 	stackName: 'STACK_NAME',

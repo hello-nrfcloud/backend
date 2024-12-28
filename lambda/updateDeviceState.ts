@@ -33,10 +33,10 @@ import type {
 	APIGatewayProxyResultV2,
 	Context,
 } from 'aws-lambda'
-import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.js'
-import { loggingFetch } from '../util/loggingFetch.js'
-import { withDevice, type WithDevice } from './middleware/withDevice.js'
-import { getAllNRFCloudAPIConfigs } from './nrfcloud/getAllNRFCloudAPIConfigs.js'
+import { updateLwM2MShadow } from '../lwm2m/updateLwM2MShadow.ts'
+import { loggingFetch } from '../util/loggingFetch.ts'
+import { withDevice, type WithDevice } from './middleware/withDevice.ts'
+import { getAllNRFCloudAPIConfigs } from './nrfcloud/getAllNRFCloudAPIConfigs.ts'
 
 const { stackName, version, DevicesTableName } = fromEnv({
 	stackName: 'STACK_NAME',

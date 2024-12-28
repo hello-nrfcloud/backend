@@ -3,7 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { fromEnv } from '@bifravst/from-env'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import type { EventBridgeEvent } from 'aws-lambda'
-import { notifyClients } from '../websocket/notifyClients.js'
+import { notifyClients } from '../websocket/notifyClients.ts'
 
 export type WebsocketPayload = {
 	deviceId: string

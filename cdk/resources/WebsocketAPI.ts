@@ -9,12 +9,12 @@ import {
 	type aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../packBackendLambdas.js'
-import { ApiLogging } from './APILogging.js'
-import type { DeviceLastSeen } from './DeviceLastSeen.js'
-import type { DeviceStorage } from './DeviceStorage.js'
-import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.js'
-import type { WebsocketEventBus } from './WebsocketEventBus.js'
+import type { BackendLambdas } from '../packBackendLambdas.ts'
+import { ApiLogging } from './APILogging.ts'
+import type { DeviceLastSeen } from './DeviceLastSeen.ts'
+import type { DeviceStorage } from './DeviceStorage.ts'
+import type { WebsocketConnectionsTable } from './WebsocketConnectionsTable.ts'
+import type { WebsocketEventBus } from './WebsocketEventBus.ts'
 
 export const integrationUri = (
 	parent: Construct,

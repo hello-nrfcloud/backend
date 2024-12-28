@@ -7,8 +7,8 @@ import {
 	type aws_lambda as Lambda,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../packBackendLambdas.js'
-import type { API } from './API.js'
+import type { BackendLambdas } from '../packBackendLambdas.ts'
+import type { API } from './API.ts'
 
 export type CustomDomain = {
 	domainName: string

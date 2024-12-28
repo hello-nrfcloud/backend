@@ -1,6 +1,6 @@
 import { Context, type FOTAJob } from '@hello.nrfcloud.com/proto/hello'
 import type { Static } from '@sinclair/typebox'
-import type { PersistedJob } from './jobRepo.js'
+import type { PersistedJob } from './jobRepo.ts'
 
 export const toJob = (job: PersistedJob): Static<typeof FOTAJob> => ({
 	'@context': Context.fotaJob.toString(),

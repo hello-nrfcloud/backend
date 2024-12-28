@@ -6,9 +6,9 @@ import {
 	aws_events as Events,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import type { BackendLambdas } from '../../packBackendLambdas.js'
-import type { DeviceLastSeen } from '../DeviceLastSeen.js'
-import type { DeviceStorage } from '../DeviceStorage.js'
+import type { BackendLambdas } from '../../packBackendLambdas.ts'
+import type { DeviceLastSeen } from '../DeviceLastSeen.ts'
+import type { DeviceStorage } from '../DeviceStorage.ts'
 
 export class KPIs extends Construct {
 	public readonly fn: PackedLambdaFn

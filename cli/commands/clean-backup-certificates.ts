@@ -6,9 +6,9 @@ import {
 import { settingsPath } from '@bifravst/aws-ssm-settings-helpers'
 import chalk from 'chalk'
 import { chunk } from 'lodash-es'
-import { STACK_NAME } from '../../cdk/stackConfig.js'
-import { ScopeContexts } from '../../settings/scope.js'
-import type { CommandDefinition } from './CommandDefinition.js'
+import { STACK_NAME } from '../../cdk/stackConfig.ts'
+import { ScopeContexts } from '../../settings/scope.ts'
+import type { CommandDefinition } from './CommandDefinition.ts'
 
 export const cleanBackupCertificates = ({
 	ssm,

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { getDistanceFromLatLngInKm } from './getDistanceFromLatLngInKm.js'
+import { getDistanceFromLatLngInKm } from './getDistanceFromLatLngInKm.ts'
 
 void describe('getDistanceFromLatLngInKm()', () => {
 	void it('should calculate the distance between two coordinates in km.', () => {

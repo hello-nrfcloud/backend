@@ -7,7 +7,7 @@ import {
 import { FOTAJobTarget } from '@hello.nrfcloud.com/proto/hello'
 import { isObject } from 'lodash-es'
 import semver from 'semver'
-import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.js'
+import { getLwM2MShadow } from '../../lwm2m/getLwM2MShadow.ts'
 
 type VersionInfo =
 	| {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import { describe, it } from 'node:test'
-import { readDeviceCertificates } from './readDeviceCertificates.js'
+import { readDeviceCertificates } from './readDeviceCertificates.ts'
 
 void describe('readDeviceCertificates()', () => {
 	void it('should return a map of certificates', async () => {
