@@ -76,7 +76,7 @@
     "cfn-response": "1.0.1",
     "chalk": "5.4.1",
     "check-node-version": "4.2.1",
-    "commander": "12.1.0",
+    "commander": "13.0.0",
     "commitlint": "19.6.1",
     "constructs": "10.4.2",
     "glob": "11.0.0",
