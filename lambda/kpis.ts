@@ -14,6 +14,7 @@ import {
 import middy from '@middy/core'
 import { dailyActiveDevices } from '../kpis/dailyActiveDevices.ts'
 import { dailyActiveFingerprints } from '../kpis/dailyActiveFingerprints.ts'
+import { totalFingerprintsUsed } from '../kpis/totalFingerprintsUsed.ts'
 
 const { lastSeenTableName, devicesTableName, stackName } = fromEnv({
 	lastSeenTableName: 'LAST_SEEN_TABLE_NAME',
@@ -25,6 +26,7 @@ const ssm = new SSMClient({})
 const db = new DynamoDBClient({})
 const getDailyActiveDevices = dailyActiveDevices(db, lastSeenTableName)
 const getDailyActiveFingerprints = dailyActiveFingerprints(db, devicesTableName)
+const getTotalFingerprintsUsed = totalFingerprintsUsed(db, devicesTableName)
 
 const { track, metrics } = metricsForComponent('KPIs')
 
@@ -51,6 +53,12 @@ const h = async () => {
 				)
 			},
 		),
+		getTotalFingerprintsUsed().then((totalFingerprintsUsedPerModel) => {
+			console.log({ totalFingerprintsUsedPerModel })
+			for (const [model, count] of totalFingerprintsUsedPerModel) {
+				track(`totalFingerprintsUsed:${model}`, MetricUnit.Count, count)
+			}
+		}),
 		// Current month's nRF Cloud costs
 		...(await getAllAccounts({ ssm, stackName })).map(async (account) => {
 			const settingsPromise =
