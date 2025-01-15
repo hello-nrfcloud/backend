@@ -128,7 +128,7 @@
     "@bifravst/run": "1.2.0",
     "@bifravst/timestream-helpers": "6.0.3",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
-    "@hello.nrfcloud.com/lambda-helpers": "2.0.63",
+    "@hello.nrfcloud.com/lambda-helpers": "2.0.64",
     "@hello.nrfcloud.com/nrfcloud-api-helpers": "6.0.121",
     "@hello.nrfcloud.com/proto": "15.3.34",
     "@hello.nrfcloud.com/proto-map": "16.1.33",
