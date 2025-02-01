@@ -4,7 +4,7 @@
   "description": "Cloud backend for hello.nrfcloud.com developed using AWS CDK in TypeScript",
   "type": "module",
   "scripts": {
-    "test": "npx globstar -- node --experimental-transform-types --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
+    "test": "node --experimental-transform-types --test --test-reporter spec \"!(dist|node_modules)/**/*.spec.ts\"",
     "test:e2e": "node --experimental-transform-types --no-warnings ./feature-runner/run-features.ts > e2e-test-result.json && cat e2e-test-result.json | node --experimental-transform-types --no-warnings ./feature-runner/console-reporter.ts --only-failed --with-timestamps",
     "prepare": "husky && check-node-version --package"
   },
@@ -80,7 +80,6 @@
     "commitlint": "19.6.1",
     "constructs": "10.4.2",
     "glob": "11.0.1",
-    "globstar": "1.0.0",
     "husky": "9.1.7",
     "jsonata": "2.0.6",
     "lint-staged": "15.4.3",
