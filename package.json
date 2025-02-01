@@ -122,7 +122,7 @@
   },
   "prettier": "@bifravst/prettier-config",
   "dependencies": {
-    "@aws-lambda-powertools/metrics": "2.13.0",
+    "@aws-lambda-powertools/metrics": "2.13.1",
     "@bifravst/aws-ssm-settings-helpers": "1.2.97",
     "@bifravst/from-env": "3.0.2",
     "@bifravst/run": "1.2.0",
