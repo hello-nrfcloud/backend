@@ -68,7 +68,7 @@
     "@types/semver": "7.5.8",
     "@types/ws": "8.5.14",
     "@types/yauzl": "2.10.3",
-    "@types/yazl": "2.4.5",
+    "@types/yazl": "2.4.6",
     "aws-cdk": "2.177.0",
     "aws-cdk-lib": "2.177.0",
     "cbor-x": "1.6.0",
