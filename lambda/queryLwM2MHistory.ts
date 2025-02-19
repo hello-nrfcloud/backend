@@ -22,6 +22,7 @@ import {
 import {
 	LwM2MObjectIDs,
 	definitions,
+	isNumeric,
 	timestampResources,
 	type LWM2MObjectInfo,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
@@ -46,7 +47,6 @@ import {
 } from '../historicalData/HistoricalDataTimeSpans.ts'
 import { getAvailableColumns } from '../historicalData/getAvailableColumns.ts'
 import { validateDeviceJWT } from '../jwt/validateDeviceJWT.ts'
-import { isNumeric } from '../lwm2m/isNumeric.ts'
 import { fetchMapJWTPublicKeys } from './map/fetchMapJWTPublicKeys.ts'
 import { withDevice, type WithDevice } from './middleware/withDevice.ts'
 

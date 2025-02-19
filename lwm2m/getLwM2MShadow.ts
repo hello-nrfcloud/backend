@@ -3,12 +3,12 @@ import {
 	type IoTDataPlaneClient,
 } from '@aws-sdk/client-iot-data-plane'
 import {
+	isUnixTimeInSeconds,
 	timestampResources,
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import { shadowToObjects } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import type { Device } from '../devices/device.ts'
-import { isUnixTimeInSeconds } from './isUnixTimeInSeconds.ts'
 
 export const getLwM2MShadow =
 	(iotData: IoTDataPlaneClient) =>

@@ -11,14 +11,17 @@ import { fromEnv } from '@bifravst/from-env'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
-	LwM2MObjectID,
 	isLwM2MObjectID,
+	LwM2MObjectID,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
+import {
+	instanceMeasuresToRecord,
+	NoHistoryMeasuresError,
+} from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
+
 import middy from '@middy/core'
 import { getDeviceById } from '../devices/getDeviceById.ts'
-import { instanceMeasuresToRecord } from '../historicalData/instanceMeasuresToRecord.ts'
-import { NoHistoryMeasuresError } from '../historicalData/NoHistoryMeasuresError.ts'
 
 const { tableInfo, DevicesTableName } = fromEnv({
 	tableInfo: 'HISTORICAL_DATA_TABLE_INFO',
