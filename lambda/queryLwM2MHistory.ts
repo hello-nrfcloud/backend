@@ -8,7 +8,7 @@ import {
 	ValidationException,
 } from '@aws-sdk/client-timestream-query'
 import { fromEnv } from '@bifravst/from-env'
-import { parseResult } from '@bifravst/timestream-helpers'
+import { getAvailableColumns, parseResult } from '@bifravst/timestream-helpers'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
@@ -45,7 +45,6 @@ import {
 	LastHour,
 	type HistoricalDataTimeSpan,
 } from '../historicalData/HistoricalDataTimeSpans.ts'
-import { getAvailableColumns } from '../historicalData/getAvailableColumns.ts'
 import { validateDeviceJWT } from '../jwt/validateDeviceJWT.ts'
 import { fetchMapJWTPublicKeys } from './map/fetchMapJWTPublicKeys.ts'
 import { withDevice, type WithDevice } from './middleware/withDevice.ts'
