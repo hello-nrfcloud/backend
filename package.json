@@ -60,7 +60,7 @@
     "@hello.nrfcloud.com/bdd-markdown-steps": "2.8.432",
     "@swc/cli": "0.6.0",
     "@swc/core": "1.11.12",
-    "@types/aws-lambda": "8.10.147",
+    "@types/aws-lambda": "8.10.148",
     "@types/cfn-response": "1.0.8",
     "@types/glob": "8.1.0",
     "@types/jsonwebtoken": "9.0.9",
