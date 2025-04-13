@@ -59,7 +59,7 @@
     "@commitlint/config-conventional": "19.8.0",
     "@hello.nrfcloud.com/bdd-markdown-steps": "2.8.451",
     "@swc/cli": "0.6.0",
-    "@swc/core": "1.11.18",
+    "@swc/core": "1.11.20",
     "@types/aws-lambda": "8.10.148",
     "@types/cfn-response": "1.0.8",
     "@types/glob": "8.1.0",
