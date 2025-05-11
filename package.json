@@ -58,7 +58,7 @@
     "@bifravst/random-words": "8.0.3",
     "@commitlint/config-conventional": "19.8.1",
     "@hello.nrfcloud.com/bdd-markdown-steps": "2.8.481",
-    "@swc/cli": "0.7.3",
+    "@swc/cli": "0.7.5",
     "@swc/core": "1.11.24",
     "@types/aws-lambda": "8.10.149",
     "@types/cfn-response": "1.0.8",
