@@ -13,7 +13,7 @@ import middy from '@middy/core'
 import { Type } from '@sinclair/typebox'
 import type {
 	APIGatewayProxyEventV2,
-	APIGatewayProxyResultV2,
+	APIGatewayProxyStructuredResultV2,
 	Context,
 } from 'aws-lambda'
 import { getFeedbackSettings } from '../settings/feedback.ts'
@@ -34,57 +34,57 @@ const InputSchema = Type.Object({
 	browser: Type.String({ minLength: 1, title: 'Non-empty string' }),
 })
 
-const h = async (
-	event: APIGatewayProxyEventV2,
-	context: ValidInput<typeof InputSchema> & Context,
-): Promise<APIGatewayProxyResultV2> => {
-	const { stars, email, suggestion, browser } = context.validInput
-
-	const res = await fetch(settings.webhookURL, {
-		method: 'POST',
-		headers: {
-			'content-type': 'application/json; charset=utf-8',
-		},
-		// The Adaptive Card format is required to support Outlook on iOS and Android. However, if you are sending actionable messages via an Office connector, or to a Microsoft Teams connector, you must continue to use the message card format.
-		// @see https://learn.microsoft.com/en-us/outlook/actionable-messages/message-card-reference
-		body: JSON.stringify({
-			summary: 'New feedback',
-			themeColor: '00a9ce',
-			title: 'New feedback received',
-			sections: [
-				{
-					facts: [
-						{
-							name: 'Rating',
-							value: '★'.repeat(stars) + '☆'.repeat(5 - stars),
-						},
-						{
-							name: 'Email',
-							value: email,
-						},
-						{
-							name: 'Browser',
-							value: browser,
-						},
-					],
-					text: suggestion,
-				},
-			],
-		}),
-	})
-
-	if (!res.ok) {
-		console.error(await res.text())
-		throw new Error('Failed to submit feedback')
-	}
-
-	return aResponse(201)
-}
-
-export const handler = middy()
+export const handler = middy<
+	APIGatewayProxyEventV2,
+	APIGatewayProxyStructuredResultV2,
+	Error,
+	ValidInput<typeof InputSchema> & Context
+>()
 	.use(corsOPTIONS('POST'))
 	.use(addVersionHeader(version))
 	.use(requestLogger())
 	.use(validateInput(InputSchema))
 	.use(problemResponse())
-	.handler(h)
+	.handler(async (_, context) => {
+		const { stars, email, suggestion, browser } = context.validInput
+
+		const res = await fetch(settings.webhookURL, {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json; charset=utf-8',
+			},
+			// The Adaptive Card format is required to support Outlook on iOS and Android. However, if you are sending actionable messages via an Office connector, or to a Microsoft Teams connector, you must continue to use the message card format.
+			// @see https://learn.microsoft.com/en-us/outlook/actionable-messages/message-card-reference
+			body: JSON.stringify({
+				summary: 'New feedback',
+				themeColor: '00a9ce',
+				title: 'New feedback received',
+				sections: [
+					{
+						facts: [
+							{
+								name: 'Rating',
+								value: '★'.repeat(stars) + '☆'.repeat(5 - stars),
+							},
+							{
+								name: 'Email',
+								value: email,
+							},
+							{
+								name: 'Browser',
+								value: browser,
+							},
+						],
+						text: suggestion,
+					},
+				],
+			}),
+		})
+
+		if (!res.ok) {
+			console.error(await res.text())
+			throw new Error('Failed to submit feedback')
+		}
+
+		return aResponse(201)
+	})

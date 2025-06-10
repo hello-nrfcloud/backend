@@ -44,121 +44,122 @@ for (const [account, { apiEndpoint, apiKey }] of Object.entries(
 
 const db = new DynamoDBClient({})
 
-const h = async (event: SQSEvent): Promise<void> => {
-	for (const record of event.Records) {
-		const {
-			jobId,
-			account,
-			lastUpdatedAt: currentLastUpdatedAt,
-			createdAt,
-		} = JSON.parse(record.body) as NrfCloudFOTAJob
-
-		if (jobId === undefined || account === undefined) {
-			log.error('Missing required attributes')
-			track('error', MetricUnit.Count, 1)
-			continue
-		}
-		const fetcher = jobFetcher.get(account)
-		if (fetcher === undefined) {
-			log.error(`No fetcher defined for ${account}!`)
-			track('error', MetricUnit.Count, 1)
-			continue
-		}
-
-		const maybeJob = await fetcher({ jobId })
-		if ('error' in maybeJob) {
-			if (
-				maybeJob.error instanceof FetchError &&
-				maybeJob.error.statusCode === 404
-			) {
-				console.error(`FOTA job ${jobId} not found!`, maybeJob.error)
-				// Mark the job as failed
-				if (Date.now() - new Date(createdAt).getTime() > 24 * 60 * 60 * 1000) {
-					await db.send(
-						new UpdateItemCommand({
-							TableName: jobStatusTableName,
-							Key: {
-								jobId: {
-									S: jobId,
-								},
-							},
-							UpdateExpression:
-								'SET #lastUpdatedAt = :lastUpdatedAt, #status = :status, #statusDetail = :statusDetail',
-							ExpressionAttributeNames: {
-								'#lastUpdatedAt': 'lastUpdatedAt',
-								'#status': 'status',
-								'#statusDetail': 'statusDetail',
-							},
-							ExpressionAttributeValues: {
-								':lastUpdatedAt': {
-									S: new Date().toISOString(),
-								},
-								':status': {
-									S: 'FAILED',
-								},
-								':statusDetail': {
-									S: 'The job was not found on nRF Cloud. It may have been deleted.',
-								},
-							},
-						}),
-					)
-				}
-			} else {
-				console.error(`Fetching the FOTA job failed!`, maybeJob.error)
-			}
-			continue
-		}
-		const job = maybeJob.result
-		track('success', MetricUnit.Count, 1)
-		log.debug('job', job)
-
-		const { firmware, lastUpdatedAt, status, statusDetail, target } = job
-
-		await db.send(
-			new UpdateItemCommand({
-				TableName: jobStatusTableName,
-				Key: {
-					jobId: {
-						S: jobId,
-					},
-				},
-				UpdateExpression:
-					'SET #firmware = :firmware, #lastUpdatedAt = :lastUpdatedAt, #status = :status, #statusDetail = :statusDetail, #target = :target',
-				ExpressionAttributeNames: {
-					'#firmware': 'firmware',
-					'#lastUpdatedAt': 'lastUpdatedAt',
-					'#status': 'status',
-					'#statusDetail': 'statusDetail',
-					'#target': 'target',
-				},
-				ExpressionAttributeValues: {
-					':lastUpdatedAt': {
-						S: lastUpdatedAt ?? currentLastUpdatedAt,
-					},
-					':status': {
-						S: status,
-					},
-					':statusDetail':
-						statusDetail !== undefined ? { S: statusDetail } : { NULL: true },
-					':firmware':
-						firmware !== undefined
-							? {
-									M: marshall(firmware, { convertEmptyValues: true }),
-								}
-							: { NULL: true },
-					':target':
-						target !== undefined
-							? {
-									M: marshall(target, { convertEmptyValues: true }),
-								}
-							: { NULL: true },
-				},
-			}),
-		)
-	}
-}
-
-export const handler = middy()
+export const handler = middy<SQSEvent, void>()
 	.use(requestLogger())
 	.use(logMetrics(metrics))
-	.handler(h)
+	.handler(async (event) => {
+		for (const record of event.Records) {
+			const {
+				jobId,
+				account,
+				lastUpdatedAt: currentLastUpdatedAt,
+				createdAt,
+			} = JSON.parse(record.body) as NrfCloudFOTAJob
+
+			if (jobId === undefined || account === undefined) {
+				log.error('Missing required attributes')
+				track('error', MetricUnit.Count, 1)
+				continue
+			}
+			const fetcher = jobFetcher.get(account)
+			if (fetcher === undefined) {
+				log.error(`No fetcher defined for ${account}!`)
+				track('error', MetricUnit.Count, 1)
+				continue
+			}
+
+			const maybeJob = await fetcher({ jobId })
+			if ('error' in maybeJob) {
+				if (
+					maybeJob.error instanceof FetchError &&
+					maybeJob.error.statusCode === 404
+				) {
+					console.error(`FOTA job ${jobId} not found!`, maybeJob.error)
+					// Mark the job as failed
+					if (
+						Date.now() - new Date(createdAt).getTime() >
+						24 * 60 * 60 * 1000
+					) {
+						await db.send(
+							new UpdateItemCommand({
+								TableName: jobStatusTableName,
+								Key: {
+									jobId: {
+										S: jobId,
+									},
+								},
+								UpdateExpression:
+									'SET #lastUpdatedAt = :lastUpdatedAt, #status = :status, #statusDetail = :statusDetail',
+								ExpressionAttributeNames: {
+									'#lastUpdatedAt': 'lastUpdatedAt',
+									'#status': 'status',
+									'#statusDetail': 'statusDetail',
+								},
+								ExpressionAttributeValues: {
+									':lastUpdatedAt': {
+										S: new Date().toISOString(),
+									},
+									':status': {
+										S: 'FAILED',
+									},
+									':statusDetail': {
+										S: 'The job was not found on nRF Cloud. It may have been deleted.',
+									},
+								},
+							}),
+						)
+					}
+				} else {
+					console.error(`Fetching the FOTA job failed!`, maybeJob.error)
+				}
+				continue
+			}
+			const job = maybeJob.result
+			track('success', MetricUnit.Count, 1)
+			log.debug('job', job)
+
+			const { firmware, lastUpdatedAt, status, statusDetail, target } = job
+
+			await db.send(
+				new UpdateItemCommand({
+					TableName: jobStatusTableName,
+					Key: {
+						jobId: {
+							S: jobId,
+						},
+					},
+					UpdateExpression:
+						'SET #firmware = :firmware, #lastUpdatedAt = :lastUpdatedAt, #status = :status, #statusDetail = :statusDetail, #target = :target',
+					ExpressionAttributeNames: {
+						'#firmware': 'firmware',
+						'#lastUpdatedAt': 'lastUpdatedAt',
+						'#status': 'status',
+						'#statusDetail': 'statusDetail',
+						'#target': 'target',
+					},
+					ExpressionAttributeValues: {
+						':lastUpdatedAt': {
+							S: lastUpdatedAt ?? currentLastUpdatedAt,
+						},
+						':status': {
+							S: status,
+						},
+						':statusDetail':
+							statusDetail !== undefined ? { S: statusDetail } : { NULL: true },
+						':firmware':
+							firmware !== undefined
+								? {
+										M: marshall(firmware, { convertEmptyValues: true }),
+									}
+								: { NULL: true },
+						':target':
+							target !== undefined
+								? {
+										M: marshall(target, { convertEmptyValues: true }),
+									}
+								: { NULL: true },
+					},
+				}),
+			)
+		}
+	})

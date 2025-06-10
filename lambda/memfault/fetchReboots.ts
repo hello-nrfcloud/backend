@@ -53,67 +53,65 @@ const fetchReboots = getDeviceReboots(
 
 const updateShadow = updateLwM2MShadow(iotData)
 
-const h = async (event: SQSEvent): Promise<void> => {
-	for (const record of event.Records) {
-		const { deviceId, since } = JSON.parse(record.body) as Record<
-			string,
-			string
-		>
-
-		if (deviceId === undefined || since === undefined) {
-			log.error('Missing required attributes')
-			continue
-		}
-		const maybeReboots = await fetchReboots(deviceId, since)
-		if ('error' in maybeReboots) {
-			if (maybeReboots.error instanceof NotFoundError) {
-				log.debug(maybeReboots.error.message)
-			} else {
-				log.error(maybeReboots.error.message)
-				track('error', MetricUnit.Count, 1)
-			}
-			continue
-		}
-		const reboots = maybeReboots.value.data
-		track('numReboots', MetricUnit.Count, reboots.length)
-		log.debug('reboots', JSON.stringify(reboots))
-
-		// Update the shadow with the latest
-		if (reboots[0]) await updateShadow(deviceId, [toReboot(reboots[0])])
-
-		// And put all in the table
-		const records = reboots.map((reboot) => ({
-			PutRequest: {
-				Item: marshall(
-					{
-						deviceId,
-						timestamp: reboot.time,
-						reason: reboot.reason,
-						ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
-					},
-					{ removeUndefinedValues: true },
-				),
-			},
-		}))
-		if (records.length > 0)
-			await db.send(
-				new BatchWriteItemCommand({
-					RequestItems: {
-						[tableName]: records,
-					},
-				}),
-			)
-
-		// Put updates on the event bus
-		await Promise.all(
-			reboots.map(async (reboot) =>
-				notifyWebsocket(deviceId, toReboot(reboot)),
-			),
-		)
-	}
-}
-
-export const handler = middy()
+export const handler = middy<SQSEvent>()
 	.use(requestLogger())
 	.use(logMetrics(metrics))
-	.handler(h)
+	.handler(async (event): Promise<void> => {
+		for (const record of event.Records) {
+			const { deviceId, since } = JSON.parse(record.body) as Record<
+				string,
+				string
+			>
+
+			if (deviceId === undefined || since === undefined) {
+				log.error('Missing required attributes')
+				continue
+			}
+			const maybeReboots = await fetchReboots(deviceId, since)
+			if ('error' in maybeReboots) {
+				if (maybeReboots.error instanceof NotFoundError) {
+					log.debug(maybeReboots.error.message)
+				} else {
+					log.error(maybeReboots.error.message)
+					track('error', MetricUnit.Count, 1)
+				}
+				continue
+			}
+			const reboots = maybeReboots.value.data
+			track('numReboots', MetricUnit.Count, reboots.length)
+			log.debug('reboots', JSON.stringify(reboots))
+
+			// Update the shadow with the latest
+			if (reboots[0]) await updateShadow(deviceId, [toReboot(reboots[0])])
+
+			// And put all in the table
+			const records = reboots.map((reboot) => ({
+				PutRequest: {
+					Item: marshall(
+						{
+							deviceId,
+							timestamp: reboot.time,
+							reason: reboot.reason,
+							ttl: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
+						},
+						{ removeUndefinedValues: true },
+					),
+				},
+			}))
+			if (records.length > 0)
+				await db.send(
+					new BatchWriteItemCommand({
+						RequestItems: {
+							[tableName]: records,
+						},
+					}),
+				)
+
+			// Put updates on the event bus
+			await Promise.all(
+				reboots.map(async (reboot) =>
+					notifyWebsocket(deviceId, toReboot(reboot)),
+				),
+			)
+		}
+	})

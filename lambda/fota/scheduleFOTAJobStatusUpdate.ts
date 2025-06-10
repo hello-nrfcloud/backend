@@ -30,93 +30,93 @@ const sqs = new SQSClient({})
 
 const { track } = metricsForComponent('fotaStatusUpdate')
 
-const h = async (): Promise<void> => {
-	const pendingJobs = (
+export const handler = middy()
+	.use(requestLogger())
+	.handler(async () => {
+		const pendingJobs = (
+			await Promise.all(
+				['QUEUED', 'IN_PROGRESS', 'DOWNLOADING'].map(async (status) => {
+					const results = paginateQuery(
+						{
+							client: db,
+						},
+						{
+							TableName: jobStatusTableName,
+							IndexName: jobStatusTableStatusIndexName,
+							KeyConditionExpression:
+								'#status = :status AND #nextUpdateAt < :now',
+							ExpressionAttributeNames: {
+								'#status': 'status',
+								'#jobId': 'jobId',
+								'#nextUpdateAt': 'nextUpdateAt',
+								'#createdAt': 'createdAt',
+							},
+							ExpressionAttributeValues: {
+								':status': {
+									S: status,
+								},
+								':now': {
+									S: new Date().toISOString(),
+								},
+							},
+							ProjectionExpression: '#jobId, #nextUpdateAt, #createdAt',
+						},
+					)
+					const items = []
+					for await (const { Items } of results) {
+						items.push(...(Items ?? []))
+					}
+					return items
+				}),
+			)
+		).flat()
+
+		const jobs = pendingJobs.map((item) => unmarshall(item)) as Array<
+			Pick<NrfCloudFOTAJob, 'jobId' | 'nextUpdateAt' | 'createdAt'>
+		>
+
+		console.log(JSON.stringify(jobs))
+
+		track('jobs', MetricUnit.Count, jobs.length ?? 0)
+
 		await Promise.all(
-			['QUEUED', 'IN_PROGRESS', 'DOWNLOADING'].map(async (status) => {
-				const results = paginateQuery(
-					{
-						client: db,
-					},
-					{
+			jobs.map(async (job) => {
+				const res = await db.send(
+					new UpdateItemCommand({
 						TableName: jobStatusTableName,
-						IndexName: jobStatusTableStatusIndexName,
-						KeyConditionExpression:
-							'#status = :status AND #nextUpdateAt < :now',
+						Key: {
+							jobId: {
+								S: job.jobId,
+							},
+						},
+						UpdateExpression: 'SET #nextUpdateAt = :nextUpdateAt',
+						ConditionExpression: '#nextUpdateAt = :currentNextUpdateAt',
 						ExpressionAttributeNames: {
-							'#status': 'status',
-							'#jobId': 'jobId',
 							'#nextUpdateAt': 'nextUpdateAt',
-							'#createdAt': 'createdAt',
 						},
 						ExpressionAttributeValues: {
-							':status': {
-								S: status,
+							':nextUpdateAt': {
+								S: nextUpdateAt(
+									new Date(job.createdAt),
+									parseInt(freshIntervalSeconds, 10),
+								).toISOString(),
 							},
-							':now': {
-								S: new Date().toISOString(),
+							':currentNextUpdateAt': {
+								S: job.nextUpdateAt,
 							},
 						},
-						ProjectionExpression: '#jobId, #nextUpdateAt, #createdAt',
-					},
+						ReturnValues: 'ALL_OLD',
+					}),
 				)
-				const items = []
-				for await (const { Items } of results) {
-					items.push(...(Items ?? []))
-				}
-				return items
+				await sqs.send(
+					new SendMessageCommand({
+						QueueUrl: workQueueUrl,
+						MessageBody: JSON.stringify(unmarshall(res.Attributes ?? {})),
+					}),
+				)
 			}),
 		)
-	).flat()
-
-	const jobs = pendingJobs.map((item) => unmarshall(item)) as Array<
-		Pick<NrfCloudFOTAJob, 'jobId' | 'nextUpdateAt' | 'createdAt'>
-	>
-
-	console.log(JSON.stringify(jobs))
-
-	track('jobs', MetricUnit.Count, jobs.length ?? 0)
-
-	await Promise.all(
-		jobs.map(async (job) => {
-			const res = await db.send(
-				new UpdateItemCommand({
-					TableName: jobStatusTableName,
-					Key: {
-						jobId: {
-							S: job.jobId,
-						},
-					},
-					UpdateExpression: 'SET #nextUpdateAt = :nextUpdateAt',
-					ConditionExpression: '#nextUpdateAt = :currentNextUpdateAt',
-					ExpressionAttributeNames: {
-						'#nextUpdateAt': 'nextUpdateAt',
-					},
-					ExpressionAttributeValues: {
-						':nextUpdateAt': {
-							S: nextUpdateAt(
-								new Date(job.createdAt),
-								parseInt(freshIntervalSeconds, 10),
-							).toISOString(),
-						},
-						':currentNextUpdateAt': {
-							S: job.nextUpdateAt,
-						},
-					},
-					ReturnValues: 'ALL_OLD',
-				}),
-			)
-			await sqs.send(
-				new SendMessageCommand({
-					QueueUrl: workQueueUrl,
-					MessageBody: JSON.stringify(unmarshall(res.Attributes ?? {})),
-				}),
-			)
-		}),
-	)
-}
-
-export const handler = middy().use(requestLogger()).handler(h)
+	})
 
 /**
  * Calculate the next update time based on the age of the job.

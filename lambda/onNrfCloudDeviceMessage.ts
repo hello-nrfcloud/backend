@@ -17,47 +17,48 @@ const log = logger('onNrfCloudDeviceMessage')
 
 const { track, metrics } = metricsForComponent('onNrfCloudDeviceMessage')
 
-const h = async (event: {
-	message: Record<string, any>
-	deviceId: string
-	timestamp: number
-}): Promise<void> => {
-	const { message, deviceId } = event
-
-	const converted = converter(message)
-	if (converted === null) {
-		console.error(`Failed to convert message`, JSON.stringify(message))
-		track('deviceMessage:error', MetricUnit.Count, 1)
-		return
-	}
-	track('deviceMessage:success', MetricUnit.Count, 1)
-
-	const reported = objectsToShadow([converted])
-
-	if (Object.keys(reported).length === 0) {
-		console.error(`Failed to convert object to shadow!`)
-		track('deviceMessage:error', MetricUnit.Count, 1)
-		return
-	}
-
-	const state = {
-		reported,
-	}
-
-	log.debug('state', state)
-
-	await iot.send(
-		new UpdateThingShadowCommand({
-			thingName: deviceId,
-			shadowName: 'lwm2m',
-			payload: JSON.stringify({
-				state,
-			}),
-		}),
-	)
-}
-
-export const handler = middy()
+export const handler = middy<
+	{
+		message: Record<string, any>
+		deviceId: string
+		timestamp: number
+	},
+	void
+>()
 	.use(requestLogger())
 	.use(logMetrics(metrics))
-	.handler(h)
+	.handler(async (event) => {
+		const { message, deviceId } = event
+
+		const converted = converter(message)
+		if (converted === null) {
+			console.error(`Failed to convert message`, JSON.stringify(message))
+			track('deviceMessage:error', MetricUnit.Count, 1)
+			return
+		}
+		track('deviceMessage:success', MetricUnit.Count, 1)
+
+		const reported = objectsToShadow([converted])
+
+		if (Object.keys(reported).length === 0) {
+			console.error(`Failed to convert object to shadow!`)
+			track('deviceMessage:error', MetricUnit.Count, 1)
+			return
+		}
+
+		const state = {
+			reported,
+		}
+
+		log.debug('state', state)
+
+		await iot.send(
+			new UpdateThingShadowCommand({
+				thingName: deviceId,
+				shadowName: 'lwm2m',
+				payload: JSON.stringify({
+					state,
+				}),
+			}),
+		)
+	})

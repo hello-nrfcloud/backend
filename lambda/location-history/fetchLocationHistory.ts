@@ -55,99 +55,6 @@ for (const [account, { apiEndpoint, apiKey }] of Object.entries(
 
 const updateShadow = updateLwM2MShadow(iotData)
 
-const h = async (event: SQSEvent): Promise<void> => {
-	for (const record of event.Records) {
-		const { deviceId, from, to, account } = JSON.parse(record.body) as Record<
-			string,
-			string
-		>
-
-		if (
-			deviceId === undefined ||
-			from === undefined ||
-			to === undefined ||
-			account === undefined
-		) {
-			log.error('Missing required attributes')
-			track('error', MetricUnit.Count, 1)
-			continue
-		}
-		const fetcher = locationFetcher.get(account)
-		if (fetcher === undefined) {
-			log.error(`No fetcher defined for ${account}!`)
-			track('error', MetricUnit.Count, 1)
-			continue
-		}
-		const locations = await paginateHistory(fetcher, deviceId, from, to)
-		track('numLocations', MetricUnit.Count, locations.length)
-
-		// track locations per service
-		const countPerSource = locations.reduce<Record<string, number>>(
-			(acc, { serviceType }) => ({
-				...acc,
-				[serviceType]: (acc[serviceType] ?? 0) + 1,
-			}),
-			{},
-		)
-		for (const [source, count] of Object.entries(countPerSource)) {
-			track(`numLocations:${source}`, MetricUnit.Count, count)
-		}
-		log.debug('locations', locations)
-
-		// Update the shadow with the latest
-		if (locations[0])
-			await updateShadow(deviceId, [toGeoLocation(locations[0])])
-
-		// And put all in the table
-		if (locations.length > 0) {
-			await Promise.all(
-				batchArray(locations, 25).map(async (locations) => {
-					try {
-						await db.send(
-							new BatchWriteItemCommand({
-								RequestItems: {
-									[tableName]: locations.map((location) => ({
-										PutRequest: {
-											Item: marshall(
-												{
-													id: location.id,
-													deviceId,
-													timestamp: location.insertedAt,
-													lat: parseFloat(location.lat),
-													lon: parseFloat(location.lon),
-													source: location.serviceType,
-													uncertainty: parseFloat(location.uncertainty),
-													ttl:
-														Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
-												},
-												{ removeUndefinedValues: true },
-											),
-										},
-									})),
-								},
-							}),
-						)
-					} catch (err) {
-						console.error(err)
-						console.error(
-							`Failed to write records for device`,
-							deviceId,
-							(err as Error).message,
-						)
-					}
-				}),
-			)
-		}
-
-		// Put updates on the event bus
-		await Promise.all(
-			locations.map(async (location) =>
-				notifyWebsocket(deviceId, toGeoLocation(location)),
-			),
-		)
-	}
-}
-
 const paginateHistory = async (
 	client: ReturnType<typeof getLocationHistory>,
 	deviceId: string,
@@ -179,7 +86,98 @@ const paginateHistory = async (
 	return locations
 }
 
-export const handler = middy()
+export const handler = middy<SQSEvent>()
 	.use(requestLogger())
 	.use(logMetrics(metrics))
-	.handler(h)
+	.handler(async (event): Promise<void> => {
+		for (const record of event.Records) {
+			const { deviceId, from, to, account } = JSON.parse(record.body) as Record<
+				string,
+				string
+			>
+
+			if (
+				deviceId === undefined ||
+				from === undefined ||
+				to === undefined ||
+				account === undefined
+			) {
+				log.error('Missing required attributes')
+				track('error', MetricUnit.Count, 1)
+				continue
+			}
+			const fetcher = locationFetcher.get(account)
+			if (fetcher === undefined) {
+				log.error(`No fetcher defined for ${account}!`)
+				track('error', MetricUnit.Count, 1)
+				continue
+			}
+			const locations = await paginateHistory(fetcher, deviceId, from, to)
+			track('numLocations', MetricUnit.Count, locations.length)
+
+			// track locations per service
+			const countPerSource = locations.reduce<Record<string, number>>(
+				(acc, { serviceType }) => ({
+					...acc,
+					[serviceType]: (acc[serviceType] ?? 0) + 1,
+				}),
+				{},
+			)
+			for (const [source, count] of Object.entries(countPerSource)) {
+				track(`numLocations:${source}`, MetricUnit.Count, count)
+			}
+			log.debug('locations', locations)
+
+			// Update the shadow with the latest
+			if (locations[0])
+				await updateShadow(deviceId, [toGeoLocation(locations[0])])
+
+			// And put all in the table
+			if (locations.length > 0) {
+				await Promise.all(
+					batchArray(locations, 25).map(async (locations) => {
+						try {
+							await db.send(
+								new BatchWriteItemCommand({
+									RequestItems: {
+										[tableName]: locations.map((location) => ({
+											PutRequest: {
+												Item: marshall(
+													{
+														id: location.id,
+														deviceId,
+														timestamp: location.insertedAt,
+														lat: parseFloat(location.lat),
+														lon: parseFloat(location.lon),
+														source: location.serviceType,
+														uncertainty: parseFloat(location.uncertainty),
+														ttl:
+															Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30,
+													},
+													{ removeUndefinedValues: true },
+												),
+											},
+										})),
+									},
+								}),
+							)
+						} catch (err) {
+							console.error(err)
+							console.error(
+								`Failed to write records for device`,
+								deviceId,
+								(err as Error).message,
+							)
+						}
+					}),
+				)
+			}
+
+			// Put updates on the event bus
+			await Promise.all(
+				locations.map(async (location) =>
+					notifyWebsocket(deviceId, toGeoLocation(location)),
+				),
+			)
+		}
+	})

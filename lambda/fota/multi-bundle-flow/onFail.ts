@@ -15,8 +15,8 @@ const { jobTableName } = fromEnv({
 const db = new DynamoDBClient({})
 const f = fail(db, jobTableName)
 
-const h = async (
-	event: EventBridgeEvent<
+export const handler = middy<
+	EventBridgeEvent<
 		'Step Functions Execution Status Change',
 		{
 			executionArn: string // e.g. 'arn:aws:states:us-east-2:123456789012:execution:state-machine-name:execution-name'
@@ -34,19 +34,24 @@ const h = async (
 				included: true
 			}
 		}
-	>,
-): Promise<void> => {
-	const input = tryAsJSON(event.detail.input) ?? {}
-	console.log(`Marking job as failed:`, event.detail.name, event.detail.status)
+	>
+>()
+	.use(requestLogger())
+	.handler(async (event): Promise<void> => {
+		const input = tryAsJSON(event.detail.input) ?? {}
+		console.log(
+			`Marking job as failed:`,
+			event.detail.name,
+			event.detail.status,
+		)
 
-	await f(
-		input.job.pk,
-		event.detail.name,
-		statusToReason(event.detail.status),
-		new Date(event.detail.stopDate),
-	)
-}
-export const handler = middy().use(requestLogger()).handler(h)
+		await f(
+			input.job.pk,
+			event.detail.name,
+			statusToReason(event.detail.status),
+			new Date(event.detail.stopDate),
+		)
+	})
 
 const statusToReason = (status: string) => {
 	switch (status) {

@@ -28,70 +28,72 @@ const db = new DynamoDBClient({})
 
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
-const h = async (event: DynamoDBStreamEvent): Promise<void> => {
-	for (const record of event.Records) {
-		const newImage = record.dynamodb?.NewImage
-		if (newImage === undefined) {
-			continue
-		}
-		const job = unmarshall(
-			newImage as Record<string, AttributeValue>,
-		) as PersistedJob
-
-		const { Items: jobs } = await db.send(
-			new QueryCommand({
-				TableName: jobStatusTableName,
-				IndexName: parentJobIdIndexName,
-				KeyConditionExpression: 'parentJobId = :parentJobId	',
-				ExpressionAttributeValues: {
-					':parentJobId': {
-						S: job.pk,
-					},
-				},
-			}),
-		)
-
-		if (jobs?.length === 0) {
-			console.debug(`No nRF Cloud jobs found for job ${job.pk}`)
-			continue
-		}
-
-		const { apiKey, apiEndpoint } =
-			(await allNRFCloudAPIConfigs)[job.account] ?? {}
-		if (apiKey === undefined || apiEndpoint === undefined)
-			throw new Error(`nRF Cloud API key for ${job.account} is not configured.`)
-
-		for (const job of jobs ?? []) {
-			const nrfCloudJob = unmarshall(job) as Pick<
-				NrfCloudFOTAJob,
-				'jobId' | 'status'
-			>
-			console.log(JSON.stringify(nrfCloudJob))
-			if (
-				![
-					FOTAJobStatus.DOWNLOADING,
-					FOTAJobStatus.IN_PROGRESS,
-					FOTAJobStatus.QUEUED,
-				].includes(nrfCloudJob.status)
-			) {
-				console.debug(
-					`Job ${nrfCloudJob.jobId} is in status ${nrfCloudJob.status}, no action needed.`,
-				)
+export const handler = middy<DynamoDBStreamEvent>()
+	.use(requestLogger())
+	.handler(async (event): Promise<void> => {
+		for (const record of event.Records) {
+			const newImage = record.dynamodb?.NewImage
+			if (newImage === undefined) {
 				continue
 			}
-			const cancelJob = cancelFOTAJob({
-				endpoint: apiEndpoint,
-				apiKey,
-			})
+			const job = unmarshall(
+				newImage as Record<string, AttributeValue>,
+			) as PersistedJob
 
-			const res = await cancelJob(nrfCloudJob.jobId)
-			if (!('success' in res)) {
-				console.error(`Failed to cancel job: ${res.error.message}.`)
-			} else {
-				console.log(`Cancelled job ${nrfCloudJob.jobId}.`)
+			const { Items: jobs } = await db.send(
+				new QueryCommand({
+					TableName: jobStatusTableName,
+					IndexName: parentJobIdIndexName,
+					KeyConditionExpression: 'parentJobId = :parentJobId	',
+					ExpressionAttributeValues: {
+						':parentJobId': {
+							S: job.pk,
+						},
+					},
+				}),
+			)
+
+			if (jobs?.length === 0) {
+				console.debug(`No nRF Cloud jobs found for job ${job.pk}`)
+				continue
+			}
+
+			const { apiKey, apiEndpoint } =
+				(await allNRFCloudAPIConfigs)[job.account] ?? {}
+			if (apiKey === undefined || apiEndpoint === undefined)
+				throw new Error(
+					`nRF Cloud API key for ${job.account} is not configured.`,
+				)
+
+			for (const job of jobs ?? []) {
+				const nrfCloudJob = unmarshall(job) as Pick<
+					NrfCloudFOTAJob,
+					'jobId' | 'status'
+				>
+				console.log(JSON.stringify(nrfCloudJob))
+				if (
+					![
+						FOTAJobStatus.DOWNLOADING,
+						FOTAJobStatus.IN_PROGRESS,
+						FOTAJobStatus.QUEUED,
+					].includes(nrfCloudJob.status)
+				) {
+					console.debug(
+						`Job ${nrfCloudJob.jobId} is in status ${nrfCloudJob.status}, no action needed.`,
+					)
+					continue
+				}
+				const cancelJob = cancelFOTAJob({
+					endpoint: apiEndpoint,
+					apiKey,
+				})
+
+				const res = await cancelJob(nrfCloudJob.jobId)
+				if (!('success' in res)) {
+					console.error(`Failed to cancel job: ${res.error.message}.`)
+				} else {
+					console.log(`Cancelled job ${nrfCloudJob.jobId}.`)
+				}
 			}
 		}
-	}
-}
-
-export const handler = middy().use(requestLogger()).handler(h)
+	})
