@@ -6,10 +6,7 @@ import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionH
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { logger } from '@hello.nrfcloud.com/lambda-helpers/logger'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import {
-	ProblemDetailError,
-	problemResponse,
-} from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
+import { problemResponse } from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	validateInput,
@@ -25,6 +22,7 @@ import {
 	Context,
 	HttpStatusCode,
 	InternalError,
+	ProblemDetailError,
 	deviceId,
 	type FOTABundle,
 	type FOTABundles,

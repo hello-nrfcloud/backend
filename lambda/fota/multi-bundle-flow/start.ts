@@ -10,10 +10,7 @@ import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
 import { metricsForComponent } from '@hello.nrfcloud.com/lambda-helpers/metrics'
-import {
-	ProblemDetailError,
-	problemResponse,
-} from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
+import { problemResponse } from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	validateInput,
@@ -26,6 +23,7 @@ import {
 	deviceId,
 	FOTAJobStatus,
 	HttpStatusCode,
+	ProblemDetailError,
 	UpgradePath,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'

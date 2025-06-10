@@ -10,9 +10,9 @@ import type { DynamoDBStreamEvent } from 'aws-lambda'
 
 const iotData = new IoTDataPlaneClient({})
 
-export const handler = middy()
+export const handler = middy<DynamoDBStreamEvent, void>()
 	.use(requestLogger())
-	.handler(async (event: DynamoDBStreamEvent): Promise<void> => {
+	.handler(async (event) => {
 		for (const record of event.Records) {
 			const newImage = record.dynamodb?.NewImage
 			const oldImage = record.dynamodb?.OldImage

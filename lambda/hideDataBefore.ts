@@ -3,10 +3,7 @@ import { fromEnv } from '@bifravst/from-env'
 import { aResponse } from '@hello.nrfcloud.com/lambda-helpers/aResponse'
 import { addVersionHeader } from '@hello.nrfcloud.com/lambda-helpers/addVersionHeader'
 import { corsOPTIONS } from '@hello.nrfcloud.com/lambda-helpers/corsOPTIONS'
-import {
-	ProblemDetailError,
-	problemResponse,
-} from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
+import { problemResponse } from '@hello.nrfcloud.com/lambda-helpers/problemResponse'
 import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import {
 	validateInput,
@@ -16,6 +13,7 @@ import { fingerprintRegExp } from '@hello.nrfcloud.com/proto/fingerprint'
 import {
 	BadRequestError,
 	HttpStatusCode,
+	ProblemDetailError,
 	deviceId,
 } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'

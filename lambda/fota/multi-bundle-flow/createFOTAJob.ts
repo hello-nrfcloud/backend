@@ -19,40 +19,46 @@ const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 const { track } = metricsForComponent('deviceFOTA')
 const trackFetch = loggingFetch({ track, log: logger('deviceFOTA') })
 
-const h = async (event: {
+export const handler = middy<{
 	account: string
 	deviceId: string
 	nextBundle: {
 		bundleId: string
 	}
-}): Promise<{
-	jobId: string
-}> => {
-	const { apiKey, apiEndpoint } =
-		(await allNRFCloudAPIConfigs)[event.account] ?? {}
-	if (apiKey === undefined || apiEndpoint === undefined)
-		throw new Error(`nRF Cloud API key for ${event.account} is not configured.`)
+}>()
+	.use(requestLogger())
+	.handler(
+		async (
+			event,
+		): Promise<{
+			jobId: string
+		}> => {
+			const { apiKey, apiEndpoint } =
+				(await allNRFCloudAPIConfigs)[event.account] ?? {}
+			if (apiKey === undefined || apiEndpoint === undefined)
+				throw new Error(
+					`nRF Cloud API key for ${event.account} is not configured.`,
+				)
 
-	const createJob = createFOTAJob(
-		{
-			endpoint: apiEndpoint,
-			apiKey,
+			const createJob = createFOTAJob(
+				{
+					endpoint: apiEndpoint,
+					apiKey,
+				},
+				trackFetch,
+			)
+
+			const res = await createJob({
+				deviceId: event.deviceId,
+				bundleId: event.nextBundle.bundleId,
+			})
+
+			if (!('result' in res)) {
+				throw new Error(`Failed to create job: ${res.error.message}.`)
+			}
+
+			return {
+				jobId: res.result.jobId,
+			}
 		},
-		trackFetch,
 	)
-
-	const res = await createJob({
-		deviceId: event.deviceId,
-		bundleId: event.nextBundle.bundleId,
-	})
-
-	if (!('result' in res)) {
-		throw new Error(`Failed to create job: ${res.error.message}.`)
-	}
-
-	return {
-		jobId: res.result.jobId,
-	}
-}
-
-export const handler = middy().use(requestLogger()).handler(h)

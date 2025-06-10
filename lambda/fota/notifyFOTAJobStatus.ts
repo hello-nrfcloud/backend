@@ -16,34 +16,34 @@ const { EventBusName } = fromEnv({
 
 const eventBus = new EventBridge({})
 
-const h = async (event: DynamoDBStreamEvent): Promise<void> => {
-	for (const record of event.Records) {
-		const newImage = record.dynamodb?.NewImage
-		if (newImage === undefined) {
-			continue
+export const handler = middy<DynamoDBStreamEvent, void>()
+	.use(requestLogger())
+	.handler(async (event) => {
+		for (const record of event.Records) {
+			const newImage = record.dynamodb?.NewImage
+			if (newImage === undefined) {
+				continue
+			}
+			const job = unmarshall(
+				newImage as Record<string, AttributeValue>,
+			) as PersistedJob
+
+			const message = toJob(job)
+
+			console.debug('websocket message', JSON.stringify({ payload: message }))
+
+			await eventBus.putEvents({
+				Entries: [
+					{
+						EventBusName,
+						Source: 'hello.ws',
+						DetailType: Context.lwm2mObjectUpdate.toString(),
+						Detail: JSON.stringify(<WebsocketPayload>{
+							deviceId: job.deviceId,
+							message,
+						}),
+					},
+				],
+			})
 		}
-		const job = unmarshall(
-			newImage as Record<string, AttributeValue>,
-		) as PersistedJob
-
-		const message = toJob(job)
-
-		console.debug('websocket message', JSON.stringify({ payload: message }))
-
-		await eventBus.putEvents({
-			Entries: [
-				{
-					EventBusName,
-					Source: 'hello.ws',
-					DetailType: Context.lwm2mObjectUpdate.toString(),
-					Detail: JSON.stringify(<WebsocketPayload>{
-						deviceId: job.deviceId,
-						message,
-					}),
-				},
-			],
-		})
-	}
-}
-
-export const handler = middy().use(requestLogger()).handler(h)
+	})

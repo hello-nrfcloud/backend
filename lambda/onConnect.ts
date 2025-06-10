@@ -36,103 +36,106 @@ const sendShadow = sendShadowToConnection({
 })
 const getShadow = getLwM2MShadow(iotData)
 
-const h = async (
-	event: AuthorizedEvent,
-): Promise<APIGatewayProxyStructuredResultV2> => {
-	const context = event.requestContext.authorizer
-	const { connectionId } = event.requestContext
-	log.debug('ws:connect', connectionId)
-	const { deviceId, model } = context
-	if ('account' in context) {
-		const { account } = context
-		await repo.add({
-			deviceId,
-			model,
-			account,
-			connectionId,
-			ttl: Math.round(Date.now() / 1000) + 5 * 60,
-		})
-	}
-
-	// Mask lastSeen if it is before the hideDataBefore date
-	let lastSeen = (await getLastSeenOrNull(deviceId))?.toISOString() ?? undefined
-	if (
-		lastSeen !== undefined &&
-		'hideDataBefore' in context &&
-		context.hideDataBefore !== undefined
-	) {
-		const hideDataBefore = new Date(context.hideDataBefore)
-		if (hideDataBefore > new Date(lastSeen)) {
-			lastSeen = undefined
+export const handler = middy<
+	AuthorizedEvent,
+	APIGatewayProxyStructuredResultV2
+>()
+	.use(requestLogger())
+	.handler(async (event) => {
+		const context = event.requestContext.authorizer
+		const { connectionId } = event.requestContext
+		log.debug('ws:connect', connectionId)
+		const { deviceId, model } = context
+		if ('account' in context) {
+			const { account } = context
+			await repo.add({
+				deviceId,
+				model,
+				account,
+				connectionId,
+				ttl: Math.round(Date.now() / 1000) + 5 * 60,
+			})
 		}
-	}
 
-	const message: Static<typeof DeviceIdentity> = {
-		'@context': Context.deviceIdentity.toString(),
-		model,
-		id: deviceId,
-		lastSeen,
-	}
-	if ('hideDataBefore' in context)
-		message.hideDataBefore = context.hideDataBefore
+		// Mask lastSeen if it is before the hideDataBefore date
+		let lastSeen =
+			(await getLastSeenOrNull(deviceId))?.toISOString() ?? undefined
+		if (
+			lastSeen !== undefined &&
+			'hideDataBefore' in context &&
+			context.hideDataBefore !== undefined
+		) {
+			const hideDataBefore = new Date(context.hideDataBefore)
+			if (hideDataBefore > new Date(lastSeen)) {
+				lastSeen = undefined
+			}
+		}
 
-	log.debug('websocket message', { message })
-	await eventBus.putEvents({
-		Entries: [
-			{
-				EventBusName,
-				Source: 'hello.ws',
-				DetailType: Context.deviceIdentity.toString(),
-				Detail: JSON.stringify(<WebsocketPayload>{
-					deviceId,
-					connectionId,
-					message,
-				}),
-			},
-		],
-	})
+		const message: Static<typeof DeviceIdentity> = {
+			'@context': Context.deviceIdentity.toString(),
+			model,
+			id: deviceId,
+			lastSeen,
+		}
+		if ('hideDataBefore' in context)
+			message.hideDataBefore = context.hideDataBefore
 
-	// Send the LwM2M shadow
-	const maybeShadow = await getShadow({
-		id: deviceId,
-		hideDataBefore:
-			'hideDataBefore' in context && typeof context.hideDataBefore === 'string'
-				? new Date(context.hideDataBefore)
-				: undefined,
-	})
-	if ('error' in maybeShadow) {
-		log.debug('failed to fetch shadow', {
-			deviceId,
-			error: maybeShadow.error.message,
+		log.debug('websocket message', { message })
+		await eventBus.putEvents({
+			Entries: [
+				{
+					EventBusName,
+					Source: 'hello.ws',
+					DetailType: Context.deviceIdentity.toString(),
+					Detail: JSON.stringify(<WebsocketPayload>{
+						deviceId,
+						connectionId,
+						message,
+					}),
+				},
+			],
 		})
-		// Send empty shadow in case it was hidden
-		if ('hideDataBefore' in context) {
+
+		// Send the LwM2M shadow
+		const maybeShadow = await getShadow({
+			id: deviceId,
+			hideDataBefore:
+				'hideDataBefore' in context &&
+				typeof context.hideDataBefore === 'string'
+					? new Date(context.hideDataBefore)
+					: undefined,
+		})
+		if ('error' in maybeShadow) {
+			log.debug('failed to fetch shadow', {
+				deviceId,
+				error: maybeShadow.error.message,
+			})
+			// Send empty shadow in case it was hidden
+			if ('hideDataBefore' in context) {
+				await sendShadow({
+					deviceId,
+					model,
+					shadow: {
+						desired: [],
+						reported: [],
+					},
+					connectionId,
+				})
+			}
+		} else {
+			log.debug('sending shadow', {
+				deviceId,
+				connectionId,
+			})
 			await sendShadow({
 				deviceId,
 				model,
-				shadow: {
-					desired: [],
-					reported: [],
-				},
+				shadow: maybeShadow.shadow,
 				connectionId,
 			})
 		}
-	} else {
-		log.debug('sending shadow', {
-			deviceId,
-			connectionId,
-		})
-		await sendShadow({
-			deviceId,
-			model,
-			shadow: maybeShadow.shadow,
-			connectionId,
-		})
-	}
 
-	return {
-		statusCode: 200,
-	}
-}
-
-export const handler = middy().use(requestLogger()).handler(h)
+		return {
+			statusCode: 200,
+		}
+	})

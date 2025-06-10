@@ -10,16 +10,17 @@ const iotData = new IoTDataPlaneClient({})
 
 const d = getDeviceFirmwareDetails(iotData)
 
-const h = async (event: {
+export const handler = middy<{
 	deviceId: string
-}): Promise<DeviceFirmwareDetails> => {
-	const maybeFirmwareDetails = await d(event.deviceId, (...args) =>
-		console.debug(
-			`[FOTA:${event.deviceId}]`,
-			...args.map((a) => JSON.stringify(a)),
-		),
-	)
-	if ('error' in maybeFirmwareDetails) throw maybeFirmwareDetails.error
-	return maybeFirmwareDetails.details
-}
-export const handler = middy().use(requestLogger()).handler(h)
+}>()
+	.use(requestLogger())
+	.handler(async (event): Promise<DeviceFirmwareDetails> => {
+		const maybeFirmwareDetails = await d(event.deviceId, (...args) =>
+			console.debug(
+				`[FOTA:${event.deviceId}]`,
+				...args.map((a) => JSON.stringify(a)),
+			),
+		)
+		if ('error' in maybeFirmwareDetails) throw maybeFirmwareDetails.error
+		return maybeFirmwareDetails.details
+	})

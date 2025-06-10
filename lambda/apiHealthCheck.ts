@@ -11,15 +11,13 @@ const { version } = fromEnv({
 	version: 'VERSION',
 })(process.env)
 
-const h = async (): Promise<APIGatewayProxyResultV2> => {
-	return aResponse(200, {
-		'@context': Context.apiHealth,
-		version,
-	})
-}
-
-export const handler = middy()
+export const handler = middy<void, APIGatewayProxyResultV2>()
 	.use(corsOPTIONS('POST'))
 	.use(addVersionHeader(version))
 	.use(requestLogger())
-	.handler(h)
+	.handler(async () =>
+		aResponse(200, {
+			'@context': Context.apiHealth,
+			version,
+		}),
+	)

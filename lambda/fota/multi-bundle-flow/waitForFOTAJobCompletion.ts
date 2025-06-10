@@ -16,51 +16,53 @@ import type { DynamoDBStreamEvent } from 'aws-lambda'
 
 const sfn = new SFNClient({})
 
-const h = async (event: DynamoDBStreamEvent): Promise<void> => {
-	for (const record of event.Records) {
-		const newImage = record.dynamodb?.NewImage
-		if (newImage === undefined) {
-			continue
-		}
-		const job = unmarshall(
-			newImage as Record<string, AttributeValue>,
-		) as Static<typeof FOTAJobType> & {
-			waitForFOTAJobCompletionTaskToken: string
-		}
-
-		try {
-			switch (job.status) {
-				case FOTAJobStatus.COMPLETED:
-				case FOTAJobStatus.SUCCEEDED:
-					await sfn.send(
-						new SendTaskSuccessCommand({
-							taskToken: job.waitForFOTAJobCompletionTaskToken,
-							output: JSON.stringify(job),
-						}),
-					)
-					break
-				case FOTAJobStatus.FAILED:
-				case FOTAJobStatus.CANCELLED:
-				case FOTAJobStatus.TIMED_OUT:
-				case FOTAJobStatus.REJECTED:
-					await sfn.send(
-						new SendTaskFailureCommand({
-							taskToken: job.waitForFOTAJobCompletionTaskToken,
-							error: 'JobFailed',
-							cause: `Job ${job.jobId} failed with status ${job.status}`,
-						}),
-					)
-					break
-				default:
-					console.debug(`Job ${job.jobId} is still in progress: ${job.status}`)
+export const handler = middy<DynamoDBStreamEvent>()
+	.use(requestLogger())
+	.handler(async (event): Promise<void> => {
+		for (const record of event.Records) {
+			const newImage = record.dynamodb?.NewImage
+			if (newImage === undefined) {
+				continue
 			}
-		} catch (e) {
-			if (!(e instanceof Error)) throw e
-			if (e.name === 'TaskDoesNotExist' || e.name === 'TaskTimedOut') {
-				console.debug(`Could not update task: ${e.message}!`)
+			const job = unmarshall(
+				newImage as Record<string, AttributeValue>,
+			) as Static<typeof FOTAJobType> & {
+				waitForFOTAJobCompletionTaskToken: string
+			}
+
+			try {
+				switch (job.status) {
+					case FOTAJobStatus.COMPLETED:
+					case FOTAJobStatus.SUCCEEDED:
+						await sfn.send(
+							new SendTaskSuccessCommand({
+								taskToken: job.waitForFOTAJobCompletionTaskToken,
+								output: JSON.stringify(job),
+							}),
+						)
+						break
+					case FOTAJobStatus.FAILED:
+					case FOTAJobStatus.CANCELLED:
+					case FOTAJobStatus.TIMED_OUT:
+					case FOTAJobStatus.REJECTED:
+						await sfn.send(
+							new SendTaskFailureCommand({
+								taskToken: job.waitForFOTAJobCompletionTaskToken,
+								error: 'JobFailed',
+								cause: `Job ${job.jobId} failed with status ${job.status}`,
+							}),
+						)
+						break
+					default:
+						console.debug(
+							`Job ${job.jobId} is still in progress: ${job.status}`,
+						)
+				}
+			} catch (e) {
+				if (!(e instanceof Error)) throw e
+				if (e.name === 'TaskDoesNotExist' || e.name === 'TaskTimedOut') {
+					console.debug(`Could not update task: ${e.message}!`)
+				}
 			}
 		}
-	}
-}
-
-export const handler = middy().use(requestLogger()).handler(h)
+	})

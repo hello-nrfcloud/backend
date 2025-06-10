@@ -5,32 +5,37 @@ import type { Static } from '@sinclair/typebox'
 import { type DeviceFirmwareDetails } from '../getDeviceFirmwareDetails.ts'
 import { getNextUpgrade } from '../getNextUpgrade.ts'
 
-const h = async (event: {
+export const handler = middy<{
 	deviceFirmwareDetails: DeviceFirmwareDetails
 	usedVersions?: Record<string, string>
 	upgradePath: Static<typeof FOTAJob>['upgradePath']
-}): Promise<{
-	bundleId: string | null
-}> => {
-	const maybeBundleId = getNextUpgrade(
-		event.upgradePath,
-		event.deviceFirmwareDetails,
+}>()
+	.use(requestLogger())
+	.handler(
+		async (
+			event,
+		): Promise<{
+			bundleId: string | null
+		}> => {
+			const maybeBundleId = getNextUpgrade(
+				event.upgradePath,
+				event.deviceFirmwareDetails,
+			)
+			if ('error' in maybeBundleId) {
+				throw maybeBundleId.error
+			}
+			const { bundleId, reportedVersion } = maybeBundleId.upgrade
+			if (
+				bundleId === null ||
+				(new Set(Object.keys(event.usedVersions ?? {})).has(reportedVersion) ??
+					false)
+			) {
+				return {
+					bundleId: null,
+				}
+			}
+			return {
+				bundleId,
+			}
+		},
 	)
-	if ('error' in maybeBundleId) {
-		throw maybeBundleId.error
-	}
-	const { bundleId, reportedVersion } = maybeBundleId.upgrade
-	if (
-		bundleId === null ||
-		(new Set(Object.keys(event.usedVersions ?? {})).has(reportedVersion) ??
-			false)
-	) {
-		return {
-			bundleId: null,
-		}
-	}
-	return {
-		bundleId,
-	}
-}
-export const handler = middy().use(requestLogger()).handler(h)

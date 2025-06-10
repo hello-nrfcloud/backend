@@ -10,30 +10,29 @@ const { jobTableName } = fromEnv({
 
 const db = new DynamoDBClient({})
 
-export const handler = middy()
+export const handler = middy<{
+	state: {
+		job: {
+			/**
+			 * @example "oob-350006667318123#app"
+			 */
+			pk: string
+		}
+	}
+	taskToken: string
+}>()
 	.use(requestLogger())
-	.handler(
-		async (e: {
-			state: {
-				job: {
-					/**
-					 * @example "oob-350006667318123#app"
-					 */
-					pk: string
-				}
-			}
-			taskToken: string
-		}) =>
-			writeTaskToken({
-				db,
-				TableName: jobTableName,
-				tokenName: 'waitForUpdateAppliedTaskToken',
-			})({
-				Key: {
-					pk: {
-						S: e.state.job.pk,
-					},
+	.handler(async (e) =>
+		writeTaskToken({
+			db,
+			TableName: jobTableName,
+			tokenName: 'waitForUpdateAppliedTaskToken',
+		})({
+			Key: {
+				pk: {
+					S: e.state.job.pk,
 				},
-				taskToken: e.taskToken,
-			}),
+			},
+			taskToken: e.taskToken,
+		}),
 	)
