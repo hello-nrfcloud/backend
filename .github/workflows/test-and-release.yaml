@@ -18,6 +18,10 @@ env:
   COAP_SIMULATOR_DOWNLOAD_URL: ${{ secrets.COAP_SIMULATOR_DOWNLOAD_URL }}
   REGISTRY: ghcr.io
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit-tests:
     runs-on: ubuntu-24.04
