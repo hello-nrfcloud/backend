@@ -72,7 +72,7 @@
     "aws-cdk": "2.1018.0",
     "aws-cdk-lib": "2.200.1",
     "cbor-x": "1.6.0",
-    "cdk": "2.1018.0",
+    "cdk": "2.1018.1",
     "cfn-response": "1.0.1",
     "chalk": "5.4.1",
     "check-node-version": "4.2.1",
