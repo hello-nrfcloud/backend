@@ -82,7 +82,7 @@
     "glob": "11.0.2",
     "husky": "9.1.7",
     "jsonata": "2.0.6",
-    "lint-staged": "16.1.0",
+    "lint-staged": "16.1.2",
     "nock": "14.0.5",
     "semver": "7.7.2",
     "tsmatchers": "5.0.2",
