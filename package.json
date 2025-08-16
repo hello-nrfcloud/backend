@@ -74,7 +74,7 @@
     "cbor-x": "1.6.0",
     "cdk": "2.1025.0",
     "cfn-response": "1.0.1",
-    "chalk": "5.4.1",
+    "chalk": "5.5.0",
     "check-node-version": "4.2.1",
     "commander": "14.0.0",
     "commitlint": "19.8.1",
