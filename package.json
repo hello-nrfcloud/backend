@@ -41,7 +41,7 @@
     "@aws-sdk/client-route-53": "3.873.0",
     "@aws-sdk/client-ses": "3.873.0",
     "@aws-sdk/client-sfn": "3.873.0",
-    "@aws-sdk/client-sqs": "3.873.0",
+    "@aws-sdk/client-sqs": "3.875.0",
     "@aws-sdk/client-ssm": "3.873.0",
     "@aws-sdk/client-sts": "3.873.0",
     "@aws-sdk/client-timestream-query": "3.873.0",
