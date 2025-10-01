@@ -50,7 +50,7 @@ jobs:
 
     steps:
       - name: Log in to the repo's container registry
-        uses: docker/login-action@327cd5a69de6c009b9ce71bce8395f28e651bf99
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -82,7 +82,7 @@ jobs:
           echo "repositoryUri=$REPO_URI" >> $GITHUB_OUTPUT
 
       - name: Log in to the repo's container registry
-        uses: docker/login-action@327cd5a69de6c009b9ce71bce8395f28e651bf99
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
         with:
           registry: ${{ steps.repositoryUri.outputs.repositoryUri }}
           username: AWS
