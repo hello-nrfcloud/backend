@@ -70,7 +70,7 @@
     "@types/yauzl": "2.10.3",
     "@types/yazl": "3.3.0",
     "aws-cdk": "2.1030.0",
-    "aws-cdk-lib": "2.219.0",
+    "aws-cdk-lib": "2.220.0",
     "cbor-x": "1.6.0",
     "cdk": "2.1030.0",
     "cfn-response": "1.0.1",
