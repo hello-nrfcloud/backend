@@ -129,7 +129,7 @@
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
     "@hello.nrfcloud.com/lambda-helpers": "4.0.11",
     "@hello.nrfcloud.com/nrfcloud-api-helpers": "6.0.375",
-    "@hello.nrfcloud.com/proto": "15.4.67",
+    "@hello.nrfcloud.com/proto": "15.4.69",
     "@hello.nrfcloud.com/proto-map": "16.5.19",
     "@middy/core": "6.4.5",
     "@middy/input-output-logger": "6.4.5",
