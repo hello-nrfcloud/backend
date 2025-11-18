@@ -79,7 +79,7 @@
     "commander": "14.0.2",
     "commitlint": "20.1.0",
     "constructs": "10.4.2",
-    "glob": "11.0.3",
+    "glob": "11.1.0",
     "husky": "9.1.7",
     "jsonata": "2.1.0",
     "lint-staged": "16.2.6",
