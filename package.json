@@ -86,7 +86,7 @@
     "nock": "14.0.10",
     "semver": "7.7.3",
     "tsmatchers": "5.0.2",
-    "yauzl": "3.2.0",
+    "yauzl": "3.2.1",
     "yazl": "3.3.1"
   },
   "lint-staged": {
