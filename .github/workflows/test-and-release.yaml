@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - uses: actions/setup-node@v5
         with:
@@ -63,7 +63,7 @@ jobs:
       requestsTableName: ${{ steps.create.outputs.requestsTableName }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - uses: actions/setup-node@v5
         with:
@@ -125,7 +125,7 @@ jobs:
       tag: ${{ steps.build.outputs.tag }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - uses: actions/setup-node@v5
         with:
@@ -181,7 +181,7 @@ jobs:
       HTTP_API_MOCK_API_URL: ${{ needs.http-api-mock.outputs.apiURL }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: store checkout out version
         id: ref
@@ -290,7 +290,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ needs.e2e-tests.outputs.ref }}
 
