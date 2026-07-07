@@ -81,7 +81,7 @@
     "constructs": "10.4.4",
     "glob": "11.1.0",
     "husky": "9.1.7",
-    "jsonata": "2.1.0",
+    "jsonata": "2.2.0",
     "lint-staged": "16.2.7",
     "nock": "14.0.15",
     "semver": "7.7.3",
