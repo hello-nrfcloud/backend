@@ -133,7 +133,7 @@
     "@hello.nrfcloud.com/proto-map": "16.6.72",
     "@middy/core": "6.4.5",
     "@middy/input-output-logger": "6.4.5",
-    "@sinclair/typebox": "0.34.49",
+    "@sinclair/typebox": "0.34.52",
     "cbor-x": "1.6.4",
     "e118-iin-list": "4.5.0",
     "id128": "1.6.6",
