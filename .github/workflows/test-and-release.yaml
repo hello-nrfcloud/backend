@@ -245,7 +245,7 @@ jobs:
           --no-warnings ./feature-runner/console-reporter.ts  --only-failed
           --with-timestamps
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: e2e-test-result-${{ github.sha }}
@@ -261,7 +261,7 @@ jobs:
           node --experimental-transform-types ./aws/export-logs.ts ${{ env.STACK_NAME }}
           node --experimental-transform-types ./aws/export-logs.ts ${{ needs.http-api-mock.outputs.stackName }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: logs-${{ github.sha }}
