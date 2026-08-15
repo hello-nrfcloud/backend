@@ -185,7 +185,7 @@ const h = async (
 				)
 			}
 		}
-		throw new Error('Query failed')
+		throw new Error('Query failed', { cause: err })
 	}
 }
 

@@ -2,6 +2,7 @@ import {
 	codeBlockOrThrow,
 	regExpMatchedStep,
 	type StepRunner,
+	type StepRunnerArgs,
 } from '@bifravst/bdd-markdown'
 import { Type } from '@sinclair/typebox'
 import assert from 'assert/strict'
@@ -124,10 +125,14 @@ const receive = regExpMatchedStep(
 	},
 )
 
-const wsSend = <StepRunner>{
+const wsSend = {
 	match: (title: string) =>
 		/^I send this message via the websocket$/.test(title),
-	run: async ({ log: { progress }, context, step }) => {
+	run: async ({
+		log: { progress },
+		context,
+		step,
+	}: StepRunnerArgs<Record<string, any>>) => {
 		const { wsClient } = context
 		const message = JSON.parse(codeBlockOrThrow(step).code)
 		await setTimeout(1000)
@@ -171,6 +176,6 @@ export const websocketStepRunners = ({
 } => ({
 	steps: [wsConnect({ websocketUri }), receive, wsSend, assertOnLastMessage],
 	cleanup: async (): Promise<void> => {
-		await Promise.all(Object.values(wsClients).map((client) => client.close()))
+		Object.values(wsClients).map((client) => client.close())
 	},
 })

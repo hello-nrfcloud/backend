@@ -11,7 +11,6 @@ import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda'
 import { lastSeenRepo } from '../lastSeen/lastSeenRepo.ts'
 import { getLwM2MShadow } from '../lwm2m/getLwM2MShadow.ts'
 import { connectionsRepository } from '../websocket/connectionsRepository.ts'
-import type { WebsocketPayload } from './publishToWebsocketClients.ts'
 import type { AuthorizedEvent } from './ws/AuthorizedEvent.ts'
 import { sendShadowToConnection } from './ws/sendShadowToConnection.ts'
 
@@ -87,7 +86,7 @@ export const handler = middy<
 					EventBusName,
 					Source: 'hello.ws',
 					DetailType: Context.deviceIdentity.toString(),
-					Detail: JSON.stringify(<WebsocketPayload>{
+					Detail: JSON.stringify({
 						deviceId,
 						connectionId,
 						message,

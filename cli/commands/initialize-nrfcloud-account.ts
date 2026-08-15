@@ -78,7 +78,7 @@ const initializeAccount =
 				console.log(chalk.yellow(`${k}:`), chalk.blue(v)),
 			)
 			console.log()
-		} catch (err) {
+		} catch {
 			console.log(chalk.magenta(`Stack not configured.`))
 		}
 

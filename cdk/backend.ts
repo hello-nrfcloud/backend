@@ -16,7 +16,7 @@ import { ensureCA } from '../bridge/ensureCA.ts'
 import { ensureMQTTBridgeCredentials } from '../bridge/ensureMQTTBridgeCredentials.ts'
 import { mqttBridgeCertificateLocation } from '../bridge/mqttBridgeCertificateLocation.ts'
 import { debug, type logFn } from '../cli/log.ts'
-import pJSON from '../package.json' assert { type: 'json' }
+import pJSON from '../package.json' with { type: 'json' }
 import { ScopeContexts, type ScopeContext } from '../settings/scope.ts'
 import { BackendApp } from './BackendApp.ts'
 import { restoreCertificateFromSSM } from './helpers/certificates/restoreCertificateFromSSM.ts'

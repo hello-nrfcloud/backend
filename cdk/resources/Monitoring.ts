@@ -8,7 +8,7 @@ import { Construct } from 'constructs'
 export class Monitoring extends Construct {
 	public constructor(
 		parent: Construct,
-		{ logGroups }: { logGroups: Array<Logs.ILogGroup> },
+		{ logGroups }: { logGroups: Array<Logs.ILogGroupRef> },
 	) {
 		super(parent, 'Monitoring')
 

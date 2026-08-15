@@ -1,7 +1,7 @@
 type ReturnDefer<T> = {
 	promise: Promise<T>
 	resolve: (value: T) => void
-	reject: (reason: any) => void
+	reject: (reason: unknown) => void
 }
 
 export class DeferTimeoutError extends Error {
@@ -24,7 +24,7 @@ export const defer = <T>(timeoutMS: number): ReturnDefer<T> => {
 		}
 		ret.reject = (reason) => {
 			clearTimeout(timer)
-			_reject(reason)
+			_reject(reason instanceof Error ? reason : new Error(String(reason)))
 		}
 	})
 

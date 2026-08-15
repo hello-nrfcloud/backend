@@ -141,7 +141,9 @@ export const logsCommand = ({
 								!/^(START|END|REPORT) RequestId:/.test(message ?? ''),
 						)
 						?.filter(({ message }) =>
-							filter === undefined ? true : message?.includes(filter),
+							filter === undefined
+								? true
+								: (message?.includes(filter) ?? false),
 						)
 						?.forEach((e) => {
 							try {

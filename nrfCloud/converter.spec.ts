@@ -1,19 +1,18 @@
 import {
 	LwM2MObjectID,
-	type Geolocation_14201,
 	type LwM2MObjectInstance,
 } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { converter } from './converter.ts'
-import GNSS from './examples/GNSS.json' assert { type: 'json' }
+import GNSS from './examples/GNSS.json' with { type: 'json' }
 
 void describe('convert()', () => {
 	void describe('should convert devices messages to LwM2M objects', () => {
 		for (const [message, expected] of [
 			[
 				GNSS,
-				<Geolocation_14201>{
+				{
 					ObjectID: LwM2MObjectID.Geolocation_14201,
 					// ObjectInstanceID: 0, // 0: device, 1: ground-fix, 2: single-cell
 					ObjectVersion: '1.0',

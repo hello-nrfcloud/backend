@@ -1,4 +1,7 @@
-import { type QueryCommandOutput } from '@aws-sdk/client-timestream-query'
+import {
+	type QueryCommandInput,
+	type QueryCommandOutput,
+} from '@aws-sdk/client-timestream-query'
 import assert from 'node:assert/strict'
 import { describe, it, mock } from 'node:test'
 import { check, objectMatching } from 'tsmatchers'
@@ -108,7 +111,10 @@ void describe('paginateTimestreamQuery()', () => {
 	})
 
 	void it('should paginate results', async () => {
-		const send = mock.fn()
+		const send =
+			mock.fn<
+				(args: { input: QueryCommandInput }) => Promise<QueryCommandOutput>
+			>()
 		send.mock.mockImplementationOnce(
 			async () =>
 				Promise.resolve({
@@ -231,7 +237,7 @@ void describe('paginateTimestreamQuery()', () => {
 			}),
 		)
 
-		assert.call(send, {
+		assertCall(send, {
 			input: {
 				QueryString:
 					"SELECT deviceId, measure_name, measure_value::double, time FROM \"historicalData07AF2C3C-B8xvZ9KBGFEL\".\"historicalDatahistoricalDataTable305CFA9D-SLuHYYxeZrFZ\" WHERE deviceId = 'oob-352656108602296' AND \"@context\" = 'https://github.com/hello-nrfcloud/proto/transformed/PCA20035%2Bsolar/location' AND measure_name in ('lat','lng','acc','ts') AND time BETWEEN from_milliseconds(1692101009025) - 30day AND from_milliseconds(1692101009025) ORDER BY time DESC",

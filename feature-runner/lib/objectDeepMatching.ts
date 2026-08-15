@@ -1,5 +1,5 @@
 import { anArray, arrayContaining, is, objectMatching } from 'tsmatchers'
-import type { Matcher } from 'tsmatchers/js/tsMatchers.ts'
+import type { Matcher } from 'tsmatchers/internals'
 
 export const objectDeepMatching = (expected: unknown): Matcher<unknown> => {
 	if (Array.isArray(expected)) {

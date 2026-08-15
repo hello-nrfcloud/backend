@@ -62,7 +62,7 @@ export const handler = middy<
 			const senMLCBOR = event.senMLCBOR
 			try {
 				senML = fromCBOR(decode(Buffer.from(senMLCBOR, 'base64')))
-			} catch (err) {
+			} catch {
 				console.error(`Failed to decode SenML from ${senMLCBOR}!`)
 				await logDb.recordError(deviceId, senMLCBOR, [
 					`Failed to decode payload as SenML!`,

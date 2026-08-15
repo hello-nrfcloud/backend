@@ -23,9 +23,7 @@ const diffShadows = (
 		for (const [InstanceId, Instance] of Object.entries(Instances)) {
 			const InstanceIdN = parseInt(InstanceId, 10)
 			if (current[ObjectIDAndVersion]?.[InstanceIdN] === undefined) {
-				if (diff[ObjectIDAndVersion] === undefined) {
-					diff[ObjectIDAndVersion] = {}
-				}
+				diff[ObjectIDAndVersion] ??= {}
 				diff[ObjectIDAndVersion][InstanceIdN] = Instance
 				continue
 			}
@@ -40,12 +38,8 @@ const diffShadows = (
 					// or its the timestamp resource
 					ResourceIDN === tsResource
 				) {
-					if (diff[ObjectIDAndVersion] === undefined) {
-						diff[ObjectIDAndVersion] = {}
-					}
-					if (diff[ObjectIDAndVersion][InstanceIdN] === undefined) {
-						diff[ObjectIDAndVersion][InstanceIdN] = {}
-					}
+					diff[ObjectIDAndVersion] ??= {}
+					diff[ObjectIDAndVersion][InstanceIdN] ??= {}
 					diff[ObjectIDAndVersion][InstanceIdN][ResourceIDN] = Value
 				}
 			}

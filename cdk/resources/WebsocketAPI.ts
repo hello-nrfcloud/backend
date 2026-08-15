@@ -154,9 +154,7 @@ export class WebsocketAPI extends Construct {
 			},
 		)
 		this.authorizerFn.fn.addPermission('invokeByHttpApi', {
-			principal: new IAM.ServicePrincipal(
-				'apigateway.amazonaws.com',
-			) as IAM.IPrincipal,
+			principal: new IAM.ServicePrincipal('apigateway.amazonaws.com'),
 			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
 				Stack.of(this).account
 			}:${api.ref}/authorizers/${authorizer.attrAuthorizerId}`,
@@ -231,25 +229,19 @@ export class WebsocketAPI extends Construct {
 		this.websocketURI = `${api.attrApiEndpoint}/${prodStage.ref}`
 		// API invoke lambda permissions
 		this.onConnectFn.fn.addPermission('invokeByAPI', {
-			principal: new IAM.ServicePrincipal(
-				'apigateway.amazonaws.com',
-			) as IAM.IPrincipal,
+			principal: new IAM.ServicePrincipal('apigateway.amazonaws.com'),
 			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
 				Stack.of(this).account
 			}:${api.ref}/${prodStage.stageName}/$connect`,
 		})
 		this.onMessageFn.fn.addPermission('invokeByAPI', {
-			principal: new IAM.ServicePrincipal(
-				'apigateway.amazonaws.com',
-			) as IAM.IPrincipal,
+			principal: new IAM.ServicePrincipal('apigateway.amazonaws.com'),
 			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
 				Stack.of(this).account
 			}:${api.ref}/${prodStage.stageName}/message`,
 		})
 		this.onDisconnectFn.fn.addPermission('invokeByAPI', {
-			principal: new IAM.ServicePrincipal(
-				'apigateway.amazonaws.com',
-			) as IAM.IPrincipal,
+			principal: new IAM.ServicePrincipal('apigateway.amazonaws.com'),
 			sourceArn: `arn:aws:execute-api:${Stack.of(this).region}:${
 				Stack.of(this).account
 			}:${api.ref}/${prodStage.stageName}/$disconnect`,
