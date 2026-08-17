@@ -62,8 +62,7 @@ const diffShadows = (
 				tsResource
 			] as number | undefined
 			const diffTs = diff[ObjectIDAndVersion]?.[InstanceIdN]?.[tsResource] as
-				| number
-				| undefined
+				number | undefined
 			if (currentTs !== undefined && diffTs !== undefined) {
 				diff[ObjectIDAndVersion]![InstanceIdN]![tsResource] = Math.max(
 					currentTs,
