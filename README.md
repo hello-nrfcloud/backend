@@ -34,6 +34,12 @@ release process.
 The CoAP simulator is written in Golang, which needs to be
 [present on the local system](https://go.dev/dl/).
 
+## TypeScript 6 and 7
+
+This repo
+[runs TypeScript 6 and 7 side by side](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0),
+[so that eslint works](https://github.com/typescript-eslint/typescript-eslint/issues/10940#issuecomment-4922812181).
+
 ### Run once
 
 To setup MQTT bridge, you have to run the below command to generate a

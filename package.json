@@ -68,6 +68,7 @@
     "@types/ws": "8.18.1",
     "@types/yauzl": "3.4.0",
     "@types/yazl": "3.3.1",
+    "@typescript/native": "npm:typescript@7.0.2",
     "aws-cdk": "2.1136.0",
     "aws-cdk-lib": "2.265.0",
     "cbor-x": "1.6.5",
@@ -85,6 +86,7 @@
     "nock": "14.0.17",
     "semver": "7.8.5",
     "tsmatchers": "6.0.2",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
     "yauzl": "3.4.0",
     "yazl": "3.3.1"
   },
