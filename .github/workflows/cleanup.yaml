@@ -106,4 +106,4 @@ jobs:
         env:
           NODE_OPTIONS: --experimental-transform-types --no-warnings
         run: |
-          node node_modules/@bifravst/http-api-mock/dist/cdk/http-api-mock.js destroy ${{ inputs.http_api_mock_stack_name }}
+          node node_modules/@bifravst/http-api-mock/dist/cdk/http-api-mock.js --destroy ${{ inputs.http_api_mock_stack_name }}
