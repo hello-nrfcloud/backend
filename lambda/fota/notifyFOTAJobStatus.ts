@@ -6,7 +6,6 @@ import { requestLogger } from '@hello.nrfcloud.com/lambda-helpers/requestLogger'
 import { Context } from '@hello.nrfcloud.com/proto/hello'
 import middy from '@middy/core'
 import type { DynamoDBStreamEvent } from 'aws-lambda'
-import type { WebsocketPayload } from '../publishToWebsocketClients.ts'
 import type { PersistedJob } from './jobRepo.ts'
 import { toJob } from './toJobExecution.ts'
 
@@ -38,7 +37,7 @@ export const handler = middy<DynamoDBStreamEvent, void>()
 						EventBusName,
 						Source: 'hello.ws',
 						DetailType: Context.lwm2mObjectUpdate.toString(),
-						Detail: JSON.stringify(<WebsocketPayload>{
+						Detail: JSON.stringify({
 							deviceId: job.deviceId,
 							message,
 						}),

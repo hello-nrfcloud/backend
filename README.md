@@ -23,8 +23,22 @@ developed using [AWS CDK](https://aws.amazon.com/cdk) in
 npm ci
 ```
 
+#### Node & NPM
+
+This project requires Node.js `>=24.19.0 <25` and npm `>=12.0.2 <13` (enforced
+via `check-node-version` on `npm install` and `npm ci`). The check is skipped
+during `npm publish` and `npm pack`, so it does not interfere with
+`semantic-release`, which runs its own dependency installation as part of the
+release process.
+
 The CoAP simulator is written in Golang, which needs to be
 [present on the local system](https://go.dev/dl/).
+
+## TypeScript 6 and 7
+
+This repo
+[runs TypeScript 6 and 7 side by side](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0),
+[so that eslint works](https://github.com/typescript-eslint/typescript-eslint/issues/10940#issuecomment-4922812181).
 
 ### Run once
 

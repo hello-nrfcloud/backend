@@ -13,7 +13,7 @@ import { env } from '../aws/env.ts'
 import { getIoTEndpoint } from '../aws/getIoTEndpoint.ts'
 import type { StackOutputs } from '../cdk/BackendStack.ts'
 import { STACK_NAME } from '../cdk/stackConfig.ts'
-import psjon from '../package.json' assert { type: 'json' }
+import psjon from '../package.json' with { type: 'json' }
 import { buildContainersCommand } from './commands/build-container.ts'
 import { cleanBackupCertificates } from './commands/clean-backup-certificates.ts'
 import type { CommandDefinition } from './commands/CommandDefinition.ts'

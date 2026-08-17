@@ -31,8 +31,11 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
+          node-version: ">=24.19.0 <25"
           cache: "npm"
+
+      - name: Install NPM version specified in package.json
+        uses: ./.github/actions/install-npm
 
       - name: Install dependencies
         run: npm ci --no-audit
@@ -67,8 +70,11 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
+          node-version: ">=24.19.0 <25"
           cache: "npm"
+
+      - name: Install NPM version specified in package.json
+        uses: ./.github/actions/install-npm
 
       - name: Install dependencies
         run: npm ci --no-audit
@@ -85,8 +91,10 @@ jobs:
 
       - name: Create HTTP API mock
         id: create
+        env:
+          NODE_OPTIONS: --experimental-transform-types --no-warnings
         run: |
-          npx @bifravst/http-api-mock > http-api-mock.json
+          node node_modules/@bifravst/http-api-mock/dist/cdk/http-api-mock.js > http-api-mock.json
           echo "stackName=`jq -r '.stackName' http-api-mock.json`" >> $GITHUB_OUTPUT
           echo "responsesTableName=`jq -r '.responsesTableName' http-api-mock.json`" >> $GITHUB_OUTPUT
           echo "apiURL=`jq -r '.apiURL' http-api-mock.json`" >> $GITHUB_OUTPUT
@@ -129,8 +137,11 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
+          node-version: ">=24.19.0 <25"
           cache: "npm"
+
+      - name: Install NPM version specified in package.json
+        uses: ./.github/actions/install-npm
 
       - name: Install dependencies
         run: npm ci --no-audit
@@ -189,8 +200,11 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
+          node-version: ">=24.19.0 <25"
           cache: "npm"
+
+      - name: Install NPM version specified in package.json
+        uses: ./.github/actions/install-npm
 
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
@@ -240,10 +254,11 @@ jobs:
 
       - name: Print failed End-to-End tests
         if: failure()
+        env:
+          NODE_OPTIONS: --experimental-transform-types --no-warnings
         run:
-          cat e2e-test-result.json | node --experimental-transform-types
-          --no-warnings ./feature-runner/console-reporter.ts  --only-failed
-          --with-timestamps
+          cat e2e-test-result.json | node
+          ./feature-runner/console-reporter.ts  --only-failed --with-timestamps
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
@@ -257,9 +272,11 @@ jobs:
 
       - name: Get all logs
         if: failure()
+        env:
+          NODE_OPTIONS: --experimental-transform-types --no-warnings
         run: |
-          node --experimental-transform-types ./aws/export-logs.ts ${{ env.STACK_NAME }}
-          node --experimental-transform-types ./aws/export-logs.ts ${{ needs.http-api-mock.outputs.stackName }}
+          node ./aws/export-logs.ts ${{ env.STACK_NAME }}
+          node ./aws/export-logs.ts ${{ needs.http-api-mock.outputs.stackName }}
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
@@ -296,8 +313,11 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
+          node-version: ">=24.19.0 <25"
           cache: "npm"
+
+      - name: Install NPM version specified in package.json
+        uses: ./.github/actions/install-npm
 
       - name: Install dependencies
         run: npm ci --no-audit

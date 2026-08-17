@@ -102,11 +102,13 @@ export const updateLambda = ({
 
 		console.log(`[${id}] Updating (${functionToUpdate.PhysicalResourceId}) ...`)
 
-		let res: PackedLambda | undefined = undefined
+		let res: PackedLambda
 
+		// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
 		switch (fnInfo.Configuration?.Runtime) {
 			case 'nodejs20.x':
 			case 'nodejs22.x':
+			case 'nodejs24.x':
 				res = await packLambdaFromPath({
 					id,
 					sourceFilePath: `lambda/${sourceFile ?? id}.ts`,

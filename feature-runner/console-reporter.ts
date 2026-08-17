@@ -13,7 +13,9 @@ let res: SuiteResult
 try {
 	res = JSON.parse(chunks.join(''))
 } catch (error) {
-	throw new Error(`Failed to parse result JSON: ${(error as Error).message}`)
+	throw new Error(`Failed to parse result JSON: ${(error as Error).message}`, {
+		cause: error,
+	})
 }
 
 consoleReporter(res, console.log, {

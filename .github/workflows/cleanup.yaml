@@ -33,8 +33,11 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
+          node-version: ">=24.19.0 <25"
           cache: "npm"
+
+      - name: Install NPM version specified in package.json
+        uses: ./.github/actions/install-npm
 
       - name: Install dependencies
         run: npm ci --no-audit
@@ -80,8 +83,14 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
+          node-version: ">=24.19.0 <25"
           cache: "npm"
+
+      - name: Install NPM version specified in package.json
+        uses: ./.github/actions/install-npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
@@ -94,5 +103,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION_CI }}
 
       - name: Delete HTTP API mock
+        env:
+          NODE_OPTIONS: --experimental-transform-types --no-warnings
         run: |
-          npx @bifravst/http-api-mock destroy ${{ inputs.http_api_mock_stack_name }}
+          node node_modules/@bifravst/http-api-mock/dist/cdk/http-api-mock.js --destroy --stack-name ${{ inputs.http_api_mock_stack_name }}

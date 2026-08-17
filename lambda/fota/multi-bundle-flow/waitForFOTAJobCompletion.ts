@@ -53,6 +53,11 @@ export const handler = middy<DynamoDBStreamEvent>()
 							}),
 						)
 						break
+					case FOTAJobStatus.CREATED:
+					case FOTAJobStatus.IN_PROGRESS:
+					case FOTAJobStatus.DELETION_IN_PROGRESS:
+					case FOTAJobStatus.QUEUED:
+					case FOTAJobStatus.DOWNLOADING:
 					default:
 						console.debug(
 							`Job ${job.jobId} is still in progress: ${job.status}`,

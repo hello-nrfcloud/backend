@@ -98,7 +98,7 @@ export class BackendStack extends Stack {
 				hash: baseLayer.hash,
 			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
-			compatibleRuntimes: [Lambda.Runtime.NODEJS_22_X],
+			compatibleRuntimes: [Lambda.Runtime.NODEJS_24_X],
 		})
 
 		const jwtLayerVersion = new Lambda.LayerVersion(this, 'jwtLayer', {
@@ -109,7 +109,7 @@ export class BackendStack extends Stack {
 				hash: jwtLayer.hash,
 			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
-			compatibleRuntimes: [Lambda.Runtime.NODEJS_22_X],
+			compatibleRuntimes: [Lambda.Runtime.NODEJS_24_X],
 		})
 
 		const healthCheckLayerVersion = new Lambda.LayerVersion(
@@ -122,7 +122,7 @@ export class BackendStack extends Stack {
 					hash: healthCheckLayer.hash,
 				}).code,
 				compatibleArchitectures: [Lambda.Architecture.ARM_64],
-				compatibleRuntimes: [Lambda.Runtime.NODEJS_22_X],
+				compatibleRuntimes: [Lambda.Runtime.NODEJS_24_X],
 			},
 		)
 
@@ -179,7 +179,7 @@ export class BackendStack extends Stack {
 					hash: cdkLayer.hash,
 				}).code,
 				compatibleArchitectures: [Lambda.Architecture.ARM_64],
-				compatibleRuntimes: [Lambda.Runtime.NODEJS_22_X],
+				compatibleRuntimes: [Lambda.Runtime.NODEJS_24_X],
 			})
 			const domain = new APICustomDomain(this, {
 				api,

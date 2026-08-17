@@ -12,7 +12,7 @@ import {
 	Stack,
 } from 'aws-cdk-lib'
 import type { ContainerImage } from 'aws-cdk-lib/aws-ecs'
-import { LogDriver, type ICluster } from 'aws-cdk-lib/aws-ecs'
+import { LogDriver } from 'aws-cdk-lib/aws-ecs'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 import { Construct } from 'constructs'
@@ -255,10 +255,7 @@ export class Integration extends Construct {
 
 				return result
 			},
-			{ environment: initEnvironment, secrets: initSecrets } as {
-				environment: Record<string, string>
-				secrets: Record<string, ECS.Secret>
-			},
+			{ environment: initEnvironment, secrets: initSecrets },
 		)
 
 		mqttBridgeTask.addContainer('mqttBridgeContainer', {
@@ -289,7 +286,7 @@ export class Integration extends Construct {
 			this,
 			'mqttBridgeService',
 			{
-				cluster: cluster as ICluster,
+				cluster,
 				taskDefinition: mqttBridgeTask,
 				desiredCount: 1,
 				// Required for shared VPC and access to SSM Parameters

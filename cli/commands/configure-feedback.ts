@@ -51,7 +51,7 @@ export const configureFeedbackCommand = ({
 		const { name } = await putSetting({
 			ssm,
 			stackName,
-		})(property as keyof Settings, new URL(value), deleteBeforeUpdate)
+		})(property, new URL(value), deleteBeforeUpdate)
 
 		console.log()
 		console.log(
