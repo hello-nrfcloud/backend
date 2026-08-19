@@ -55,7 +55,7 @@
     "@bifravst/eslint-config-typescript": "8.0.0",
     "@bifravst/http-api-mock": "3.0.10",
     "@bifravst/prettier-config": "2.0.0",
-    "@bifravst/random-words": "8.0.3",
+    "@bifravst/random-words": "9.0.0",
     "@commitlint/config-conventional": "21.2.2",
     "@hello.nrfcloud.com/bdd-markdown-steps": "5.0.5",
     "@swc/cli": "0.8.1",
