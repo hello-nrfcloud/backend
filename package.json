@@ -126,7 +126,7 @@
     "@bifravst/aws-ssm-settings-helpers": "2.0.0",
     "@bifravst/from-env": "4.0.0",
     "@bifravst/run": "2.0.1",
-    "@bifravst/timestream-helpers": "6.1.0",
+    "@bifravst/timestream-helpers": "7.0.0",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.0",
     "@hello.nrfcloud.com/lambda-helpers": "5.0.54",
     "@hello.nrfcloud.com/nrfcloud-api-helpers": "7.0.2",
