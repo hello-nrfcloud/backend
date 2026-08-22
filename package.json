@@ -70,7 +70,7 @@
     "@types/yazl": "3.3.1",
     "@typescript/native": "npm:typescript@7.0.2",
     "aws-cdk": "2.1137.0",
-    "aws-cdk-lib": "2.265.0",
+    "aws-cdk-lib": "2.266.0",
     "cbor-x": "1.6.5",
     "cdk": "2.1138.0",
     "cfn-response": "1.0.1",
