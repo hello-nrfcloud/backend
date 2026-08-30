@@ -69,7 +69,7 @@
     "@types/yauzl": "3.4.0",
     "@types/yazl": "3.3.1",
     "@typescript/native": "npm:typescript@7.0.2",
-    "aws-cdk": "2.1137.0",
+    "aws-cdk": "2.1139.0",
     "aws-cdk-lib": "2.266.0",
     "cbor-x": "1.6.6",
     "cdk": "2.1138.0",
