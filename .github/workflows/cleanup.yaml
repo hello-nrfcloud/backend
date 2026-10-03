@@ -43,7 +43,7 @@ jobs:
         run: npm ci --no-audit
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           # The role is set up via https://github.com/hello-nrfcloud/ci
           # secrets.AWS_ACCOUNT_ID_CI is an organization secret
@@ -93,7 +93,7 @@ jobs:
         run: npm ci --no-audit
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           # The role is set up via https://github.com/hello-nrfcloud/ci
           # secrets.AWS_ACCOUNT_ID_CI is an organization secret
