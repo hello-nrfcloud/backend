@@ -50,7 +50,7 @@
     "@bifravst/aws-cdk-ecr-helpers": "2.0.1",
     "@bifravst/aws-cdk-lambda-helpers": "5.1.5",
     "@bifravst/bdd-markdown": "9.0.5",
-    "@bifravst/ci": "3.0.2",
+    "@bifravst/ci": "3.0.3",
     "@bifravst/cloudformation-helpers": "10.0.1",
     "@bifravst/eslint-config-typescript": "8.0.14",
     "@bifravst/http-api-mock": "3.0.75",
