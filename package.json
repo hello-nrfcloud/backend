@@ -124,7 +124,7 @@
   "dependencies": {
     "@aws-lambda-powertools/metrics": "2.36.0",
     "@bifravst/aws-ssm-settings-helpers": "2.0.3",
-    "@bifravst/from-env": "4.0.0",
+    "@bifravst/from-env": "4.0.1",
     "@bifravst/run": "2.0.1",
     "@bifravst/timestream-helpers": "7.0.0",
     "@hello.nrfcloud.com/certificate-helpers": "1.0.4",
