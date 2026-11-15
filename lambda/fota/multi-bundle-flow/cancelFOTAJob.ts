@@ -26,6 +26,15 @@ const { stackName, jobStatusTableName, parentJobIdIndexName } = fromEnv({
 const ssm = new SSMClient({})
 const db = new DynamoDBClient({})
 
+/**
+ * nRF Cloud FOTA jobs in these states are still active and need to be cancelled
+ */
+const cancellableStatuses: FOTAJobStatus[] = [
+	FOTAJobStatus.DOWNLOADING,
+	FOTAJobStatus.IN_PROGRESS,
+	FOTAJobStatus.QUEUED,
+]
+
 const allNRFCloudAPIConfigs = getAllNRFCloudAPIConfigs({ ssm, stackName })()
 
 export const handler = middy<DynamoDBStreamEvent>()
@@ -71,13 +80,7 @@ export const handler = middy<DynamoDBStreamEvent>()
 					'jobId' | 'status'
 				>
 				console.log(JSON.stringify(nrfCloudJob))
-				if (
-					![
-						FOTAJobStatus.DOWNLOADING,
-						FOTAJobStatus.IN_PROGRESS,
-						FOTAJobStatus.QUEUED,
-					].includes(nrfCloudJob.status)
-				) {
+				if (!cancellableStatuses.includes(nrfCloudJob.status)) {
 					console.debug(
 						`Job ${nrfCloudJob.jobId} is in status ${nrfCloudJob.status}, no action needed.`,
 					)
