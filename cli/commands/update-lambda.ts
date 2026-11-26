@@ -1,24 +1,29 @@
-import {
-	DescribeStackResourceCommand,
-	type CloudFormationClient,
-} from '@aws-sdk/client-cloudformation'
-import {
-	GetFunctionCommand,
-	LastUpdateStatus,
-	UpdateFunctionCodeCommand,
-	UpdateFunctionConfigurationCommand,
-	type LambdaClient,
-} from '@aws-sdk/client-lambda'
-import {
-	packLambdaFromPath,
-	type PackedLambda,
-} from '@bifravst/aws-cdk-lambda-helpers'
-import { listStackResources } from '@bifravst/cloudformation-helpers'
-import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
-import pRetry from 'p-retry'
-import { packGo } from '../../cdk/helpers/lambda/packGo.ts'
+import type { CloudFormationClient } from '@aws-sdk/client-cloudformation'
+import type { LambdaClient } from '@aws-sdk/client-lambda'
+import type { PackedLambda } from '@bifravst/aws-cdk-lambda-helpers'
+import { updateLambdaCode } from '@bifravst/aws-cdk-lambda-helpers/util'
+import chalk from 'chalk'
+import { packBackendLambdas } from '../../cdk/packBackendLambdas.ts'
 import type { CommandDefinition } from './CommandDefinition.ts'
+
+const isPackedLambda = (v: unknown): v is PackedLambda =>
+	typeof v === 'object' &&
+	v !== null &&
+	'id' in v &&
+	'zipFilePath' in v &&
+	'hash' in v
+
+const flatten = (
+	lambdas: Record<string, unknown>,
+): Record<string, PackedLambda> =>
+	Object.fromEntries(
+		Object.values(lambdas).flatMap((v) => {
+			if (isPackedLambda(v)) return [[v.id, v]]
+			if (typeof v === 'object' && v !== null)
+				return Object.entries(flatten(v as Record<string, unknown>))
+			return []
+		}),
+	)
 
 export const updateLambda = ({
 	stackName,
@@ -29,146 +34,46 @@ export const updateLambda = ({
 	cf: CloudFormationClient
 	lambda: LambdaClient
 }): CommandDefinition => ({
-	command: 'update-lambda <id>',
-	options: [
-		{
-			flags: '-s, --source-file <sourceFile>',
-			description: `Update the lambda from this source file`,
-		},
-		{
-			flags: '-p, --physical-resource-id <physicalResourceId>',
-			description: `Update the lambda with this physical resource ID`,
-		},
-		{
-			flags: '-v, --version <version>',
-			description: `Set the version environment variable`,
-		},
-	],
-	action: async (id, { physicalResourceId: pId, version, sourceFile }) => {
-		const stackFunctionIds = await listStackResources(
-			cf,
-			stackName,
-			'AWS::Lambda::Function',
+	command: 'update-lambda [id]',
+	action: async (id?: string) => {
+		const start = new Date()
+		const lambdas = flatten(await packBackendLambdas())
+		console.debug(
+			'Packed lambdas in',
+			new Date().getTime() - start.getTime(),
+			'ms',
 		)
 
-		const stackFunctions: Array<{
-			PhysicalResourceId: string
-			id?: string
-		}> = []
-
-		for (const { StackResourceDetail } of await Promise.all(
-			stackFunctionIds.map(async ({ LogicalResourceId }) =>
-				cf.send(
-					new DescribeStackResourceCommand({
-						StackName: stackName,
-						LogicalResourceId,
-					}),
-				),
-			),
-		)) {
-			const { PhysicalResourceId, Metadata } = StackResourceDetail ?? {}
-			if (PhysicalResourceId === undefined) continue
-
-			stackFunctions.push({
-				PhysicalResourceId,
-				// Try to match by packed lambda ID
-				id: JSON.parse(Metadata ?? '{}')['packedlambda:id'],
-			})
-		}
-
-		let functionToUpdate = stackFunctions.find(
-			({ id: packedId }) => packedId === id,
-		)
-
-		if (functionToUpdate === undefined) {
-			const matchById = stackFunctions.filter(({ PhysicalResourceId }) =>
-				PhysicalResourceId.includes(pId ?? id),
-			)
-			if (matchById.length === 1) functionToUpdate = matchById[0]
-		}
-
-		if (functionToUpdate === undefined) {
-			for (const fn of stackFunctions) {
-				console.debug(`- ${fn.id ?? '?'} (${fn.PhysicalResourceId})`)
-			}
-			throw new Error(`No function found for ${id}!`)
-		}
-
-		const fnInfo = await lambda.send(
-			new GetFunctionCommand({
-				FunctionName: functionToUpdate.PhysicalResourceId,
-			}),
-		)
-
-		console.log(`[${id}] Updating (${functionToUpdate.PhysicalResourceId}) ...`)
-
-		let res: PackedLambda
-
-		// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
-		switch (fnInfo.Configuration?.Runtime) {
-			case 'nodejs20.x':
-			case 'nodejs22.x':
-			case 'nodejs24.x':
-				res = await packLambdaFromPath({
-					id,
-					sourceFilePath: `lambda/${sourceFile ?? id}.ts`,
-				})
-				break
-			case 'provided.al2023':
-				if (id !== 'healthCheckForCoAPClient')
-					throw new Error(`Unsupported Go lambda ${id}!`)
-				res = await packGo(id, 'lambda/health-check/coap/client')
-				break
-			default:
-				throw new Error(`Unsupported runtime ${fnInfo.Configuration?.Runtime}`)
-		}
-
-		const updateResult = await lambda.send(
-			new UpdateFunctionCodeCommand({
-				FunctionName: functionToUpdate.PhysicalResourceId,
-				ZipFile: new Uint8Array(await readFile(res.zipFilePath)),
-			}),
-		)
-
-		console.log('RevisionId', updateResult.RevisionId)
-		console.log('CodeSha256', updateResult.CodeSha256)
-
-		await pRetry(
-			async () => {
-				const updateStatus = (
-					await lambda.send(
-						new GetFunctionCommand({
-							FunctionName: functionToUpdate.PhysicalResourceId,
+		const filteredLambdas =
+			id === undefined
+				? lambdas
+				: Object.fromEntries(
+						Object.entries(lambdas).filter(([lambdaId]) => {
+							if (lambdaId === id) return true
+							console.debug(
+								chalk.blue(`[${stackName}]`),
+								chalk.green(`[${lambdaId}]`),
+								'skipped',
+							)
+							return false
 						}),
 					)
-				).Configuration?.LastUpdateStatus
-				assert.equal(
-					updateStatus,
-					LastUpdateStatus.Successful,
-					`Lambda update should have succeeded, got ${updateStatus}`,
-				)
-			},
-			{
-				minTimeout: 1000,
-				maxTimeout: 1000,
-				retries: 10,
-			},
+
+		if (Object.keys(filteredLambdas).length === 0)
+			throw new Error(`No lambda found for ${id}!`)
+
+		await updateLambdaCode({ cf, lambda })(
+			stackName,
+			filteredLambdas,
+			(arg, ...args: Array<unknown>) =>
+				console.debug(chalk.blue(`[${stackName}]`), chalk.green(arg), ...args),
 		)
 
-		if (typeof version === 'string') {
-			console.log(`[${id}] updating VERSION to ${version} ...`)
-
-			await lambda.send(
-				new UpdateFunctionConfigurationCommand({
-					FunctionName: functionToUpdate.PhysicalResourceId,
-					Environment: {
-						Variables: {
-							VERSION: version,
-						},
-					},
-				}),
-			)
-		}
+		console.debug(
+			'Updated lambdas in',
+			new Date().getTime() - start.getTime(),
+			'ms',
+		)
 	},
-	help: 'Updates a lambda directly',
+	help: 'Updates the code of all lambdas (or the one with the given ID) directly, if changed',
 })

@@ -165,5 +165,3 @@ export const packBackendLambdas = async (): Promise<BackendLambdas> => ({
 		),
 	},
 })
-
-await packBackendLambdas()

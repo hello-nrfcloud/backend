@@ -1,5 +1,8 @@
 import { repositoryName } from '@bifravst/aws-cdk-ecr-helpers/repository'
-import { LambdaSource } from '@bifravst/aws-cdk-lambda-helpers/cdk'
+import {
+	BaseLayerVersion,
+	LambdaSource,
+} from '@bifravst/aws-cdk-lambda-helpers/cdk'
 import type { PackedLayer } from '@bifravst/aws-cdk-lambda-helpers/layer'
 import { LwM2MObjectID } from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { App } from 'aws-cdk-lib'
@@ -90,16 +93,7 @@ export class BackendStack extends Stack {
 			description: 'Provides the hello.nrfcloud.com backend',
 		})
 
-		const baseLayerVersion = new Lambda.LayerVersion(this, 'baseLayer', {
-			layerVersionName: `${Stack.of(this).stackName}-baseLayer`,
-			code: new LambdaSource(this, {
-				id: 'baseLayer',
-				zipFilePath: baseLayer.layerZipFilePath,
-				hash: baseLayer.hash,
-			}).code,
-			compatibleArchitectures: [Lambda.Architecture.ARM_64],
-			compatibleRuntimes: [Lambda.Runtime.NODEJS_24_X],
-		})
+		const baseLayerVersion = new BaseLayerVersion(this, baseLayer)
 
 		const jwtLayerVersion = new Lambda.LayerVersion(this, 'jwtLayer', {
 			layerVersionName: `${Stack.of(this).stackName}-jwtLayer`,
@@ -109,7 +103,6 @@ export class BackendStack extends Stack {
 				hash: jwtLayer.hash,
 			}).code,
 			compatibleArchitectures: [Lambda.Architecture.ARM_64],
-			compatibleRuntimes: [Lambda.Runtime.NODEJS_24_X],
 		})
 
 		const healthCheckLayerVersion = new Lambda.LayerVersion(
@@ -122,7 +115,6 @@ export class BackendStack extends Stack {
 					hash: healthCheckLayer.hash,
 				}).code,
 				compatibleArchitectures: [Lambda.Architecture.ARM_64],
-				compatibleRuntimes: [Lambda.Runtime.NODEJS_24_X],
 			},
 		)
 
@@ -134,7 +126,7 @@ export class BackendStack extends Stack {
 		const websocketEventBus = new WebsocketEventBus(this)
 
 		const deviceShadow = new DeviceShadow(this, {
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			lambdaSources,
 			connectionsTable: websocketConnectionsTable,
 			eventBus: websocketEventBus,
@@ -144,7 +136,7 @@ export class BackendStack extends Stack {
 		const convertNrfCloudDeviceMessages = new ConvertNrfCloudDeviceMessages(
 			this,
 			{
-				layers: [baseLayerVersion],
+				layers: [baseLayerVersion.layerVersion],
 				lambdaSources,
 			},
 		)
@@ -152,7 +144,7 @@ export class BackendStack extends Stack {
 		const websocketAPI = new WebsocketAPI(this, {
 			lambdaSources,
 			deviceStorage,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			lastSeen,
 			connectionsTable: websocketConnectionsTable,
 			eventBus: websocketEventBus,
@@ -160,7 +152,7 @@ export class BackendStack extends Stack {
 
 		const api = new API(this)
 		const apiHealth = new APIHealthCheck(this, {
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			lambdaSources,
 		})
 		api.addRoute('GET /health', apiHealth.fn.fn)
@@ -179,7 +171,6 @@ export class BackendStack extends Stack {
 					hash: cdkLayer.hash,
 				}).code,
 				compatibleArchitectures: [Lambda.Architecture.ARM_64],
-				compatibleRuntimes: [Lambda.Runtime.NODEJS_24_X],
 			})
 			const domain = new APICustomDomain(this, {
 				api,
@@ -215,20 +206,20 @@ export class BackendStack extends Stack {
 		const healthCheckMqtt = new HealthCheckMqtt(this, {
 			websocketAPI,
 			deviceStorage,
-			layers: [baseLayerVersion, healthCheckLayerVersion],
+			layers: [baseLayerVersion.layerVersion, healthCheckLayerVersion],
 			lambdaSources,
 		})
 
 		const healthCheckCoAP = new HealthCheckCoAP(this, {
 			websocketAPI,
 			deviceStorage,
-			layers: [baseLayerVersion, healthCheckLayerVersion],
+			layers: [baseLayerVersion.layerVersion, healthCheckLayerVersion],
 			lambdaSources,
 		})
 
 		const convertLwM2M = new CoAPSenMLtoLwM2M(this, {
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			websocketEventBus,
 			lastSeen,
 		})
@@ -236,7 +227,7 @@ export class BackendStack extends Stack {
 		const senMLImportLogs = new SenMLImportLogs(this, {
 			deviceStorage,
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			importLogsTable: convertLwM2M.importLogs,
 		})
 		api.addRoute('GET /device/{deviceId}/senml-imports', senMLImportLogs.fn.fn)
@@ -248,34 +239,34 @@ export class BackendStack extends Stack {
 
 		const kpis = new KPIs(this, {
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			lastSeen,
 			deviceStorage,
 		})
 
 		const updateDeviceState = new UpdateDeviceState(this, {
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			deviceStorage,
 		})
 		api.addRoute('PATCH /device/{deviceId}/state', updateDeviceState.fn.fn)
 
 		const feedback = new Feedback(this, {
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 		})
 		api.addRoute('POST /feedback', feedback.fn.fn)
 
 		const deviceInfo = new DeviceInfo(this, {
 			deviceStorage,
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 		})
 		api.addRoute('GET /device', deviceInfo.fn.fn)
 
 		const deviceLocationHistory = new DeviceLocationHistory(this, {
 			lambdaSources,
-			layers: [baseLayerVersion, jwtLayerVersion],
+			layers: [baseLayerVersion.layerVersion, jwtLayerVersion],
 			connectionsTable: websocketConnectionsTable,
 			websocketEventBus,
 			deviceStorage,
@@ -287,7 +278,7 @@ export class BackendStack extends Stack {
 
 		const memfaultReboots = new MemfaultReboots(this, {
 			lambdaSources,
-			layers: [baseLayerVersion, jwtLayerVersion],
+			layers: [baseLayerVersion.layerVersion, jwtLayerVersion],
 			connectionsTable: websocketConnectionsTable,
 			websocketEventBus,
 			deviceStorage,
@@ -299,7 +290,7 @@ export class BackendStack extends Stack {
 
 		const lwm2mObjectsHistory = new LwM2MObjectsHistory(this, {
 			deviceStorage,
-			layers: [baseLayerVersion, jwtLayerVersion],
+			layers: [baseLayerVersion.layerVersion, jwtLayerVersion],
 			lambdaSources,
 		})
 		api.addRoute(
@@ -309,7 +300,7 @@ export class BackendStack extends Stack {
 
 		const deviceFOTA = new DeviceFOTA(this, {
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			deviceStorage,
 			websocketEventBus,
 		})
@@ -325,7 +316,7 @@ export class BackendStack extends Stack {
 		// State machine to drive the multi-bundle flow
 		const mbff = new MultiBundleFOTAFlow(this, {
 			lambdas: lambdaSources.multiBundleFOTAFlow,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			deviceFOTA,
 			deviceStorage,
 		})
@@ -342,7 +333,7 @@ export class BackendStack extends Stack {
 
 		const updateDevice = new UpdateDevice(this, {
 			lambdaSources,
-			layers: [baseLayerVersion],
+			layers: [baseLayerVersion.layerVersion],
 			deviceStorage,
 		})
 		api.addRoute(
