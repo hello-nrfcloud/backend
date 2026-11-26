@@ -25,7 +25,7 @@ npm ci
 
 #### Node & NPM
 
-This project requires Node.js `>=24.19.0 <25` and npm `>=12.0.2 <13` (enforced
+This project requires Node.js `>=26.13.1 <27` and npm `>=12.2.3 <13` (enforced
 via `check-node-version` on `npm install` and `npm ci`). The check is skipped
 during `npm publish` and `npm pack`, so it does not interfere with
 `semantic-release`, which runs its own dependency installation as part of the

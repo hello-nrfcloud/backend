@@ -1,3 +1,5 @@
-export enum ContainerRepositoryId {
-	MQTTBridge = 'mqtt-bridge',
-}
+export const ContainerRepositoryId = {
+	MQTTBridge: 'mqtt-bridge',
+} as const
+export type ContainerRepositoryId =
+	(typeof ContainerRepositoryId)[keyof typeof ContainerRepositoryId]

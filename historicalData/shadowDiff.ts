@@ -1,4 +1,7 @@
-import { timestampResources } from '@hello.nrfcloud.com/proto-map/lwm2m'
+import {
+	isLwM2MObjectID,
+	timestampResources,
+} from '@hello.nrfcloud.com/proto-map/lwm2m'
 import type { LwM2MShadow } from '@hello.nrfcloud.com/proto-map/lwm2m/aws'
 import { isEqual } from 'lodash-es'
 
@@ -10,9 +13,11 @@ const diffShadows = (
 
 	for (const [ObjectIDAndVersion, Instances] of Object.entries(update)) {
 		// Determine the timestamp resource for the object
-		const [ObjectID] = ObjectIDAndVersion.split(':')
-		if (ObjectID === undefined) continue
-		const tsResource = timestampResources.get(parseInt(ObjectID, 10))
+		const [ObjectIDString] = ObjectIDAndVersion.split(':')
+		if (ObjectIDString === undefined) continue
+		const ObjectID = parseInt(ObjectIDString, 10)
+		if (!isLwM2MObjectID(ObjectID)) continue
+		const tsResource = timestampResources.get(ObjectID)
 		if (tsResource === undefined) continue
 
 		if (current[ObjectIDAndVersion] === undefined) {

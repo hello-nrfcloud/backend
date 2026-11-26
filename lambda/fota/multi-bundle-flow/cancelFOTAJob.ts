@@ -72,11 +72,13 @@ export const handler = middy<DynamoDBStreamEvent>()
 				>
 				console.log(JSON.stringify(nrfCloudJob))
 				if (
-					![
-						FOTAJobStatus.DOWNLOADING,
-						FOTAJobStatus.IN_PROGRESS,
-						FOTAJobStatus.QUEUED,
-					].includes(nrfCloudJob.status)
+					!(
+						[
+							FOTAJobStatus.DOWNLOADING,
+							FOTAJobStatus.IN_PROGRESS,
+							FOTAJobStatus.QUEUED,
+						] as FOTAJobStatus[]
+					).includes(nrfCloudJob.status)
 				) {
 					console.debug(
 						`Job ${nrfCloudJob.jobId} is in status ${nrfCloudJob.status}, no action needed.`,

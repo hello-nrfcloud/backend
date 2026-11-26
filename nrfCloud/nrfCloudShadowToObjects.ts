@@ -28,7 +28,7 @@ export const nrfCloudShadowToObjects = ({
 			metadata.reported.device.deviceInfo.appVersion?.timestamp,
 			metadata.reported.device.deviceInfo.board?.timestamp,
 		]
-		const d = <DeviceInformation_14204>{
+		const d = {
 			ObjectID: LwM2MObjectID.DeviceInformation_14204,
 			ObjectVersion: '1.0',
 			Resources: {
@@ -41,7 +41,7 @@ export const nrfCloudShadowToObjects = ({
 				// Board version
 				4: reported.device.deviceInfo.board,
 			},
-		}
+		} as DeviceInformation_14204
 		if ('simInfo' in reported.device) {
 			// SIM ICCID
 			d.Resources[1] = reported.device.simInfo.iccid

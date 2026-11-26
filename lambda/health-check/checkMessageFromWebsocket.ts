@@ -1,11 +1,13 @@
 import { WebSocket, type RawData } from 'ws'
 import { defer } from './defer.ts'
 
-export enum ValidateResponse {
-	skip,
-	valid,
-	invalid,
-}
+export const ValidateResponse = {
+	skip: 0,
+	valid: 1,
+	invalid: 2,
+} as const
+export type ValidateResponse =
+	(typeof ValidateResponse)[keyof typeof ValidateResponse]
 
 export const checkMessageFromWebsocket = async ({
 	endpoint,

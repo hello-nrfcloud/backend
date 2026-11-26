@@ -1,7 +1,8 @@
-export enum Scopes {
-	STACK = 'stack',
-	NRFCLOUD_BRIDGE_CERTIFICATE = 'nRFCloudBridgeCertificate',
-}
+export const Scopes = {
+	STACK: 'stack',
+	NRFCLOUD_BRIDGE_CERTIFICATE: 'nRFCloudBridgeCertificate',
+} as const
+export type Scopes = (typeof Scopes)[keyof typeof Scopes]
 
 export type ScopeContext = {
 	scope: string
@@ -9,28 +10,28 @@ export type ScopeContext = {
 }
 
 export const ScopeContexts = {
-	STACK_MQTT_BRIDGE: <ScopeContext>{
+	STACK_MQTT_BRIDGE: {
 		scope: Scopes.STACK,
 		context: 'mqttBridge',
-	},
-	NRFCLOUD_BRIDGE_CERTIFICATE_MQTT: <ScopeContext>{
+	} as ScopeContext,
+	NRFCLOUD_BRIDGE_CERTIFICATE_MQTT: {
 		scope: Scopes.NRFCLOUD_BRIDGE_CERTIFICATE,
 		context: 'MQTT',
-	},
-	NRFCLOUD_BRIDGE_CERTIFICATE_CA: <ScopeContext>{
+	} as ScopeContext,
+	NRFCLOUD_BRIDGE_CERTIFICATE_CA: {
 		scope: Scopes.NRFCLOUD_BRIDGE_CERTIFICATE,
 		context: 'CA',
-	},
-	STACK_FEEDBACK: <ScopeContext>{
+	} as ScopeContext,
+	STACK_FEEDBACK: {
 		scope: Scopes.STACK,
 		context: 'feedback',
-	},
-	STACK_MEMFAULT: <ScopeContext>{
+	} as ScopeContext,
+	STACK_MEMFAULT: {
 		scope: Scopes.STACK,
 		context: 'memfault',
-	},
-	STACK_MAP: <ScopeContext>{
+	} as ScopeContext,
+	STACK_MAP: {
 		scope: Scopes.STACK,
 		context: 'map',
-	},
+	} as ScopeContext,
 } as const
